@@ -22,8 +22,6 @@ __status__ = 'Development'
 import os
 import pickle
 import json
-#from urllib.request import urlopen
-#from urllib.error import URLError, HTTPError
 import requests
 from hashlib import md5
 import lituus.mtg as mtg
@@ -32,6 +30,7 @@ import lituus.mtgl.parser as parser
 import lituus.mtgl.mtgt as mtgt
 import lituus.mtgcard as mtgcard
 
+# file paths and urls
 url_cards = "https://mtgjson.com/json/AllCards.json"
 mvpath    = os.path.join(mtg.pth_sto,'multiverse.pkl')
 tcpath    = os.path.join(mtg.pth_sto,'transformed.pkl')
