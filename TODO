@@ -10,8 +10,6 @@ quantify with all or not
 
 66. Add english name conversion i.e. Lim-Dul's Vault
 
-67. Find out why allcards.json from mtgjson gives 403 error
-
 68. Inside double quotes we have ... this creature ... or ... this artifact ... etc
 should we self-ref these?
 

@@ -22,8 +22,9 @@ __status__ = 'Development'
 import os
 import pickle
 import json
-from urllib.request import urlopen
-from urllib.error import URLError, HTTPError
+#from urllib.request import urlopen
+#from urllib.error import URLError, HTTPError
+import requests
 from hashlib import md5
 import lituus.mtg as mtg
 import lituus.mtgl.mtgl as mtgl
@@ -67,20 +68,20 @@ def multiverse(update=False):
             if fin: fin.close()
 
     # there is no version checking. on update, downloads AllCards.json & reparses
-    if update:
+    if update and False: # TODO: disable downloading allcards until debugging is complete
         fout = None
         try:
             print("Requesting AllCards.json")
-            jurl = urlopen(url_cards).read()
+            jurl = requests.get(url_cards)
+            if jurl.status_code != 200: raise RuntimeError
             fout = open(os.path.join(mtg.pth_resources,'AllCards.json'),'w')
-            fout.write(jurl.read())
+            fout.write(jurl.json())
             fout.close()
             print("AllCards.json updated")
-        except (URLError,HTTPError):
+        except RuntimeError:
             print("Failed to download AllCards.json")
         except OSError as e:
             print("Failed to save AllCards.json: {}".format(e))
-            return
         finally:
             if fout: fout.close()
 
