@@ -3,8 +3,7 @@
 
 Lituus, a curved staff or wand used by Roman augurs to define a templum in the sky and interpret the passage of birds and divine omens.
 
-![](docs/lituus logo small.png?raw=true)
-
+![Lituus Logo](https://github.com/TemporalInept/Lituus/blob/master/docs/lituus%20logo%20small.png)
 ## 1 DESCRIPTION
 
 Lituus is a proof of concept that aims to:
