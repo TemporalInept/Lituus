@@ -1,4 +1,4 @@
-# ![Lituus Logo](https://github.com/TemporalInept/Lituus/blob/master/docs/lituus%20banner.png) Lituus v 0.1.0 ![Lituus Logo](https://github.com/TemporalInept/Lituus/blob/master/docs/lituus%20banner.png)
+# ![Lituus Logo](https://github.com/TemporalInept/Lituus/blob/master/docs/lituus%20banner.png)
 ## A parser and pseudo-scientific analyzer of MTG cards.
 
 Lituus, a curved staff or wand used by Roman augurs to define a templum in the sky and interpret the passage of birds and divine omens.
