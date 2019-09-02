@@ -5,6 +5,8 @@ Lituus, a curved staff or wand used by Roman augurs to define a templum in the s
 
 ## 1 DESCRIPTION
 
+**NOTE: Lituus in its current state does not work**
+
 Lituus is a proof of concept that aims to:
 
  1. Grab the characteristics of each card,
