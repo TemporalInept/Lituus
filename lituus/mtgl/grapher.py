@@ -24,6 +24,10 @@ import lituus.mtgl.list_util as ll
 import lituus.mtgl.mtgl as mtgl
 import lituus.mtgl.mtgt as mtgt
 
+# TODO: remove these
+tri = [mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',mtgl.is_coordinator,mtgl.is_mtg_obj]
+bi = [mtgl.is_mtg_obj,',',mtgl.is_mtg_obj]
+
 def graph(mtxt,ctype='other'):
     """
      graphs the mtgl parsed oracle text of card
@@ -646,6 +650,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
         try:
             # for testing try collate on exile only matching three objs if it
             # doesn't match these parameters, allow it to fall through
+            if ll.matchl(tri,tkns,0) == 0: print("{} {}".format(v,tkns[:len(tri)+1]))
             """
             if v == 'exile':
                 objs,c,tl,skip = collate(tkns)
@@ -671,6 +676,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
             # TODO: drop to here
             """
 
+            # TODO: should we make this Thing so we can catch zones as well
             if mtgl.is_mtg_obj(tkns[0]) or mtgl.is_lituus_obj(tkns[0]):
                 # TODO: find a better attribute name than object
                 t.add_attr(t.add_node(kwid,'object'),'object',tkns[0])

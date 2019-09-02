@@ -47,6 +47,43 @@ which, when combined with other characterisitics of cards, will give us the tool
  2. **networkx** (https://networkx.github.io) to create parse trees
  3. **BeautifulSoup** (https://www.crummy.com/software/BeautifulSoup/) for scraping online decklists
 
+## 3 INSTALLION/USING
+
+## 4 ARCHITECTURE
+
+## 5. FILE STRUCTURE:
+Brief Overview of the project file structure. Directories and/or files annotated
+with (-) are not included in pip installs or PyPI downloads
+
+* Lituus                    root Distribution directory
+  - \_\_init\_\_.py         initialize distrubution Lituus module
+  - docs                    README resources
+    + lituus banner.png     banner image for README
+    + lituus logo small.png Small logo for Lituus
+  - README.md               this file
+  - LICENSE                 GPLv3 License
+  - TODO                    things I want to implement/change
+  - lituus                  package directory
+    + \_\_init\_\_.py       initialize lituus module
+    + mtg.py                constants and general functions
+    + multiverse.py         mtgjson interface
+    + mtgcard.py            defines our concept of a card
+    + mtgl                  Parsing/Graphing functuality
+     * \_\_init\_\_.py      initialize mtgl module
+     * mtgl.py              regexes, strings & helper functions for the mtgl format
+     * tagger.py            tags (annotates) MTG oracle text in the mtgl format
+     * lexer.py             tokenized tagged text
+     * parser.py            parses tagged and tokenized text
+     * grapher.py           turns parsed text into parse trees
+     * mtgt.py              wrapper for networkx trees
+     * list_util.py         useful list functions
+    + resources             local copies of other peoples work
+      * AllCards.json       All the cards
+      * Primary Database    cEDH decks details
+    + sto                   Saved data
+      * multiverse.pkl      Saved multiverse after parsing
+      * transformed.pkl     Saved transformed cards after parsing
+
 ***
 Lituus is unofficial Fan Content permitted under the Fan Content Policy. Not
 approved/endorsed by Wizards. Portions of the materials used are property of Wizards

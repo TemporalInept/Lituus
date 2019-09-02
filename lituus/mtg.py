@@ -72,8 +72,3 @@ land_cats = [
     "Basic","Bounce","Shock","Reveal","Battle","Bond","Fast","Check","Slow",
     "Slow Depl","Scry","Cycling","Bicyle","Filter","Man","Pain","Threshold",
     "Fetch","Sac","Sac Depl","Charge","Strip","Dual","Tainted","Other"]
-
-### REG EXP CONSTANTS
-re_ms = r"{[0-9wubrgcspx\/]+}" # matches 1 mana symbol brace enclosed digit, type {}
-
-### HELPER FUNCTIONS

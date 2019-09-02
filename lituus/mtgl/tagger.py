@@ -7,8 +7,7 @@ the terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version.
 
-Defines constants, regular expressions and string replacments for tagging of mtg
-oracle text
+Tags MTG oracle text in the mtgl format
 """
 
 __name__ = 'tagger'
