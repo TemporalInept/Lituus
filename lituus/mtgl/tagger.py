@@ -262,7 +262,6 @@ def fix_lvl_up(txt):
     for i,j in enumerate(ls):
         if i < len(ls) - 1:
             if i < len(ls) - 1:
-                ltxt += txt[j:ls[i + 1]].replace("\n"," <break> ")  # replace newlines with space
                 if i == 0:
                     # the first line is the level up COST line, remove any
                     # <break>s & add one newline

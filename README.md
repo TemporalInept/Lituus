@@ -7,10 +7,11 @@ Lituus, a curved staff or wand used by Roman augurs to define a templum in the s
 
 Lituus is a proof of concept that aims to:
 
- 1. Parse and graph Magic: The Gathering (MTG) oracle text,
- 2. Compile and collate the parsed oracle text and other card data,
+ 1. Grab the characteristics of each card,
+ 2. Parse and graph Magic: The Gathering (MTG) oracle text,
+ 3. Compile and collate the parsed oracle text and card characteristics,
  3. Analyze the collated data in terms of Competitive Elder Highlander (cEDH) decks,
- 4. and use the data in Ertai's Study of Lesser Wizards (ESoLW) <https://github.com/TemporalInept/ESoLW> Quarterly and Annual Reports.
+ 5. and use the data in Ertai's Study of Lesser Wizards (ESoLW) <https://github.com/TemporalInept/ESoLW> Quarterly and Annual Reports.
 
 Lituus is written Python and requires Python 3 to run. It has only been tested on my personal computer is not guaranteed to work on anything else. 
 

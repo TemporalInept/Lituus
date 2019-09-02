@@ -96,13 +96,15 @@ GT  = '⋗' # mtgl greater than
 LE  = '≤' # mtgl less than or equal
 GE  = '≥' # mtgl greater than or equal
 EQ  = '≡' # mtgl equal to
-#ARW = '→' # property # TODO: i don't think we use this anymore
+ARW = '→' # property
 # symbols defined in oracle text
 HYP = '—' # mtg long hyphen
 BLT = '•' # mtg bullet
-# symbols that can be mixed up easily
+# symbols that can be mixed up easily or hard to read
 PER = '.' # period
 CMA = ',' # comma
+DBL = '"' # double quote
+SNG = "'" # single quote
 # symbols used in mtgjson format
 MIN = '−' # not used yet (found in negative loyalty costs)
 
@@ -173,7 +175,7 @@ def tkn_type(tkn):
     """
     if is_tag(tkn): return MTGL_TAG
     if is_mtg_symbol(tkn): return MTGL_SYM
-    if tkn in [':', ',', '.', '"', "'", '•', '—']: return MTGL_PUN
+    if tkn in [':', CMA, PER, DBL, SNG, BLT, HYP]: return MTGL_PUN
     return MTGL_WRD
 
 # match a mtg symbol
@@ -207,7 +209,7 @@ def untag(tkn):
     except AttributeError:
         raise MTGLTagException(tkn)
 
-re_hanging = re.compile(r"(\s)>")  # find hanging spaces before ending angle brace
+re_hanging = re.compile(r"(\s)>") # find hanging spaces before ending angle brace
 def retag(tag,val,ps):
     """
      builds a tag from tag name, tag-value and property dict
@@ -217,8 +219,7 @@ def retag(tag,val,ps):
     :return: the built tag
     """
     return re_hanging.sub(
-        '>',
-        "{}<{} {}>".format(tag,val," ".join(["=".join([p, ps[p]]) for p in ps]))
+        '>',"{}<{} {}>".format(tag,val," ".join(["=".join([p,ps[p]]) for p in ps]))
     )
 
 def is_tgr_word(tkn):
@@ -477,11 +478,8 @@ re_lituus_stat = re.compile(r"\b({})\b".format('|'.join(lituus_status)))
 
 # PHASES
 
-# phases 501 to 514 (including steps) and turn
+# phases 501 to 514 (including steps and turns)
 # requires two regex, the second to capture singleton upkeep and combat
-# TODO: have to remember why we took phase out
-# TODO: we would have to do a negative look behind for cumulative if try to
-#  do Issue # 127
 phases = [
     "untap step","upkeep step","draw step","main phase","combat phase",
     "beginning of combat step","beginning of combat","declare attackers step",
@@ -551,6 +549,8 @@ objects = ['ability','card','copy','token','spell','permanent','emblem','source'
 re_obj = re.compile(r"(?<!<)\b({}\b)".format('|'.join(objects)))
 
 # CHARACTERISTICS
+# NOTE: sub_characteristics must be updated with the release of new sets to
+#  include adding any token specific types
 
 # characteristics 109.3
 meta_characteristics = [
@@ -565,7 +565,7 @@ type_characteristics = [  # NOTE: we added historic
     'instant','creature','sorcery','planeswalker',
     'enchantment','land','artifact','historic'
 ]
-sub_characteristics = [ # NOTE: added scion, army, saproling and clue
+sub_characteristics = [
     'dryad','wurm','wall','horse','dovin','ogre','shaman','dragon','zombie','human',
     'warrior','aura','desert','beast','angel','djinn','soldier','spirit','rhino',
     'cleric','treefolk','centaur','scarecrow','rat','drake','knight','goblin',
@@ -602,7 +602,10 @@ sub_characteristics = [ # NOTE: added scion, army, saproling and clue
     'reflection','angrath','kasmina','rowan','arlinn','mine','spawn','venser',
     'pangolin','koth','vivien','oyster','yanling','flagbearer','rigger','lamia',
     'mole','locus','brushwagg','fortification','will',
-    'scion','army','saproling','clue' # added tokens
+    # added tokens
+    'army','camarid','caribou','citizen','clue','deserter','germ','graveborn',
+    'orb','pentavite','pincher','prism','sand','saproling','scion','sculpture',
+    'serf','servo','splinter','survivor','tetravite','triskelavite'
 ]
 characteristics = meta_characteristics + \
                   color_characteristics + \

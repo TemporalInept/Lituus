@@ -162,10 +162,9 @@ def import_cards(mv,tc,mverse):
             continue
 
         # get the parameters and parse the oracle
-        # TODO: once the bugs, are worked out, change reraise of error to print
-        #  and continue
+        # TODO: once the bugs, are worked out, remove reraise of error
         jcard = mverse[cname]
-        dcard = parse_card(cname,jcard)
+        dcard = harvest(cname,jcard)
         try:
             parser.parse(cname,dcard)
         except mtgl.MTGLException:
@@ -212,14 +211,13 @@ def import_cards(mv,tc,mverse):
         del mv[b]
         mv[name] = dcard
 
-def parse_card(name,jcard):
+def harvest(name,jcard):
     """
      extract details from the json card and return the card dict
     :param name: the name of the card
     :param jcard: json card dict
     :return: card dict
     """
-    # extract characteristics from card
     try:
         dcard = {
             'rid':md5(name.encode()).hexdigest(),
@@ -250,20 +248,27 @@ def parse_card(name,jcard):
     elif 'Creature' in jcard['types']:
         dcard['P/T'] = "{}/{}".format(jcard['power'],jcard['toughness'])
 
-    # return the card dict
     return dcard
 
 def _hack_oracle_(name,txt):
     """
-    Hard coded hacks to modify card contents to enable better
-    processing
+    Hard coded hacks to modify card contents to enable better processing
     :param name: the name of the card
     :param txt: the oracle text
     :return: modified oracle text
     """
-    if name == "Urborg, Tomb of Yawgmoth": txt += "\n{T}: Add {B}.\n"
-    elif name == "Drayd Arbor": # rewrite the oracle
+    if name == "Urborg, Tomb of Yawgmoth":
+        # Urborg has an implied "Add B" because it makes itself a swamp
+        txt += "\n{T}: Add {B}.\n"
+    elif name == "Drayd Arbor":
+        # all reminded text is removed because it is in most cases redudant. But
+        # Dryad's arbor oracle text in its entirety is reminder text
         txt = "Dryad Arbor isn't a spell, it's affected by summoning sickness.\n{T}: Add {G}\n"
+    elif name == "Raging River":
+        # Raging River double-quote encloses it pile labels which interact
+        # negatively with the grapher. Remove the quotes from left and right
+        # labels
+        txt = txt.replace('"left"','left').replace('"right"','right').replace('"right."','right.')
     return txt
 
 def _precompile_types_(mv):

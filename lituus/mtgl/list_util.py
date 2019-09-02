@@ -101,17 +101,28 @@ def indicesl(ls,e):
 def joinl(ls,e):
     """
      joins the sublists in ls with the tkn e such that the joined list js will be
-       ls[0] [e] + ls[1] + e ... + ls[n]
+       ls[0] + [e] + ls[1] + e ... + ls[n]
     :param ls: list of lists
     :param e: string token to join
     :return: the joined list
-    TODO: this is a hack an extremely inefficient
+    TODO: this is a hack and extremely inefficient
     """
     js = []
     for i,ss in enumerate(ls):
         js += ss
         if i < len(ls)-1: js += [e]
     return js
+
+def indexl(ls,e,start=0):
+    """
+     finds the index of the first occurrence of element e in list ls after index
+     start
+     :param ls: the list to search
+     :param e: the element to look for
+     :param start: the index to start at
+     :return: the right index of e in ls (or throws a ValueError)
+    """
+    return (ls[start+1:].index(e))+(start+1)
 
 def rindexl(ls,e):
     """

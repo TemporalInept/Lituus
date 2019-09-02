@@ -407,3 +407,37 @@ activation instruction or leave as is
 
 231. find out why '$' is not working in regexs
 
+232. Effects (609), events (700.1) etc what other rules terminilogy needs to be applied
+
+234. Splintering Wind
+ {2}{G}: Splintering Wind deals 1 damage to target creature. Create a 1/1 green Splinter creature token. It has flying and "Cumulative upkeep Green." When it leaves the battlefield, it deals 1 damage to you and each creature you control.
+
+with strict parsing, the phrase "When it leaves the battlefield, it deals 1 damage to you and each creature you control." will not apply to the token because it is not
+inside the double quotes. Note the phrasing on the original card:
+ 
+  "If this token leaves play..."
+
+which explitly states that the token does damage on leaving the battlefield
+
+235. need a more robust, portable and non-hacky means of identifying and 'capturing' double-quote enclosed phrases
+
+236. See Curse of Opulence. The way that cards are parsed, we will get an 
+effect of creating a gold token and the instructions will state:
+It has "Sacrifice this artifact: Add one mana of any color."
+this instruction is part of the gold token how can we identify these cases and
+then ensure they are grouped with the token. Same is also true for King Macar
+
+237. should we move commas preceding double quotes outside of the double quote
+
+238. Arlinn, Embraced by the Moon, Diabolical Salvation, Koth of the Hammer,
+Liliana of the Dark Realms, Mu Yanling, Sky Dancer, Nesting Dragon & Reef Worm 
+have embedded singled-quoted clauses
+
+239. need to run on check on quoted-clauses to confirm it works
+
+240. add a replace for lists in list_util
+
+241. when we start looking for triggered abilities mid-clause, have to remember
+single-quotes inside double quotes
+
+242. Have to look at 'hierarchy', are we adding too many uncessary nodes?

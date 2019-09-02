@@ -174,9 +174,7 @@ def rectify(olds):
                 news.append('vote')
             continue
 
-        # d) 'ph<xa<draw> step>' is a phase, remove the draw as an action
-
-        # e) activate and trigger are actions unless followed by ob<ability>
+        # d) activate and trigger are actions unless followed by ob<ability>
         #if tkn == 'ka<activate>' or tkn == 'xa<trigger>':
         #    try:
         #        if mtgl.is_mtg_obj(olds[i+1]) and\
@@ -602,6 +600,7 @@ def add_hanging(olds):
                     news.pop() # pop the preposition
                     ot,ov,ops = mtgl.untag(news.pop())
 
+                    # TODO: WTF why/what/where is the arrow at
                     if p: ops['zone'] = '{}{}{}'.format(v,mtgl.ARW,p)
                     else: ops['zone'] = v
 

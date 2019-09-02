@@ -40,11 +40,12 @@ def graph(mtxt,ctype='other'):
 
     for i,line in enumerate(mtxt):
         try:
+            #if i == 2:
             graph_line(t,t.add_node(parent,'line'),line,ctype)
         except mtgt.MTGTException as e:
             raise mtgl.MTGLGraphException(e)
         except Exception as e:
-            raise mtgl.MTGLException("Unknown Error: Failed to graph {}".format(e))
+            raise mtgl.MTGLException("Unknown Error ({})".format(e))
 
     # return only the networkx tree (currently due to pickling issues with
     # self-defined classes)
@@ -74,18 +75,21 @@ def graph_line(t,pid,line,ctype='other'):
     #  e) 700.2 Modal spell or ability
     #  f) 710 Leveler Cards
     #  g) 714 Saga Cards
+    #  h) 113.1a Granted abilities (preceded by has,have,gains,gain and
+    #   double quoted
     if mtgl.is_ability_word(line[0]): graph_aw_line(t,pid,line)
     elif is_kw_line(line): graph_kw_line(t,pid,line)
     else:
         # (112.3) add an ability-line or 'ability-clause' node
         isline = pid.split(':')[0] == 'line'
         if isline: lid = t.add_node(pid,'ability-line')
-        else: lid = t.add_node(pid,'ability-clause')
+        #else: lid = t.add_node(pid,'ability-clause')
+        else: lid = pid
 
         if is_modal(line): graph_modal_line(t,lid,line) # e
         elif is_level(line): graph_level_line(t,lid,line) # f
         elif ctype == 'saga': graph_saga_line(t,lid,line) # g
-        elif ':' in line: graph_activated_ability(t,lid,line)
+        elif is_activated_ability(line): graph_activated_ability(t,lid,line)
         elif mtgl.is_tgr_word(line[0]): graph_triggered_ability(t,lid,line)
         elif ctype == 'spell': graph_clause(t,t.add_node(lid,'spell-ability'),line)
         else:
@@ -93,12 +97,9 @@ def graph_line(t,pid,line,ctype='other'):
             # default handling of any line/clause that cannot be classified as
             # one of the above. But, static-abilities do not apply in all cases
             # 112.3d "...create continuous effects..." therefore, if this is not
-            # a true line, it will be classified as an event
+            # a true line, it will be classified as an effect
             if isline: nid = t.add_node(lid,'static-ability')
-            else: nid = t.add_node(lid,'clause') #TODO: need a better name
-
-            # level symbol 710.2
-            #if is_level(line): graph_level(t,nid,line)
+            else: nid = t.add_node(lid,'effect-clause') #TODO: need a better name
             graph_clause(t,nid,line)
 
 def graph_aw_line(t,pid,line):
@@ -373,24 +374,45 @@ def graph_activated_ability(t,pid,line):
     # split the line into cost & remainder, graphing the cost
     aaid = t.add_node(pid,'activated-ability')
     cost,_,rem = ll.splitl(line,line.index(':'))
-    graph_cost(t,aaid,cost)
-    eid = t.add_node(aaid,'effect')
+    graph_cost(t,aaid,cost,'activated-ability-cost')
+    eid = t.add_node(aaid,'activated-ability-effect')
 
     # if it's modal, graph as a line under effect
     if is_modal(rem): graph_line(t,eid,rem)
     else:
+        # TODO: hanlding periods followed by double quotes is too hacky
+        #  figure out a better way of doing this
         # otherwise split remainder into effect, activating instruction(s)
-        effect,_,ais = ll.splitl(rem,rem.index(mtgl.PER))
+        try:
+            effect,_,ais = ll.splitl(rem,rem.index(mtgl.PER))
+            effect += [mtgl.PER] # add the period back
+        except ValueError:
+            effect = rem
+            ais = []
 
-        # graph the effeect as a line, adding the period back
-        graph_line(t,eid,effect+[mtgl.PER])
+        # graph effect as a line, add period back & check for hanging double-quote
+        ds = ll.indicesl(effect,mtgl.DBL)
+        if len(ds)%2 == 1:
+            # have an odd number of double quotes in eff
+            i = ll.rindexl(ais,mtgl.DBL)
+            effect += ais[:i+1]
+            ais = ais[i+1:]
+        graph_line(t,eid,effect)
 
         # then any activating instructions - split the instructions by period
-        if ais: aiid = t.add_node(aaid,'activating-instructions')
+        # TODO: is the below double quote check still necessary?
+        aiid = None
         prev = 0
         for i in ll.indicesl(ais,mtgl.PER): # looking for right splits
-            graph_line(t,t.add_node(aiid,'instruction'),ais[prev:i+1])
-            prev = i+1 # skip the period
+            # have to look at periods followed by a double quote
+            left = 1
+            try:
+                if ais[i+1] == mtgl.DBL: left = 2
+            except IndexError:
+                pass
+            if not aiid: aiid = t.add_node(aaid,'activated-ability-instructions')
+            graph_line(t,t.add_node(aiid,'instruction'),ais[prev:i+left])
+            prev = i+left # skip the period (and double quote)
 
 def graph_triggered_ability(t,pid,line):
     """
@@ -404,31 +426,42 @@ def graph_triggered_ability(t,pid,line):
     # all triggered abilties start with one of the trigger words (at,when,whenever)
     # (though not necessarily at the beginning of a line)
 
-    # add the triggered-ability node,
+    # add a triggered-ability node, & split the line into word, cond, eff & instr
     taid = t.add_node(pid,'triggered-ability')
-
-    # then split the line into trigger-word, condition, effect & instructions
     word,cond,effect,instr = ta_clause(line)
 
     # add the trigger word node and graph the condition as a clause
-    t.add_node(taid,'trigger-word',word=mtgl.untag(word)[1])
-    graph_clause(t,t.add_node(taid,'condition'),cond)
+    t.add_node(taid,'triggered-ability-word',word=mtgl.untag(word)[1])
+    graph_clause(t,t.add_node(taid,'triggered-ability-condition'),cond)
 
     # for effect we add the node, then check if it is modal or not
     eid = t.add_node(taid,'effect')
 
     # for modal, we need to recombine effect and instructions
+    # TODO: this is nearly the same as activated_ability can we subfunction it
     if is_modal(effect): graph_line(t,eid,effect+instr)
     else:
+        # NOTE: function ta_clause takes care of hanging double quotes betw/
+        # effect and instruction, no need to check here
         # graph the effect as a line
         graph_line(t,eid,effect)
 
-        # if there are instructions, split them by periods and add to nide.
-        if instr: iid = t.add_node(taid,'triggered-instructions')
+        # if there are instructions, split them by periods and add to node.
+        # NOTE: there may be hanging double quotes when instructions is
+        # split
+        #if instr: iid = t.add_node(taid,'triggered-instructions')
+        iid = None
         prev = 0
         for i in ll.indicesl(instr,mtgl.PER): # looking for right splits
-            graph_line(t,t.add_node(iid,'instruction'),instr[prev:i+1])
-            prev = i+1 # skip the period
+            # have to look at periods followed by a double quote
+            left = 1
+            try:
+                if instr[i+1] == mtgl.DBL: left = 2
+            except IndexError:
+                pass
+            if not iid: iid = t.add_node(taid,'triggered-ability-instructions')
+            graph_line(t,t.add_node(iid,'instruction'),instr[prev:i+left])
+            prev = i+left # skip the period
 
 def graph_clause(t,pid,tkns):
     """
@@ -437,9 +470,11 @@ def graph_clause(t,pid,tkns):
     :param pid: the parent id of this subtree
     :param tkns: the mtgl tokens
     """
+    #print("pid={} Starting with tkns = {}".format(pid,tkns))
     cls = []
     skip = 0
     for i,tkn in enumerate(tkns):
+        #print('i={}, skip={} tkn={}\ncls={}'.format(i,skip,tkn,cls))
         # ignore any already processed tokens
         if skip:
             skip -= 1
@@ -449,7 +484,16 @@ def graph_clause(t,pid,tkns):
             if cls:
                 t.add_node(pid,'clause',tkns=cls)
                 cls = []
-            t.add_node(pid,'punctuation',symbol=tkn)
+
+            # for double quotes, grab the encapsulated tokens & graph them as a
+            # line otherwise add the punctuation
+            if tkn == mtgl.DBL:
+                #print("\tProcessing double quote. cls closed out")
+                dbl = tkns[i+1:ll.indexl(tkns,mtgl.DBL,i)]
+                #print("\tdbl = {}".format(dbl))
+                graph_line(t,t.add_node(pid,'quoted-clause'),dbl)
+                skip = len(dbl) + 1 # skip the right double quote
+            else: t.add_node(pid,'punctuation',symbol=tkn)
         elif mtgl.tkn_type(tkn) == mtgl.MTGL_SYM:
             if cls:
                 t.add_node(pid,'clause',tkns=cls)
@@ -1155,7 +1199,7 @@ def ta_clause(tkns):
     # where nu<x> - signifies that this clause is part of the previous one,
     # meaning the previous one should be the beginning of the effect
     # TODO: any event like enter the battlefield signifies a condition (except
-    #  in the case multiple objects that make up an or clause)
+    #  in the case multiple objects that make up an 'or' clause)
     split = None
     for i,s in enumerate(ss):
         if i == 0: continue # the first clause is always in the condition
@@ -1185,12 +1229,23 @@ def ta_clause(tkns):
     cond = ll.joinl(ss[:split],mtgl.CMA)
     rem  = ll.joinl(ss[split:],mtgl.CMA)
 
-    # determine if rem is only the effect or if it is effect. Instructions.
-    assert(mtgl.PER in rem)
-    eff,_,instr = ll.splitl(rem,rem.index(mtgl.PER))
-    eff += [mtgl.PER]
+    # The remainder is either only the effect or, it is effect. instructions
+    if mtgl.PER in rem:
+        effect,_,instr = ll.splitl(rem,rem.index(mtgl.PER))
+        effect += [mtgl.PER] # add the period back to effect
+    else:
+        effect = rem
+        instr = []
 
-    return tw,cond,eff,instr
+    # before returning we have to make sure that a double-quoted clause has not
+    # been split across effect and instr.
+    ds = ll.indicesl(effect,mtgl.DBL)
+    if len(ds)%2 == 1: # have an odd number of double quotes
+        i = ll.rindexl(instr,mtgl.DBL)
+        effect += instr[:i+1]
+        instr = instr[i+1:]
+
+    return tw,cond,effect,instr
 
 def _combine_pro_from_(qs):
     """
@@ -1301,6 +1356,21 @@ def is_level(tkns):
     """
     return ll.matchl(['level',mtgl.is_number],tkns,0) == 0
 
+def is_activated_ability(tkns):
+    """
+     determines if the list of tkns defines an activated ability and if so it
+     defines a ability of the card vice an activated ability granted by the card
+    :param tkns: tokens to check
+    :return: True if tkns is a 'true' activated ability
+    """
+    if ':' in tkns:
+        # NOTE: even though we do not process single-quoted phrases, we still need
+        #  to check for them here
+        if mtgl.DBL in tkns and tkns.index(mtgl.DBL) < tkns.index(':'): return False
+        if mtgl.SNG in tkns and tkns.index(mtgl.SNG) < tkns.index(':'): return False
+        else: return True
+    else: return False
+
 ####
 # KEYWORDS
 # keyword lines contain one or more comma seperated keyword clauses where a keyword
@@ -1318,7 +1388,8 @@ def is_kw_line(line):
     #  graphed correctly)
     # standard keyword ability line is one or more comma separated keyword clauses
     # and does not end with a period or a period and a double quote
-    if not line[-1] in [mtgl.PER, '"']: return True
+    if not line[-1] in [mtgl.PER,mtgl.DBL] and ll.matchl([mtgl.is_keyword],line) > -1:
+        return True
 
     # keyword clauses with non-mana cost will have a long hyphen, start with a
     # keyword and end with a period
