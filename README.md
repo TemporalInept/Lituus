@@ -11,9 +11,7 @@ Lituus is a proof of concept that aims to:
  2. Parse and graph Magic: The Gathering (MTG) oracle text,
  3. Compile and collate the parsed oracle text and card characteristics,
  3. Analyze the collated data in terms of Competitive Elder Highlander (cEDH) decks,
- 5. and use the data in Ertai's Study of Lesser Wizards (ESoLW) <https://github.com/TemporalInept/ESoLW> Quarterly and Annual Reports.
-
-Lituus is written Python and requires Python 3 to run. It has only been tested on my personal computer is not guaranteed to work on anything else. 
+ 5. and use the data in Ertai's Study of Lesser Wizards (ESoLW) <https://github.com/TemporalInept/ESoLW> Quarterly and Annual Reports. 
 
 Sources:
 
@@ -40,6 +38,12 @@ root
 </pre>
 
 which, when combined with other characterisitics of cards, will give us the tools to meet our objectives.
+
+## 2 DEPENDENCIES
+
+ 1. **Python 3.x** It has only been tested on my machine using Python 3.5.2 is not guaranteed to work on anything else. I have no intention of trying to port it to Python 2.x
+ 2. **networkx** (https://networkx.github.io) to create parse trees
+ 3. **BeautifulSoup** (https://www.crummy.com/software/BeautifulSoup/) for scraping online decklists
 
 ***
 Lituus is unofficial Fan Content permitted under the Fan Content Policy. Not
