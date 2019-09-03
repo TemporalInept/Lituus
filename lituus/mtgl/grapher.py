@@ -1236,6 +1236,7 @@ tri_chain = [
     mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',mtgl.is_coordinator,mtgl.is_mtg_obj
 ]
 bi_chain = [mtgl.is_thing,',',mtgl.is_thing]
+bi_chain2 = [mtgl.is_thing,mtgl.is_coordinator,mtgl.is_thing]
 def collate(t,tkns):
     """
      given that the first token in tkns is a Thing, gathers and combines all
@@ -1244,14 +1245,9 @@ def collate(t,tkns):
     :param tkns: list of unprocessed tokens
     :return: id for the 'rootless' conjunction node, number of tokens processed
     """
-    print('Collating {}'.format(tkns))
     # check tri-chains first to avoid false positives by bi-chains
     if ll.matchl(tri_chain,tkns,0) == 0:
-        print('Found')
         return conjoin(t,[tkns[0],tkns[2],tkns[5]],tkns[4]),len(tri_chain)
-
-    # print out bi merges (with no coordinator)
-    if ll.matchl(bi_chain,tkns,0) == 0: return 'bi-chain',0
 
     return None,0
 
