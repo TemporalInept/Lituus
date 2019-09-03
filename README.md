@@ -47,7 +47,11 @@ which, when combined with other characterisitics of cards, will give us the tool
  2. **networkx** (https://networkx.github.io) to create parse trees
  3. **BeautifulSoup** (https://www.crummy.com/software/BeautifulSoup/) for scraping online decklists
 
-## 3 INSTALLION/USING
+## 3 INSTALLATION/USING
+
+Currently, Lituus has no "self install" capabilities. Once the parsing is stable and I moved the analyzing portion over, I'll work on the installation functuality. 
+
+Until then, if you want to run Lituus, download and unzip <https://github.com/TemporalInept/Lituus/archive/master.zip> to your desired location. You can run Lituus directly from this location or add as .pth file to your Python site-packages directory (<https://docs.python.org/2/library/site.html>) and run Lituus from anywhere. 
 
 ## 4 ARCHITECTURE
 
