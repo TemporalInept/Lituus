@@ -24,10 +24,6 @@ import lituus.mtgl.list_util as ll
 import lituus.mtgl.mtgl as mtgl
 import lituus.mtgl.mtgt as mtgt
 
-# TODO: remove these
-tri = [mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',mtgl.is_coordinator,mtgl.is_mtg_obj]
-bi = [mtgl.is_mtg_obj,',',mtgl.is_mtg_obj]
-
 def graph(mtxt,ctype='other'):
     """
      graphs the mtgl parsed oracle text of card
@@ -643,47 +639,20 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
         assert(tkns and tkns[0] == 'xo<them>')
         t.add_node(kwid,'pair',pair=tkns[0])
         skip = 1
-    elif v in KWA_OBJECT:
-        # keyword actions of the from keyword-action ob or Thing
-        # if it's a mtg object, we will use the value i.e. permanent, card,
-        # spell etc in the node. if its a lituus object, use 'object'
-        try:
-            # for testing try collate on exile only matching three objs if it
-            # doesn't match these parameters, allow it to fall through
-            if ll.matchl(tri,tkns,0) == 0: print("{} {}".format(v,tkns[:len(tri)+1]))
-            """
-            if v == 'exile':
-                objs,c,tl,skip = collate(tkns)
-                if objs:
-                    # we have a conjunction, add an object node and then
-                    # any top-level attributes
-                    oid = t.add_node(kwid,'object')
-                    for k in tl: t.add_attr(oid,k,tl[k])
-
-                    # add a conjuction node
-                    cid = t.add_node(oid,'conjunction',items='object',coordinator=c)
-
-                    # add the 'items'
-                    for obj in objs:
-                        t.add_attr(t.add_node(cid,'object'),'object',obj)
-                    return [],skip
-
-            # TODO; drop this code once done
-            tri = [mtgl.is_mtg_obj, ',', mtgl.is_mtg_obj, ',', re_conj, mtgl.is_mtg_obj]
-            bi = [mtgl.is_mtg_obj, ',', mtgl.is_mtg_obj]
-            if ll.matchl(bi, tkns, 0) == 0 and ll.matchl(tri,tkns,0) != 0:
-                print('kw={}\n tkns={}'.format(v, tkns))
-            # TODO: drop to here
-            """
-
-            # TODO: should we make this Thing so we can catch zones as well
-            if mtgl.is_mtg_obj(tkns[0]) or mtgl.is_lituus_obj(tkns[0]):
+    elif v in KWA_OBJECT: # keyword actions of the form keyword-action ob (or Thing)
+        # can we collate the kwa's object(s)
+        nid,skip = collate(t,tkns)
+        if nid == 'bi-chain':
+            print(v,' ',tkns[:len(bi_chain)+1])
+        elif nid:
+            # add an edge for our current point in the tree to the conjuction node
+            t.add_edge(kwid,nid)
+        else:
+            if tkns and mtgl.is_thing(tkns[0]):
                 # TODO: find a better attribute name than object
                 t.add_attr(t.add_node(kwid,'object'),'object',tkns[0])
                 skip = 1
-
-        except IndexError:
-            return [],skip
+        return [],skip
     elif v in KWA_N:
         # ka<KEYWORD-ACTION> N
         try:
@@ -1263,77 +1232,87 @@ def _combine_pro_from_(qs):
     qs = mtgl.AND.join([mtgl.untag(q)[2]['characteristics'] for q in qs])
     return mtgl.retag('ob','card',{'characteristics':qs})
 
-re_conj=re.compile(r"^(or|and|op<⊕>)$",re.M)
-def collate(tkns):
+tri_chain = [
+    mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',mtgl.is_coordinator,mtgl.is_mtg_obj
+]
+bi_chain = [mtgl.is_thing,',',mtgl.is_thing]
+def collate(t,tkns):
     """
-     given that the first token in tkns is a Thing, gathers all subsequent tokens
-     in tkns that refer to an object or objects under a conjuction
+     given that the first token in tkns is a Thing, gathers and combines all
+     subsequent tokens in tkns that refer to a Thing or Things under a conjuction
+    :param t: the tree
     :param tkns: list of unprocessed tokens
-    :return: for now a simple string
+    :return: id for the 'rootless' conjunction node, number of tokens processed
     """
-#    #_,ob,rem = mtgl.splitl(tkns,0)
-#    #if mtgl.is_lituus_obj(ob): return "lituus object"
-#
-    tri = [mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',re_conj,mtgl.is_mtg_obj]
-    if ll.matchl(tri,tkns,0) == 0:
-        os,c,t = _conjoin_objects_([tkns[0],tkns[2],tkns[5]],tkns[4])
-        return os,c,t,len(tri)
+    print('Collating {}'.format(tkns))
+    # check tri-chains first to avoid false positives by bi-chains
+    if ll.matchl(tri_chain,tkns,0) == 0:
+        print('Found')
+        return conjoin(t,[tkns[0],tkns[2],tkns[5]],tkns[4]),len(tri_chain)
 
-    #bi = [mtgl.is_mtg_obj,',',mtgl.is_mtg_obj]
-    #if ll.matchl(bi,tkns,0) == 0: print('bi merge of {}'.format(tkns))
-#        return
-#
-#    # Line 874 in exile with unprocessed (probably Chrome Mox)
-#    # TODO: why is with cmc blah blah not being picked up
-    return None,None,None,0
+    # print out bi merges (with no coordinator)
+    if ll.matchl(bi_chain,tkns,0) == 0: return 'bi-chain',0
 
-def _conjoin_objects_(tkns,c):
+    return None,0
+
+def conjoin(t,objs,c):
     """
-
-    :param tkns: a list of 'objects'
+     combines the objects in objs with coordinator c under a conjunction node
+    :param t: the tree
+    :param objs: a list of 'objects'
     :param c: the coordinator token
-    :return:
+    :return: node-id of a 'rootles' conjuction node
     """
-    # initialize top-level dict to empty
-    tl = {}
+    # to conjoin, create a conjunction node with coordinator attribute. Due to the
+    # parser's method of chaining and combining objets, any quantifiers (that apply
+    # to all the objects) will be in the first object, the same goes for numbers,
+    # possessives (i.e. owner, controller) will be in the last object. status, meta,
+    # characteristics will stay with the object they're found in.
+    # TODO: Sands of time does not follow this convention, 'status = tapped' should
+    #  be in each object but is only found in the first
 
-    # get any quantifier from the first object then extract any num op N attributes
-    # which will also be on the first object
-    t,v,ps = mtgl.untag(tkns[0])
-    qtr = ps['quantifier'] if 'quantifier' in ps else None
-    if 'num' in ps:
-        tl['num'] = ps['num']        # set k,v in top-level
-        del ps['num']                # delete num from the object attributes
-        tkns[0] = mtgl.retag(t,v,ps) # and retag it
-
-    # and any possessor from the last object
-    _,_,ps = mtgl.untag(tkns[-1])
-    pk = pv = None
-    if 'owner' in ps:
-        pk = 'owner'
-        pv = ps['owner']
-    elif 'controller' in ps:
-        pk = 'controller'
-        pv = ps['controller']
-
-    # and update coordinator if necessary to and/or
+    # initialize top-level attributes to None and update coordinator if neccessary
+    qtr = num = pk = pv = None
     crd = 'and/or' if c == 'op<⊕>' else c
+    itype = 'object'
 
+    # get any quantifier and/or numbers from the first object
+    # TODO: need to verify that val will be the same for each object
+    tag,val,ps = mtgl.untag(objs[0])
+    qtr = ps['quantifier'] if 'quantifier' in ps else None
+    itype = val
+    if qtr: del ps['quantifier']
+    if 'num' in ps:
+        # for number, store it, delete the attribute from the object & retag it
+        num = ps['num']
+        del ps['num']
 
-    # add quantifier and/or possessor to all objects
-    objs = []
-    for tkn in tkns:
-        # untag the token, add quantifier (if present), add possessor (if present)
-        #  TODO: note we assume that quantifiers will only be the first token
-        #   and possessors will only be in the last token due to the method that
-        #   the parser uses to combine and chain objects
-        t,v,ps = mtgl.untag(tkn)
-        if qtr: ps['quantifier'] = qtr
-        if pk: ps[pk] = pv
+        # if the num refers to 'y' change it back to 'any number of'
+        if num == 'nu<y>': num = 'any number of'
 
-        objs.append(mtgl.retag(t,v,ps))
+    objs[0] = mtgl.retag(tag,val,ps)
 
-    return objs,crd,tl
+    # get any possessor from the last object
+    tag,val,ps = mtgl.untag(objs[-1])
+    if 'owner' in ps or 'controller' in ps:
+        # for possesive, store it, delete the attr. from the object & retag it
+        pk = 'owner' if 'owner' in ps else 'controller'
+        pv = ps[pk]
+        del ps[pk]
+    objs[-1] = mtgl.retag(tag,val,ps)
+
+    # create a (rootless) conjunction node and add attributes if present
+    nid = t.add_node_ur('conjunction',coordinator=crd,items=itype)
+    if qtr: t.add_attr(nid,'quantifier',qtr)
+    if num: t.add_attr(nid,'n',num)
+    if pk: t.add_attr(nid,pk,pv)
+
+    # iterate the objects and add to the conjuction node
+    # TODO: the objects should now only have attributes that apply to that specific
+    #  object
+    for obj in objs: t.add_attr(t.add_node(nid,'object'),'object',obj)
+
+    return nid
 
 modal1 = ['xa<choose>',mtgl.is_number,mtgl.HYP]
 modal2 = [

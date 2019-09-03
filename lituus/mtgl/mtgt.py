@@ -93,25 +93,6 @@ class MTGTree:
                 if attrs: print("{}{} ({})".format(" " * ds[n],n," ".join(attrs)))
                 else: print("{}{}".format(" " * ds[n],n))
 
-    """
-    TODO:
-<root>
-├ line:0
-│ │└kw-line:0
-│   ├keyword-clause:0
-│   │└keyword:0
-│   └keyword-clause:1
-│    ├keyword:1
-│    └keyword-param:0
-└ line:1
-   └kw-line:1
-    └keyword-clause:2
-     └keyword:2
-
-we do not want the vertical brace for kw-line:0 but do want it for keyword:0
-what is the difference?
-
-    """
     def print2(self,show_attr=False):
         """
          prints the tree with each branch indented 2 spaces from parent.
@@ -203,6 +184,8 @@ what is the difference?
     def parent(self,nid):
         try:
             return next(self._t.predecessors(nid))
+        except StopIteration:
+            return None
         except KeyError:
             raise MTGTException("No such node {}".format(nid))
 
@@ -246,8 +229,33 @@ what is the difference?
         self._t.add_edge(pid,nid)
         return nid
 
+    def add_node_ur(self,ntype,**kwargs):
+        """
+         adds a rootless node of type ntype with attributes to the tree
+        :param ntype: the type of node
+        :param kwargs: attributes
+        :return: the node id of the new node
+        """
+        nid = self._node_id_(ntype)
+        self._t.add_node(nid)
+        for k, v in kwargs.items(): self._t.node[nid][k] = v
+        return nid
+
+    def add_edge(self,pid,cid):
+        """
+         adds an edge from parent pid to child cid
+        :param pid: parent-id
+        :param cid: child-id
+        """
+        # don't allow edges to be added to a node with a parent
+        if self.parent(cid): raise MTGTException("{} has a parent".format(cid))
+        self._t.add_edge(pid,cid)
+
     # TODO:
     def del_node(self): pass
+
+    # TODO:
+    def del_edge(self): pass
 
     def add_attr(self,nid,k,v):
         """

@@ -1,17 +1,12 @@
 8. What to do with text inside double quotes
 
-30. See Stasis will read as xp{player} skip their ph{untap_step}. need to
-quantify with all or not
+30. See Stasis will read as xp{player} skip their ph{untap_step}. need to quantify with all or not
 
 52. tag additional? (see Ravaging Riftwurm)
 
 66. Add english name conversion i.e. Lim-Dul's Vault
 
-68. Inside double quotes we have ... this creature ... or ... this artifact ... etc
-should we self-ref these?
-
-88. Generic replacement effect = 
- if <object> would <action>, <replacement> instead 
+68. Inside double quotes we have ... this creature ... or ... this artifact ... etc should we self-ref these?
 
 90. code programmatic download of cEDH primary deck as .tsv file
 
@@ -19,15 +14,13 @@ should we self-ref these?
 
 101. Look at Spawnbroker.
 
-111. Have to find creature types like Assembly-Worker with hyphens. These
- will be replaced by _ and we should either leave as is or change back
+111. Have to find creature types like Assembly-Worker with hyphens. These will be replaced by _ and we should either leave as is or change back
   o assembly-worker, power-plant
   o jump-start
 
 115. the power and toughness mean different things
- Calcite Snapper -> Whenever a land enters the battlefield under your control, you may switch Calcite Snapper's power and toughness until end of turn.
-
-  Broodstar -> Broodstar's power and toughness are each equal to the number of artifacts you control.
+ - Calcite Snapper -> Whenever a land enters the battlefield under your control, you may switch Calcite Snapper's power and toughness until end of turn.
+ - Broodstar -> Broodstar's power and toughness are each equal to the number of artifacts you control.
 
 119. See Hanweir Battlements 
  'ob<permanent characteristics=creature quantifier=a>', 'named', 'ob<card ref=ffa73c0251393a8a18233b4446e4bac5>',
@@ -35,20 +28,12 @@ the two objects should be merged
 
 120. how to figure out what 'xo<it>' refers to?
 
-124. Pickling Error when dumping MTGCards
->>> pickle.dump(mv1['Dark Ritual'],fout)
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-_pickle.PicklingError: Can't pickle <class 'mtgcard.MTGCard'>: it's not the same object as mtgcard.MTGCard
-
-and
-_pickle.PicklingError: Can't pickle <class 'mtglo.Activate'>: import of module 'mtglo' failed
+124. Pickling Error when dumping MTGCards _pickle.PicklingError: Can't pickle <class 'mtgcard.MTGCard'>: it's not the same object as mtgcard.MTGCard
 
 126. Protection i.e Iridescent Angel "protection from all colors". We need a way to merge the 'all' into colors. that is a quantifier and a characteristic
  - same goes for mox opal etc ('xa<add>', 'xo<mana num=1>', 'of', 'xq<any>', 'ch<color>')
 
-129. Add 'suspended' as a status. do the same for unattached
-See
+129. Add 'suspended' as a status. do the same for unattached See
 >>> mv['Clockspinning']._card['mtgl']
 [['kw<buyback>', '{3}'], ['xa<choose>', 'xo<ctr quantifier=a>', 'pr<on>', 'ob<permanent quantifier=target>', 'or', 'suspended', 'ob<card>', '.', 'remove', 'xo<ctr quantifier=that>', 'pr<from>', 'ob<permanent∨card quantifier=that>', 'or', 'xa<put>', 'xq<another>', 'of', 'xo<ctr quantifier=those>', 'pr<on>', 'xo<it>', '.']]
 
@@ -56,39 +41,31 @@ However after adding it to lituus status, got
 >>> mv['Clockspinning']._card['mtgl']
 [['kw<buyback>', '{3}'], ['xa<choose>', 'xo<ctr quantifier=a>', 'pr<on>', 'ob<permanent quantifier=target>', 'ob<card status=suspended>', '.', 'remove', 'xo<ctr quantifier=that>', 'pr<from>', 'ob<permanent∨card quantifier=that>', 'or', 'xa<put>', 'xq<another>', 'of', 'xo<ctr quantifier=those>', 'pr<on>', 'xo<it>', '.']]
 
-The problem is that 'target' applies to both permanent and card but the two objects cannot be merged, should read 
-ob<permanent quantifier=target> or ob<card status=suspended quantifier=target>
+The problem is that 'target' applies to both permanent and card but the two objects cannot be merged, should read ob<permanent quantifier=target> or ob<card status=suspended quantifier=target>
 
 131. For stuff like 
   'xa<pay>', 'nu<3>', 'xc<life>'
-should we combine the nu and the xc into xc<life num=3> or consider that any
-xa has a nu and a xc
+should we combine the nu and the xc into xc<life num=3> or consider that any xa has a nu and a xc
 
 133. pickle the n2r file
 
 137. do we need to add_hanging for all prepositions i.e. 'from' or leave as is 
 
 138. Thromok the Insatiable
-['kw<devour>', 'nu<x>', ',', 'where', 'nu<x>', 'is', 'the', 'number', 'of', 'ob<permanent characteristics=creature>', 'devoured', 'xq<this>', 'way']
- 
- a look for phrases ", where VAR is the number of" and figure out how to add
-  this as a node i.e. Node = (number, n=nu<x>) where x = ...
+  ['kw<devour>', 'nu<x>', ',', 'where', 'nu<x>', 'is', 'the', 'number', 'of', 'ob<permanent characteristics=creature>', 'devoured', 'xq<this>', 'way']
+look for phrases ", where VAR is the number of" and figure out how to add this as a node i.e. Node = (number, n=nu<x>) where x = ...
 
 139. Daybreak Coronet
 ['kw<enchant>', 'ob<permanent characteristics=creature>', 'pr<with>', 'ob<permanent characteristics=aura quantifier=another status=attached>', 'pr<to>', 'xo<it>']
-This is the only card with a 'clause' after enchant obj and, this clause specifies
-details about the object to be enchanted
+This is the only card with a 'clause' after enchant obj and, this clause specifies details about the object to be enchanted
 
 141. see Arcbound Wanderer, is there any other cases of a keyword<long hyphen>keyword?
 
-143. mtgcard keywords and ability words are tokenized i.e lowercased and with 
-underscore replacing spaces. How do we want to tree these in the MTGCard objects
-that is should we replace the underscores and capitalize the first letter in the
-called function or let the caller handle this
+143. mtgcard keywords and ability words are tokenized i.e lowercased and with underscore replacing spaces. How do we want to tree these in the MTGCard objects that is should we replace the underscores and capitalize the first letter in the called function or let the caller handle this
 
 144. obj enters the battlefield tapped i.e. worn powerstone
- this would be good to define an ETB node but how to place obj and status i.e. tapped
- would have to differniate from as enters.. and when ... enters
+ o this would be good to define an ETB node but how to place obj and status i.e. tapped
+ 0 would have to differniate from as enters.. and when ... enters
 
 146. see Graf Rats (other meld cards)
  'sq<then>', 'ka<meld>', 'them', 'pr<into>', 'chittering', 'host']
@@ -98,20 +75,17 @@ Chittering Host should be tagged as a card
 [['kw<lifelink>', ',', 'kw<protection>', 'pr<from>', 'ch<cmc>', 'op<≥>', 'nu<3>']]
 have to combine >= 3 into the ch<cmc>
 
-150. have to redo activate and ability
- Desert's Hold
+150. have to redo activate and ability see Desert's Hold
  line 2 -> Enchanted creature can't attack or block, and its activated abilities can't be activated.
  ['and', 'xo<it>', 'ka<activate>', 'ob<ability>', 'cn<cannot>', 'be', 'ka<activate>']
  here 'ka<activate>', 'ob<ability>' should be ob<ability characteristics=activated'>
 
- Abeyance
+ and Abeyance
 line 0 -> Until end of turn, target player can't cast instant or sorcery spells, and that player can't activate abilities that aren't mana abilities.
   ['and', 'xp<player quantifier=that>', 'cn<cannot>', 'ka<activate>', 'ob<ability>', 'xq<that>', 'arent', 'xo<mana_ability>']
- here it should stay as ka<activate> ob<ability>
+here it should stay as ka<activate> ob<ability>
 
-semi-fixed, have to go back into parser->rectify and fix xs<activated> where necessary
-
-need to look into triggered as well
+semi-fixed, have to go back into parser->rectify and fix xs<activated> where necessary need to look into triggered as well
 
 151. fight
 Ezuri's Predation
@@ -133,16 +107,13 @@ Those creatures fight each other
 
 158. Have we found all edge cases for shuffle and search
 
-160. see Murderous Betrayal
-the clause rounded up is being treated as a seperate sub-cost due to the 
-preceding comma
+160. see Murderous Betrayal the clause rounded up is being treated as a seperate sub-cost due to the preceding comma
 
 161. see Abbot of Keral Keep
 clause ['the', 'pr<top>', 'ob<card>', 'of', 'zn<library player=you>'] 
 is the object begin referenced but of course is not being picked up as such
 
-how can we make the clause an object?
- and are their any other wordings for this clause or other types of claues
+how can we make the clause an object? and are their any other wordings for this clause or other types of claues
 
 see 151 where Ezuri's Predation shows one such clause
 
@@ -151,38 +122,27 @@ manifest will result in many of these failures i.e. manifest the top card of you
 Ad Nauseum
 clause:0(tkns=['pr<top>', 'ob<card>', 'of', 'zn<library player=you>', 'and'])
 
-162. because we are only checking the first token of each line we miss trigger
-words in the middle of lines like Mana Drain and Pyromancer's Goggles
+162. because we are only checking the first token of each line we miss trigger words in the middle of lines like Mana Drain and Pyromancer's Goggles
 
-163. We still have to do something with phrases inside " " doublequotes
-see Blinding Powder. 
-Have to look for stuff like object has "..." or object gains "..."
+163. Have to look for stuff like object has "..." or object gains "..."
 
-164. Have to rectify play i.e. play with the top card of your library revealed is
-not a keyword-action 
+164. Have to rectify play i.e. play with the top card of your library revealed is not a keyword-action 
  - also revealed is distinct from reveal (have fixed this but what other keyword-actions are like this)
 
-165. do we need to add manifest as a type
+166. see Besmirch shows a case of 'and'ing two keyword actions with respect to the same object "untap and goad that creature"
 
-166. see Besmirch
-shows a case of 'and'ing two keyword actions with respect to the same object
-"untap and goad that creature"
-
-168. with voting and everything removed, we could drop the check for 'pr<for> in
- the graph_clause function (see Grudge Keeper) which didn't remove ka<vote> as 
- planned
+168. with voting and everything removed, we could drop the check for 'pr<for> in  the graph_clause function (see Grudge Keeper) which didn't remove ka<vote> as planned
  - should vote that are untagged be retagged as an entity or thing etc
  - Brago's representative you get a additional vote (here vote should really be
    untagged)
 
-169. should we look at retagging keyword-actions that 'fail' during graph clause
- or leave as is
+169. should we look at retagging keyword-actions that 'fail' during graph clause or leave as is
 
 173. move chain_zones into chain?
 
 174. look at coordinating conjuctions
 
-mtgl = cn<if>', 'xp<you>', 'xc<control>', 'ob<permanent characteristics=desert quantifier=a>', 'there', 'is', 'ob<card characteristics=desert quantifier=a>', 'pr<in>', 'zn<graveyard player=you>'
+mtgl = cn<if>', 'xp<you>', 'xc<control>', 'ob<permanent characteristics=desert quantifier=a>', 'or', 'there', 'is', 'ob<card characteristics=desert quantifier=a>', 'pr<in>', 'zn<graveyard player=you>'
 
 176. for search shuffle should we also designate who where possible
 i.e. 
@@ -199,19 +159,15 @@ could read as
      │└zone:1(zone=zn<library player=their>)
 
 178. see Behomoth's Herald
-1. for "Sacrifice a red creature, a green creature, and a white creature"
-need to figure out how to combine these under the sacrifice clause
+1. for "Sacrifice a red creature, a green creature, and a white creature" need to figure out how to combine these under the sacrifice clause
 
-2. the ',' between red creature and green creature is being dropped - it is present
-in the 'mtgl'
+2. the ',' between red creature and green creature is being dropped - it is present in the 'mtgl'
  -- think the commas are being dropped in the activated-ability graphing in the _subcosts_ portion with prev = i + 1 # skip the comma
 however not skipping the comma also leads to issues
 
 and in the parse tree, named still needs to be handled see 119
 
-181. see Conjured Currency  "target permanent you neither own nor control"
- only card I can find with that phrasing. There are also both own and control (5 total)
-both of these cases need to be merged somehow
+181. see Conjured Currency  "target permanent you neither own nor control" only card I can find with that phrasing. There are also both own and control (5 total) both of these cases need to be merged somehow
 
 Conjured Currency ...
 ob<permanent quantifier=target> 'xp<you>', 'neither', 'xc<own>', 'nor', 'xc<control>'
@@ -221,45 +177,15 @@ Remove Enchantments ...
 
 in both cases, the possessives are not being added to the respective objects
 
-182. Exchange
- Keep and eye on Juxtapose
- Conjured Currency (see 181)
- Daring Thief,Gauntlets of Chaos, Puca's Mischeif,Spawnbroker -> hanging clause 
- Gilded Drake "If you don't or can't make an exchange, sacrifice Gilded Drake."
-  this exchange is being treated as a kwa,  (or can't make an exchange could all be dropped)
+182. Exchange - Keep and eye on Juxtapose, Conjured Currency (see 181), Daring Thief,Gauntlets of Chaos, Puca's Mischeif,Spawnbroker -> hanging clause 
+ o Gilded Drake "If you don't or can't make an exchange, sacrifice Gilded Drake." this exchange is being treated as a kwa,  (or can't make an exchange could all be dropped)
 
-183. See Puca's mischief
-an opponent controls with an equal or lesser converted mana cost.
-missed a phrasing for combining operators (this would be less than or equal to)
+183. See Puca's mischief an opponent controls with an equal or lesser converted mana cost. missed a phrasing for combining operators (this would be less than or equal to)
 
 187. Thinking that removing any tags from keyword actions that don't fit the patterns could be advantageous in finding cards that have keyword-actions i.e. Shadow of Doubt
 
-188. for stuff like ob<...> ch<power|toughness> how can we put the characteristic
-into the object and where should it be done
+188. for stuff like ob<...> ch<power|toughness> how can we put the characteristic into the object and where should it be done
  - same goes for players and life total
-
-189. 'or' and 'and' see Nylea's Colossus but also applies to for example
- Add {B} or {U}
-
-need to add some manner of combining 'like' tokens. could do a sub-tree
-i.e 
-
-A. decision type='or'
- - 'ob<card ref=self>'
- - 'ob<permanent characteristics=enchantment quantifier=another>'
-
-B. decision type='or'
- - '{b}'
- - '{u}'
-
-several problems
- 1. we have to take account of Add {W}, {U}, or {B}
- 2. if we use a tree, we would have to add 'trees' to matchl and redo much
-  of the graphing functions to take into this account
- 3. would we then want say the function mtgl.is_obj to return True for 
-  example A.
- 4. a, b, and c = 87
-    s, b, or c = 85
 
 190 see Flameshot
 ... 'xa<choose>', 'among', 'nu<1>', ',', 'nu<2>', ',', 'or', 'ob<permanent characteristics=creature num=3 quantifier=target>' ...
@@ -269,49 +195,31 @@ only the num=3 is combined with the creature
 
 191. for Hornet Nest we have a hanging clause
 
-192. have to take care of "where x is ..." sooner than later and clauses
-inside double quotes as well
+192. have to take care of "where x is ..." sooner than later and clauses inside double quotes as well
  - Qualify 1a: ['.', '"'] inside lituus-action add
 
-197. See Urza's Mine
-in the add mana, we capture instead as a qualifying clause. have to make sure that
-once "if" condition, do "instead are coded, everything is fine
+197. See Urza's Mine in the add mana, we capture instead as a qualifying clause. have to make sure that once "if" condition, do "instead are coded, everything is fine
 
-198. have to remember that for add mana, a triple conjuction does not necessarily
-mean it can produce three different types of mana, i.e. Twilight Mire
+198. have to remember that for add mana, a triple conjuction does not necessarily mean it can produce three different types of mana, i.e. Twilight Mire
 
 199. See False Dawn
 that would ... instead ...
 another if ... would ... instead version
 
-201. Chrome Mox
-When Chrome Mox enters the battlefield, you may exile a nonartifact, nonland card from your hand.
+201. see Chrome Mox. There are multiple other cards with similar and two with permanent vice card. Have to figure out how to chain these When Chrome Mox enters the battlefield, you may exile a nonartifact, nonland card from your hand.
 
-the nonartifact, nonland are treated as two seperate cards
-'xp<you>', 'cn<may>', 'ka<exile>', 'ob<permanent quantifier=a characteristics=¬artifact>', ',', 'ob<card characteristics=¬land>',
-There are multiple other cards with similar 
+... 'ka<exile>', 'a', 'ch<¬artifact>', ',', 'ch<¬land>', 'ob<card>', 'pr<from>' ...
 
-'xp<you>', 'cn<may>', 'ka<exile>', 'a', 'ch<¬artifact>', ',', 'ch<¬land>', 'ob<card>'
-
-and there are two with permanent vice card
-
-these need to be chained
-
-Ashmouth Hound is an example where a comma signifies not chaining
-
-'mt<whenever>', 'ob<card ref=self>', 'xa<block>', 'or', 'xa<become>', 'xa<block>', 'by', 'a', 'ch<creature>', ',', 'ob<card ref=self>', 'xa<deal>', 'nu<1>', 'ef<damage>', 'pr<to>', 'xq<that>', 'ch<creature>', '.'
+But see Ashmouth Hound which is an example where a comma signifies not chaining
+... 'by', 'a', 'ch<creature>', ',', 'ob<card ref=self>', 'xa<deal>', ...
 
 In tkn, Ashmouth Hound has ch<> ',' ob<>
-but Waste Not for example has ch ',' ch ob
-and Godsire has ch ',' ch ',' ch
+but Waste Not for example has ch<> ',' ch<> ob<>
+and Godsire has ch<> ',' ch<> ',' ch<>
 
 Look at Godsire where colors should be combined and then merged with the preceding obj
 
-first attempt in parser resulting in incorrectly and'ing objects that shouldn't have
-been and'ed
-
-attempt to chain in the grapher when processing keyword-actions/(lituus actions?)
-that expect an object
+attempt to chain in the grapher when processing keyword-actions/(lituus actions?) that expect an object
 
 203. Guided Passage
  'ka<reveal>', 'the', 'ob<card>', 'pr<in>', 'zn<library player=you>', '.'
@@ -323,37 +231,28 @@ that expect an object
      ├clause:0(tkns=['ob<card>', 'pr<in>', 'zn<library player=you>'])
 the clause specifies what is to be revealed
 
-205. It's controller - xo<it> xp<controller> is a player as it refers to the
-controller of it do something lie xp<controller of=it>
-do the same for its owner
+205. It's controller - xo<it> xp<controller> is a player as it refers to the controller of it do something lie xp<controller of=it> do the same for its owner
 
-However, in doing so, parser->merge possessives "elif mtgl.is_player(tkn)" will 
-need to be updated 
+However, in doing so, parser->merge possessives "elif mtgl.is_player(tkn)" will need to be updated 
 
 - there are 776 instances of xo<it> xp<owner> - 403 have a zone following
 - there are 403 instances of xo<it> xp<controller> - 13 have a zone following
 
-207. xa<enter> xa<die> should be retagged as something other than action (event??)
-or should they
+207. xa<enter> xa<die> should be retagged as something other than action (event??) or should they??
 
 209. Look at Goblin Flotilla, has two triggered abilities
 
-210. thought about adding 'turn' to lituus action (turn face up etc) but it will
-clash with phases
+210. thought about adding 'turn' to lituus action (turn face up etc) but it will clash with phases
 
 212. have to relook at add mana - make the subtree/clause standard
 
 213. have to consider that an object could be something like "the top card of your library"
 
-214. in collate objects have to extract num and push it up the tree but what other attributes do we need to look for?
-Lord of Shatterskull pass - some of the parameters an object can have
-ob<permanent characteristics=creature controller=player quantifier=each>
+214. in collate objects have to extract num and push it up the tree but what other attributes do we need to look for? Lord of Shatterskull pass - some of the parameters an object can have ob<permanent characteristics=creature controller=player quantifier=each>
 
 217. Look at what tags we can untag in the grapher. Examples numbers & trigger words
 
-218. keyword action regenerate - sometimes is preceded by the 'object'. 
- i.e. They cannot be regenerated
- In these cases, do we remove the kwa tag or what should we do
+218. keyword action regenerate - sometimes is preceded by the 'object'. i.e. They cannot be regenerated In these cases, do we remove the kwa tag or what should we do
 
 219. draw is a good example of implied and explicit players
  Opt - draw a card
@@ -395,13 +294,9 @@ to player='you' or only add it if it is present?
            ├clause:3(tkns=['cn<only_if>', 'xo<ctr type=hatchling num=≥2>', 'are', 'pr<on>', 'ob<card ref=self>'])
            └punctuation:2(symbol=.)
 
-everything under modes are classified as ability-clause-event and is graphed 
-by graph_clause. In this case we have instructions i.e. "Activate this ability
- only if 2 hatchling counters on it. do we try and turn this into an 
-activation instruction or leave as is
+everything under modes are classified as ability-clause-event and is graphed by graph_clause. In this case we have instructions i.e. "Activate this ability only if 2 hatchling counters on it. do we try and turn this into an activation instruction or leave as is
 
-229. after downloading the json including MH1 cards, need to look at Hexdrinker
- for accurate graphing
+229. after downloading the json including MH1 cards, need to look at Hexdrinker for accurate graphing
 
 230. tagger->fix_lvl_up is too hacky, need to go back and streamline it
 
@@ -409,38 +304,54 @@ activation instruction or leave as is
 
 232. Effects (609), events (700.1) etc what other rules terminilogy needs to be applied
 
-234. Splintering Wind
- {2}{G}: Splintering Wind deals 1 damage to target creature. Create a 1/1 green Splinter creature token. It has flying and "Cumulative upkeep Green." When it leaves the battlefield, it deals 1 damage to you and each creature you control.
-
-with strict parsing, the phrase "When it leaves the battlefield, it deals 1 damage to you and each creature you control." will not apply to the token because it is not
-inside the double quotes. Note the phrasing on the original card:
+234. see Splintering Wind {2}{G}: Splintering Wind deals 1 damage to target creature. Create a 1/1 green Splinter creature token. It has flying and "Cumulative upkeep Green." When it leaves the battlefield, it deals 1 damage to you and each creature you control.
+ with strict parsing, the phrase "When it leaves the battlefield, it deals 1 damage to you and each creature you control." will not apply to the token because it is not inside the double quotes. Note the phrasing on the original card:
  
-  "If this token leaves play..."
+ "If this token leaves play..."
 
-which explitly states that the token does damage on leaving the battlefield
+ which explitly states that the token does damage on leaving the battlefield
 
 235. need a more robust, portable and non-hacky means of identifying and 'capturing' double-quote enclosed phrases
 
-236. See Curse of Opulence. The way that cards are parsed, we will get an 
-effect of creating a gold token and the instructions will state:
-It has "Sacrifice this artifact: Add one mana of any color."
-this instruction is part of the gold token how can we identify these cases and
-then ensure they are grouped with the token. Same is also true for King Macar
+236. See Curse of Opulence. The way that cards are parsed, we will get an effect of creating a gold token and the instructions will state: It has "Sacrifice this artifact: Add one mana of any color." this instruction is part of the gold token how can we identify these cases and then ensure they are grouped with the token. Same is also true for King Macar
 
 237. should we move commas preceding double quotes outside of the double quote
 
-238. Arlinn, Embraced by the Moon, Diabolical Salvation, Koth of the Hammer,
-Liliana of the Dark Realms, Mu Yanling, Sky Dancer, Nesting Dragon & Reef Worm 
-have embedded singled-quoted clauses
+238. Arlinn, Embraced by the Moon, Diabolical Salvation, Koth of the Hammer, Liliana of the Dark Realms, Mu Yanling, Sky Dancer, Nesting Dragon & Reef Worm have embedded singled-quoted clauses
 
 239. need to run on check on quoted-clauses to confirm it works
 
 240. add a replace for lists in list_util
 
-241. when we start looking for triggered abilities mid-clause, have to remember
-single-quotes inside double quotes
+241. when we start looking for triggered abilities mid-clause, have to remember single-quotes inside double quotes
 
 242. Have to look at 'hierarchy', are we adding too many uncessary nodes?
 
 243. See Elder Druid, need to find a way to combine keyword actions
+
+244. With collation of objects we also have phrase like
+ o from target player's library
+ o with cmc less than 3
+
+245. tree printing
+<root>
+├ line:0
+│ │└kw-line:0
+│   ├keyword-clause:0
+│   │└keyword:0
+│   └keyword-clause:1
+│    ├keyword:1
+│    └keyword-param:0
+└ line:1
+   └kw-line:1
+    └keyword-clause:2
+     └keyword:2
+
+we do not want the vertical brace for kw-line:0 but do want it for keyword:0 Also in trees with greater branching/depths, only the first two immediate branch symbols are drawn (we may have to look into a recursive solution)
+
+246. create a new module for set updates and move multiverse->_precompile_types there. consider moving the downloading of allcards.json there as well and only allow update of the card json from there 
+
+247. in conjuction nodes for objects, we need an attribute defining the item-type as in mana conjuctions (items=mana-string)
+
+248. see Greater Gargadon because of the order in which lines are partitioned and graphed, GG's activated ability cost "Sacrifice an artifact, creature, or land: ..." goes to graph_cost first where the commas are mistakenly used to break "an artifact", "creature" and "or land" into seperate subcosts
 
