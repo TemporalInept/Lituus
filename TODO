@@ -366,9 +366,8 @@ we do not want the vertical brace for kw-line:0 but do want it for keyword:0 Als
 
 247. It no longer makes sense for parser to handle the tagging, tokenizing and graphing of cards. This should be moved (most likely multiverse) and have parser only parse the text
 
-248. in conjuction nodes for objects, we need an attribute defining the item-type as in mana conjuctions (items=mana-string)
-
 249. see Greater Gargadon because of the order in which lines are partitioned and graphed, GG's activated ability cost "Sacrifice an artifact, creature, or land: ..." goes to graph_cost first where the commas are mistakenly used to break "an artifact", "creature" and "or land" into seperate subcosts
+ - do we need to do a first pass and join stuff like decision points and conjoined node?
 
 251. Monastery siege and others have choose x or y and then descriptions of each choice, have to 'modalize' these. There are 18 enchantments (not including sagas) that have this behavior
 
@@ -376,10 +375,18 @@ we do not want the vertical brace for kw-line:0 but do want it for keyword:0 Als
 
 253. add a not capability to list_util->matchl
 
-253. with, that, to ?prepositions? signifies a following phrase that should be attached to an object
+253. 'with', 'that', 'thats', 'to' ?prepositions? signifies a following phrase that should be attached to an object
 
-255. see Goblin Vandal, defending player has dissappeared due to parser->merge_possessives dropping the status, a fix gives us the below
-  'ob<permanent quantifier=target controller=defending∧player characteristics=artifact>'
-works but does it make sense?
+255. see Goblin Vandal
+'ob<permanent quantifier=target controller=defending∧player characteristics=artifact>'
+Is the defending∧player the best way to take care of merge objects and possessives when the possessive has a status? or is there a better symbol than '∧' to use
+Also are there other tokens where tag attributes are being dropped?
 
-Also are there other tokens where tag attributes are being dropped
+257. for collate, should we just go ahead and always return a node id, regardless if it is a subtree or single node?
+
+258. life total is 'xc<life> total' where it should be parsed into a single token life_total the question is how to tag it. is it still a characteristic or is it a object?
+
+259. Make a negated tag? for stuff like doesnt or add doesnt to conditionals or
+ move cannot from conditionals
+
+260. grapher->item_type needs serious rework, especially after adding Things to bi_chain checks. i.e. what is an it, permanent, card etc

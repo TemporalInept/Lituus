@@ -899,7 +899,6 @@ def graph_lituus_action(t,pid,la,tkns):
     if v == 'add': return graph_lituus_action_add(t,laid,tkns)
     else:
         t.add_node(laid,'lituus-action',word=v)
-        # graph as we get to them
         return 0
 
 def graph_lituus_action_add(t,pid,tkns):
@@ -923,7 +922,7 @@ def graph_lituus_action_add(t,pid,tkns):
     # try double first
     dbl = [mtgl.is_mana_string,'or',mtgl.is_mana_string]
     if ll.matchl(dbl,tkns,0) == 0:
-        cid=t.add_node(mid,'conjuction',coordinator='or',items='mana-string')
+        cid=t.add_node(mid,'conjunction',coordinator='or',items='mana-string')
         t.add_node(cid,'mana-string',mana=tkns[0])
         t.add_node(cid,'mana-string',mana=tkns[2])
         return len(dbl)
@@ -931,7 +930,7 @@ def graph_lituus_action_add(t,pid,tkns):
     # then triple
     tpl = [mtgl.is_mana_string,',',mtgl.is_mana_string,',','or',mtgl.is_mana_string]
     if ll.matchl(tpl,tkns,0) == 0:
-        cid = t.add_node(mid,'conjuction',coordinator='or',items='mana-string')
+        cid = t.add_node(mid,'conjunction',coordinator='or',items='mana-string')
         t.add_node(cid,'mana-string',mana=tkns[0])
         t.add_node(cid,'mana-string',mana=tkns[2])
         t.add_node(cid,'mana-string',mana=tkns[5])
@@ -1234,7 +1233,7 @@ tri_chain = [
     mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',mtgl.is_coordinator,mtgl.is_mtg_obj
 ]
 #bi_chain = [mtgl.is_thing,',',mtgl.is_thing]
-bi_chain = [mtgl.is_mtg_obj,re.compile(r"and|'⊕'"),mtgl.is_mtg_obj]
+bi_chain = [mtgl.is_thing,mtgl.is_coordinator,mtgl.is_thing]
 def collate(t,tkns):
     """
      given that the first token in tkns is a Thing, gathers and combines all
@@ -1247,13 +1246,13 @@ def collate(t,tkns):
     if ll.matchl(tri_chain,tkns,0) == 0:
         return conjoin(t,[tkns[0],tkns[2],tkns[5]],tkns[4]),len(tri_chain)
 
-    # check bi-chains, additional checking has to be done
-    #if ll.matchl(bi_chain,tkns,0) == 0: return 'bi-chain',0
-    #    l,c,r = tkns[:len(bi_chain)] # get left, coordinator, right
-    #    if c == 'and':
-    #        if collate_bi_and(l,r): pass
-    #
-    #    else: return 'bi-chain'
+    # check bi-chain
+    if conjoin_bi(tkns): return conjoin(t,[tkns[0],tkns[2]],tkns[1]),len(bi_chain)
+
+    #if  ll.matchl(bi_chain,tkns,0) == 0:
+    #    # dont chain anything with a trailing action
+    #    if not(len(tkns) > len(bi_chain) and mtgl.is_action(tkns[len(bi_chain)])):
+    #        return conjoin(t,[tkns[0],tkns[2]],tkns[1]),len(bi_chain)
 
     return None,0
 
@@ -1268,18 +1267,18 @@ def conjoin(t,objs,c):
     # to conjoin, create a conjunction node with coordinator attribute. Due to the
     # parser's method of chaining and combining objets, any quantifiers (that apply
     # to all the objects) will be in the first object, the same goes for numbers,
-    # possessives (i.e. owner, controller) will be in the last object. status, meta,
-    # characteristics will stay with the object they're found in.
+    # possessives that apply to all the objects (i.e. owner, controller) will be
+    # in the last object. status, meta, characteristics will stay with the object
+    # they're found in. As will numbers etc that are found in non-first nodes
     # TODO: Sands of time does not follow this convention, 'status = tapped' should
     #  be in each object but is only found in the first
 
     # initialize top-level attributes to None and update coordinator if neccessary
-    qtr = num = pk = pv = None
+    qtr = num = pk = pv = itype = None
     crd = 'and/or' if c == 'op<⊕>' else c
-    itype = 'object'
 
-    # get any quantifier and/or numbers from the first object
-    # TODO: need to verify that val will be the same for each object
+    # get any quantifier and/or number from the first object
+    # TODO: do we need to verify that val is the same for each object?
     tag,val,ps = mtgl.untag(objs[0])
     qtr = ps['quantifier'] if 'quantifier' in ps else None
     itype = val
@@ -1291,7 +1290,6 @@ def conjoin(t,objs,c):
 
         # if the num refers to 'y' change it back to 'any number of'
         if num == 'nu<y>': num = 'any number of'
-
     objs[0] = mtgl.retag(tag,val,ps)
 
     # get any possessor from the last object
@@ -1304,33 +1302,57 @@ def conjoin(t,objs,c):
     objs[-1] = mtgl.retag(tag,val,ps)
 
     # create a (rootless) conjunction node and add attributes if present
-    nid = t.add_node_ur('conjunction',coordinator=crd,items=itype)
+    nid = t.add_node_ur('conjunction',coordinator=crd,items=item_type(objs))
     if qtr: t.add_attr(nid,'quantifier',qtr)
     if num: t.add_attr(nid,'n',num)
     if pk: t.add_attr(nid,pk,pv)
 
     # iterate the objects and add to the conjuction node
-    # TODO: the objects should now only have attributes that apply to that specific
-    #  object
-    for obj in objs: t.add_attr(t.add_node(nid,'object'),'object',obj)
+    for obj in objs: t.add_attr(t.add_node(nid,'item'),'object',obj)
 
     return nid
 
-def collate_bi_and(l,r):
+def conjoin_bi(tkns):
     """
-     determines if two Things should be conjoined by and
-    :param l: left Thing
-    :param r: right Thing
-    :return: True if they should be conjoined, False otherwise
+     determines if there is bi-chain of Things in tkns which can be conjoined
+    :param tkns: the list of tokens to check
+    :return: True if the start of tokens can be conjoined (bi-chain) or False
+     otherwise
     """
-    # we have specific rules to determine if two Things should be conjoined
-    # untag the Things
-    lt,lv,_ = mtgl.untag(l)
-    rt,rv,_ = mtgl.untag(r)
-
-    #
-
+    # TODO: this need extensive testing and verification
+    if ll.matchl(bi_chain,tkns,0) == 0:
+        # do not chain anything that meets the following criteria
+        #  1. the word immediately after the bi-chain is an action word
+        #  2. the word immediately after the bi-chain is a conditional or negation
+        #   i.e. 'cn<may>' or 'doesnt'
+        #  3. the word immediately after the bi-chain is a characteristic
+        try:
+            nxt = tkns[len(bi_chain)]
+        except IndexError:
+            return True
+        else:
+            if mtgl.is_action(nxt): return False
+            if mtgl.is_conditional(nxt) or nxt == 'doesnt': return False
+            if mtgl.is_property(nxt): return False
+            return True
     return False
+
+# TODO: this is not working as planned have to completely redo
+#  see Goblin Sappers
+""" returns the lowest 'substance' of the objs based on zone """
+substance = { # 0=anywhere, 1=stack, 2=in play
+    'card':0,'source':0,'it':0,
+    'spell':1,'ability':1,'copy':1,
+    'permanent':2,'token':2,'emblem':2,
+}
+#s2it = {0:'card'}
+def item_type(objs):
+    i = 'permanent'
+    for obj in objs:
+        if obj == 'ob<card ref=self>': continue # ignore these, they could be anything
+        v = mtgl.untag(obj)[1]
+        if substance[v] < substance[i]: i = v
+    return i
 
 modal1 = ['xa<choose>',mtgl.is_number,mtgl.HYP]
 modal2 = [

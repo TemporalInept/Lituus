@@ -333,6 +333,12 @@ def is_preposition(tkn):
     except MTGLTagException:
         return False
 
+def is_conditional(tkn):
+    try:
+        return untag(tkn)[0] == 'cn'
+    except MTGLTagException:
+        return False
+
 def is_number(tkn):
     try:
         return untag(tkn)[0] == 'nu'
@@ -741,7 +747,7 @@ prepositions = [
 ]
 re_prep = re.compile(r"\b({})\b(?!>)".format('|'.join(prepositions)))
 
-# conditiona;/requirement related
+# conditional/requirement related
 conditionals = [
     'only if','if','would','unless','rather than','instead','may','except','not',
     'only','cannot'

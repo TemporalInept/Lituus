@@ -44,9 +44,10 @@ def matchl(ss,ls,a=None):
        specified regex
       2. any regex passed in ss must be compiled and the underlying function uses
        the regex 'match'
-    While slower than a check for against each element in a list i.e. if
-     ls[0] == a and ls[1] == b ... and ls[n] = n it is much cleaner and it
-     eliminates the need for IndexError check
+    While slower than a check against each element in a list i.e. if
+     ls[0] == a and ls[1] == b ... and ls[n] = n it is much cleaner, it
+     eliminates the need for IndexError check and eliminates the need to know
+     what indices to check
     :param ss: a list of functions, compiled re and/or strings
     :param ls: the list to match against
     :param a: stop at index a. if present, matchl will not attempt to match
@@ -105,7 +106,6 @@ def joinl(ls,e):
     :param ls: list of lists
     :param e: string token to join
     :return: the joined list
-    TODO: this is a hack and extremely inefficient
     """
     js = []
     for i,ss in enumerate(ls):
