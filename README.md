@@ -21,9 +21,6 @@ Sources:
  2. AverageDragon's (<https://tappedout.net/users/AverageDragon/>) cEDH conglomerate at <http:cedh-decklist-database.xyz/primary.html>
  3. MTG Comprehensive Rules at <https://magic.wizards.com/en/game-info/gameplay/rules-and-formats/rules>
 
-Lituus is a follow on to a personal project I had written that attempted to do the
-above but had become grossly unmaintable due to a mess of regular expressions and string finds. Furthermore, the final aim of Lituus is to compare cEDH decks to each other in a quantifiable way and programmatically discern their Archetypes which requires a more robust method.
-
 Once complete, Lituus will be able to conceptualize oracle text as trees
 
 <pre>
@@ -47,15 +44,21 @@ which, when combined with other characterisitics of cards, will give us the tool
  2. **networkx** (https://networkx.github.io) to create parse trees
  3. **BeautifulSoup** (https://www.crummy.com/software/BeautifulSoup/) for scraping online decklists
 
-## 3 INSTALLATION/USING
+## 3 BACKGROUND, OBJECTIVES AND CURRENT ISSUES
+Lituus is a follow on to a personal project that attempted to create a program that could compare my decks to other decks (specifically cEDH) but, it became grossly unmaintable due to a mess of regular expressions and string finds. Furthermore, the final aim of Lituus is to compare cEDH decks to each other in a quantifiable way and programmatically discern their Archetypes which requires a more robust method.
+
+The results of the current program can be found in ESoLW (<https://github.com/TemporalInept/ESoLW>). 
+
+
+## 4 INSTALLATION/USING
 
 Currently, Lituus has no "self install" capabilities. Once the parsing is stable and I moved the analyzing portion over, I'll work on the installation functuality. 
 
 Until then, if you want to run Lituus, download and unzip <https://github.com/TemporalInept/Lituus/archive/master.zip> to your desired location. You can run Lituus directly from this location or add as .pth file to your Python site-packages directory (<https://docs.python.org/2/library/site.html>) and run Lituus from anywhere. 
 
-## 4 ARCHITECTURE
+## 5 ARCHITECTURE
 
-## 5. FILE STRUCTURE:
+## 6. FILE STRUCTURE:
 Brief Overview of the project file structure. Directories and/or files annotated
 with (-) are not included in pip installs or PyPI downloads
 
