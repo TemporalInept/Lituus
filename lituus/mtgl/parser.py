@@ -12,8 +12,8 @@ Parses tagged oracle text and resolves tagger errors using contextual informatio
 
 __name__ = 'parser'
 __license__ = 'GPLv3'
-__version__ = '0.1.7'
-__date__ = 'August 2019'
+__version__ = '0.1.8'
+__date__ = 'September 2019'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -628,37 +628,40 @@ def merge_possessive(olds):
 
         if mtgl.is_mtg_obj(tkn):
             # after chaining/grouping, objects that have possesives
-            # will be follwed by player xc<[not]control|own>
-            try:
-                if mtgl.is_player(olds[i+1]) and _is_possessive_(olds[i+2]):
-                    ot,ov,op = mtgl.untag(tkn)          # object tag
-                    pt,pv,pp = mtgl.untag(olds[i+1])    # player tag
-                    _,v,_ = mtgl.untag(olds[i+2])       # possessive tag
+            # will be follwed by xp<player> xc<[not]control|own>
+            if ll.matchl([mtgl.is_player,is_possessive],olds[i:],1) == 1:
+                ot,ov,op = mtgl.untag(tkn)          # object tag
+                pt,pv,pp = mtgl.untag(olds[i+1])    # player tag
+                _,v,_ = mtgl.untag(olds[i+2])       # possessive tag
 
-                    # is the possessive negated? if so, strip it out
-                    neg = mtgl.NOT in v
-                    if neg: v = v[1:]
+                # is the possessive negated? if so, strip it out
+                neg = mtgl.NOT in v
+                if neg: v = v[1:]
 
-                    # determine property
-                    prop = 'controller' if v == 'control' else 'owner'
+                # determine property
+                prop = 'controller' if v == 'control' else 'owner'
 
-                    # process 'you' and player/opponent differently
-                    if pv == 'you':
-                        if neg: pv = 'opponent' # make opponent if negated
-                        assert(prop not in op)  # (shouldn't already have a possessive)
-                        op[prop] = pv
-                        news.append(mtgl.retag(ot,ov,op))
-                    else:
-                        if not 'quantifier' in pp: val = pv
-                        else: val = pp['quantifier'] + mtgl.AND + pv
-                        assert(prop not in op)
-                        op[prop] = val
-                        news.append(mtgl.retag(ot,ov,op))
+                # process 'you' and player/opponent differently
+                if pv == 'you':
+                    if neg: pv = 'opponent' # make opponent if negated
+                    op[prop] = pv
+                    news.append(mtgl.retag(ot,ov,op))
+                else:
+                    # if there is a quantifier, AND it with player
+                    if not 'quantifier' in pp: val = pv
+                    else: val = pp['quantifier'] + mtgl.AND + pv
 
-                    # skip the merged tokens
-                    skip = 2
-                    continue
-            except IndexError: pass
+                    # does the player have a status?
+                    # TODO: 1. haven't seen any players with a status and
+                    #  quantifier 2. several ways to add status, could use
+                    #  AND or ARW or wrap in parenthesis etc - which is best?
+                    if 'status' in pp: val = pp['status'] + mtgl.AND + val
+                    op[prop] = val
+                    news.append(mtgl.retag(ot,ov,op))
+
+                # skip the merged tokens
+                skip = 2
+                continue
         elif mtgl.is_player(tkn):
             # after chaining/grouping, players that possess a zone will be
             # followed by the zone
@@ -685,7 +688,7 @@ def merge_possessive(olds):
         news.append(tkn)
     return news
 
-def _is_possessive_(tkn):
+def is_possessive(tkn):
     """
      determines if the lituus_characteristic (xc) is possesive i.e. contains
      own or control

@@ -662,7 +662,7 @@ lituus_actions = [
     'put','remove','distribute','get','return','draw','move','copy','look','pay',
     'deal','gain','lose','attack','block','add','enter','leave','choose','die',
     'spend','take','skip','cycle','reduce','become','trigger','prevent','declare',
-    'has','have','switch','phase in','phase out','flip',
+    'has','have','switch','phase in','phase out','flip','assign'
 ]
 re_lituus_act = re.compile(r"(?<!<)\b({})\b".format('|'.join(lituus_actions)))
 
@@ -774,9 +774,9 @@ re_pro_fix = re.compile(
 )
 
 # TODO: need to scrub this for relevance
-# TODO: annotate use of y for any number of and z for a number of
 # TODO: annotate use of ch (mtg_characteritistic) as id for activated and
 #  triggered
+# TODO: need a better name for this dict
 to_merge = {
     "ph<turn> sq<after> dm<this> nu<1>":"ph<turn> sq<after> dm<this> ph<turn>",
     "xo<mana> xc<cost>":"ch<mana_cost>",
@@ -798,6 +798,7 @@ to_merge = {
     "council dilemma":"aw<council's_dilemma>",
     "ph<phase> out":"xa<phase_out>",
     "ph<phase> in":"xa<phase_in>",
+    "xq<that> xq<target>":"that xa<target>"
 }
 
 # don't get the tagged level_up

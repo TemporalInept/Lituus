@@ -40,7 +40,6 @@ def graph(mtxt,ctype='other'):
 
     for i,line in enumerate(mtxt):
         try:
-            #if i == 2:
             graph_line(t,t.add_node(parent,'line'),line,ctype)
         except mtgt.MTGTException as e:
             raise mtgl.MTGLGraphException(e)
@@ -642,10 +641,9 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
     elif v in KWA_OBJECT: # keyword actions of the form keyword-action ob (or Thing)
         # can we collate the kwa's object(s)
         nid,skip = collate(t,tkns)
-        if nid == 'bi-chain':
-            print(v,' ',tkns[:len(bi_chain)+1])
+        if nid == 'bi-chain': print(v,' ',tkns[:len(bi_chain)+1])
         elif nid:
-            # add an edge for our current point in the tree to the conjuction node
+            # add an edge from our current point in the tree to the conjuction node
             t.add_edge(kwid,nid)
         else:
             if tkns and mtgl.is_thing(tkns[0]):
@@ -1235,8 +1233,8 @@ def _combine_pro_from_(qs):
 tri_chain = [
     mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',mtgl.is_coordinator,mtgl.is_mtg_obj
 ]
-bi_chain = [mtgl.is_thing,',',mtgl.is_thing]
-bi_chain2 = [mtgl.is_thing,mtgl.is_coordinator,mtgl.is_thing]
+#bi_chain = [mtgl.is_thing,',',mtgl.is_thing]
+bi_chain = [mtgl.is_mtg_obj,re.compile(r"and|'⊕'"),mtgl.is_mtg_obj]
 def collate(t,tkns):
     """
      given that the first token in tkns is a Thing, gathers and combines all
@@ -1248,6 +1246,14 @@ def collate(t,tkns):
     # check tri-chains first to avoid false positives by bi-chains
     if ll.matchl(tri_chain,tkns,0) == 0:
         return conjoin(t,[tkns[0],tkns[2],tkns[5]],tkns[4]),len(tri_chain)
+
+    # check bi-chains, additional checking has to be done
+    #if ll.matchl(bi_chain,tkns,0) == 0: return 'bi-chain',0
+    #    l,c,r = tkns[:len(bi_chain)] # get left, coordinator, right
+    #    if c == 'and':
+    #        if collate_bi_and(l,r): pass
+    #
+    #    else: return 'bi-chain'
 
     return None,0
 
@@ -1309,6 +1315,22 @@ def conjoin(t,objs,c):
     for obj in objs: t.add_attr(t.add_node(nid,'object'),'object',obj)
 
     return nid
+
+def collate_bi_and(l,r):
+    """
+     determines if two Things should be conjoined by and
+    :param l: left Thing
+    :param r: right Thing
+    :return: True if they should be conjoined, False otherwise
+    """
+    # we have specific rules to determine if two Things should be conjoined
+    # untag the Things
+    lt,lv,_ = mtgl.untag(l)
+    rt,rv,_ = mtgl.untag(r)
+
+    #
+
+    return False
 
 modal1 = ['xa<choose>',mtgl.is_number,mtgl.HYP]
 modal2 = [

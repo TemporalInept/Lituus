@@ -30,6 +30,17 @@ the two objects should be merged
 
 124. Pickling Error when dumping MTGCards _pickle.PicklingError: Can't pickle <class 'mtgcard.MTGCard'>: it's not the same object as mtgcard.MTGCard
 
+tried
+>>> from lituus.mtgl import mtgt
+>>> import pickle
+>>> t = mtgt.MTGTree()
+>>> fout = open('test.pkl','wb')
+>>> pickle.dump(t,fout)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+_pickle.PicklingError: Can't pickle <class 'mtgt.MTGTree'>: import of module 'mtgt' failed
+which is different
+
 126. Protection i.e Iridescent Angel "protection from all colors". We need a way to merge the 'all' into colors. that is a quantifier and a characteristic
  - same goes for mox opal etc ('xa<add>', 'xo<mana num=1>', 'of', 'xq<any>', 'ch<color>')
 
@@ -217,6 +228,8 @@ In tkn, Ashmouth Hound has ch<> ',' ob<>
 but Waste Not for example has ch<> ',' ch<> ob<>
 and Godsire has ch<> ',' ch<> ',' ch<>
 
+Another example is Angelic Voices
+
 Look at Godsire where colors should be combined and then merged with the preceding obj
 
 attempt to chain in the grapher when processing keyword-actions/(lituus actions?) that expect an object
@@ -357,20 +370,16 @@ we do not want the vertical brace for kw-line:0 but do want it for keyword:0 Als
 
 249. see Greater Gargadon because of the order in which lines are partitioned and graphed, GG's activated ability cost "Sacrifice an artifact, creature, or land: ..." goes to graph_cost first where the commas are mistakenly used to break "an artifact", "creature" and "or land" into seperate subcosts
 
-250. In some cases, 'that' and/or target are not quantifiers see Accursed Witch
-'ob<spell>', 'xp<you>', 'xp<opponent>', 'ka<cast>', 'ob<card ref=self quantifier=target∧that>'
-here it should be 
-ka<cast> that target ob<card ref=self> 
-Other examples are Boreal Elemental, Icefall Regent, Elderwood Scion, Kasmina, Enigmatic Mentor, Kopala, Warden of Waves, Monastery Siege & Sphinx of New Prahv
+251. Monastery siege and others have choose x or y and then descriptions of each choice, have to 'modalize' these. There are 18 enchantments (not including sagas) that have this behavior
 
-Have to 
- (1) confirm the phrase "that target" should not be tagged as quantifiers and not be chained to objects 
- (2) itdentify other situations like this
- (3) that can be untagged, but in this target is an action. it should be untagged as a quantifier but then, should we retag it as a lituus-action?
+252. for conjoining and tri chains is Thing the best option, it appears that for bi chains and 'and' at least, only mtg objecs should be considered
 
-This brings a bigger issue to the front. 
- Target can be a quanitifer i.e. target spell, an (implied) object i.e. choose a new target for that copy or an action (in reality, an adverb of an action)
+253. add a not capability to list_util->matchl
 
-Target has to be fixed prior to parser->group, the obvious place is parser->rectify
+253. with, that, to ?prepositions? signifies a following phrase that should be attached to an object
 
+255. see Goblin Vandal, defending player has dissappeared due to parser->merge_possessives dropping the status, a fix gives us the below
+  'ob<permanent quantifier=target controller=defending∧player characteristics=artifact>'
+works but does it make sense?
 
+Also are there other tokens where tag attributes are being dropped
