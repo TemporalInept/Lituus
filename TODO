@@ -364,8 +364,6 @@ we do not want the vertical brace for kw-line:0 but do want it for keyword:0 Als
 
 246. create a new module for set updates and move multiverse->_precompile_types there. consider moving the downloading of allcards.json there as well and only allow update of the card json from there 
 
-247. It no longer makes sense for parser to handle the tagging, tokenizing and graphing of cards. This should be moved (most likely multiverse) and have parser only parse the text
-
 249. see Greater Gargadon because of the order in which lines are partitioned and graphed, GG's activated ability cost "Sacrifice an artifact, creature, or land: ..." goes to graph_cost first where the commas are mistakenly used to break "an artifact", "creature" and "or land" into seperate subcosts
  - do we need to do a first pass and join stuff like decision points and conjoined node?
 

@@ -21,30 +21,19 @@ __status__ = 'Development'
 
 import re
 import lituus.mtgl.list_util as ll
-import lituus.mtgl.tagger as tagger
-import lituus.mtgl.lexer as lexer
 import lituus.mtgl.mtgl as mtgl
-import lituus.mtgl.grapher as grapher
 
 # constants/helpers
 re_draft = re.compile(r"draft(ing|ed)?")
 
-def parse(name,card):
+def parse(txt):
     """
-     returns a tree for each line in card's text
-    :param name: name of the card
-    :param card: the card dict
-     NOTE: modifies the card dict in place
+    parses the tokenized text of card into mtgl
+    :param txt: tagged and tokenized text
+    returns the parsed oracle text
     """
-    # tag and tokenize the oracle text
-    try:
-        card['tag'] = tagger.tag(name,card['oracle'])
-        card['tkn'] = lexer.tokenize(card['tag'])
-    except Exception as e:  # generical catchall for debugging purposes
-        print("Failed to tag and tokenize {} -> {]".format(name), type(e))
-
-    # parse the tagged oracle text into mtgl
-    for i,line in enumerate(card['tkn']):
+    ptxt = []
+    for i,line in enumerate(txt):
         try:
             # check for reference to 'draft' in the line. if so, drop the line
             if ll.matchl([re_draft],line) > -1: continue
@@ -54,20 +43,10 @@ def parse(name,card):
             line = group(line)
             line = add_hanging(line)
             line = merge_possessive(line)
-            card['mtgl'].append(line)
+            ptxt.append(line)
         except Exception as e: # generic catchall for debugging purposes
-            print("Failed to parse {} at line {} -> {}.".format(name,i,type(e)))
-            raise
-
-    # parse the mtgl into a tree
-    try:
-        ctype = 'other'
-        if 'Instant' in card['type'] or 'Sorcery' in card['type']: ctype = 'spell'
-        elif 'Saga' in card['sub-type']: ctype = 'saga'
-        card['mtgt'] = grapher.graph(card['mtgl'],ctype)
-    except mtgl.MTGLException as e:
-        print(e)
-        raise
+            raise mtgl.MTGLException("Parse failure {} at line {}.".format(type(e),i))
+    return ptxt
 
 def rectify(olds):
     """

@@ -26,7 +26,10 @@ import requests
 from hashlib import md5
 import lituus.mtg as mtg
 import lituus.mtgl.mtgl as mtgl
+import lituus.mtgl.tagger as tagger
+import lituus.mtgl.lexer as lexer
 import lituus.mtgl.parser as parser
+import lituus.mtgl.grapher as grapher
 import lituus.mtgl.mtgt as mtgt
 import lituus.mtgcard as mtgcard
 
@@ -39,7 +42,7 @@ def multiverse(update=False):
     """
      :param update: if set, will download and use multiverse data from 
       https://mtgjson.com/json/AllSets.json 
-     :returns error multiverse dict
+     :returns multiverse dict
     """
     # files to create
     mv = {}  # multiverse
@@ -84,20 +87,38 @@ def multiverse(update=False):
         finally:
             if fout: fout.close()
 
-    # parse the cards json file
+    # read in AllCards.json
     fin = None
     try:
-        # get the AllCards.json and import
-        print("Parsing local copy AllCards")
-        fin = open(os.path.join(mtg.pth_resources,'AllCards.json'),'r')
+        print("Processing local copy AllCards")
+        fin = open(os.path.join(mtg.pth_resources, 'AllCards.json'), 'r')
         mverse = json.load(fin)
         fin.close()
-        import_cards(mv,tc,mverse)
-        print("Imported {} cards and {} transformed cards.".format(len(mv),len(tc)))
     except IOError as e:
         print("Error reading the cards file {}".format(e))
+        return None
     finally:
         if fin: fin.close()
+
+    # parse the mverse
+    print('Parsing the multiverse')
+    import_cards(mv,tc,mverse)
+    print("Imported {} cards and {} transformed cards.".format(len(mv), len(tc)))
+
+    #fin = None
+    #try:
+    #    # get the AllCards.json and import
+    #    print("Parsing local copy AllCards")
+    #    fin = open(os.path.join(mtg.pth_resources,'AllCards.json'),'r')
+    #    mverse = json.load(fin)
+    #    fin.close()
+    #    import_cards(mv,tc,mverse)
+    #    print("Imported {} cards and {} transformed cards.".format(len(mv),len(tc)))
+    #except IOError as e:
+    #    print("Error reading the cards file {}".format(e))
+    #    return None
+    #finally:
+    #    if fin: fin.close()
 
     # pickle the multiverse
     fout = None
@@ -163,10 +184,24 @@ def import_cards(mv,tc,mverse):
 
         # get the parameters and parse the oracle
         # TODO: once the bugs, are worked out, remove reraise of error
-        jcard = mverse[cname]
-        dcard = harvest(cname,jcard)
         try:
-            parser.parse(cname,dcard)
+            # harvest the json card dict and parse the oracle text
+            jcard = mverse[cname]
+            dcard = harvest(cname,jcard)
+            dcard['tag'] = tagger.tag(cname,dcard['oracle'])
+            dcard['tkn'] = lexer.tokenize(dcard['tag'])
+            dcard['mtgl'] = parser.parse(dcard['tkn'])
+
+            # graph the parsed oracle text
+            ctype = 'other'
+            if 'Instant' in dcard['type'] or 'Sorcery' in dcard['type']:
+                ctype = 'spell'
+            elif 'Saga' in dcard['sub-type']: ctype = 'saga'
+            dcard['mtgt'] = grapher.graph(dcard['mtgl'],ctype)
+        except KeyError as e:
+            # this is bad, lost a card in mverse
+            print("Mverse error, lost card {}".format(e))
+            raise
         except mtgl.MTGLException:
             print("Error parsing {}. Skipping...".format(cname))
             raise
