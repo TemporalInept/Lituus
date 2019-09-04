@@ -82,11 +82,13 @@ with (-) are not included in pip installs or PyPI downloads
      * mtgt.py              wrapper for networkx trees
      * list_util.py         useful list functions
     + resources             local copies of other peoples work
-      * AllCards.json       All the cards
+      * AllCards.json       all the cards in json
       * Primary Database    cEDH decks details
-    + sto                   Saved data
-      * multiverse.pkl      Saved multiverse after parsing
-      * transformed.pkl     Saved transformed cards after parsing
+    + sto                   saved data      
+      * decks               stored EDHDeck decks (pickled)
+      * decklists           scraped decks in .dec format
+      * multiverse.pkl      saved multiverse after parsing
+      * transformed.pkl     saved transformed cards after parsing
 
 ***
 Lituus is unofficial Fan Content permitted under the Fan Content Policy. Not
