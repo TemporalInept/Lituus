@@ -317,9 +317,11 @@ to player='you' or only add it if it is present?
 
 243. See Elder Druid, need to find a way to combine keyword actions
 
-244. With collation of objects we also have phrase like
+244. With collation of objects (and other processing) we end up with 'hanging' phrases like
  o from target player's library
  o with cmc less than 3
+ o attached to it
+Have to handles these 
 
 245. tree printing
 <root>
@@ -335,7 +337,7 @@ to player='you' or only add it if it is present?
     └keyword-clause:2
      └keyword:2
 
-we do not want the vertical brace for kw-line:0 but do want it for keyword:0 Also in trees with greater branching/depths, only the first two immediate branch symbols are drawn (we may have to look into a recursive solution)
+we do not want the vertical brace for kw-line:0 but do want it for keyword:0. Also in trees with greater branching/depths, only the first two immediate branch symbols are drawn (we may have to look into a recursive solution)
 
 246. create a new module for set updates and move multiverse->_precompile_types there. consider moving the downloading of allcards.json there as well and only allow update of the card json from there 
 
@@ -346,7 +348,7 @@ we do not want the vertical brace for kw-line:0 but do want it for keyword:0 Als
 
 253. add a not capability to list_util->matchl
 
-253. 'with', 'that', 'thats', 'to' ?prepositions? signifies a following phrase that should be attached to an object
+253. 'with', 'that', 'thats', 'to' ?prepositions? signifies a following phrase that should be attached to an object or node
 
 255. see Goblin Vandal
 'ob<permanent quantifier=target controller=defending∧player characteristics=artifact>'
@@ -383,4 +385,7 @@ in other words, the action word and its parameters are sibling uner the clause i
  o Clockspinning has "put another of those counters on it" since 'another of' is not being merged with counter, it is not getting graphing (contrast with Jhoira's Timebug "put another time counter on it" which is being graphed correctly)
  o Quarry Hauler "put another counter of that kind on it or remove one from it", the phrase "of that kind" messes up the grapher
 
+266. Put (card)
+ o again we have "the top card of" (Aberrant Researchers) or similar that cause put-card not to be graphed
+ o and hanging clauses (Academy Researchers)
 
