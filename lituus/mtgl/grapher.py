@@ -147,8 +147,8 @@ def graph_kw_line(t,pid,line):
             # [quality] and creature will be merged an object tag
             t.add_node(kwid,'quality',quality=ps[0])
 
-            # get the cost/subcosts
-            graph_cost(t,kwid,ps[1:])
+            # graph the cost/subcosts
+            graph_cost(t,t.add_node(kwid,'keyword-cost'),ps[1:])
         elif kw == 'hexproof' and\
                 ll.matchl(['pr<from>',mtgl.is_quality],ps,0) == 0:
             # 702.11d Hexproof from [quality]. 3 cards have this
@@ -173,13 +173,13 @@ def graph_kw_line(t,pid,line):
             )
 
             # get the cost/subcosts
-            graph_cost(t,kwid,ps[1:])
+            graph_cost(t,t.add_node(kwid,'keyword-cost'),ps[1:])
         elif kw == 'kicker' and 'op<⊕>' in ps:
             # 702.32b Kicker [cost 1] and/or [cost 2]
             # all costs should be mana costs but just in case
-            i = ps.index('op<⊕>')
-            graph_cost(t,kwid,ps[:i])
-            graph_cost(t,kwid,ps[i+1:])
+            k1,_,k2 = ll.splitl(ps,ps.index('op<⊕>'))
+            graph_cost(t,t.add_node(kwid,'keyword-cost'),k1)
+            graph_cost(t, t.add_node(kwid,'keyword-cost'),k2)
         elif kw == 'affinity':
             # 702.40a Affinity for [text] (i.e. object)
             t.add_node(kwid,'for',object=ps[-1])
@@ -194,7 +194,7 @@ def graph_kw_line(t,pid,line):
             t.add_node(kwid,'onto',subtype=ps[1])
 
             # add a cost node to the tree and all subcost(s) under it
-            graph_cost(t,kwid,ps[2:])
+            graph_cost(t,t.add_node(kwid,'keyword-cost'),ps[2:])
         elif kw in KW_N_COST:
             # 702.61a Suspend N <long-hyphen> [cost]
             # 702.76a Reinforce N <long-hyphen> [cost]
@@ -203,7 +203,7 @@ def graph_kw_line(t,pid,line):
             t.add_node(kwid,'n',value=mtgl.untag(ps[0])[1])
 
             # skipping the long hyphen, add a cost node to the tree
-            graph_cost(t,kwid,ps[2:])
+            graph_cost(t, t.add_node(kwid,'keyword-cost'),ps[2:])
         elif kw == 'forecast':
             # 702.56a Forecast <long-hyphen> [Activated Ability]
             aid = t.add_node(kwid,'sub-line')
@@ -223,7 +223,8 @@ def graph_kw_line(t,pid,line):
                 t.add_attr(t.add_node(kwid,'object'),'object',ps[0])
                 if len(ps) > 1: graph_clause(t,kwid,ps[1:])
             else:  # should be a cost
-                graph_cost(t,kwid,ps)
+                # TODO: what if it isnt a cost?
+                graph_cost(t,t.add_node(kwid, 'keyword-cost'),ps)
 
 def graph_modal_line(t,pid,line):
     """
@@ -372,10 +373,10 @@ def graph_activated_ability(t,pid,line):
     #   is also a line i.e. it may be triggered
 
     # start with an activated-ability node (under the ability-line-node,
-    # split the line into cost & remainder, graphing the cost
+    # split the line into cost & remainder, graph the cost & add an effect node
     aaid = t.add_node(pid,'activated-ability')
     cost,_,rem = ll.splitl(line,line.index(':'))
-    graph_cost(t,aaid,cost,'activated-ability-cost')
+    graph_cost(t,t.add_node(aaid,'activated-ability-cost'),cost)
     eid = t.add_node(aaid,'activated-ability-effect')
 
     # if it's modal, graph as a line under effect
@@ -471,11 +472,9 @@ def graph_clause(t,pid,tkns):
     :param pid: the parent id of this subtree
     :param tkns: the mtgl tokens
     """
-    #print("pid={} Starting with tkns = {}".format(pid,tkns))
     cls = []
     skip = 0
     for i,tkn in enumerate(tkns):
-        #print('i={}, skip={} tkn={}\ncls={}'.format(i,skip,tkn,cls))
         # ignore any already processed tokens
         if skip:
             skip -= 1
@@ -489,9 +488,7 @@ def graph_clause(t,pid,tkns):
             # for double quotes, grab the encapsulated tokens & graph them as a
             # line otherwise add the punctuation
             if tkn == mtgl.DBL:
-                #print("\tProcessing double quote. cls closed out")
                 dbl = tkns[i+1:ll.indexl(tkns,mtgl.DBL,i)]
-                #print("\tdbl = {}".format(dbl))
                 graph_line(t,t.add_node(pid,'quoted-clause'),dbl)
                 skip = len(dbl) + 1 # skip the right double quote
             else: t.add_node(pid,'punctuation',symbol=tkn)
@@ -897,6 +894,7 @@ def graph_lituus_action(t,pid,la,tkns):
 
     if v == 'add': return graph_lituus_action_add(t,laid,tkns)
     elif v == 'put': return graph_lituus_action_put(t,laid,tkns)
+    elif v == 'distribute': return graph_lituus_action_distribute(t,laid,tkns)
     else: return 0
 
 def graph_lituus_action_add(t,pid,tkns):
@@ -1119,7 +1117,7 @@ put_card2 = [
 ]
 def graph_lituus_action_put(t,pid,tkns):
     """
-     graphs the lituus action 'put' and associated parameters (takne from tkns)
+     graphs the lituus action 'put' and associated parameters (taken from tkns)
      at parent-id pid of of the tree t
     :param t: the tree
     :param pid: the parent-id to graph at
@@ -1171,18 +1169,14 @@ def graph_lituus_action_put(t,pid,tkns):
     # single put counter
     if ll.matchl(put_ctr_sng,tkns,0) == 0:
         # extract the counter type and number (if any)
+        # TODO: haven't seen any quantifiers other than 'another' or 'a' both
+        #  of which can be considered '1' do we need to check anyway
         ps = mtgl.untag(tkns[0])[2]
-        #if 'quantifier' in ps and ps['quantifier'] != 'a': print(ps)
         ctype = ps['type'] if 'type' in ps else 'any' # set to any if necessary
         n = ps['num'] if 'num' in ps else '1'         # set num to 1 if necessary
         t.add_node(pid,'counter',type=ctype,num=n,on=tkns[2])
         return len(put_ctr_sng)
 
-    """
-    put_card1 = [is_card, mtgl.is_preposition, mtgl.is_zone]
-    put_card2 = [
-        is_card, mtgl.is_preposition, mtgl.is_zone, mtgl.is_preposition, mtgl.is_zone
-    """
     # Action 2 - put card in zone has two forms a. put card onto/into zone
     # (i.e. no from) and b. put card into/from zone into/onto/from zone
     # 2.b - do this first to avoid false positives from 2.a
@@ -1209,19 +1203,71 @@ def graph_lituus_action_put(t,pid,tkns):
 
     return 0
 
-def graph_cost(t,pid,tkns,lbl='cost'):
+def graph_lituus_action_distribute(t,pid,tkns):
     """
-     graphs a cost and subsequent subcosts contained in tkns at parent id
+     graphs the lituus action 'distribute' and associated parameters (taken from
+     tkns) at parent-id pid of of the tree t
+    :param t: the tree
+    :param pid: the parent-id to graph at
+    :param tkns: the list of tokens to extract the parameters from
+    :return: skip, the number of items in tkns that have been processed
+    """
+    # distribute has the initial phrase [distribute] xo<ctr...> among
+    # then is followed by a list of numbers and an object in other words
+    # [distribute] xo<ctr...> among [n [, n ,] or n] ob<...>
+    # there are two numbers in distribute a. the number of counters and b.
+    # the number of objects the counters will be put on
+
+    # determine if tkns has the initial distribute clause
+    # TODO: see Vastwood Hydra
+    if ll.matchl([is_ctr,'among'],tkns,0) == 0:
+        skip = 2
+
+        # have to read up to the first obj from the end of the phrase, then add
+        # the two tokens from the initial phrase to get the index of the object
+        j = ll.matchl([mtgl.is_mtg_obj],tkns[skip:])
+        if j == -1: # Uhoh, something went wrong (TODO: throw an error?)
+            return 0
+        j += skip
+
+        # betw/ the initial phrase & the obj will be the list of numbers (if any)
+        # TODO: here we have a side effect of the parser as the last number
+        #  will be 'assigned' to the object
+        if j == skip: # the number (targets) is inside the object
+            # get the num and type of counters from the proplist
+            # TODO don't do anyerror checking now to see what happens
+            ps = mtgl.untag(tkns[0])[2] # counter num and type is in the proplist
+            ctype = ps['type']
+            cnum = ps['num']
+
+            # the num of 'target' objects will be in the object's prop list,
+            # pull the number out of the object then retag it
+            # TODO: once again no error checking is done for debugging purposes
+            ot,ov,ops = mtgl.untag(tkns[skip])
+            onum = ops['num']
+            del ops['num']
+            ob = mtgl.retag(ot,ov,ops)
+
+            # build and add the counter node
+            t.add_node(pid,'counter',type=ctype,num_ctr=cnum,num_obj=onum,on=ob)
+
+            return skip+1
+    return 0
+
+def graph_cost(t,pid,tkns):
+    """
+     graphs a cost (and subsequent subcosts) contained in tkns at parent id
      pid of tree t
     :param t: the tree
     :param pid: the parent id
     :param tkns: the list of tokens containing the cost
-    :param lbl: optional label of cost node, default is 'cost'
     """
-    cid = t.add_node(pid,lbl)
-    for s in _subcosts_(tkns): graph_clause(t,t.add_node(cid,'subcost'),s)
+    ss = subcosts(tkns)
+    if len(ss) == 1: cid = pid
+    else: cid=t.add_node(pid,'conjunction',item_type='cost',coordinator='and')
+    for s in ss: graph_clause(t,cid,s)
 
-def _subcosts_(tkns):
+def subcosts(tkns):
     """
      extracts all subcosts from the list of tokens
     :param tkns: list to extract subcosts from
@@ -1235,9 +1281,9 @@ def _subcosts_(tkns):
     ss = []
     prev = 0
     for i in ll.indicesl(tkns,mtgl.CMA): # looking for middle splits
-        ss.append(tkns[prev:i]) # don't include the comma
-        prev = i+1              # skip the comma
-    ss.append(tkns[prev:]) # last (or only) subcost
+        ss.append(tkns[prev:i])          # don't include the comma
+        prev = i+1                       # skip the comma
+    ss.append(tkns[prev:])               # last (or only) subcost
     return ss
 
 def ta_clause(tkns):
@@ -1407,7 +1453,7 @@ def conjoin(t,objs,c):
     objs[-1] = mtgl.retag(tag,val,ps)
 
     # create a (rootless) conjunction node and add attributes if present
-    nid = t.add_node_ur('conjunction',coordinator=crd,items='Thing')
+    nid = t.add_node_ur('conjunction',coordinator=crd,item_type='Thing')
     if qtr: t.add_attr(nid,'quantifier',qtr)
     if num: t.add_attr(nid,'n',num)
     if pk: t.add_attr(nid,pk,pv)
@@ -1424,7 +1470,7 @@ def conjoin_bi(tkns):
     :return: True if the start of tokens can be conjoined (bi-chain) or False
      otherwise
     """
-    # TODO: this need extensive testing and verification
+    # TODO: this needs extensive testing and verification
     if ll.matchl(bi_chain,tkns,0) == 0:
         # do not chain anything that meets the following criteria
         #  1. the word immediately after the bi-chain is an action word
@@ -1441,23 +1487,6 @@ def conjoin_bi(tkns):
             if mtgl.is_property(nxt): return False
             return True
     return False
-
-# TODO: this is not working as planned have to completely redo
-#  see Goblin Sappers
-""" returns the lowest 'substance' of the objs based on zone """
-substance = { # 0=anywhere, 1=stack, 2=in play
-    'card':0,'source':0,'it':0,
-    'spell':1,'ability':1,'copy':1,
-    'permanent':2,'token':2,'emblem':2,
-}
-#s2it = {0:'card'}
-def item_type(objs):
-    i = 'permanent'
-    for obj in objs:
-        if obj == 'ob<card ref=self>': continue # ignore these, they could be anything
-        v = mtgl.untag(obj)[1]
-        if substance[v] < substance[i]: i = v
-    return i
 
 modal1 = ['xa<choose>',mtgl.is_number,mtgl.HYP]
 modal2 = [
@@ -1718,19 +1747,16 @@ KWA_SPECIAL = [
 ####
 
 """
-    'put','remove','distribute','get','return','draw','move','copy','look','pay',
+    'remove','distribute','get','return','draw','move','copy','look','pay',
     'deal','gain','lose','attack','block','enter','leave','choose','die',
     'spend','take','skip','cycle','reduce','become','trigger','prevent','declare',
-    'has','have','switch','phase in','phase out','flip','assign',win'
+    'has','have','switch','phase in','phase out','flip','assign','win'
 """
 
 #NOTE: pay behaves similarily to add however, it could also be pay life
 """ REFERENCE ONLY 
 add - xa<add> Mana ((symbol, string or xo<mana...>)
-put - xa<put> Card to Zone, xa<put> n counter(s) on object
+put - xa<put> Card (from Zone) to Zone, xa<put> n counter(s) on object
 """
 
-""" REFERENCE ONLY
-LA_MANA = [ xa<add> Mana (symbol, string or xo<mana...>
-"""
 

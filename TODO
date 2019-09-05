@@ -359,23 +359,6 @@ Also are there other tokens where tag attributes are being dropped?
  move cannot from conditionals. 
  2. do we need a verb tag for words like be, become that do not warrant a lituus action tag but could assist in graphing
 
-260. grapher->item_type needs serious rework, especially after adding Things to bi_chain checks. i.e. what is an it, permanent, card etc
-
-261. right now for action words (mtg or lituus) we have 
-XXXX-action-clause
- |- XXXX-action (word=WORD)
- |- parameter-1 (PARAMETER)
- |- parameter-n (PARAMETER)
-
-for example Path to Exile
-....
-     ├keyword-action-clause:0
-     │├keyword-action:0(word=exile)
-     │└object:0(object=ob<permanent quantifier=target characteristics=creature>)
-....
-
-in other words, the action word and its parameters are sibling uner the clause is this good or should we move the parameters under the action word? I don't think so, but keep it in mind
-
 262. do we need to collate KW_OBJECT?
 
 264. tag 'time', but how? tag 'effect' as what?
@@ -384,8 +367,14 @@ in other words, the action word and its parameters are sibling uner the clause i
  o Doubling Season has ('twice that many of those counters') have to figure out how to get it to graph the 'put counter'
  o Clockspinning has "put another of those counters on it" since 'another of' is not being merged with counter, it is not getting graphing (contrast with Jhoira's Timebug "put another time counter on it" which is being graphed correctly)
  o Quarry Hauler "put another counter of that kind on it or remove one from it", the phrase "of that kind" messes up the grapher
+  o see also Ageless Entity "put that many +1/+1 counters on Ageless Entity" 'that many' messes up the grapher, this is something we could possibly put into the counter with a variable i.e. nu<?>
 
 266. Put (card)
  o again we have "the top card of" (Aberrant Researchers) or similar that cause put-card not to be graphed
  o and hanging clauses (Academy Researchers)
 
+267. See Ajani, Mentor of Heroes 
+['+nu<1>', ':', 'xa<distribute>', 'xo<ctr type=+1/+1 num=3>', 'among', 'nu<1>', ',', 'nu<2>', ',', 'or', 'ob<permanent characteristics=creature num=3 controller=you quantifier=target>', '.'] 
+this is a case of needing to collate numbers but where and when should this be done? if done in the parser, it would introduce additional data structures to parser's output i.e. a tuple if done in the grapher, should we add a fist pass that creates unrooted subtrees of conjunctions? this approach could be used for other issues as well. or should we do it as the situatin arises?
+
+268. Can we generalize collate to work on more than just Things? i.e. mana, costs etc
