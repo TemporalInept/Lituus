@@ -218,6 +218,8 @@ def graph_kw_line(t,pid,line):
                     # found with a keyword and variable for n
                     t.add_node(kwid,'clause',tokens=ps[3:])
             elif mtgl.is_mtg_obj(ps[0]):
+                # TODO: check for need to collate, also should we continue
+                #  to constrain to obj and not Thing
                 t.add_attr(t.add_node(kwid,'object'),'object',ps[0])
                 if len(ps) > 1: graph_clause(t,kwid,ps[1:])
             else:  # should be a cost
@@ -639,17 +641,10 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
         t.add_node(kwid,'pair',pair=tkns[0])
         skip = 1
     elif v in KWA_OBJECT: # keyword actions of the form keyword-action ob (or Thing)
-        # can we collate the kwa's object(s)
+        # collate will determine what object or objects to use, and create a
+        # rootless subtree. Otherwise, None will be returned
         nid,skip = collate(t,tkns)
-        if nid == 'bi-chain': print(v,' ',tkns[:len(bi_chain)+1])
-        elif nid:
-            # add an edge from our current point in the tree to the conjuction node
-            t.add_edge(kwid,nid)
-        else:
-            if tkns and mtgl.is_thing(tkns[0]):
-                # TODO: find a better attribute name than object
-                t.add_attr(t.add_node(kwid,'object'),'object',tkns[0])
-                skip = 1
+        if nid: t.add_edge(kwid,nid)
         return [],skip
     elif v in KWA_N:
         # ka<KEYWORD-ACTION> N
@@ -892,19 +887,22 @@ def graph_lituus_action(t,pid,la,tkns):
     :param tkns: next tokens that haven't been added to the tree
     :return: skip, the number of items in tkns that have been processed
     """
-    # TODO: do we need a way to 'backtrack' and remove this node if the
+    # TODO: do we need a way to 'backtrack' and remove these nodes if the
     #  lituus action shouldn't be tagged as one
+    # extract the action word, create a lituus action clause, and the lituus
+    # action node
     v = mtgl.untag(la)[1]
     laid = t.add_node(pid,'lituus-action-clause')
+    t.add_node(laid,'lituus-action',word=v)
+
     if v == 'add': return graph_lituus_action_add(t,laid,tkns)
-    else:
-        t.add_node(laid,'lituus-action',word=v)
-        return 0
+    elif v == 'put': return graph_lituus_action_put(t,laid,tkns)
+    else: return 0
 
 def graph_lituus_action_add(t,pid,tkns):
     """
-     graphs a add (mana) lituus action and associated parameters from tkns into tree t at
-      parent id pid.
+     graphs a add (mana) lituus action and associated parameters from tkns into
+     tree t at parent id pid.
     :param t: the tree
     :param pid: parent id in the tree
     :param tkns: next tokens that haven't been added to the tree
@@ -912,8 +910,7 @@ def graph_lituus_action_add(t,pid,tkns):
     NOTE: we assume that any following tokens up to the first period (if
           it exists) or the end the tokens are qualifying instructions
     """
-    # drop in the add node then the mana node
-    t.add_node(pid,'lituus-action',word='add')
+    # drop in the mana node
     mid = t.add_node(pid,'mana')
 
     # TODO: with double and triple. need to monitor new cards to make
@@ -1105,6 +1102,75 @@ def graph_lituus_action_add(t,pid,tkns):
     print("Unprocessed Add Mana: {}".format(tkns))
     return 0
 
+def is_ctr(tkn): return mtgl.is_lituus_obj(tkn) and mtgl.untag(tkn)[1] == 'ctr'
+put_ctr_sng = [is_ctr,'pr<on>',mtgl.is_thing]
+put_ctr_dbl = [is_ctr,'pr<on>',mtgl.is_thing,'and',is_ctr,'pr<on>',mtgl.is_thing]
+put_ctr_tpl = [
+    is_ctr,'pr<on>',mtgl.is_thing,',',
+    is_ctr,'pr<on>',mtgl.is_thing,',','and',
+    is_ctr,'pr<on>',mtgl.is_thing
+]
+def graph_lituus_action_put(t,pid,tkns):
+    """
+     graphs the lituus action 'put' and associated parameters (takne from tkns)
+     at parent-id pid of of the tree t
+    :param t: the tree
+    :param pid: the parent-id to graph at
+    :param tkns: the list of tokens to extract the parameters from
+    :return: skip, the number of items in tkns that have been processed
+    """
+    # put refers to two separate actions 1) put a counter on an object and 2)
+    # put (move) a card from one zone to another
+    # TODO: do we need annotate the separate acitons i.e put-counter, put-card
+
+    # Action 1 - (121.6) put a counter on an object. Basic (single) has the form
+    # xa<put> xo<ctr...> pr<on> ob<...>
+    # NOTE:
+    #  1. we'll use Thing to handle xo<it> and player(although in reference to
+    #  players we only see gets a counter
+    #  2. conjunctions are similar to but different than object conjuction
+    #   phrasing, due to the xo<ctr...> and pr<on> repeated between the conjoined
+    #   objects - therefor it is handled here
+
+    # triple counter conjunction (only 2 cards Incremental Growth, Incremental Blight
+    if ll.matchl(put_ctr_tpl,tkns,0) == 0:
+        cid = t.add_node(pid,'conjunction',coordinator='and',item_type='counter')
+        for i in [0,4,9]: # index of xo<ctr...>s
+            # extract the counter type and number (if any)
+            ps = mtgl.untag(tkns[i])[2]
+            ctype = ps['type'] if 'type' in ps else 'any' # set to any if necessary
+            n = ps['num'] if 'num' in ps else '1'         # set num to 1 if necessary
+
+            # add a counter node with a 'type' attribute (counter type) and an
+            # 'on' attribute (the object the counter is put on)
+            t.add_node(cid,'counter',type=ctype,num=n,on=tkns[i+2])
+        return len(put_ctr_tpl)
+
+    # double counter conjunction
+    if ll.matchl(put_ctr_dbl,tkns,0) == 0:
+        cid = t.add_node(pid,'conjunction',coordinator='and',item_type='counter')
+        for i in [0,4]: # index of xo<ctr...>s
+            # extract the counter type and number (if any)
+            ps = mtgl.untag(tkns[i])[2]
+            ctype = ps['type'] if 'type' in ps else 'any' # set to any if necessary
+            n = ps['num'] if 'num' in ps else '1'         # set to 1 if necessary
+
+            # add a counter node with a 'type' attribute (counter type) and an
+            # 'on' attribute (the object the counter is put on)
+            t.add_node(cid,'counter',type=ctype,num=n,on=tkns[i+2])
+        return len(put_ctr_dbl)
+
+    # single put counter
+    if ll.matchl(put_ctr_sng,tkns,0) == 0:
+        # extract the counter type and number (if any)
+        ps = mtgl.untag(tkns[0])[2]
+        ctype = ps['type'] if 'type' in ps else 'any' # set to any if necessary
+        n = ps['num'] if 'num' in ps else '1'         # set num to 1 if necessary
+        t.add_node(pid,'counter',type=ctype,num=n,on=tkns[2])
+        return len(put_ctr_sng)
+
+    return 0
+
 def graph_cost(t,pid,tkns,lbl='cost'):
     """
      graphs a cost and subsequent subcosts contained in tkns at parent id
@@ -1232,7 +1298,7 @@ def _combine_pro_from_(qs):
 tri_chain = [
     mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',mtgl.is_coordinator,mtgl.is_mtg_obj
 ]
-#bi_chain = [mtgl.is_thing,',',mtgl.is_thing]
+#bi_chain = [mtgl.is_thing,',',mtgl.is_thing] #TODO: what to do with these cases
 bi_chain = [mtgl.is_thing,mtgl.is_coordinator,mtgl.is_thing]
 def collate(t,tkns):
     """
@@ -1244,15 +1310,16 @@ def collate(t,tkns):
     """
     # check tri-chains first to avoid false positives by bi-chains
     if ll.matchl(tri_chain,tkns,0) == 0:
-        return conjoin(t,[tkns[0],tkns[2],tkns[5]],tkns[4]),len(tri_chain)
+        return conjoin(t,[tkns[0],tkns[2],tkns[5]],tkns[4]),5
 
     # check bi-chain
-    if conjoin_bi(tkns): return conjoin(t,[tkns[0],tkns[2]],tkns[1]),len(bi_chain)
+    if conjoin_bi(tkns): return conjoin(t,[tkns[0],tkns[2]],tkns[1]),3
 
-    #if  ll.matchl(bi_chain,tkns,0) == 0:
-    #    # dont chain anything with a trailing action
-    #    if not(len(tkns) > len(bi_chain) and mtgl.is_action(tkns[len(bi_chain)])):
-    #        return conjoin(t,[tkns[0],tkns[2]],tkns[1]),len(bi_chain)
+    # single token?
+    if ll.matchl([mtgl.is_thing],tkns,0) == 0:
+        nid = t.add_node_ur('object')
+        t.add_attr(nid,'object',tkns[0])
+        return nid,1
 
     return None,0
 
@@ -1302,7 +1369,7 @@ def conjoin(t,objs,c):
     objs[-1] = mtgl.retag(tag,val,ps)
 
     # create a (rootless) conjunction node and add attributes if present
-    nid = t.add_node_ur('conjunction',coordinator=crd,items=item_type(objs))
+    nid = t.add_node_ur('conjunction',coordinator=crd,items='Thing')
     if qtr: t.add_attr(nid,'quantifier',qtr)
     if num: t.add_attr(nid,'n',num)
     if pk: t.add_attr(nid,pk,pv)
@@ -1490,9 +1557,17 @@ def kw_clauses(line):
 # keywords with non - mana costs have the form kw<KW> — COST
 ####
 
+KW_VARIATION = ['cycling','landwalk','offering']
+KW_N_COST = [
+    'awaken',      # 702.112a Awaken N <long-hyphen> [cost]
+    'suspend',     # 702.61a Suspend N <long-hyphen> [cost]
+    'reinforce',   # 702.76a Reinforce N <long-hyphen> [cost]
+]
+
 # NOTE:
 # 1. hexproof (3 cards have hexproof from)
 # 2. 1 card has modular<long hyphen>sunburst
+""" REFERENCE ONLY
 KW_SINGLETON = [
     'deathtouch','defender','double_strike','first_strike','flash','flying',
     'haste','hexproof','indestructible','intimidate','lifelink','reach','shroud',
@@ -1505,18 +1580,23 @@ KW_SINGLETON = [
     'ingest','myriad','skulk','melee','partner','undaunted',
     'improvise','aftermath','ascend','assist','jump_start','mentor','riot'
 ]
+"""
 # NOTE:
 # 1. Champion would be special but due to parsing the quantifier is merged into
 # the object i.e. champion an object becomes kw<champion> ob<type quantifier=a>
 # 2. Partner with would be special but due to parsing the name bcecomes and
 # object
+""" REFERENCE ONLY
 KW_OBJECT = [ #kw<KEYWORD> ob<OBJ>
     'enchant','landwalk','offering','champion','partner_with'
 ]
+"""
+
 # NOTE:
 # 1. Kicker has a and/or variation
 # 2. Cycling has a [Type]cycling [cost] variation
 # 3. Equip has a Equip [quality] creature i.e. Blackblade Reforged
+""" REFERENCE ONLY
 KW_COST = [ #kw<KEYWORD> [cost]
     'equip','buyback','echo','kicker','multikicker','flashback','madness',
     'morph','megamorph','entwine','ninjutsu','commander_ninjutsu','replicate',
@@ -1524,12 +1604,16 @@ KW_COST = [ #kw<KEYWORD> [cost]
     'level_up','miracle','overload','scavenge','bestow','outlast','dash',
     'surge','emerge','embalm','eternalize','spectacle'
 ]
+"""
+""" REFERENCE ONLY
 KW_N = [ # kw<KEYWORD> N
     'rampage','fading','amplify','modular','bushido','soulshift','dredge',
     'bloodthirst','graft','ripple','vanishing','absorb','frenzy','poisonous',
     'devour','annihilator','tribute','renown','crew','fabricate','afflict',
     'afterlife'
 ]
+"""
+""" REFERENCE ONLY
 KW_SPECIAL = [
     #'equip',        # 702.6s Equip [quality] creature [cost]. 1 card, Blackblade Reforged
     #'protection',   # 702.16a Protection from [quality]
@@ -1543,21 +1627,12 @@ KW_SPECIAL = [
     #'champion',    # 702.71a Champion an [object]
     #'partner_wth', # 702.123f Partner with [name]
 ]
-KW_N_COST = [
-    'awaken',      # 702.112a Awaken N <long-hyphen> [cost]
-    'suspend',     # 702.61a Suspend N <long-hyphen> [cost]
-    'reinforce',   # 702.76a Reinforce N <long-hyphen> [cost]
-]
-KW_VARIATION = [
-    'cycling','landwalk','offering'
-]
+"""
 
 ####
 # KEYWORD ACTION REFERENCES Section 701
 # NOTE: below is primarily for reference but we do use KW_N_COST & KW_VARIATION
 ####
-
-KWA_SINGLETON = ['proliferate','populate','investigate']
 
 KWA_N = [ # ka<KEYWORD ABILITY> N
     'scry','fateseal','monstrosity','bolster','support','surveil','adapt','amass'
@@ -1569,6 +1644,11 @@ KWA_OBJECT = [ # ka<KEYWORD-ACTION> ob
     'activate','cast','play','meld',                                                            # xo or obj
 ]
 
+""" REFERENCE ONLY
+KWA_SINGLETON = ['proliferate','populate','investigate']
+"""
+
+""" REFERENCE ONLY
 KWA_SPECIAL = [
     'double',   # 701.9a TODO
     #'exchange'  # 701.10a  TODO
@@ -1580,9 +1660,39 @@ KWA_SPECIAL = [
     #'explore', # 701.39a ob explores
     #'shuffle', # 701.19a
 ]
+"""
 
 # double 701.9
 # ka<double> power and/or toughness 701.9a
 # ka<double> player's life 701.9d
 # ka<double> # of counters on player or permanet 701.9e
 # ka<double> amount of mana 701.9f
+
+####
+# LITUUS ACTION REFERENCES
+# Lituus actions are words that are common and important in MTG oracle text but
+# are not referenced, identified or discussed in the comprehensive rules.
+# A prime example is draw. Some refer to kewyord actions or abilities like cycle,
+# phase in etc.
+#
+# Because these are not referenced by the rules book, we attempt to define their
+# usage and parameters via how and where they are used in oracle texts
+####
+
+"""
+    'put','remove','distribute','get','return','draw','move','copy','look','pay',
+    'deal','gain','lose','attack','block','enter','leave','choose','die',
+    'spend','take','skip','cycle','reduce','become','trigger','prevent','declare',
+    'has','have','switch','phase in','phase out','flip','assign'
+"""
+
+#NOTE: pay behaves similarily to add however, it could also be pay life
+""" REFERENCE ONLY 
+add - xa<add> Mana ((symbol, string or xo<mana...>)
+put - xa<put> Card to Zone, xa<put> n counter(s) on object
+"""
+
+""" REFERENCE ONLY
+LA_MANA = [ xa<add> Mana (symbol, string or xo<mana...>
+"""
+

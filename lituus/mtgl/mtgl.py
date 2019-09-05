@@ -528,6 +528,8 @@ re_mint = re.compile(r"(?<!{|\w|=)(\d+|x)(?!\w<)")
 lituus_quantifiers = [
     'target','each','all','any','every','another','other',
     'this','that','those','these'
+    'first','second','third','fourth','fifth','sixth',
+    'seventh','eighth','ninth','tenth'
 ]
 re_lituus_qu = re.compile(r"\b({})\b".format('|'.join(lituus_quantifiers)))
 
@@ -625,7 +627,7 @@ re_ch_pt = re.compile(r"(\+|-)?nu<(\d+)>/(\+|-)?nu<(\d+)>(?!\scounter)")
 
 # lituus characteristics - have to make sure it has not already been tagged
 lituus_characteristics = [  # NOTE: these apply primarily to player
-    'control','own','life','cost','hand size','devotion'
+    'life_total','control','own','life','cost','hand size','devotion'
 ]
 re_lituus_ch = re.compile(r"\b({})\b(?!>)".format('|'.join(lituus_characteristics)))
 
