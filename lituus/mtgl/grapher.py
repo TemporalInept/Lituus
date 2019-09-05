@@ -1120,8 +1120,7 @@ def graph_lituus_action_put(t,pid,tkns):
     :return: skip, the number of items in tkns that have been processed
     """
     # put refers to two separate actions 1) put a counter on an object and 2)
-    # put (move) a card from one zone to another
-    # TODO: do we need annotate the separate acitons i.e put-counter, put-card
+    # put a card into zone
 
     # Action 1 - (121.6) put a counter on an object. Basic (single) has the form
     # xa<put> xo<ctr...> pr<on> ob<...>
@@ -1132,6 +1131,8 @@ def graph_lituus_action_put(t,pid,tkns):
     #   phrasing, due to the xo<ctr...> and pr<on> repeated between the conjoined
     #   objects - therefor it is handled here
 
+    # TODO: we need to relook at quantifiers, will there be any with something
+    #  other than any
     # triple counter conjunction (only 2 cards Incremental Growth, Incremental Blight
     if ll.matchl(put_ctr_tpl,tkns,0) == 0:
         cid = t.add_node(pid,'conjunction',coordinator='and',item_type='counter')
@@ -1164,10 +1165,14 @@ def graph_lituus_action_put(t,pid,tkns):
     if ll.matchl(put_ctr_sng,tkns,0) == 0:
         # extract the counter type and number (if any)
         ps = mtgl.untag(tkns[0])[2]
+        #if 'quantifier' in ps and ps['quantifier'] != 'a': print(ps)
         ctype = ps['type'] if 'type' in ps else 'any' # set to any if necessary
         n = ps['num'] if 'num' in ps else '1'         # set num to 1 if necessary
         t.add_node(pid,'counter',type=ctype,num=n,on=tkns[2])
         return len(put_ctr_sng)
+
+    # Action 2 - put card in zone
+
 
     return 0
 
@@ -1683,7 +1688,7 @@ KWA_SPECIAL = [
     'put','remove','distribute','get','return','draw','move','copy','look','pay',
     'deal','gain','lose','attack','block','enter','leave','choose','die',
     'spend','take','skip','cycle','reduce','become','trigger','prevent','declare',
-    'has','have','switch','phase in','phase out','flip','assign'
+    'has','have','switch','phase in','phase out','flip','assign',win'
 """
 
 #NOTE: pay behaves similarily to add however, it could also be pay life

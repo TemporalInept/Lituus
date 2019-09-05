@@ -401,8 +401,11 @@ in other words, the action word and its parameters are sibling uner the clause i
 
 262. do we need to collate KW_OBJECT?
 
-263. consider adding win to lituus actions? i.e. w.r.t clash, "if you win..."
-
 264. tag 'time', but how? tag 'effect' as what?
 
-265. Doubling Season has ('twice that many of those counters') have to figure out how to get it to graph the 'put counter'
+265. Put (counters)
+ o Doubling Season has ('twice that many of those counters') have to figure out how to get it to graph the 'put counter'
+ o Clockspinning has "put another of those counters on it" since 'another of' is not being merged with counter, it is not getting graphing (contrast with Jhoira's Timebug "put another time counter on it" which is being graphed correctly)
+ o Quarry Hauler "put another counter of that kind on it or remove one from it", the phrase "of that kind" messes up the grapher
+
+

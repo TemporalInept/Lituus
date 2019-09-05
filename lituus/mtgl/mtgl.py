@@ -670,7 +670,7 @@ lituus_actions = [
     'put','remove','distribute','get','return','draw','move','copy','look','pay',
     'deal','gain','lose','attack','block','add','enter','leave','choose','die',
     'spend','take','skip','cycle','reduce','become','trigger','prevent','declare',
-    'has','have','switch','phase in','phase out','flip','assign'
+    'has','have','switch','phase in','phase out','flip','assign','win'
 ]
 re_lituus_act = re.compile(r"(?<!<)\b({})\b".format('|'.join(lituus_actions)))
 
