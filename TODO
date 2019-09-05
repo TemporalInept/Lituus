@@ -259,7 +259,13 @@ However, in doing so, parser->merge possessives "elif mtgl.is_player(tkn)" will 
 
 212. have to relook at add mana - make the subtree/clause standard
 
-213. have to consider that an object could be something like "the top card of your library"
+213. have to consider that an object could be something like "the top card of your library" and how to parse/graph it
+ o the probelm in list_util->matchl is that it doesn't work with variable length lists so we cannot have ob<...> or (the top card of your library) 
+ o one fix would be to make that phrase a rootless node of the form
+  object
+   type=card
+   zone=library
+   location=top
 
 214. in collate objects have to extract num and push it up the tree but what other attributes do we need to look for? Lord of Shatterskull pass - some of the parameters an object can have ob<permanent characteristics=creature controller=player quantifier=each>
 
@@ -279,36 +285,6 @@ to player='you' or only add it if it is present?
  3. grab a subtree given the 'root'-id of that subtree
  4. from #3 print only a subtree
 
-228. For Triassic Egg and others. 
-└ line:1
-   └ability-line:1
-    └activated-ability:1
-     ├cost:1
-     │└subcost:2
-       └keyword-action-clause:0
-        ├keyword-action:0(word=sacrifice)
-        └object:0(object=ob<card ref=self>)
-     └effect:1
-      └ability-clause:1
-       └modal:0
-        ├instruction:0
-        │└choose:0(n=1 repeatable=no)
-        ├mode:0
-        │└ability-clause:2
-          └event:1
-           ├clause:1(tkns=['xp<you>', 'cn<may>'])
-           ├lituus-action-clause:1
-           │└lituus-action:1(word=put)
-           ├clause:2(tkns=['ob<card characteristics=creature quantifier=a>', 'pr<from>', 'zn<hand player=you>', 'pr<onto>', 'zn<battlefield>'])
-           ├punctuation:1(symbol=.)
-           ├keyword-action-clause:1
-           │├keyword-action:1(word=activate)
-           │└object:1(object=ob<ability quantifier=this>)
-           ├clause:3(tkns=['cn<only_if>', 'xo<ctr type=hatchling num=≥2>', 'are', 'pr<on>', 'ob<card ref=self>'])
-           └punctuation:2(symbol=.)
-
-everything under modes are classified as ability-clause-event and is graphed by graph_clause. In this case we have instructions i.e. "Activate this ability only if 2 hatchling counters on it. do we try and turn this into an activation instruction or leave as is
-
 229. after downloading the json including MH1 cards, need to look at Hexdrinker for accurate graphing
 
 230. tagger->fix_lvl_up is too hacky, need to go back and streamline it
@@ -317,8 +293,7 @@ everything under modes are classified as ability-clause-event and is graphed by 
 
 232. Effects (609), events (700.1) etc what other rules terminilogy needs to be applied
 
-234. see Splintering Wind {2}{G}: Splintering Wind deals 1 damage to target creature. Create a 1/1 green Splinter creature token. It has flying and "Cumulative upkeep Green." When it leaves the battlefield, it deals 1 damage to you and each creature you control.
- with strict parsing, the phrase "When it leaves the battlefield, it deals 1 damage to you and each creature you control." will not apply to the token because it is not inside the double quotes. Note the phrasing on the original card:
+234. see Splintering Wind {2}{G}: Splintering Wind deals 1 damage to target creature. Create a 1/1 green Splinter creature token. It has flying and "Cumulative upkeep Green." When it leaves the battlefield, it deals 1 damage to you and each creature you control. with strict parsing, the phrase "When it leaves the battlefield, it deals 1 damage to you and each creature you control." will not apply to the token because it is not inside the double quotes, rather it will apply to Splintering Wind. Note the phrasing on the original card:
  
  "If this token leaves play..."
 

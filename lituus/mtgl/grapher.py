@@ -1102,6 +1102,7 @@ def graph_lituus_action_add(t,pid,tkns):
     print("Unprocessed Add Mana: {}".format(tkns))
     return 0
 
+# put-counter
 def is_ctr(tkn): return mtgl.is_lituus_obj(tkn) and mtgl.untag(tkn)[1] == 'ctr'
 put_ctr_sng = [is_ctr,'pr<on>',mtgl.is_thing]
 put_ctr_dbl = [is_ctr,'pr<on>',mtgl.is_thing,'and',is_ctr,'pr<on>',mtgl.is_thing]
@@ -1109,6 +1110,12 @@ put_ctr_tpl = [
     is_ctr,'pr<on>',mtgl.is_thing,',',
     is_ctr,'pr<on>',mtgl.is_thing,',','and',
     is_ctr,'pr<on>',mtgl.is_thing
+]
+# put-card
+def is_card(tkn): return mtgl.is_mtg_obj(tkn) and mtgl.untag(tkn)[1] == 'card'
+put_card1 = [is_card,mtgl.is_preposition,mtgl.is_zone]
+put_card2 = [
+    is_card,mtgl.is_preposition,mtgl.is_zone,mtgl.is_preposition,mtgl.is_zone
 ]
 def graph_lituus_action_put(t,pid,tkns):
     """
@@ -1171,8 +1178,34 @@ def graph_lituus_action_put(t,pid,tkns):
         t.add_node(pid,'counter',type=ctype,num=n,on=tkns[2])
         return len(put_ctr_sng)
 
-    # Action 2 - put card in zone
+    """
+    put_card1 = [is_card, mtgl.is_preposition, mtgl.is_zone]
+    put_card2 = [
+        is_card, mtgl.is_preposition, mtgl.is_zone, mtgl.is_preposition, mtgl.is_zone
+    """
+    # Action 2 - put card in zone has two forms a. put card onto/into zone
+    # (i.e. no from) and b. put card into/from zone into/onto/from zone
+    # 2.b - do this first to avoid false positives from 2.a
+    # TODO: we are dropping the specific preposition i.e. 'onto' and 'into' will
+    #  this have an adverse effect?
+    if ll.matchl(put_card2,tkns,0) == 0:
+        # in this case, we have to determine the from zone and the to zone
+        if mtgl.untag(tkns[1])[1] == 'from':
+            fz = tkns[2]
+            tz = tkns[4]
+        else:
+            fz = tkns[4]
+            tz = tkns[2]
 
+        t.add_attr(t.add_node(pid,'card',to=tz,what=tkns[0]),'from',fz)
+        return len(put_card2)
+
+    # 2.a
+    if ll.matchl(put_card1,tkns,0) == 0:
+        # in this case, we assume that the preposition is always 'onto' or 'into'
+        # and therefore defines 'to'. 'from' is not stated in the clause
+        t.add_node(pid,'card',to=tkns[2],what=tkns[0])
+        return len(put_card1)
 
     return 0
 
