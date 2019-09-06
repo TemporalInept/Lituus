@@ -1221,37 +1221,51 @@ def graph_lituus_action_distribute(t,pid,tkns):
     # determine if tkns has the initial distribute clause
     # TODO: see Vastwood Hydra
     if ll.matchl([is_ctr,'among'],tkns,0) == 0:
-        skip = 2
+        i = 2
 
         # have to read up to the first obj from the end of the phrase, then add
         # the two tokens from the initial phrase to get the index of the object
-        j = ll.matchl([mtgl.is_mtg_obj],tkns[skip:])
-        if j == -1: # Uhoh, something went wrong (TODO: throw an error?)
-            return 0
-        j += skip
+        j = ll.matchl([mtgl.is_mtg_obj],tkns[i:])
+        assert(j != -1)
+        #if j == -1: return 0 # uh-oh something bad happened (throw an error?)
+        j += i
 
         # betw/ the initial phrase & the obj will be the list of numbers (if any)
-        # TODO: here we have a side effect of the parser as the last number
-        #  will be 'assigned' to the object
-        if j == skip: # the number (targets) is inside the object
-            # get the num and type of counters from the proplist
-            # TODO don't do anyerror checking now to see what happens
-            ps = mtgl.untag(tkns[0])[2] # counter num and type is in the proplist
-            ctype = ps['type']
-            cnum = ps['num']
+        # two basic possibilities 1) there is no list of numbers regarding the
+        # object(s), that number is stored in the object itself see
+        # Blessings of Nature, the parsed mtgl is
+        # 'xa<distribute>', 'xo<ctr type=+1/+1 num=4>', 'among',
+        # 'ob<permanent characteristics=creature num=y quantifier=target>'
+        # 2) a list of numbers is found between the initial clause and the object
+        # Note: a parser side effect is that the last number will be 'assigned'
+        #  to the object
 
-            # the num of 'target' objects will be in the object's prop list,
-            # pull the number out of the object then retag it
-            # TODO: once again no error checking is done for debugging purposes
-            ot,ov,ops = mtgl.untag(tkns[skip])
-            onum = ops['num']
-            del ops['num']
-            ob = mtgl.retag(ot,ov,ops)
+        # regardless of case, the # and type of counters are in the initial phrase
+        # TODO don't do any error checking now to see what happens
+        ps = mtgl.untag(tkns[0])[2]
+        ctype = ps['type']
+        cnum = ps['num']
 
-            # build and add the counter node
-            t.add_node(pid,'counter',type=ctype,num_ctr=cnum,num_obj=onum,on=ob)
+        # and the object will be always be at j. the last (or only) num of 'target'
+        # objects will be in the object's prop list, pull the number out of the
+        # object then retag it
+        ot,ov,ops = mtgl.untag(tkns[j])
+        onum = ops['num']
+        del ops['num']
+        ob = mtgl.retag(ot,ov,ops)
 
-            return skip+1
+        # no further analysis needs to be done, since we can determine by
+        # the distance between i and j what case we have
+        diff = j-1
+        if diff == 0: pass # could go an delete this
+        elif diff == 3: onum = "{}, {}".format(mtgl.untag(tkns[i])[1],onum)
+        elif diff == 6:
+            onum = "{}, {}, {}".format(
+                mtgl.untag(tkns[i])[1],mtgl.untag(tkns[i+2])[1],onum
+            )
+        t.add_node(pid,'counter',type=ctype,num_ctr=cnum,num_obj=onum,on=ob)
+        return j # skip up the object
+
     return 0
 
 def graph_cost(t,pid,tkns):
@@ -1416,7 +1430,7 @@ def conjoin(t,objs,c):
     :return: node-id of a 'rootles' conjuction node
     """
     # to conjoin, create a conjunction node with coordinator attribute. Due to the
-    # parser's method of chaining and combining objets, any quantifiers (that apply
+    # parser's method of chaining and combining objects, any quantifiers (that apply
     # to all the objects) will be in the first object, the same goes for numbers,
     # possessives that apply to all the objects (i.e. owner, controller) will be
     # in the last object. status, meta, characteristics will stay with the object
@@ -1438,9 +1452,6 @@ def conjoin(t,objs,c):
         # for number, store it, delete the attribute from the object & retag it
         num = ps['num']
         del ps['num']
-
-        # if the num refers to 'y' change it back to 'any number of'
-        if num == 'nu<y>': num = 'any number of'
     objs[0] = mtgl.retag(tag,val,ps)
 
     # get any possessor from the last object
@@ -1747,7 +1758,7 @@ KWA_SPECIAL = [
 ####
 
 """
-    'remove','distribute','get','return','draw','move','copy','look','pay',
+    'remove','get','return','draw','move','copy','look','pay',
     'deal','gain','lose','attack','block','enter','leave','choose','die',
     'spend','take','skip','cycle','reduce','become','trigger','prevent','declare',
     'has','have','switch','phase in','phase out','flip','assign','win'
@@ -1756,7 +1767,8 @@ KWA_SPECIAL = [
 #NOTE: pay behaves similarily to add however, it could also be pay life
 """ REFERENCE ONLY 
 add - xa<add> Mana ((symbol, string or xo<mana...>)
-put - xa<put> Card (from Zone) to Zone, xa<put> n counter(s) on object
+put - xa<put> Card (from Zone) to Zone or xa<put> n counter(s) on object
+distribute - xa<distribute> n1 counters among n2 objects
 """
 
 

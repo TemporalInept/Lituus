@@ -325,7 +325,7 @@ def fuse_tree(a,b):
       Let A be a subtree of a such that
        root
          A
-      and let B be a subtree of b suc that
+      and let B be a subtree of b such that
        root
          B
 
@@ -352,7 +352,7 @@ def fuse_tree(a,b):
 
 def _fuse_copy_(nt,nid,ot,oid):
     """
-     recursive walk and copy of old tree ot at node-id oid to new tree nt at
+     recursive walk and copy of old tree at node-id oid to new tree nt at
      node-id nid
     :param nt: the MTGTree object new tree
     :param nid: current node-id in nt

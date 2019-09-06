@@ -375,6 +375,14 @@ Also are there other tokens where tag attributes are being dropped?
 
 267. See Ajani, Mentor of Heroes 
 ['+nu<1>', ':', 'xa<distribute>', 'xo<ctr type=+1/+1 num=3>', 'among', 'nu<1>', ',', 'nu<2>', ',', 'or', 'ob<permanent characteristics=creature num=3 controller=you quantifier=target>', '.'] 
-this is a case of needing to collate numbers but where and when should this be done? if done in the parser, it would introduce additional data structures to parser's output i.e. a tuple if done in the grapher, should we add a fist pass that creates unrooted subtrees of conjunctions? this approach could be used for other issues as well. or should we do it as the situatin arises?
+this is a case of needing to collate numbers but where and when should this be done? if done in the parser, it would introduce additional data structures to parser's output i.e. a tuple. if done in the grapher, should we add a fist pass that creates unrooted subtrees of conjunctions? this approach could be used for other issues as well. or should we continue to do it as the situation arises?
 
-268. Can we generalize collate to work on more than just Things? i.e. mana, costs etc
+268. have to annotate the use of y and z variables in numbers
+ x (107.1c) placeholder for a number that needs to be determined
+ y replacement for the phrase 'any number of'
+ z replacement for the phrase 'a number of'
+
+269. Can we generalize collate to work on more than just Things? i.e. mana, costs etc
+
+270. Distribute
+ o Vastwood Hydra the phrase "equal to the number of +1/+1 counters on Vastwood Hydra" sits between counters and among
