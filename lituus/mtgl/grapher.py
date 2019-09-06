@@ -507,18 +507,17 @@ def graph_clause(t,pid,tkns):
             s += mtgl.untag(tkn)[1]
             t.add_node(pid,'loyalty-symbol',symbol=s)
         elif mtgl.is_keyword_action(tkn):
-            # TODO: 1. passing and receiving cls is unessary so long as
-            #  we set cls to [] after calling below but, is having it
-            #  returned here 'easier' to catch the flow?
-            #  2. is it better to untag tkn here and just pass the actual word?
-            cls,skip = graph_keyword_action(t,pid,cls,tkn,tkns[i+1:])
+            # in most cases, the keyword action gets its parameters from the
+            # tokens following it. However, a few require some/all of the tokens
+            # preceding it. Regardless, cls will be claused out
+            skip = graph_keyword_action(t,pid,cls,tkn,tkns[i+1:])
+            cls = []
         elif mtgl.is_lituus_act(tkn):
             # special 'action' words we have identified as being common throughout
-            # mtg oracle texts. add cls then process the action
-            if cls:
-                t.add_node(pid,'clause',tkns=cls)
-                cls = []
-            skip = graph_lituus_action(t,pid,tkn,tkns[i+1:])
+            # mtg oracle texts. Same as keyword actions where a few actions require
+            # preceding tokens to grab their parameters
+            skip = graph_lituus_action(t,pid,cls,tkn,tkns[i+1:])
+            cls = []
         else:
             cls.append(tkn)
 
@@ -571,7 +570,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
         if ob: t.add_node(kwid,'object',object=ob)
 
         # return
-        return [],0
+        return 0
 
     if v == 'fight':
         # fight 701.12 ob->creature ka<fight> ob->creature
@@ -591,7 +590,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
         if o1: t.add_attr(t.add_node(kwid,'object'),'object-1',o1)
         if o2: t.add_attr(t.add_node(kwid,'object'),'object-2',o2)
 
-        return [],skip
+        return skip
 
     if v == 'exchange': return graph_exchange(t,pid,cls,tkns)
 
@@ -642,7 +641,6 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
         # rootless subtree. Otherwise, None will be returned
         nid,skip = collate(t,tkns)
         if nid: t.add_edge(kwid,nid)
-        return [],skip
     elif v in KWA_N:
         # ka<KEYWORD-ACTION> N
         try:
@@ -652,7 +650,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
         except IndexError:
             pass
 
-    return [],skip
+    return skip
 
 def graph_exchange(t,pid,cls,tkns):
     """
@@ -713,7 +711,7 @@ def graph_exchange(t,pid,cls,tkns):
         t.add_node(kwid,'with',zone=mtgl.retag('zn',zs[1],ps))
 
         # we'll skip the zone
-        return [],1
+        return 1
     elif ll.matchl(cobs,tkns,0) == 0:
         # 701.10b is always worded exchange control of. here the
         # objs being exchanged are 'and' seperated i.e. ob1 and ob2
@@ -723,7 +721,7 @@ def graph_exchange(t,pid,cls,tkns):
         t.add_node(kwid,'keyword-action',word=v,type='control')
         t.add_attr(t.add_node(kwid,'what'),'object',tkns[2])
         t.add_attr(t.add_node(kwid,'with'),'object',tkns[4])
-        return [],5
+        return 5
     elif ll.matchl(cobe,tkns,0) == 0 or ll.matchl(cobe_edge,tkns,0) == 0:
         # 701.10b (same as above) but here, the objects are embedded.
         # Have one edge juxtaposition which has a preceding 'the'
@@ -739,7 +737,7 @@ def graph_exchange(t,pid,cls,tkns):
         else:
             t.add_node(kwid, 'what', objects=tkns[2])
             skip = 3
-        return [],skip
+        return skip
     elif ll.matchl(lt,tkns,0) == 0:
         # 701.10c exchange life totals
         # do not need the cls, go ahead and add then kwa etc
@@ -748,7 +746,7 @@ def graph_exchange(t,pid,cls,tkns):
         t.add_node(kwid,'keyword-action',word=v,type='life')
         t.add_node(kwid,'who',player=mtgl.retag('xp','you',{}))
         t.add_node(kwid,'with',player=tkns[3])
-        return [],4
+        return 4
     elif tkns == ['xc<life>', 'totals']:
         # 701.10c exchange life totals but in this case the 'who'
         # players are listed prior i.e. have already been added to
@@ -766,7 +764,7 @@ def graph_exchange(t,pid,cls,tkns):
         kwid = t.add_node(pid,'keyword-action-clause')
         t.add_node(kwid,'keyword-action',word=v,type='life')
         t.add_node(kwid,'who',players=ply)
-        return [],2
+        return 2
     elif ll.matchl(ltch,tkns,0) == 0:
         # 701.10g exchange numerical values. So far have only seen
         #  three cards with this specific value exchange which is
@@ -793,7 +791,7 @@ def graph_exchange(t,pid,cls,tkns):
         t.add_node(kwid,'with',value=mtgl.retag('ob',ov,ops))
 
         # skip the six tokens we added
-        return [],6
+        return 6
     elif ll.matchl(val_edge,tkns,0) == 0:
         # 701.10g exchange numerical values - edge case So far have
         # only seen 1 card (Serene Master) with this specific value
@@ -821,9 +819,10 @@ def graph_exchange(t,pid,cls,tkns):
         t.add_node(kwid,'with',value=mtgl.retag(ot,ov,ops))
 
         # skip the seven tokens we added
-        return [],7
+        return 7
     else:
-        return cls,0
+        if cls: t.add_node(pid,'clause',tkns=cls)
+        return 0
 
 def graph_shuffle(t,kwid,tkns):
     """
@@ -874,23 +873,41 @@ def graph_shuffle(t,kwid,tkns):
     # should never get to here
     return 0
 
-def graph_lituus_action(t,pid,la,tkns):
+def graph_lituus_action(t,pid,cls,la,tkns):
     """
-     graphs a lituus action and associated parameters from tkns into tree t at
+     graphs a lituus action and associated parameters from tkns (and sometimes)
+     cls) into tree t at
       parent id pid.
     :param t: the tree
     :param pid: parent id in the tree
+    :param cls: previous (ungraphed) tokens
     :param la: untagged lituus-action token
     :param tkns: next tokens that haven't been added to the tree
     :return: skip, the number of items in tkns that have been processed
     """
-    # TODO: do we need a way to 'backtrack' and remove these nodes if the
-    #  lituus action shouldn't be tagged as one
-    # extract the action word, create a lituus action clause, and the lituus
-    # action node
+    # extract the action word
     v = mtgl.untag(la)[1]
+
+    # a few lituus actions require tokens from cls
+    if v == 'phase_in' or v == 'phase_out':
+        # collate what we can from cls. Note that collate is grabbing from the
+        # beginning of cls meaning we may have tokens in cls that 'left over' and
+        # between the rootless action node i.e. the last line of Ertai's familiar
+        # "Ertai's Familiar cannot phase out" - the word 'cannot' will remain
+        nid,skip = collate(t,cls)
+        if skip < len(cls): t.add_node(pid,'clause',tkns=cls[skip:])
+
+        # now, create our hierarchy and add the collated subtree
+        laid = t.add_node(pid,'lituus-action-clause')
+        t.add_node(laid,'lituus-action',word=v)
+        if nid: t.add_edge(laid,nid)
+        return 0 # nothing in tokens was processed
+
+    # the following do not require tokens from cls, so we can close it out, then
+    # add our hierarchy
+    if cls: t.add_node(pid,'clause',tkns=cls)
     laid = t.add_node(pid,'lituus-action-clause')
-    t.add_node(laid,'lituus-action',word=v)
+    t.add_node(laid,'lituus-action', word=v)
 
     if v == 'add': return graph_lituus_action_add(t,laid,tkns)
     elif v == 'put': return graph_lituus_action_put(t,laid,tkns)
@@ -1769,6 +1786,7 @@ KWA_SPECIAL = [
 add - xa<add> Mana ((symbol, string or xo<mana...>)
 put - xa<put> Card (from Zone) to Zone or xa<put> n counter(s) on object
 distribute - xa<distribute> n1 counters among n2 objects
+phase in/phase out: object xa<phase_in> or object xa<phase_out>
 """
 
-
+# phase in and phase out is going to require tokens prior to the the action word

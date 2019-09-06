@@ -384,5 +384,19 @@ this is a case of needing to collate numbers but where and when should this be d
 
 269. Can we generalize collate to work on more than just Things? i.e. mana, costs etc
 
+270. I do not like the way keyword action and lituus action graphing functions have
+to close out cls, that should be a job for graph_clause, the only other way though that I could see doing it for now is to create a rootless subtree, then the caller would have to add cls, then add an edge to the rootless subtree
 270. Distribute
  o Vastwood Hydra the phrase "equal to the number of +1/+1 counters on Vastwood Hydra" sits between counters and among
+
+271. See Ertai's Familiar
+it was happenstance but shows a way that we could get around unmatching 'phases' during graphing. 
+ The phrase "... Ertai's Familiar can't phase out."
+because we are working backwords and getting the object belonging to phase out, we end up with obj="Ertai's Familiar", unknown = cannot and lituus-action = "phase out" which we then gets graphed as
+ 
+ ├clause:4(tkns=['cn<cannot>'])
+ ├lituus-action-clause:3
+ │├lituus-action:3(word=phase_out)
+ │└object:1(object=ob<card ref=self>)
+
+

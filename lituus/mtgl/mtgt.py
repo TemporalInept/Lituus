@@ -153,7 +153,7 @@ class MTGTree:
     """ returns whether tree has node with id nid """
     def has_node(self,nid): return nid in self._t.node
 
-    """ returns the node with id nid's data dict """
+    """ returns the data dict of the node with id nid """
     def node(self,nid):
         try:
             return self._t.node[nid]
@@ -211,6 +211,28 @@ class MTGTree:
             ss = self.children(self.parent(nid))
             ss.remove(nid)
             return ss
+        except KeyError:
+            raise MTGTException("No such node {}".format(nid))
+
+    """ returns the immediate 'left' sibling """
+    def left_sibling(self,nid):
+        try:
+            ss = self.children(self.parent(nid))
+            i = ss.index(nid)
+            return ss[i-1]
+        except IndexError:
+            return None
+        except KeyError:
+            raise MTGTException("No such node {}".format(nid))
+
+    """ returns the immediate 'left' sibling """
+    def right_sibling(self,nid):
+        try:
+            ss = self.children(self.parent(nid))
+            i = ss.index(nid)
+            return ss[i+1]
+        except IndexError:
+            return None
         except KeyError:
             raise MTGTException("No such node {}".format(nid))
 
