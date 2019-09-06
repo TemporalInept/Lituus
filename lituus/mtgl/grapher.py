@@ -1432,7 +1432,7 @@ def collate(t,tkns):
 
     # single token?
     if ll.matchl([mtgl.is_thing],tkns,0) == 0:
-        nid = t.add_node_ur('object')
+        nid = t.add_ur_node('object')
         t.add_attr(nid,'object',tkns[0])
         return nid,1
 
@@ -1481,7 +1481,7 @@ def conjoin(t,objs,c):
     objs[-1] = mtgl.retag(tag,val,ps)
 
     # create a (rootless) conjunction node and add attributes if present
-    nid = t.add_node_ur('conjunction',coordinator=crd,item_type='Thing')
+    nid = t.add_ur_node('conjunction',coordinator=crd,item_type='Thing')
     if qtr: t.add_attr(nid,'quantifier',qtr)
     if num: t.add_attr(nid,'n',num)
     if pk: t.add_attr(nid,pk,pv)

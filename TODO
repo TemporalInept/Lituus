@@ -280,8 +280,7 @@ so, should we explicitly set an attribute or node (probably node) that defaults
 to player='you' or only add it if it is present?
 
 220. In mtgt, need to add the following capabiities to the MTGTree
- 1. add a node without adding edge
- 2. remove a node or attribute
+ 2. remove an attribute
  3. grab a subtree given the 'root'-id of that subtree
  4. from #3 print only a subtree
 
@@ -399,4 +398,4 @@ because we are working backwords and getting the object belonging to phase out, 
  │├lituus-action:3(word=phase_out)
  │└object:1(object=ob<card ref=self>)
 
-
+which is basically perfect. 

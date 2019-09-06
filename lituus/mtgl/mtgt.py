@@ -85,13 +85,16 @@ class MTGTree:
         """
         # get the depths of the node from the 'root', then traverse the tree in
         # preorder (left to right) printing each node spacing by depth
-        ds = nx.shortest_path_length(self._t,'root')
-        for n in nx.dfs_preorder_nodes(self._t,'root'):
-            if not show_attr: print("{}{}".format(" " * ds[n],n))
-            else:
-                attrs = ["{}={}".format(k,v) for k,v in self._t.node[n].items()]
-                if attrs: print("{}{} ({})".format(" " * ds[n],n," ".join(attrs)))
-                else: print("{}{}".format(" " * ds[n],n))
+        try:
+            ds = nx.shortest_path_length(self._t,'root')
+            for n in nx.dfs_preorder_nodes(self._t,'root'):
+                if not show_attr: print("{}{}".format(" " * ds[n],n))
+                else:
+                    attrs = ["{}={}".format(k,v) for k,v in self._t.node[n].items()]
+                    if attrs: print("{}{} ({})".format(" " * ds[n],n," ".join(attrs)))
+                    else: print("{}{}".format(" " * ds[n],n))
+        except nx.NetworkXError as e:
+            raise MTGTException(e)
 
     def print2(self,show_attr=False):
         """
@@ -103,46 +106,49 @@ class MTGTree:
         cs = self.children('root')
         lastchild = cs[-1]
 
-        ds = nx.shortest_path_length(self._t, 'root')
-        for nid in nx.dfs_preorder_nodes(self._t,'root'):
-            if nid == 'root':
-                print("<root>")
-                continue
+        try:
+            ds = nx.shortest_path_length(self._t, 'root')
+            for nid in nx.dfs_preorder_nodes(self._t,'root'):
+                if nid == 'root':
+                    print("<root>")
+                    continue
 
-            # determine what the leftmost symbol will be
-            rsym = ''
-            msym = " " * ds[nid]
-            if nid in cs:
-                # direct descendant of root
-                if nid == lastchild: lsym = SYM_LAST_CHILD
-                else: lsym = SYM_CHILD
-            else:
-                # leftmost symbol will be a vertical line unless the last
-                # child of root is a descendant of this node
-                if lastchild in self.ancestors(nid): lsym = ' '
-                else: lsym = SYM_2ND_ORDER
+                # determine what the leftmost symbol will be
+                rsym = ''
+                msym = " " * ds[nid]
+                if nid in cs:
+                    # direct descendant of root
+                    if nid == lastchild: lsym = SYM_LAST_CHILD
+                    else: lsym = SYM_CHILD
+                else:
+                    # leftmost symbol will be a vertical line unless the last
+                    # child of root is a descendant of this node
+                    if lastchild in self.ancestors(nid): lsym = ' '
+                    else: lsym = SYM_2ND_ORDER
 
-                # if the parent of this node has siblings and it is not
-                # the last child change the mid symbols
-                pid = self.parent(nid)
-                ss = self.children(self.parent(pid))
-                if self.siblings(pid) and pid != ss[-1]:
-                    msym = list(msym)
-                    msym[-1] = SYM_2ND_ORDER
-                    msym = "".join(msym)
+                    # if the parent of this node has siblings and it is not
+                    # the last child change the mid symbols
+                    pid = self.parent(nid)
+                    ss = self.children(self.parent(pid))
+                    if self.siblings(pid) and pid != ss[-1]:
+                        msym = list(msym)
+                        msym[-1] = SYM_2ND_ORDER
+                        msym = "".join(msym)
 
-                # determine what the rightmost symbol will be
-                ss = self.children(self.parent(nid)) # get all nodes on same level
-                if nid == ss[-1]: rsym = SYM_LAST_CHILD
-                else: rsym = SYM_CHILD
+                    # determine what the rightmost symbol will be
+                    ss = self.children(self.parent(nid)) # get all nodes on same level
+                    if nid == ss[-1]: rsym = SYM_LAST_CHILD
+                    else: rsym = SYM_CHILD
 
-            # attributes?
-            attrs = ''
-            if show_attr:
-                ps1 = ["{}={}".format(k,v) for k,v in self._t.node[nid].items()]
-                if ps1: attrs = "({})".format(" ".join(ps1))
+                # attributes?
+                attrs = ''
+                if show_attr:
+                    ps1 = ["{}={}".format(k,v) for k,v in self._t.node[nid].items()]
+                    if ps1: attrs = "({})".format(" ".join(ps1))
 
-            print("{}{}{}{}{}".format(lsym,msym,rsym,nid,attrs))
+                print("{}{}{}{}{}".format(lsym,msym,rsym,nid,attrs))
+        except nx.NetworkXError as e:
+            raise MTGTException(e)
 
     @property # return the root node-id (which should always be 'root')
     def root(self): return next(nx.topological_sort(self._t))
@@ -189,13 +195,18 @@ class MTGTree:
         except KeyError:
             raise MTGTException("No such node {}".format(nid))
 
-    """ 
-     returns the ancestors (ids) of the node with id nid (in no particular order 
-    """
+    """ returns a list of ancestors of node nid (in no particular order) """
     def ancestors(self,nid):
         try:
             return [n for n in nx.ancestors(self._t,nid)]
-        except KeyError:
+        except nx.NetworkXError:
+            raise MTGTException("No such node {}".format(nid))
+
+    """ returns a list ofall descendants of node nid (in no particular order) """
+    def descendants(self,nid):
+        try:
+            return [n for n in nx.descendants(self._t,nid)]
+        except nx.NetworkXError:
             raise MTGTException("No such node {}".format(nid))
 
     """ returns the children of the node with id nid """
@@ -251,7 +262,7 @@ class MTGTree:
         self._t.add_edge(pid,nid)
         return nid
 
-    def add_node_ur(self,ntype,**kwargs):
+    def add_ur_node(self,ntype,**kwargs):
         """
          adds a rootless node of type ntype with attributes to the tree
         :param ntype: the type of node
@@ -273,8 +284,9 @@ class MTGTree:
         if self.parent(cid): raise MTGTException("{} has a parent".format(cid))
         self._t.add_edge(pid,cid)
 
-    # TODO:
-    def del_node(self): pass
+    """ emoves node nid, edges into nid and the subtree at node nid """
+    def del_node(self,nid): self._t.remove_nodes_from(self.descendants(nid) + [nid])
+
 
     # TODO:
     def del_edge(self): pass
