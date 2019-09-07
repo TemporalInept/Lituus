@@ -1340,10 +1340,9 @@ def ta_clause(tkns):
         prev = i+1 # drops the comma
     ss.append(rem[prev:])
 
-    # look for key words to determine where the condition and effect are joined
+    # look for key phrases to determine where the condition and effect are joined
     # these are
-    #  Thing action-word
-    #  player (may) action-word
+    #  Thing action-word or player (may) action-word
     #  TODO: see 205, we currently hack "xo<it> xp<controller>|xp<owner>" as a
     #   player action-word
     # conditional-if, that is, cn<if> signifies that this clause is part of the
@@ -1355,16 +1354,20 @@ def ta_clause(tkns):
     #  in the case multiple objects that make up an 'or' clause)
     split = None
     for i,s in enumerate(ss):
-        if i == 0: continue # the first clause is always in the condition
+        if i == 0:
+            # the first clause is always in the condition but, if it ends with
+            # a phase, it is the only part of the condition
+            if ll.matchl([mtgl.is_phase],s[-1:],0) == 0: split = 1
+            else: continue
         if ll.matchl([mtgl.is_thing,mtgl.is_action],s,0) == 0:
-            split = i
-            break
-        elif ll.matchl([mtgl.is_player,'cn<may>',mtgl.is_action],s,0) == 0:
             split = i
             break
         elif ll.matchl(['xo<it>',mtgl.is_player,mtgl.is_action],s,0) == 0:
             # TODO: once we find a solution to 205, we can look at combining
             #  this into Thing, action
+            split = i
+            break
+        elif ll.matchl([mtgl.is_player,'cn<may>',mtgl.is_action],s,0) == 0:
             split = i
             break
         elif mtgl.is_action(s[0]):
@@ -1410,11 +1413,19 @@ def _combine_pro_from_(qs):
     qs = mtgl.AND.join([mtgl.untag(q)[2]['characteristics'] for q in qs])
     return mtgl.retag('ob','card',{'characteristics':qs})
 
+qud_chain = [ # only a few quad chain cards (see Decimate)
+    mtgl.is_mtg_obj,mtgl.CMA,                                    # 0,1
+    mtgl.is_mtg_obj,mtgl.CMA,                                    # 2,3
+    mtgl.is_mtg_obj,mtgl.CMA,mtgl.is_coordinator,mtgl.is_mtg_obj # 4,5,6,7
+]
 tri_chain = [
     mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',mtgl.is_coordinator,mtgl.is_mtg_obj
 ]
-bi_chain_no_crd = [mtgl.is_mtg_obj,',',mtgl.is_mtg_obj]
+tri_chain_alt = [ # three objects (missed by the parser) that should be 'chained'
+    mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,
+]
 bi_chain = [mtgl.is_thing,mtgl.is_coordinator,mtgl.is_thing]
+bi_chain_alt = [mtgl.is_mtg_obj,',',mtgl.is_mtg_obj]
 def collate(t,tkns):
     """
      given that the first token in tkns is a Thing, gathers and combines all
@@ -1423,15 +1434,45 @@ def collate(t,tkns):
     :param tkns: list of unprocessed tokens
     :return: id for the 'rootless' conjunction node, number of tokens processed
     """
-    # check tri-chains first to avoid false positives by bi-chains
+    # check in decreasing number of conjoined object to avoid false positives
+
+    # check quad-chains
+    if ll.matchl(qud_chain,tkns,0) == 0:
+        return conjoin(t,[tkns[0],tkns[2],tkns[4],tkns[7]],tkns[6]),len(qud_chain)
+
+    # check tri-chains
     if ll.matchl(tri_chain,tkns,0) == 0:
-        return conjoin(t,[tkns[0],tkns[2],tkns[5]],tkns[4]),5
+        return conjoin(t,[tkns[0],tkns[2],tkns[5]],tkns[4]),len(tri_chain)
+
+    # check tri-chain alternate (create a single object) see Victim of Night
+    # 'fixing' an inability of the parser to chain these under a single object
+    if ll.matchl(tri_chain_alt,tkns,0) == 0:
+        # TODO: this will fail if any of the objects do not have characteristics
+        tag,val,ps = mtgl.untag(tkns[0]) # untag the first object
+        ps2 = mtgl.untag(tkns[2])[2]
+        ps3 = mtgl.untag(tkns[4])[2]
+        ps['characteristics'] = mtgl.AND.join(
+            [ps['characteristics'],ps2['characteristics'],ps3['characteristics']]
+        )
+        nid = t.add_ur_node('object')
+        t.add_attr(nid,'object',mtgl.retag(tag,val,ps))
+        return nid,len(tri_chain_alt)
 
     # check bi-chain
-    if conjoin_bi(tkns): return conjoin(t,[tkns[0],tkns[2]],tkns[1]),3
+    if ll.matchl(bi_chain,tkns,0) == 0 and conjoin_bi_chain(tkns):
+        return conjoin(t,[tkns[0],tkns[2]],tkns[1]),len(bi_chain)
 
-    #if ll.matchl(bi_chain_no_crd,tkns,0) == 0:
-    #    print("{}\n{}".format(tkns[:3],tkns))
+    # check bi-chain alternate, once again, create a single object
+    if ll.matchl(bi_chain_alt,tkns,0) == 0:
+        # based on review of cards, the can be chained into a single object unless
+        # one of the objects is a self-reference
+        if tkns[0] != 'ob<card ref=self>' and tkns[2] != 'ob<card ref=self>':
+            tag,val,ps = mtgl.untag(tkns[0])
+            ps1 = mtgl.untag(tkns[2])[2]
+            ps['characteristics'] += mtgl.AND + ps1['characteristics']
+            nid = t.add_ur_node('object')
+            t.add_attr(nid,'object',mtgl.retag(tag,val,ps))
+            return nid,len(bi_chain_alt)
 
     # single token?
     if ll.matchl([mtgl.is_thing],tkns,0) == 0:
@@ -1484,40 +1525,40 @@ def conjoin(t,objs,c):
     objs[-1] = mtgl.retag(tag,val,ps)
 
     # create a (rootless) conjunction node and add attributes if present
-    nid = t.add_ur_node('conjunction',coordinator=crd,item_type='Thing')
+    nid = t.add_ur_node('conjunction',coordinator=crd,item_type='object')
     if qtr: t.add_attr(nid,'quantifier',qtr)
     if num: t.add_attr(nid,'n',num)
     if pk: t.add_attr(nid,pk,pv)
 
     # iterate the objects and add to the conjuction node
-    for obj in objs: t.add_attr(t.add_node(nid,'item'),'object',obj)
+    for obj in objs:
+        tag,val,ps = mtgl.untag(obj)
+        if 'quantifier' in ps: del ps['quantifier']
+        t.add_attr(t.add_node(nid,'item'),'object',mtgl.retag(tag,val,ps))
 
     return nid
 
-def conjoin_bi(tkns):
+def conjoin_bi_chain(tkns):
     """
-     determines if there is bi-chain of Things in tkns which can be conjoined
+     determines if there is a bi-chain of objects in tkns which can be conjoined
     :param tkns: the list of tokens to check
     :return: True if the start of tokens can be conjoined (bi-chain) or False
      otherwise
     """
     # TODO: this needs extensive testing and verification
-    if ll.matchl(bi_chain,tkns,0) == 0:
-        # do not chain anything that meets the following criteria
-        #  1. the word immediately after the bi-chain is an action word
-        #  2. the word immediately after the bi-chain is a conditional or negation
-        #   i.e. 'cn<may>' or 'doesnt'
-        #  3. the word immediately after the bi-chain is a characteristic
-        try:
-            nxt = tkns[len(bi_chain)]
-        except IndexError:
-            return True
-        else:
-            if mtgl.is_action(nxt): return False
-            if mtgl.is_conditional(nxt) or nxt == 'doesnt': return False
-            if mtgl.is_property(nxt): return False
-            return True
-    return False
+    # do not chain anything that meets the following criteria
+    #  1. the word immediately after the bi-chain is an action word
+    #  2. the word immediately after the bi-chain is a conditional or negation
+    #   i.e. 'cn<may>' or 'doesnt'
+    #  3. the word immediately after the bi-chain is a characteristic
+    try:
+        nxt = tkns[len(bi_chain)]
+    except IndexError: return True
+    else:
+        if mtgl.is_action(nxt): return False
+        if mtgl.is_conditional(nxt) or nxt == 'doesnt': return False
+        if mtgl.is_property(nxt): return False
+        return True
 
 modal1 = ['xa<choose>',mtgl.is_number,mtgl.HYP]
 modal2 = [

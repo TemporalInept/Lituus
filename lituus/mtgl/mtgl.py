@@ -266,6 +266,12 @@ def is_zone(tkn):
     except MTGLTagException:
         return False
 
+def is_phase(tkn):
+    try:
+        return untag(tkn)[0] == 'ph'
+    except MTGLTagException:
+        return False
+
 def is_property(tkn):
     try:
         return untag(tkn)[0] in ['ch','xc']

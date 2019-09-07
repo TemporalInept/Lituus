@@ -291,6 +291,8 @@ def chain(olds):
                 # we are in a current chain
                 if tkn == ',':
                     nop = _comma_read_ahead_(olds[i:])
+                    # TODO: cannot remember why I set up the below, cannot
+                    # find a good example
                     if nop == mtgl.AND or nop == ',': # distinct objects
                         pl = {tp:op.join(cs)}
                         if pt: pl['meta'] = 'p/t'+mtgl.EQ+pt
@@ -349,16 +351,13 @@ def _comma_read_ahead_(tkns):
     """
     # read ahead until we find 'or' or 'and' or a non-characteristic
     for i,tkn in enumerate(tkns):
-        try:
-            if tkn == 'or':
-                if ll.matchl([mtgl.is_mtg_char,mtgl.is_mtg_obj],tkns[i:],1) == 1:
-                    return mtgl.OR
-                else: return mtgl.CMA
-            elif tkn == 'and': return mtgl.AND
-            elif tkn == ',': continue # skip the commas
-            elif not mtgl.is_mtg_char(tkn): return mtgl.CMA
-        except IndexError:
-            pass
+        if tkn == 'or':
+            if ll.matchl([mtgl.is_mtg_char,mtgl.is_mtg_obj],tkns[i:],1) == 1:
+                return mtgl.OR
+            else: return mtgl.CMA
+        elif tkn == 'and': return mtgl.AND
+        elif tkn == ',': continue # skip the commas
+        elif not mtgl.is_mtg_char(tkn): return mtgl.CMA
     return mtgl.CMA
 
 def _chained_and_(i,tkns):

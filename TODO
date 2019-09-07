@@ -217,23 +217,6 @@ only the num=3 is combined with the creature
 that would ... instead ...
 another if ... would ... instead version
 
-201. see Chrome Mox. There are multiple other cards with similar and two with permanent vice card. Have to figure out how to chain these When Chrome Mox enters the battlefield, you may exile a nonartifact, nonland card from your hand.
-
-... 'ka<exile>', 'a', 'ch<¬artifact>', ',', 'ch<¬land>', 'ob<card>', 'pr<from>' ...
-
-But see Ashmouth Hound which is an example where a comma signifies not chaining
-... 'by', 'a', 'ch<creature>', ',', 'ob<card ref=self>', 'xa<deal>', ...
-
-In tkn, Ashmouth Hound has ch<> ',' ob<>
-but Waste Not for example has ch<> ',' ch<> ob<>
-and Godsire has ch<> ',' ch<> ',' ch<>
-
-Another example is Angelic Voices
-
-Look at Godsire where colors should be combined and then merged with the preceding obj
-
-attempt to chain in the grapher when processing keyword-actions/(lituus actions?) that expect an object
-
 203. Guided Passage
  'ka<reveal>', 'the', 'ob<card>', 'pr<in>', 'zn<library player=you>', '.'
 └ line:0
@@ -381,7 +364,7 @@ this is a case of needing to collate numbers but where and when should this be d
  y replacement for the phrase 'any number of'
  z replacement for the phrase 'a number of'
 
-269. Can we generalize collate to work on more than just Things? i.e. mana, costs etc
+269. Can we generalize collate to work on more than just objects? i.e. mana, costs etc. if it is just the a check for type i.e. is_mtg_obj, or is_mtg_num this would be easy enough to do
 
 270. I do not like the way keyword action and lituus action graphing functions have
 to close out cls, that should be a job for graph_clause, the only other way though that I could see doing it for now is to create a rootless subtree, then the caller would have to add cls, then add an edge to the rootless subtree
@@ -403,3 +386,7 @@ because we are working backwords and getting the object belonging to phase out, 
 275. conjoin instructions? i.e. in activated abilities
 
 276. parser->rectify has become really hacky and unwieldy (is there even a need to enumerate the list of tokens or could we just use matchl), parser->chain could use a major overhaul as well
+
+277. See Remove Enchantment - going to be difficult to graph correctly
+
+278. see Angelic Voices, Godsire, the three colors of the created token should be chained (and would be if they were run through grapher->collate). Godsire is also another example of a hanging clause
