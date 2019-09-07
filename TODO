@@ -41,6 +41,8 @@ Traceback (most recent call last):
 _pickle.PicklingError: Can't pickle <class 'mtgt.MTGTree'>: import of module 'mtgt' failed
 which is different
 
+Posted question to https://stackoverflow.com/questions/57826565/python3-cannot-pickle-self-defined-objects
+
 126. Protection i.e Iridescent Angel "protection from all colors". We need a way to merge the 'all' into colors. that is a quantifier and a characteristic
  - same goes for mox opal etc ('xa<add>', 'xo<mana num=1>', 'of', 'xq<any>', 'ch<color>')
 
