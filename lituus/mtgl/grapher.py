@@ -1464,12 +1464,21 @@ def collate(t,tkns):
 
     # check bi-chain alternate, once again, create a single object
     if ll.matchl(bi_chain_alt,tkns,0) == 0:
-        # based on review of cards, the can be chained into a single object unless
-        # one of the objects is a self-reference
+        # based on review of cards, these can be chained into a single object
+        # unless one of the objects is a self-reference
         if tkns[0] != 'ob<card ref=self>' and tkns[2] != 'ob<card ref=self>':
-            tag,val,ps = mtgl.untag(tkns[0])
-            ps1 = mtgl.untag(tkns[2])[2]
+            # from the 1st object, we want the tag (should be 'ob') and the prop
+            # list. from the 2nd object we want the val and the prop list. Due to
+            # the parser, the 1st object will have a value of permanent the 2nd
+            # will have the value as found in the oracle text (if any) or
+            # permanent if it wasn't stated.
+            # TODO: i don't think there is any problem but should we check
+            #  the second object for other properties?
+            tag,_,ps = mtgl.untag(tkns[0])
+            _,val,ps1 = mtgl.untag(tkns[2])
             ps['characteristics'] += mtgl.AND + ps1['characteristics']
+
+            # add a rootless node, then retag the chained object
             nid = t.add_ur_node('object')
             t.add_attr(nid,'object',mtgl.retag(tag,val,ps))
             return nid,len(bi_chain_alt)
