@@ -391,7 +391,7 @@ to close out cls, that should be a job for graph_clause, the only other way thou
 271. See Ertai's Familiar
 it was happenstance but shows a way that we could get around unmatching 'phases' during graphing. 
  The phrase "... Ertai's Familiar can't phase out."
-because we are working backwords and getting the object belonging to phase out, we end up with obj="Ertai's Familiar", unknown = cannot and lituus-action = "phase out" which we then gets graphed as
+because we are working backwords and getting the object belonging to phase out, we end up with obj="Ertai's Familiar", unknown = cannot and lituus-action = "phase out" which then gets graphed as
  
  ├clause:4(tkns=['cn<cannot>'])
  ├lituus-action-clause:3
@@ -399,8 +399,6 @@ because we are working backwords and getting the object belonging to phase out, 
  │└object:1(object=ob<card ref=self>)
 
 272. what to do with be, become, change
-
-274. target can be object, quantifier or action
 
 275. conjoin instructions? i.e. in activated abilities
 
