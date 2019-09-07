@@ -183,7 +183,7 @@ def graph_kw_line(t,pid,line):
         elif kw == 'affinity':
             # 702.40a Affinity for [text] (i.e. object)
             t.add_node(kwid,'for',object=ps[-1])
-        elif kw == 'modular' and ll.subl([mtgl.HYP,'kw<modular>'],ps) == 0:
+        elif kw == 'modular' and ll.matchl([mtgl.HYP,'kw<modular>'],ps) == 0:
             # rule 702.43c (arcbound wanderer) has the form
             # Modular-Sunburst where Sunburst is a stand-in for N
             # TODO: are there any other cases where a long hyphen seperates
@@ -1781,7 +1781,7 @@ KWA_SPECIAL = [
     'remove','get','return','draw','move','copy','look','pay',
     'deal','gain','lose','attack','block','enter','leave','choose','die',
     'spend','take','skip','cycle','reduce','become','trigger','prevent','declare',
-    'has','have','switch','phase in','phase out','flip','assign','win'
+    'has','have','switch','phase in','phase out','flip','assign','win','target'
 """
 
 #NOTE: pay behaves similarily to add however, it could also be pay life

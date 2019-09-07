@@ -61,6 +61,11 @@ def rectify(olds):
     :param olds: the current list of tokens
     :return: tokens with subsequent entities merged
     """
+    # before enumerating the tokens we'll make some list replacements
+    olds = ll.replacel( # combined or'ed activated, triggered status
+        olds,['xs<activated>','or','xs<triggered>'],['xs<activated∨triggered>']
+    ) # see Stifle
+
     news = []
     skip = 0
     for i,tkn in enumerate(olds):
@@ -83,6 +88,7 @@ def rectify(olds):
 
             # (2) make two and'ed/or'ed 'consecutive' singleton objs one
             if ll.matchl([mtgl.is_coordinator,mtgl.is_mtg_obj],olds[i:],1) == 1:
+                # see Glyph Keeper (spell or ability)
                 t,v,p = mtgl.untag(olds[i+2])
                 if not p: # don't join anything with a prop list
                     if olds[i+1] == 'or': op = mtgl.OR
@@ -198,24 +204,33 @@ def rectify(olds):
                 news.append('vote')
             continue
 
-        # e) activate and trigger are actions unless followed by ob<ability>
-        #if tkn == 'ka<activate>' or tkn == 'xa<trigger>':
-        #    try:
-        #        if mtgl.is_mtg_obj(olds[i+1]) and\
-        #                mtgl.untag(olds[i+1])[1] != 'ability':
-        #            ch = mtgl.untag(tkn)[1]
-        #            ch = ch + 'd' if ch[-1] == 'e' else ch + 'ed'
-        #            news.append(mtgl.retag('ch',ch,{}))
-        #            continue
-        #    except IndexError: pass
+        # f) activate/trigger mtgl and tagger do remove conjugations from activated
+        # (& triggered) so we end up with both 'activate' and 'activated' where
+        # activated is tagged as a status. see Cursed Totem. Here the first activated
+        # is a status but the last activated should be rectified to an action
+        if tkn == 'xs<activated>' or tkn == 'xs<triggered>':
+            # create the tag and value if we have to change the token
+            if tkn == 'xs<activated>':
+                t = 'ka' # activate is recognized in the rules as a KWA
+                v = 'activate'
+            else:
+                t = 'xa' # trigger is not recognized
+                v = 'trigger'
+
+            # if the next token is an object we have a status otherwise, we should
+            # retag as an action
+            if ll.matchl([mtgl.is_mtg_obj],olds[i:],1) != 1:
+                news.append(mtgl.retag(t,v,{}))
+            else: news.append(tkn)
+            continue
 
         # (4) combine numeric phrases
         if mtgl.is_number(tkn):
             # check for 'or' followed by 'more' or 'less'
             try:
                 op = None
-                if ll.subl(['or','less'],olds[i+1:]) == 0: op = mtgl.LE
-                elif ll.subl(['or','more'],olds[i+1:]) == 0: op = mtgl.GE
+                if ll.matchl(['or','less'],olds[i+1:]) == 0: op = mtgl.LE
+                elif ll.matchl(['or','more'],olds[i+1:]) == 0: op = mtgl.GE
                 if op:
                     news.append("nu<{}{}>".format(op,mtgl.untag(tkn)[1]))
                     skip = 2

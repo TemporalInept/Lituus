@@ -90,7 +90,7 @@ def multiverse(update=False):
     # read in AllCards.json
     fin = None
     try:
-        print("Processing local copy AllCards")
+        print("Loading the Multiverse")
         fin = open(os.path.join(mtg.pth_resources, 'AllCards.json'), 'r')
         mverse = json.load(fin)
         fin.close()
@@ -101,7 +101,7 @@ def multiverse(update=False):
         if fin: fin.close()
 
     # parse the mverse
-    print('Parsing the multiverse')
+    print('Parsing the Multiverse')
     import_cards(mv,tc,mverse)
     print("Imported {} cards and {} transformed cards.".format(len(mv), len(tc)))
 

@@ -21,18 +21,6 @@ __status__ = 'Development'
 
 import re
 
-def subl(ss,ls):
-    """
-     determines whether the list of tokens ss can be found in the list ls
-    :param ss: the sublist
-    :param ls: the ls
-    :return: index that sub starts in line or -1
-    """
-    if len(ss) > len(ls): return -1
-    for i in range(0,len(ls)-len(ss)+1):
-        if ls[i:i+len(ss)] == ss: return i
-    return -1
-
 re_all = re.compile(r".+") # catchall for match any token
 def ors(tkns): return re.compile(r"{}".format('|'.join([t for t in tkns])))
 def matchl(ss,ls,a=None):
@@ -76,6 +64,22 @@ def matchl(ss,ls,a=None):
             else: raise TypeError("matchl: invalid type {}".format(type(s)))
         if found: return i
     return -1
+
+def replacel(ls,ss,ns):
+    """
+     replaces occurences of the sublist ms in the list ls with the new sublist n.
+     Uses matchl to find ms so it does not have to be exact list of tokens. The
+     changes are done in place i.e. it modifies ls
+    :param ls: the list to search in
+    :param ss: the sublist to match
+    :param ns: the list to replace sublist with
+    """
+    ls1 = ls[:]
+    j = matchl(ss,ls1)
+    while j > -1:
+        ls1[j:j+len(ss)] = ns
+        j = matchl(ss,ls1)
+    return ls1
 
 def splitl(ls,i):
     """

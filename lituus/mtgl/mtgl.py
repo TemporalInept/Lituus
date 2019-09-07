@@ -478,7 +478,7 @@ re_stat_fix = re.compile(r"(face|phased)(-)(up|down|in|out)")
 # TODO: add these 'suspended','unattached'
 lituus_status = [
     'attacking','blocking','defending','transformed','enchanted','equipped',
-    'exiled','attached','activated','revealed'
+    'exiled','attached','activated','triggered','revealed'
 ]
 re_lituus_stat = re.compile(r"\b({})\b".format('|'.join(lituus_status)))
 
@@ -681,7 +681,7 @@ all_acts = {
     **{w+'s':w for w in all_acts if w[-1] not in ['s','h']},
     **{w+'es':w for w in all_acts if w[-1] in ['s','h']},
     **{w+'d':w for w in all_acts if w not in ['activate','exile'] and w[-1] == 'e'},
-    **{w+'ed':w for w in all_acts if w not in ['reveal','attach'] and w[-1] != 'e'},
+    **{w+'ed':w for w in all_acts if w not in ['trigger','reveal','attach'] and w[-1] != 'e'},
     **{w+'ing':w for w in all_acts if w not in ['attack','block'] and w[-1] != 'e'},
     **{w[:-1]+'ing': w for w in all_acts if w not in ['vote','cycle'] and w[-1] == 'e'}
 }
@@ -782,8 +782,6 @@ re_pro_fix = re.compile(
 )
 
 # TODO: need to scrub this for relevance
-# TODO: annotate use of ch (mtg_characteritistic) as id for activated and
-#  triggered
 rephrase = {
     "ph<turn> sq<after> dm<this> nu<1>":"ph<turn> sq<after> dm<this> ph<turn>",
     "xo<mana> xc<cost>":"ch<mana_cost>",
@@ -800,12 +798,10 @@ rephrase = {
     "xq<that> are st<tapped> and xs<attacking>":"st<tapped> and xs<attacking>",
     "ch<aura> swap":"kw<aura_swap>",
     "cumulative ph<upkeep>":"kw<cumulative_upkeep>",
-    "ka<activate> or xa<trigger> ob<ability>":"ch<activated> or ch<triggered> ob<ability>",
     "ch<will> of the council":"aw<will_of_the_council>",
     "council dilemma":"aw<council's_dilemma>",
     "ph<phase> out":"xa<phase_out>",
     "ph<phase> in":"xa<phase_in>",
-    #"xq<that> xq<target>":"that xa<target>"
 }
 
 # don't get the tagged level_up

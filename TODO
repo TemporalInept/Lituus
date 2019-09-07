@@ -402,4 +402,4 @@ because we are working backwords and getting the object belonging to phase out, 
 
 275. conjoin instructions? i.e. in activated abilities
 
-276. parser->rectify has become really hacky and unwieldy, parser->chain could use a major overhaul as well
+276. parser->rectify has become really hacky and unwieldy (is there even a need to enumerate the list of tokens or could we just use matchl), parser->chain could use a major overhaul as well
