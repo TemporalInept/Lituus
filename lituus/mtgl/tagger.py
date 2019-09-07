@@ -243,7 +243,7 @@ def merge_tags(txt):
     :param txt: the tagged text
     :return: merged tagged text
     """
-    for mt in mtgl.to_merge: txt = txt.replace(mt,mtgl.to_merge[mt])
+    for mt in mtgl.rephrase: txt = txt.replace(mt,mtgl.rephrase[mt])
     return txt
 
 def fix_lvl_up(txt):

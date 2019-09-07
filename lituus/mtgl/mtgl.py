@@ -784,11 +784,10 @@ re_pro_fix = re.compile(
 # TODO: need to scrub this for relevance
 # TODO: annotate use of ch (mtg_characteritistic) as id for activated and
 #  triggered
-# TODO: need a better name for this dict
-to_merge = {
+rephrase = {
     "ph<turn> sq<after> dm<this> nu<1>":"ph<turn> sq<after> dm<this> ph<turn>",
     "xo<mana> xc<cost>":"ch<mana_cost>",
-    "ph<combat> ef<damage>":"ef<combat damage>",
+    "ph<combat> ef<damage>":"ef<combat_damage>",
     "xo<mana> ob<ability>":"xo<mana_ability>",
     "xa<declare> xo<blocker> step":"ph<declare_blockers_step>",
     "xa<declare> xo<attacker> step":"ph<declare_attackers_step>",
@@ -806,7 +805,7 @@ to_merge = {
     "council dilemma":"aw<council's_dilemma>",
     "ph<phase> out":"xa<phase_out>",
     "ph<phase> in":"xa<phase_in>",
-    "xq<that> xq<target>":"that xa<target>"
+    #"xq<that> xq<target>":"that xa<target>"
 }
 
 # don't get the tagged level_up

@@ -1413,7 +1413,7 @@ def _combine_pro_from_(qs):
 tri_chain = [
     mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',mtgl.is_coordinator,mtgl.is_mtg_obj
 ]
-#bi_chain = [mtgl.is_thing,',',mtgl.is_thing] #TODO: what to do with these cases
+bi_chain_no_crd = [mtgl.is_mtg_obj,',',mtgl.is_mtg_obj]
 bi_chain = [mtgl.is_thing,mtgl.is_coordinator,mtgl.is_thing]
 def collate(t,tkns):
     """
@@ -1429,6 +1429,9 @@ def collate(t,tkns):
 
     # check bi-chain
     if conjoin_bi(tkns): return conjoin(t,[tkns[0],tkns[2]],tkns[1]),3
+
+    #if ll.matchl(bi_chain_no_crd,tkns,0) == 0:
+    #    print("{}\n{}".format(tkns[:3],tkns))
 
     # single token?
     if ll.matchl([mtgl.is_thing],tkns,0) == 0:

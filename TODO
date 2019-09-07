@@ -398,4 +398,10 @@ because we are working backwords and getting the object belonging to phase out, 
  │├lituus-action:3(word=phase_out)
  │└object:1(object=ob<card ref=self>)
 
-which is basically perfect. 
+272. what to do with be, become, change
+
+274. target can be object, quantifier or action
+
+275. conjoin instructions? i.e. in activated abilities
+
+276. parser->rectify has become really hacky and unwieldy, parser->chain could use a major overhaul as well

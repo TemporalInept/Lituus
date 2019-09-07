@@ -12,7 +12,7 @@ Parses tagged oracle text and resolves tagger errors using contextual informatio
 
 __name__ = 'parser'
 __license__ = 'GPLv3'
-__version__ = '0.1.8'
+__version__ = '0.1.9'
 __date__ = 'September 2019'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -55,8 +55,7 @@ def rectify(olds):
         like a a chracteristic.
       2. or'ed and and'ed objects (primarily/only spells or abilities) need to be
        combined
-      3. double-tags like ob<xa<copy>> as well as single tags like ka<exile>
-       require context to be fixed
+      3. double tagged an mis-tagged require context to be fixed
       4. combines phrases like nu<1> or more or nu<10> or less into a single
        nu tag
     :param olds: the current list of tokens
@@ -70,51 +69,97 @@ def rectify(olds):
             skip -= 1
             continue
 
-        # if the below fails, drop to end of for loop and just append the token
+        # check 1 and 2 here if current token is an object
         if mtgl.is_mtg_obj(tkn):
             # (1) move (non)token to right of characteristics
-            try:
-                if mtgl.is_mtg_char(olds[i+1]) and 'token' in tkn:
-                    j = i+1
-                    while mtgl.is_mtg_char(olds[j]):
-                        news.append(olds[j])
-                        j += 1
-                        skip += 1
-                    news.append(tkn)
-                    continue
-            except IndexError:
-                pass
+            if 'token' in tkn and ll.matchl([mtgl.is_mtg_char],olds[i:],1) == 1:
+                j = i+1
+                while ll.matchl([mtgl.is_mtg_char],olds[j:],0) == 0:
+                    news.append(olds[j])
+                    j += 1
+                skip = (j-i)-1
+                news.append(tkn)
+                continue
 
             # (2) make two and'ed/or'ed 'consecutive' singleton objs one
-            # TODO: is this still relevant? find an example
-            try:
-                if olds[i+1] == 'or' or olds[i+1] == 'and':
-                    t,v,p = mtgl.untag(olds[i+2])
-                    if t == 'ob' and not p:
-                        op = mtgl.OR if olds[i+1] == 'or' else mtgl.AND
-                        news.append(mtgl.retag(
-                            t,"{}{}{}".format(mtgl.untag(tkn)[1],op,v),{}
-                            )
-                        )
-                        skip = 2
-                        continue
-            except mtgl.MTGLTagException: pass
-            except IndexError: pass
+            if ll.matchl([mtgl.is_coordinator,mtgl.is_mtg_obj],olds[i:],1) == 1:
+                t,v,p = mtgl.untag(olds[i+2])
+                if not p: # don't join anything with a prop list
+                    if olds[i+1] == 'or': op = mtgl.OR
+                    elif olds[i+1] == 'and': op = mtgl.AND
+                    else: op = mtgl.AOR
+                    news.append(mtgl.retag(
+                        t,"{}{}{}".format(mtgl.untag(tkn)[1],op,v),{})
+                    )
+                    skip = 2
+                    continue
 
         # (3) determine if
-        # a) 'xe<xa<copy>>' is an entity or action. If it's followed by an object
+        # a) 'copy' is always tagged as an ob because lituus actions check for an
+        # existing tag before tagging. If it's followed by an object
         # or quantifier, then its an action (lituus) otherwise its an object
-        #  TODO: or will it always be followed by a quantifier target, that, all etc
-        #   for now only do quanitifiers
-        if tkn == 'ob<xa<copy>>':
-            try:
-                if mtgl.is_quantifier(olds[i+1]): news.append('xa<copy>')
-                else: news.append('ob<copy>')
-            except IndexError:
-                news.append('ob<copy>')
+        if tkn == 'ob<copy>':
+            # copy quantifier spell|ability, copy quantifier instant|sorcery
+
+            if ll.matchl([mtgl.is_quantifier,mtgl.is_mtg_obj],olds[i:],1) == 1:
+                news.append('xa<copy>')
+            elif ll.matchl([mtgl.is_quantifier,mtgl.is_mtg_char],olds[i:],1) == 1:
+                news.append('xa<copy>')
+            elif ll.matchl(['xo<it>'],olds[i:],1) == 1:
+                # i.e. copy it
+                news.append('xa<copy>')
+            else:
+                # last check, looking for a phrase "copy the ob<...>" where the
+                # value of ob is spell. Also looking for one of two phrases
+                # in the already added tokens 'you may' or 'spell,'
+                j = ll.matchl(['xp<you>','cn<may>'],news)
+                k = ll.matchl(['ob<spell>', mtgl.CMA],news)
+                if j > -1 and i-j == 2: news.append('xa<copy>')
+                elif k > -1 and i-k == 2: news.append('xa<copy>')
+                elif ll.matchl(['the',mtgl.is_mtg_obj],olds[i:],1) == 1:
+                    _,v,ps = mtgl.untag(olds[i+2])
+                    if v == 'spell': news.append('xa<copy>')
+                    else: news.append('ob<copy>')
+                else:
+                    news.append('ob<copy>')
             continue
 
-        # b) ka<exile> is an action or a zone. If its preceded by a preposition
+        # b) target (114)
+        if tkn == 'xq<target>':
+            # target could be a:
+            #  1. action 'that targets one or more creatures'
+            #  2. quantifier 'destroy target creature'
+            #  3. object 'can't be the target of spells or abilities'
+            # Although as an object, it presence in non-reminder text is limtited
+
+            # NOTE: by using the slice "-n:" we avoid index errors
+
+            if ll.matchl(['cn<cannot>','be','the'],news[-3:]) == 0:
+                # check conversion to object first. The full phrase is "cannot be
+                # the target of..."  but we can check news for "cannot be the".
+                news.append('xo<target>')
+            elif ll.matchl([ll.ors(['becomes','change']),'the'],news[-2:]) == 0:
+                # another conversion to object requires checking for 'becomes' or
+                # 'change' prior to the
+                news.append('xo<target>')
+            elif ll.matchl(['pr<with>','a','single'],news[-3:]) == 0:
+                # look for "with a single"
+                # TODO: are there cases where 'single' is not present or different
+                news.append('xo<target>')
+            elif ll.matchl(['new'],news[-1:]) == 0:
+                # last object check if the preceding word is new
+                news.append('xo<target>')
+            elif ll.matchl([ll.ors(['xq<that>','could','ob<copy>'])],news[-1:]) == 0:
+                # determine if 'target' is an action, the easiest is to check the
+                # preceding tokens if we find, 'that', 'could' or 'copy' it's an
+                # action NOTE: based on the assumption that rectify has correctly
+                # fixed copy tokens
+                news.append('xa<target>')
+            else:
+                news.append('xq<target>')
+            continue
+
+        # c) ka<exile> is an action or a zone. If its preceded by a preposition
         # change it to zone, otherwise leave it alone
         if tkn == 'ka<exile>':
             try:
@@ -124,7 +169,7 @@ def rectify(olds):
                 news.append(tkn)
             continue
 
-        # c) ka<counter> is a keyword action or refers to a counter. In counter
+        # d) ka<counter> is a keyword action or refers to a counter. In counter
         # spells, the word counter is followed by a quantifier. Additionally,
         # the phrase cannot be countered (cn<cannot>, be, ka<counter>) referes
         # to the keyword action
@@ -138,7 +183,7 @@ def rectify(olds):
                 news.append('xo<ctr>')
             continue
 
-        # d) ka<vote> vote appears often in cards relating to voting. We could
+        # e) ka<vote> vote appears often in cards relating to voting. We could
         # take the "strict" interpretation but since we don't yet do that for
         # other keyword-actions we will change cases of the form
         # "tied for the most votes", "gets more votes", "vote is tied"
@@ -153,7 +198,7 @@ def rectify(olds):
                 news.append('vote')
             continue
 
-        # d) activate and trigger are actions unless followed by ob<ability>
+        # e) activate and trigger are actions unless followed by ob<ability>
         #if tkn == 'ka<activate>' or tkn == 'xa<trigger>':
         #    try:
         #        if mtgl.is_mtg_obj(olds[i+1]) and\
@@ -291,8 +336,9 @@ def _comma_read_ahead_(tkns):
     for i,tkn in enumerate(tkns):
         try:
             if tkn == 'or':
-                if not mtgl.is_mtg_obj(tkns[i+1]): return mtgl.CMA
-                else: return mtgl.OR
+                if ll.matchl([mtgl.is_mtg_char,mtgl.is_mtg_obj],tkns[i:],1) == 1:
+                    return mtgl.OR
+                else: return mtgl.CMA
             elif tkn == 'and': return mtgl.AND
             elif tkn == ',': continue # skip the commas
             elif not mtgl.is_mtg_char(tkn): return mtgl.CMA

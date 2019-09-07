@@ -33,8 +33,8 @@ def subl(ss,ls):
         if ls[i:i+len(ss)] == ss: return i
     return -1
 
-# TODO: no need for below, make it a constant, and if found in sublist, it matches
 re_all = re.compile(r".+") # catchall for match any token
+def ors(tkns): return re.compile(r"{}".format('|'.join([t for t in tkns])))
 def matchl(ss,ls,a=None):
     """
      attempts to match the elements in ss to a sublist of ls.
