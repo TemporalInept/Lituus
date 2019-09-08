@@ -285,7 +285,8 @@ def chain(olds):
             # only chain meta characteristics if they are p/t (& not incr/decr)
             # and not part of a level symbol
             _,v,p = mtgl.untag(tkn)
-            if mtgl.is_meta_char(tkn):
+            if not mtgl.is_meta_char(tkn): cs.append(v)
+            else:
                 if v == 'p/t' and news and not mtgl.is_lituus_act(news[-1]):
                     pt = p['val']
                 else:
@@ -300,20 +301,6 @@ def chain(olds):
 
                     # then add the token
                     news.append(tkn)
-                #try:
-                #    if v == 'p/t' and not mtgl.is_lituus_act(news[-1]): pt = p['val']
-                #    else:
-                #        # close out our chain if it is open
-                #        pl = {tp:op.join(cs)}
-                #        if pt: pl['meta'] = 'p/t' + mtgl.EQ + pt
-                #        news.append(mtgl.retag(ti,_implied_obj_(cs),pl))
-                #        news.append(tkn)
-                #        op = mtgl.AND
-                #        cs = []
-                #        pt = None
-                #except IndexError:
-                #    news.append(tkn)
-            else: cs.append(v)
         else:
             # current token is not a characterisitic. If we're not in a chain,
             # append the token otherwise determine how to treat the token
