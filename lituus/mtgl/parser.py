@@ -291,8 +291,9 @@ def chain(olds):
                 # we are in a current chain
                 if tkn == ',':
                     nop = _comma_read_ahead_(olds[i:])
-                    # TODO: cannot remember why I set up the below, cannot
-                    # find a good example
+                    # see grapher->collate, the rules for determining if objects
+                    # should be chained is cumbersome. we'll use basic hueristics
+                    # here and allow the grapher to apply the additional rules
                     if nop == mtgl.AND or nop == ',': # distinct objects
                         pl = {tp:op.join(cs)}
                         if pt: pl['meta'] = 'p/t'+mtgl.EQ+pt

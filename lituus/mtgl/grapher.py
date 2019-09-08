@@ -592,7 +592,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
 
         return skip
 
-    if v == 'exchange': return graph_exchange(t,pid,cls,tkns)
+    if v == 'exchange': return graph_kwa_exchange(t,pid,cls,tkns)
 
     # remaining keyword-actions have parameters that follow the word. Add any
     # open clauses then add a kwa clause and a keyword-action node
@@ -608,7 +608,8 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
             t.add_node(kwid,'zone',zone=tkns[0])
             t.add_node(kwid,'for',card=tkns[2])
             skip = 3
-    elif v == 'shuffle': skip = graph_shuffle(t,kwid,tkns)
+    elif v == 'shuffle': skip = graph_kwa_shuffle(t,kwid,tkns)
+    elif v == 'double': skip = graph_kwa_double(t,kwid,tkns)
     elif v == 'vote':
         # 701.31a vote for one choice
         # the keyword-action is always followed by a for
@@ -652,7 +653,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
 
     return skip
 
-def graph_exchange(t,pid,cls,tkns):
+def graph_kwa_exchange(t,pid,cls,tkns):
     """
      because exchange has so many variations, it is handled here.
     :param t: the tree
@@ -824,7 +825,7 @@ def graph_exchange(t,pid,cls,tkns):
         if cls: t.add_node(pid,'clause',tkns=cls)
         return 0
 
-def graph_shuffle(t,kwid,tkns):
+def graph_kwa_shuffle(t,kwid,tkns):
     """
      because shuffle has so many variations, it is handled here.
     :param t: the tree
@@ -871,6 +872,44 @@ def graph_shuffle(t,kwid,tkns):
         pass
 
     # should never get to here
+    return 0
+
+def graph_kwa_double(t,kwid,tkns):
+    """
+     graphs the keyword action
+    :param t: the tree
+    :param kwid: the id of the current node
+    :param tkns: the list of tokens immediately following ka<shuffle>
+    :return: the skip number
+    """
+    # double 701.9 - doulbe power and/or toughness, double life, double counters
+    # and double mana
+
+    # 701.9f ka<double> amount of mana (also double {X} which technically falls
+    # under double amount of mana see Unbound Flourishing) and Doubling Cube.
+    # This one is hard due to the limited number of cards to use for reference
+    # a. looking for 'amount' and then a reference to mana or b. 'value' followed
+    # by a reference to a number or a number
+    i = ll.matchl([ll.ors(['amount','value'])],tkns)
+    if i > -1:
+        # i should always be 1
+        tkn = tkns[i]
+        if tkn == 'amount':
+            j = ll.matchl(['xo<mana>'],tkns)
+            assert(j > i)
+            # should have something along the lines of 'of .... mana'
+            x = tkns[i+1:i+j] # drop the first 'of' when adding
+            t.add_node(kwid,'mana',by=x[1:] if x[0] == 'of' else x)
+        else:
+            j = ll.matchl([mtgl.is_number],tkns)
+            assert(j > i)
+            t.add_node(kwid,'value',of=mtgl.untag(tkns[j])[1])
+        return i+j
+
+    # ka<double> power and/or toughness 701.9a
+    # ka<double> player's life 701.9d
+    # ka<double> # of counters on player or permanent 701.9e
+
     return 0
 
 def graph_lituus_action(t,pid,cls,la,tkns):
@@ -1142,7 +1181,7 @@ def graph_lituus_action_put(t,pid,tkns):
     :return: skip, the number of items in tkns that have been processed
     """
     # put refers to two separate actions 1) put a counter on an object and 2)
-    # put a card into zone
+    # put a card into a zone
 
     # Action 1 - (121.6) put a counter on an object. Basic (single) has the form
     # xa<put> xo<ctr...> pr<on> ob<...>
@@ -1153,8 +1192,8 @@ def graph_lituus_action_put(t,pid,tkns):
     #   phrasing, due to the xo<ctr...> and pr<on> repeated between the conjoined
     #   objects - therefor it is handled here
 
-    # TODO: we need to relook at quantifiers, will there be any with something
-    #  other than any
+    # TODO: we need to relook at quantifiers, will there be cards with something
+    #  other than 'any'
     # triple counter conjunction (only 2 cards Incremental Growth, Incremental Blight
     if ll.matchl(put_ctr_tpl,tkns,0) == 0:
         cid = t.add_node(pid,'conjunction',coordinator='and',item_type='counter')
