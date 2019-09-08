@@ -886,16 +886,19 @@ def graph_kwa_double(t,kwid,tkns):
     # and double mana.
 
     # 701.9a (b,c) ka<double> power and/or toughness two basic forms
-    # double [the|target] characteristic of obj<creature> or
-    # double obj<creature> characteristic
-    # take the easy one first
+    # double obj<creature> characteristic or the edge case
+    # double [the|target] characteristic of obj<creature> (God-Eternal Rhonas)
+    # primary case
     if ll.matchl([mtgl.is_thing,mtgl.is_meta_char],tkns) == 0:
-        t.add_node(
-            kwid,'P/T',characteristic=mtgl.untag(tkns[1])[1],creature=tkns[0]
-        )
+        t.add_node(kwid,'P/T',characteristic=mtgl.untag(tkns[1])[1],creature=tkns[0])
         return 2
 
-    # 701.9d ka<double> player's life with edge case Game of Chaos
+    # edge case
+    if ll.matchl(['the',mtgl.is_meta_char,'of',mtgl.is_mtg_obj],tkns) == 0:
+        t.add_node(kwid,'P/T',characteristic=mtgl.untag(tkns[1])[1],creature=tkns[3])
+        return 4
+
+    # 701.9d ka<double> player's life
     # looking for 'player life total'
     i = ll.matchl([mtgl.is_player,'xc<life_total>'],tkns)
     if i > - 1:
@@ -934,6 +937,7 @@ def graph_kwa_double(t,kwid,tkns):
     # This one is hard due to the limited number of cards to use for reference
     # a. looking for 'amount' and then a reference to mana or b. 'value' followed
     # by a reference to a number or a number
+    # TODO: check Unbound Flourshing once new allcards is download
     i = ll.matchl([ll.ors(['amount','value'])],tkns)
     if i > -1:
         # i should always be 1
@@ -1080,7 +1084,8 @@ def graph_lituus_action_add(t,pid,tkns):
         # add amplfying clause (if it exists), the mana-clause and
         # qualifying clause (if it exists)
         if amp: t.add_node(mid,'amplifying-clause',tkns=amp)
-        t.add_node(mid,'mana-clause',quantity=q,of="{} {}".format(x,o))
+        mcid=t.add_node(mid,'mana-clause',of="{} {}".format(x,o))
+        if q: t.add_attr(mcid,'quantity',q)
         if rem:
             stop = ll.matchl([mtgl.PER],rem)
             if stop > -1: rem = rem[:stop]
@@ -1141,7 +1146,7 @@ def graph_lituus_action_add(t,pid,tkns):
             t.add_node(mid, 'qualifying-clause',tkns=rem)
         return len(amp)+len(mc)+len(rem)
 
-    # case 1.d NOTE: there are not nay "any combination of types"
+    # case 1.d NOTE: there are not any "any combination of types"
     nm4 = [mtgl.re_mana_tag,'pr<in>','xq<any>','combination','of','ch<color>']
     l4 = len(nm4)
     i = ll.matchl(nm4,tkns)
@@ -1170,7 +1175,7 @@ def graph_lituus_action_add(t,pid,tkns):
     if i > -1:
         amp,mc,rem = ll.splitl(tkns,i)
 
-        # get quantity if present
+        # get quantity if present TODO: what to do if it isnt
         try:
             q = mtgl.re_mana_tag.match(mc).group(2)
         except AttributeError:

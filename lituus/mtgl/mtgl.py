@@ -848,6 +848,7 @@ rephrase = {
     "council dilemma":"aw<council's_dilemma>",
     "ph<phase> out":"xa<phase_out>",
     "ph<phase> in":"xa<phase_in>",
+    "xa<deal> ka<double> xq<that>":"xa<deal> twice xq<that>" # double is not a keyword action here
 }
 
 # don't get the tagged level_up
