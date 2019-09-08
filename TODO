@@ -390,8 +390,6 @@ because we are working backwords and getting the object belonging to phase out, 
 
 280. Having 'fixed' xo<it> xp<controller> have to 
  a. see if it jacked anything up
- b. fix Echoing Truth and the like "... their owners' hands." (Note their is 
- being misstaged as a player)
  c. look at doing the same for phrases like 'that card's owner' i.e. Acorn Catapult
   'ob<permanent quantifier=that>', 'xp<controller>' 
  which will be difficult (how would we retag this) ?

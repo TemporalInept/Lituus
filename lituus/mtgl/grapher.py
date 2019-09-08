@@ -907,9 +907,12 @@ def graph_kwa_double(t,kwid,tkns):
             t.add_node(kwid,'value',of=mtgl.untag(tkns[j])[1])
         return i+j
 
-    # ka<double> player's life 701.9d with edge case Game of Chaos
+    # 701.9d ka<double> player's life with edge case Game of Chaos
     # looking for 'player life total'
-    i = ll.matchl(['xc<life_total']) # get the index of life total
+    i = ll.matchl([mtgl.is_player,'xc<life_total>'],tkns)
+    if i > - 1:
+        t.add_node(kwid,'life-total',who=tkns[i])
+        return i+2
 
     # ka<double> power and/or toughness 701.9a
     # ka<double> # of counters on player or permanent 701.9e
@@ -1449,6 +1452,8 @@ def _combine_pro_from_(qs):
     qs = mtgl.AND.join([mtgl.untag(q)[2]['characteristics'] for q in qs])
     return mtgl.retag('ob','card',{'characteristics':qs})
 
+# TODO: have to look at is_mtg_obj vs is_thing there are cases (Contempt)
+#  at least in bi-chains where an mtg object should be conjoined with a lituus obj
 qud_chain = [ # only a few quad chain cards (see Decimate)
     mtgl.is_mtg_obj,mtgl.CMA,                                    # 0,1
     mtgl.is_mtg_obj,mtgl.CMA,                                    # 2,3
