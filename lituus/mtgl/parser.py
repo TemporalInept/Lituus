@@ -69,12 +69,12 @@ def rectify(olds):
         olds,['xs<activated>','or','xs<triggered>'],['xs<activated∨triggered>']
     )
 
-    # b. combine xo<it> xp<...>
-    i = ll.matchl(['xo<it>',mtgl.is_player],olds)
+    # b. combine xo<it> xp<...> and xp<their> xp<...>
+    i = ll.matchl([ll.ors(['xo<it>','xp<their>']),mtgl.is_player],olds)
     if i > -1:
-        t,v,ps = mtgl.untag(olds[i+1])     # should only be xp<controller|owner>
-        ps['of'] = 'it'                    # add of=it to proplist
-        olds[i:i+2] = [mtgl.retag(t,v,ps)] # replace the phrase with the new obj
+        t,v,ps = mtgl.untag(olds[i+1])
+        ps['of'] = 'it' if olds[i] == 'xo<it>' else 'them' # add of=? to proplist
+        olds[i:i+2] = [mtgl.retag(t,v,ps)]                 # retag
 
     news = []
     skip = 0

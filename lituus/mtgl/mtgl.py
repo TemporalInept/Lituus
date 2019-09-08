@@ -447,18 +447,58 @@ re_landwalk_pre = re.compile(r"(\w+?)(?<!\sland)walk(?!er)")  # seperate type & 
 # acronyms and 3) idiosyncratic conjugations and 4) categories with a limited
 # number of items
 word_hacks = {
-    "can't":"cannot","don't":"dont","didn't":"didnt","it's":"it is","isn't": "isnt",
-    "haven't":"havent","its":"it","aren't":"arent","you're":"youre","couldn't":"couldnt",
-    "they're":"theyre","doesn't":"doesnt","you've":"youve","that's":"thats",
-    "wasn't":"wasnt","weren't":"werent",'an':"a","werewolves":"werewolf",
-    "allies":"ally","end of turn":"eot","converted mana cost":"cmc","paid":"pay",
-    "spells":"spell","abilities":"ability","cards":"card","copies":"copy",
-    "tokens":"token","permanents":"permanent","emblems":"emblem","sorceries":"sorcery",
-    "dealt":"deal","left":"leave","lost":"lose","sources":"source","targets":"target",
-    "controls": "control","your":"you","opponents":"opponent","teammates":"teammate",
-    "players":"player","libraries":"library","owners":"owner","controllers":"controller",
-    "phases":"phase","turns":"turn","steps":"step","spent":"spend","dying":"die",
-    "chosen":"choose","attackers":"attacker","blockers":"blocker","graveyards":"graveyard",
+    "can't":"cannot",
+    "don't":"dont",
+    "didn't":"didnt",
+    "it's":"it is",
+    "isn't": "isnt",
+    "haven't":"havent",
+    "its":"it",
+    "aren't":"arent",
+    "you're":"youre",
+    "couldn't":"couldnt",
+    "they're":"theyre",
+    "doesn't":"doesnt",
+    "you've":"youve",
+    "that's":"thats",
+    "wasn't":"wasnt",
+    "weren't":"werent",
+    'an':"a",
+    "werewolves":"werewolf",
+    "allies":"ally",
+    "end of turn":"eot",
+    "converted mana cost":"cmc",
+    "paid":"pay",
+    "spells":"spell",
+    "abilities":"ability",
+    "cards":"card","copies":"copy",
+    "tokens":"token",
+    "permanents":"permanent",
+    "emblems":"emblem",
+    "sorceries":"sorcery",
+    "dealt":"deal",
+    "left":"leave",
+    "lost":"lose",
+    "sources":"source",
+    "targets":"target",
+    "controls":"control",
+    "your":"you",
+    "opponents":"opponent",
+    "teammates":"teammate",
+    "players":"player",
+    "libraries":"library",
+    "owners":"owner",
+    "controllers":"controller",
+    "phases":"phase",
+    "turns":"turn",
+    "steps":"step",
+    "spent":"spend",
+    "dying":"die",
+    "chosen":"choose",
+    "attackers":"attacker",
+    "blockers":"blocker",
+    "graveyards":"graveyard",
+    "hands":"hand",
 }
 re_wh = re.compile(r"\b({})\b".format('|'.join(word_hacks.keys())))
 
@@ -546,7 +586,7 @@ re_ef = re.compile(r"(?<!combat\s)(damage)(?!>)")
 
 # ENTITIES
 
-# lituus players
+# lituus players # TODO: not sure if their should be tagged it can reference objs tool
 # NOTE: teammate is only referenced once outside of reminder text (Imperial Mask)
 lituus_players = ['you','opponent','teammate','player','owner','controller','their']
 re_lituus_ply = re.compile(r"\b({})\b".format('|'.join(lituus_players)))

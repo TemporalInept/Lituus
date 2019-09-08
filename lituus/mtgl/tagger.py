@@ -94,7 +94,8 @@ def standarize(txt):
     :param txt: the current text
     :return: standarized text
     """
-    ntxt = txt.replace(';',mtgl.CMA)
+    ntxt = txt.replace(';',mtgl.CMA) # replace semi-colon in older card's keyword lists
+    ntxt = ntxt.replace("s' ","s ") # plural possessives
     ntxt = mtgl.re_wh.sub(lambda m: mtgl.word_hacks[m.group(1)],ntxt)
     ntxt = ntxt.replace("'s","")
     ntxt = ntxt.replace("s'","s")
