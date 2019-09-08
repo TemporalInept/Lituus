@@ -69,7 +69,7 @@ def replacel(ls,ss,ns):
     """
      replaces occurences of the sublist ms in the list ls with the new sublist n.
      Uses matchl to find ms so it does not have to be exact list of tokens. The
-     changes are done in place i.e. it modifies ls
+     changes create a new list
     :param ls: the list to search in
     :param ss: the sublist to match
     :param ns: the list to replace sublist with

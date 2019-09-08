@@ -50,7 +50,7 @@ def parse(txt):
 
 def rectify(olds):
     """
-     fixes three issues.
+     fixes several issues.
       1. token (non)token is the only top-level object from rule 109 but acts
         like a a chracteristic.
       2. or'ed and and'ed objects (primarily/only spells or abilities) need to be
@@ -58,13 +58,23 @@ def rectify(olds):
       3. double tagged an mis-tagged require context to be fixed
       4. combines phrases like nu<1> or more or nu<10> or less into a single
        nu tag
+      5. miscellaneous fixes that assist in parsing and graphing
     :param olds: the current list of tokens
     :return: tokens with subsequent entities merged
     """
-    # before enumerating the tokens we'll make some list replacements
-    olds = ll.replacel( # combined or'ed activated, triggered status
+    # 5. before enumerating the tokens we'll make some list replacements
+
+    # a. combined or'ed activated, triggered status (see Stifle
+    olds = ll.replacel(
         olds,['xs<activated>','or','xs<triggered>'],['xs<activated∨triggered>']
-    ) # see Stifle
+    )
+
+    # b. combine xo<it> xp<...>
+    i = ll.matchl(['xo<it>',mtgl.is_player],olds)
+    if i > -1:
+        t,v,ps = mtgl.untag(olds[i+1])     # should only be xp<controller|owner>
+        ps['of'] = 'it'                    # add of=it to proplist
+        olds[i:i+2] = [mtgl.retag(t,v,ps)] # replace the phrase with the new obj
 
     news = []
     skip = 0
@@ -707,15 +717,15 @@ def merge_possessive(olds):
             # followed by the zone
             try:
                 if mtgl.is_zone(olds[i+1]):
-                    pt,pv,pp = mtgl.untag(tkn)
+                    pt,pv,pps = mtgl.untag(tkn)
                     zt,zv,_ = mtgl.untag(olds[i+1]) # shouldnt be a prop-list
-                    if not 'quantifier' in pp: val = pv
-                    else: val = pp['quantifier'] + mtgl.AND + pv
 
-                    # it's possible that we have also have an it preceding this
-                    # see Guile "... ts owner's library."
-                    # before adding the zone, run a check and pop if necessary
-                    if news and news[-1] == 'xo<it>': news.pop()
+                    # check for quantifiers in the plaer
+                    if not 'quantifier' in pps: val = pv
+                    else: val = pps['quantifier'] + mtgl.AND + pv
+
+                    # check for 'of' in the player (looking for xp<owner of=it>
+                    if 'of' in pps: val = pps['of'] + mtgl.ARW + val
 
                     # add the zone to news
                     news.append(mtgl.retag(zt,zv,{'player':val}))

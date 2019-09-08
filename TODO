@@ -229,13 +229,6 @@ another if ... would ... instead version
      ├clause:0(tkns=['ob<card>', 'pr<in>', 'zn<library player=you>'])
 the clause specifies what is to be revealed
 
-205. It's controller - xo<it> xp<controller> is a player as it refers to the controller of it do something lie xp<controller of=it> do the same for its owner
-
-However, in doing so, parser->merge possessives "elif mtgl.is_player(tkn)" will need to be updated 
-
-- there are 776 instances of xo<it> xp<owner> - 403 have a zone following
-- there are 403 instances of xo<it> xp<controller> - 13 have a zone following
-
 207. xa<enter> xa<die> should be retagged as something other than action (event??) or should they??
 
 209. Look at Goblin Flotilla, has two triggered abilities
@@ -394,3 +387,13 @@ because we are working backwords and getting the object belonging to phase out, 
 278. see Angelic Voices, Godsire, characteristics are not being chain but would be if they were run through grapher->collate. Godsire is also another example of a hanging clause
 
 279. Keep 'have' ('has','get') as a lituus action? or lump them into be, become
+
+280. Having 'fixed' xo<it> xp<controller> have to 
+ a. see if it jacked anything up
+ b. fix Echoing Truth and the like "... their owners' hands." (Note their is 
+ being misstaged as a player)
+ c. look at doing the same for phrases like 'that card's owner' i.e. Acorn Catapult
+  'ob<permanent quantifier=that>', 'xp<controller>' 
+ which will be difficult (how would we retag this) ?
+  xp<controller of=that^permanent> ???
+

@@ -908,8 +908,8 @@ def graph_kwa_double(t,kwid,tkns):
         return i+j
 
     # ka<double> player's life 701.9d with edge case Game of Chaos
-
-
+    # looking for 'player life total'
+    i = ll.matchl(['xc<life_total']) # get the index of life total
 
     # ka<double> power and/or toughness 701.9a
     # ka<double> # of counters on player or permanent 701.9e
@@ -1386,8 +1386,6 @@ def ta_clause(tkns):
     # look for key phrases to determine where the condition and effect are joined
     # these are
     #  Thing action-word or player (may) action-word
-    #  TODO: see 205, we currently hack "xo<it> xp<controller>|xp<owner>" as a
-    #   player action-word
     # conditional-if, that is, cn<if> signifies that this clause is part of the
     #  condition, the effect will be the next clause
     #   TODO: are there any other conditions we have to look at
@@ -1403,11 +1401,6 @@ def ta_clause(tkns):
             if ll.matchl([mtgl.is_phase],s[-1:],0) == 0: split = 1
             else: continue
         if ll.matchl([mtgl.is_thing,mtgl.is_action],s,0) == 0:
-            split = i
-            break
-        elif ll.matchl(['xo<it>',mtgl.is_player,mtgl.is_action],s,0) == 0:
-            # TODO: once we find a solution to 205, we can look at combining
-            #  this into Thing, action
             split = i
             break
         elif ll.matchl([mtgl.is_player,'cn<may>',mtgl.is_action],s,0) == 0:
