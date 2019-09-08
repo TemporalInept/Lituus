@@ -914,8 +914,35 @@ def graph_kwa_double(t,kwid,tkns):
         t.add_node(kwid,'life-total',who=tkns[i])
         return i+2
 
-    # ka<double> power and/or toughness 701.9a
     # ka<double> # of counters on player or permanent 701.9e
+    # looking for "the number of CTR on obj|Thing
+    # TODO: this might be a place to collate even though at this point, I have
+    #  not seen a case of doubling counters on conjoined objects
+    if ll.matchl(['the','number','of',mtgl.is_lituus_obj],tkns,0) == 0:
+        # split on the 3rd token (which should be the counter(s)
+        _,ctr,rem = ll.splitl(tkns,3)
+        _,val,ps = mtgl.untag(ctr)
+        assert(val == 'ctr')
+
+        # grab the Thing
+        i = ll.matchl([mtgl.is_thing],rem)
+        ob = rem[i] # will throw an error if we don't have an object
+
+        # is there an intermediate clause
+        cls = rem[1:i]
+        if cls:
+            # see if we can find a quantifier & if so, untag it
+            j = ll.matchl([mtgl.is_quantifier],cls)
+            if j > -1: cls = mtgl.untag(cls[j])[1]
+
+        # create the node and ad quantifying clause if present
+        nid = t.add_node(kwid,'counters',type=ps['type'],thing=ob)
+        if cls: t.add_attr(nid,'quantifier',cls)
+
+        return 4+i+1 # (the intial clause, then 1 past the thing)
+
+    # ka<double> power and/or toughness 701.9a
+
 
     return 0
 
@@ -1550,14 +1577,14 @@ def conjoin(t,objs,c):
     #  be in each object but is only found in the first
 
     # initialize top-level attributes to None and update coordinator if neccessary
-    qtr = num = pk = pv = itype = None
+    qtr = num = pk = pv = None
     crd = 'and/or' if c == 'op<⊕>' else c
 
     # get any quantifier and/or number from the first object
     # TODO: do we need to verify that val is the same for each object?
     tag,val,ps = mtgl.untag(objs[0])
     qtr = ps['quantifier'] if 'quantifier' in ps else None
-    itype = val
+
     if qtr: del ps['quantifier']
     if 'num' in ps:
         # for number, store it, delete the attribute from the object & retag it
