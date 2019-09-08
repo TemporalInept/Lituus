@@ -633,7 +633,7 @@ re_ch_pt = re.compile(r"(\+|-)?nu<(\d+)>/(\+|-)?nu<(\d+)>(?!\scounter)")
 
 # lituus characteristics - have to make sure it has not already been tagged
 lituus_characteristics = [  # NOTE: these apply primarily to player
-    'life_total','control','own','life','cost','hand size','devotion'
+    'life total','control','own','life','cost','hand size','devotion'
 ]
 re_lituus_ch = re.compile(r"\b({})\b(?!>)".format('|'.join(lituus_characteristics)))
 

@@ -882,8 +882,8 @@ def graph_kwa_double(t,kwid,tkns):
     :param tkns: the list of tokens immediately following ka<shuffle>
     :return: the skip number
     """
-    # double 701.9 - doulbe power and/or toughness, double life, double counters
-    # and double mana
+    # double 701.9 - double power and/or toughness, double life, double counters
+    # and double mana. Start with the less common sub-cases
 
     # 701.9f ka<double> amount of mana (also double {X} which technically falls
     # under double amount of mana see Unbound Flourishing) and Doubling Cube.
@@ -898,6 +898,7 @@ def graph_kwa_double(t,kwid,tkns):
             j = ll.matchl(['xo<mana>'],tkns)
             assert(j > i)
             # should have something along the lines of 'of .... mana'
+            # TODO: have to graph the tokens or further parse somehow
             x = tkns[i+1:i+j] # drop the first 'of' when adding
             t.add_node(kwid,'mana',by=x[1:] if x[0] == 'of' else x)
         else:
@@ -906,8 +907,11 @@ def graph_kwa_double(t,kwid,tkns):
             t.add_node(kwid,'value',of=mtgl.untag(tkns[j])[1])
         return i+j
 
+    # ka<double> player's life 701.9d with edge case Game of Chaos
+
+
+
     # ka<double> power and/or toughness 701.9a
-    # ka<double> player's life 701.9d
     # ka<double> # of counters on player or permanent 701.9e
 
     return 0
