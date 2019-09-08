@@ -883,29 +883,17 @@ def graph_kwa_double(t,kwid,tkns):
     :return: the skip number
     """
     # double 701.9 - double power and/or toughness, double life, double counters
-    # and double mana. Start with the less common sub-cases
+    # and double mana.
 
-    # 701.9f ka<double> amount of mana (also double {X} which technically falls
-    # under double amount of mana see Unbound Flourishing) and Doubling Cube.
-    # This one is hard due to the limited number of cards to use for reference
-    # a. looking for 'amount' and then a reference to mana or b. 'value' followed
-    # by a reference to a number or a number
-    i = ll.matchl([ll.ors(['amount','value'])],tkns)
-    if i > -1:
-        # i should always be 1
-        tkn = tkns[i]
-        if tkn == 'amount':
-            j = ll.matchl(['xo<mana>'],tkns)
-            assert(j > i)
-            # should have something along the lines of 'of .... mana'
-            # TODO: have to graph the tokens or further parse somehow
-            x = tkns[i+1:i+j] # drop the first 'of' when adding
-            t.add_node(kwid,'mana',by=x[1:] if x[0] == 'of' else x)
-        else:
-            j = ll.matchl([mtgl.is_number],tkns)
-            assert(j > i)
-            t.add_node(kwid,'value',of=mtgl.untag(tkns[j])[1])
-        return i+j
+    # 701.9a (b,c) ka<double> power and/or toughness two basic forms
+    # double [the|target] characteristic of obj<creature> or
+    # double obj<creature> characteristic
+    # take the easy one first
+    if ll.matchl([mtgl.is_thing,mtgl.is_meta_char],tkns) == 0:
+        t.add_node(
+            kwid,'P/T',characteristic=mtgl.untag(tkns[1])[1],creature=tkns[0]
+        )
+        return 2
 
     # 701.9d ka<double> player's life with edge case Game of Chaos
     # looking for 'player life total'
@@ -914,7 +902,7 @@ def graph_kwa_double(t,kwid,tkns):
         t.add_node(kwid,'life-total',who=tkns[i])
         return i+2
 
-    # ka<double> # of counters on player or permanent 701.9e
+    # 701.9e ka<double> of counters on player or permanent
     # looking for "the number of CTR on obj|Thing
     # TODO: this might be a place to collate even though at this point, I have
     #  not seen a case of doubling counters on conjoined objects
@@ -941,8 +929,27 @@ def graph_kwa_double(t,kwid,tkns):
 
         return 4+i+1 # (the intial clause, then 1 past the thing)
 
-    # ka<double> power and/or toughness 701.9a
-
+    # 701.9f ka<double> amount of mana (also double {X} which technically falls
+    # under double amount of mana see Unbound Flourishing) and Doubling Cube.
+    # This one is hard due to the limited number of cards to use for reference
+    # a. looking for 'amount' and then a reference to mana or b. 'value' followed
+    # by a reference to a number or a number
+    i = ll.matchl([ll.ors(['amount','value'])],tkns)
+    if i > -1:
+        # i should always be 1
+        tkn = tkns[i]
+        if tkn == 'amount':
+            j = ll.matchl(['xo<mana>'],tkns)
+            assert(j > i)
+            # should have something along the lines of 'of .... mana'
+            # TODO: have to graph the tokens or further parse somehow
+            x = tkns[i+1:i+j] # drop the first 'of' when adding
+            t.add_node(kwid,'mana',by=x[1:] if x[0] == 'of' else x)
+        else:
+            j = ll.matchl([mtgl.is_number],tkns)
+            assert(j > i)
+            t.add_node(kwid,'value',of=mtgl.untag(tkns[j])[1])
+        return i+j
 
     return 0
 
