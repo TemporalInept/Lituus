@@ -10,7 +10,7 @@ version.
 Graphs parsed oracle text as a rooted, ordered directed acyclic graph i.e. a Tree
 """
 
-__name__ = 'grapher'
+#__name__ = 'grapher'
 __license__ = 'GPLv3'
 __version__ = '0.0.4'
 __date__ = 'September 2019'

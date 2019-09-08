@@ -10,7 +10,7 @@ version.
 MTG (Language) Tree
 """
 
-__name__ = 'mtgt'
+#__name__ = 'mtgt'
 __license__ = 'GPLv3'
 __version__ = '0.0.2'
 __date__ = 'August 2019'

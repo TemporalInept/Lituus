@@ -10,7 +10,7 @@ version.
 Defines helper functions for list processing
 """
 
-__name__ = 'list_util'
+#__name__ = 'list_util'
 __license__ = 'GPLv3'
 __version__ = '0.0.1'
 __date__ = 'August 2019'

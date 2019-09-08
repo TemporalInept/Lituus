@@ -10,7 +10,7 @@ version.
 Constants and general functions
 """
 
-__name__ = 'mtg'
+#__name__ = 'mtg'
 __license__ = 'GPLv3'
 __version__ = '0.2.0'
 __date__ = 'May 2019'

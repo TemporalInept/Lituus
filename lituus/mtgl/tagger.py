@@ -10,7 +10,7 @@ version.
 Tags MTG oracle text in the mtgl format
 """
 
-__name__ = 'tagger'
+#__name__ = 'tagger'
 __license__ = 'GPLv3'
 __version__ = '0.0.5'
 __date__ = 'September 2019'

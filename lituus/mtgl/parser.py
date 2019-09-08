@@ -10,7 +10,7 @@ version.
 Parses tagged oracle text and resolves tagger errors using contextual information
 """
 
-__name__ = 'parser'
+#__name__ = 'parser'
 __license__ = 'GPLv3'
 __version__ = '0.1.9'
 __date__ = 'September 2019'

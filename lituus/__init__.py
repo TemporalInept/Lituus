@@ -22,7 +22,7 @@ Contains:
  scrape.py scraper for online decks
 """
 
-__name__ = 'Lituus'
+#__name__ = 'Lituus'
 __license__ = 'GPLv3'
 __version__ = '0.1.0'
 __date__ = 'May 2019'

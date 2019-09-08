@@ -28,7 +28,7 @@ check documentation for your Operating System, Distro (where applicable) and Pyt
 
 """
 
-__name__ = 'Lituus'
+#__name__ = 'Lituus'
 __license__ = 'GPLv3'
 __version__ = '0.1.0'
 __date__ = 'May 2019'

@@ -10,7 +10,7 @@ version.
 Defines the MTGCard class - a wrapper around a  card dict
 """
 
-__name__ = 'mtgcard'
+#__name__ = 'mtgcard'
 __license__ = 'GPLv3'
 __version__ = '0.1.6'
 __date__ = 'August 2019'
@@ -36,10 +36,10 @@ class MTGCard(object):
     """ a more manageable wrapper around a card dictionary """
     def __init__(self,card):
         # set the card dict then pass the networkx tree to a ParseTree
-        self._card = card # the card dict
-        self._kws = []    # list of keywords
-        self._aws = []    # list of ability words
-        self._kas = []    # list of keyword actions
+        self._card = card                       # the card dict
+        self._kws = []                          # list of keywords
+        self._aws = []                          # list of ability words
+        self._kas = []                          # list of keyword actions
         self._tree = mtgt.MTGTree(card['mtgt']) # initialize the parse tree
 
         # pull out the keywords

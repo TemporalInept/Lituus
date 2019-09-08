@@ -10,7 +10,7 @@ version.
 Parser and MTGCard generator for all cEDH legal cards in the multiverse
 """
 
-__name__ = 'multiverse'
+#__name__ = 'multiverse'
 __license__ = 'GPLv3'
 __version__ = '0.2.2'
 __date__ = 'July 2019'
@@ -60,10 +60,7 @@ def multiverse(update=False):
             for cname in mv: n2r[cname] = md5(cname.encode()).hexdigest()
             mtgl.set_n2r(n2r)
 
-            # Because of pickling errors with self defined classes issue #124
-            # we have to objectify (create mtglo objects) here and convert
-            # the dict to MTGCards
-            return {name:mtgcard.MTGCard(mv[name]) for name in mv}
+            return mv
         except pickle.PickleError as e:
             print("Error loading multiverse: {}. Loading from JSON".format(e))
         finally:
@@ -152,9 +149,7 @@ def multiverse(update=False):
     finally:
         if fout: fout.close()
 
-    # Because of pickling errors with self defined classes issue #124 we have
-    # to objectify here converting the dictto MTGCards prior to returning
-    return {name:mtgcard.MTGCard(mv[name]) for name in mv}
+    return mv
 
 def import_cards(mv,tc,mverse):
     """
@@ -211,10 +206,10 @@ def import_cards(mv,tc,mverse):
 
         # determine if the card goes in the multiverse dict or transformed
         if jcard['layout'] == 'transform' and jcard['side'] == 'b':
-            tc[cname] = dcard
+            tc[cname] = mtgcard.MTGCard(dcard)
         elif jcard['layout'] == 'meld' and jcard['side'] == 'c':
-            tc[cname] = dcard
-        else: mv[cname] = dcard
+            tc[cname] = mtgcard.MTGCard(dcard)
+        else: mv[cname] = mtgcard.MTGCard(dcard)
 
         # save split cards for combing later
         if jcard['layout'] == 'split':
@@ -225,26 +220,26 @@ def import_cards(mv,tc,mverse):
         name = " // ".join(split)
         a,b = split[0],split[1]
         dcard = {
-            'rid':"{} // {}".format(mv[a]['rid'],mv[b]['rid']),
-            'name': "{} // {}".format(mv[a]['name'], mv[b]['name']),
-            'mana-cost':"{} // {}".format(mv[a]['mana-cost'],mv[b]['mana-cost']),
-            'oracle':"{} // {}".format(mv[a]['oracle'],mv[b]['oracle']),
-            'tag':"{} // {}".format(mv[a]['tag'],mv[b]['tag']),
-            'tkn':mv[a]['tkn'] + [['//']] + mv[b]['tkn'],
-            'mtgl':mv[a]['mtgl'] + [['//']] + mv[b]['mtgl'],
-            'mtgt':mtgt.fuse_tree(mv[a]['mtgt'],mv[b]['mtgt']),
-            'super-type':mv[a]['super-type'] + mv[b]['super-type'],
-            'type':mv[a]['type'] + mv[b]['type'],
-            'sub-type':mv[a]['sub-type'] + mv[b]['sub-type'],
-            'cmc':mv[a]['cmc'],
-            'color-ident':mv[a]['color-ident'],
-            'sets':mv[a]['sets'],
+            'rid':"{} // {}".format(mv[a]._card['rid'],mv[b]._card['rid']),
+            'name': "{} // {}".format(mv[a]._card['name'], mv[b]._card['name']),
+            'mana-cost':"{} // {}".format(mv[a]._card['mana-cost'],mv[b]._card['mana-cost']),
+            'oracle':"{} // {}".format(mv[a]._card['oracle'],mv[b]._card['oracle']),
+            'tag':"{} // {}".format(mv[a]._card['tag'],mv[b]._card['tag']),
+            'tkn':mv[a]._card['tkn'] + [['//']] + mv[b]._card['tkn'],
+            'mtgl':mv[a]._card['mtgl'] + [['//']] + mv[b]._card['mtgl'],
+            'mtgt':mtgt.fuse_tree(mv[a]._card['mtgt'],mv[b]._card['mtgt']),
+            'super-type':mv[a]._card['super-type'] + mv[b]._card['super-type'],
+            'type':mv[a]._card['type'] + mv[b]._card['type'],
+            'sub-type':mv[a]._card['sub-type'] + mv[b]._card['sub-type'],
+            'cmc':mv[a]._card['cmc'],
+            'color-ident':mv[a]._card['color-ident'],
+            'sets':mv[a]._card['sets'],
             'P/T':None,
             'loyalty':None
         }
         del mv[a]
         del mv[b]
-        mv[name] = dcard
+        mv[name] = mtgcard.MTGCard(dcard)
 
 def harvest(name,jcard):
     """

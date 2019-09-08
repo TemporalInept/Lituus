@@ -21,7 +21,7 @@ Contains:
  mtgt.py - defines the MTGTree (a wrapper around a networkx rooted, ordered DAG)
 """
 
-__name__ = 'mtgl'
+#__name__ = 'mtgl'
 __license__ = 'GPLv3'
 __version__ = '0.1.1'
 __date__ = 'June 2019'

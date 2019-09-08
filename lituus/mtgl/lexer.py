@@ -14,7 +14,7 @@ programmatic processing, categorization and 'reasoning' over MTG cards
 Tokenizes tagged oracle text
 """
 
-__name__ = 'lexer'
+#__name__ = 'lexer'
 __license__ = 'GPLv3'
 __version__ = '0.0.3'
 __date__ = 'June 2019'

@@ -10,7 +10,7 @@ version.
 Defines regexes,strings and helper functions used in the mtgl format
 """
 
-__name__ = 'mtgl'
+#__name__ = 'mtgl'
 __license__ = 'GPLv3'
 __version__ = '0.0.6'
 __date__ = 'September 2019'
