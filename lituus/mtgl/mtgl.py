@@ -445,6 +445,16 @@ re_tkn_ref2 = re.compile(
     r"[C|c]reate ({}),\s(.+?)\stoken".format('|'.join(list(TN2R.keys())))
 )
 
+# meld tokens from Eldritch Moon, found by the phrase "then meld them into NAME"
+# however, since there are only three and no chance of conflict with other words
+# we do a straight replacement re
+meld_tokens = [
+    'Brisela, Voice of Nightmares','Chittering Host','Hanweir, the Writhing Township'
+]
+MN2R = {n:md5(n.encode()).hexdigest() for n in meld_tokens}
+re_tkn_ref3 = re.compile(
+    r"({})".format('|'.join(list(MN2R.keys())))
+)
 
 # other card referencing will be initialized once in the call to set n2r due to
 # size of name to ref-id dict

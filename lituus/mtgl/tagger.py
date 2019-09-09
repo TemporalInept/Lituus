@@ -84,13 +84,16 @@ def tag_ref(name,txt):
     """
     ntxt = mtgl.re_self_ref(name).sub(r"ob<card ref=self>",txt)
     ntxt = mtgl.re_tkn_ref1.sub(
-        lambda m: r"{} ob<permanent ref={}>".format(
+        lambda m: r"{} ob<token ref={}>".format(
             m.group(1),mtgl.TN2R[m.group(2)]),ntxt
     )
     ntxt = mtgl.re_tkn_ref2.sub(
-        lambda m: r"create ob<permanent ref={}>, {} token".format(
+        lambda m: r"create ob<token ref={}>, {} token".format(
             mtgl.TN2R[m.group(1)],m.group(2)
         ),ntxt
+    )
+    ntxt = mtgl.re_tkn_ref3.sub(
+        lambda m: r"ob<token ref={}>".format(mtgl.MN2R[m.group(1)]),ntxt
     )
     assert(mtgl.re_oth_ref is not None)
     return mtgl.re_oth_ref.sub(
