@@ -65,18 +65,6 @@ This is the only card with a 'clause' after enchant obj and, this clause specifi
 [['kw<lifelink>', ',', 'kw<protection>', 'pr<from>', 'ch<cmc>', 'op<≥>', 'nu<3>']]
 have to combine >= 3 into the ch<cmc>
 
-150. have to redo activate and ability see Desert's Hold
- line 2 -> Enchanted creature can't attack or block, and its activated abilities can't be activated.
- ['and', 'xo<it>', 'ka<activate>', 'ob<ability>', 'cn<cannot>', 'be', 'ka<activate>']
- here 'ka<activate>', 'ob<ability>' should be ob<ability characteristics=activated'>
-
- and Abeyance
-line 0 -> Until end of turn, target player can't cast instant or sorcery spells, and that player can't activate abilities that aren't mana abilities.
-  ['and', 'xp<player quantifier=that>', 'cn<cannot>', 'ka<activate>', 'ob<ability>', 'xq<that>', 'arent', 'xo<mana_ability>']
-here it should stay as ka<activate> ob<ability>
-
-semi-fixed, have to go back into parser->rectify and fix xs<activated> where necessary need to look into triggered as well
-
 151. fight
 Ezuri's Predation
 <root>
