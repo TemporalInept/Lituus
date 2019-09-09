@@ -22,26 +22,7 @@
  - Calcite Snapper -> Whenever a land enters the battlefield under your control, you may switch Calcite Snapper's power and toughness until end of turn.
  - Broodstar -> Broodstar's power and toughness are each equal to the number of artifacts you control.
 
-119. See Hanweir Battlements 
- 'ob<permanent characteristics=creature quantifier=a>', 'named', 'ob<card ref=ffa73c0251393a8a18233b4446e4bac5>',
-the two objects should be merged
-
 120. how to figure out what 'xo<it>' refers to?
-
-124. Pickling Error when dumping MTGCards _pickle.PicklingError: Can't pickle <class 'mtgcard.MTGCard'>: it's not the same object as mtgcard.MTGCard
-
-tried
->>> from lituus.mtgl import mtgt
->>> import pickle
->>> t = mtgt.MTGTree()
->>> fout = open('test.pkl','wb')
->>> pickle.dump(t,fout)
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-_pickle.PicklingError: Can't pickle <class 'mtgt.MTGTree'>: import of module 'mtgt' failed
-which is different
-
-Posted question to https://stackoverflow.com/questions/57826565/python3-cannot-pickle-self-defined-objects
 
 126. Protection i.e Iridescent Angel "protection from all colors". We need a way to merge the 'all' into colors. that is a quantifier and a characteristic
  - same goes for mox opal etc ('xa<add>', 'xo<mana num=1>', 'of', 'xq<any>', 'ch<color>')
@@ -400,3 +381,6 @@ because we are working backwords and getting the object belonging to phase out, 
 282. make coin flip a lituus object?
 
 283. Have to relook at add mana - find a sampling of land and mana rocks etc and test them out
+
+284, see Goblin Kaboomist, King Macar how to figure out how to handle
+named in the reference of token creation but Goblin Kaboomist brings a special issue to the front - it is easiest to take care of 'named' phrases after chaining but then in GK, the token named Land Mine becomes 'ob<permanent characteristics=land∧mine>'

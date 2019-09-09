@@ -71,10 +71,11 @@ def rectify(olds):
 
     # b. combine xo<it> xp<...> and xp<their> xp<...>
     i = ll.matchl([ll.ors(['xo<it>','xp<their>']),mtgl.is_player],olds)
-    if i > -1:
+    while i > -1:
         t,v,ps = mtgl.untag(olds[i+1])
         ps['of'] = 'it' if olds[i] == 'xo<it>' else 'them' # add of=? to proplist
         olds[i:i+2] = [mtgl.retag(t,v,ps)]                 # retag
+        i = ll.matchl([ll.ors(['xo<it>', 'xp<their>']),mtgl.is_player],olds)
 
     news = []
     skip = 0
@@ -256,6 +257,7 @@ def chain(olds):
     """
      combines charcteristics belonging to an object, creating an implied object
      if necessary - characteristics will occur prior to the object (if there is one)
+     Also takes care of card name card like phrases (see Hanweir Battlements)
      :param olds: the current list of tokens
      :return: chained list of tokens
 
@@ -359,6 +361,41 @@ def chain(olds):
         pl = {tp:mtgl.AND.join(cs)}
         if pt: pl['meta'] = 'p/t'+mtgl.EQ+pt
         news.append(mtgl.retag(ti,_implied_obj_(cs),pl))
+
+    # combine card named card and variants. Looking for ob<card> name ob<card...>
+    # or ch<...> named ob<card...> these phrases will be combined into a single
+    # token. This is performed here because characteristics will have been tagged
+    # as an object (Hanweir Battlements has 'creature named ...' at this point
+    # is now ob<permanent characteristics=creature> named ..." which is easier
+    # to process. Additionaly, if not done here it will be much harder to later
+    cnc = [mtgl.is_mtg_obj,'named',mtgl.is_mtg_obj]
+    i = ll.matchl(cnc,news)
+    while i > -1:
+        # the first token should be a permanent with a type in the characteristics
+        # attribute. if not, it should be ob<card>
+        t1,v1,ps1 = mtgl.untag(news[i])
+        ctype = ps1['characteristics'] if 'characteristics' in ps1 else None
+
+        # the last token should be a ob<card...> with a ref attribute
+        # TODO: right now, just exiting the loop if it doesn't meet the criteria,
+        #  (see Goblin Kaboomist, King Macar) but will have to code in the
+        #  appropriate change
+        t2,v2,ps2 = mtgl.untag(news[i+2])
+        if t1 != t2 or 'ref' not in ps2: break
+
+        # create a new token using the val from the first, the prop list from
+        # the second (adding characterstics from the first one)
+        if ctype:
+            # shouldn't be chcaracteristics in the 2nd object but just in case
+            try:
+                ps2['characteristics'] += mtgl.AND + ctype
+            except KeyError:
+                ps2['characteristics'] = ctype
+        news[i:i+3] = [mtgl.retag(t1,v1,ps2)]
+
+        # check for more
+        i = ll.matchl(cnc,news)
+
     return news
 
 def _comma_read_ahead_(tkns):
@@ -643,6 +680,7 @@ def add_hanging(olds):
             except mtgl.MTGLTagException: pass
             except (IndexError,ValueError): pass
         elif mtgl.is_zone(tkn):
+            # TODO: make sure this is working as expected
             # check if we have a phrase ob<OBJECT> pr<in> zn<ZONE>
             try:
                 if mtgl.is_mtg_obj(news[-2]) and news[-1] == 'pr<in>':
@@ -658,7 +696,6 @@ def add_hanging(olds):
                     news.pop() # pop the preposition
                     ot,ov,ops = mtgl.untag(news.pop())
 
-                    # TODO: WTF why/what/where is the arrow at
                     if p: ops['zone'] = '{}{}{}'.format(v,mtgl.ARW,p)
                     else: ops['zone'] = v
 
