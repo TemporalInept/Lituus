@@ -512,8 +512,7 @@ def group(olds):
                 elif news[-1] == 'a': qs.append(news.pop())
                 elif mtgl.is_quantifier(news[-1]):
                     qs.append(mtgl.untag(news.pop())[1])
-                elif mtgl.is_state(news[-1]):
-                    # found a status - may be and'ed or or'ed
+                elif mtgl.is_state(news[-1]): # status - may be and'ed or or'ed
                     ss = [mtgl.untag(news.pop())[1]]
                     while len(news) >= 1:
                         if mtgl.is_state(news[-1]):

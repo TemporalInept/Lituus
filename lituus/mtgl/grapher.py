@@ -157,11 +157,15 @@ def graph_kw_line(t,pid,line):
             # 702.16a Protection from [quality] (characteristic, player etc)
             # 702.16g Protection from [quality A] and from [quality B]
             # 702.16h/702.16i Protection from (all [characteristic])/everything
-            # TODO: 1. see Issue 126
-            #       2. Mistmeadow Skulk
-            #       3. redo all of this, 'splitting' on 'from'
-            qs = [q for q in ps if mtgl.is_quality(q)]
-            t.add_node(kwid,'from',quality=_combine_pro_from_(qs))
+            # get the qualities in the parameters, if there is one, create a node
+            # otherwise, create a conjunction of qualities
+            qs =_pro_from_(ps)
+            if len(qs) == 1: t.add_node(kwid,'from',quality=qs)
+            else:
+                cid = t.add_node(
+                    kwid,'conjunction',coordinator='and',item_type='quality'
+                )
+                for q in qs: t.add_node(cid,'from',quality=q)
         elif kw == 'cycling' and mtgl.is_mtg_obj(ps[0]):
             # 702.28e [Type]cycling [cost] (Function kw_clauses rewrites
             # this as kw<cycling> [type] [cost]
@@ -1018,7 +1022,7 @@ def graph_lituus_action_add(t,pid,tkns):
     # try double first
     dbl = [mtgl.is_mana_string,'or',mtgl.is_mana_string]
     if ll.matchl(dbl,tkns,0) == 0:
-        cid=t.add_node(mid,'conjunction',coordinator='or',items='mana-string')
+        cid=t.add_node(mid,'conjunction',coordinator='or',item_type='mana-string')
         t.add_node(cid,'mana-string',mana=tkns[0])
         t.add_node(cid,'mana-string',mana=tkns[2])
         return len(dbl)
@@ -1026,7 +1030,7 @@ def graph_lituus_action_add(t,pid,tkns):
     # then triple
     tpl = [mtgl.is_mana_string,',',mtgl.is_mana_string,',','or',mtgl.is_mana_string]
     if ll.matchl(tpl,tkns,0) == 0:
-        cid = t.add_node(mid,'conjunction',coordinator='or',items='mana-string')
+        cid = t.add_node(mid,'conjunction',coordinator='or',item_type='mana-string')
         t.add_node(cid,'mana-string',mana=tkns[0])
         t.add_node(cid,'mana-string',mana=tkns[2])
         t.add_node(cid,'mana-string',mana=tkns[5])
@@ -1481,15 +1485,67 @@ def ta_clause(tkns):
 
     return tw,cond,effect,instr
 
-def _combine_pro_from_(qs):
+def _pro_from_(tkns):
     """
-     combines protection tokens qs which will be a list of 'qualities'
-    :param qs: list of qualities
-    :return: a single quality
+     extracts the 'characteristics' listed in the 'protection clause' tkns. tkns is
+     all tokens in the keyword clause following the keyword protection
+    :param tkns: a list of one or more characteristics seperated by 'pr<from>
+    :return: a list of qualities
     """
-    if len(qs) == 1: return qs
-    qs = mtgl.AND.join([mtgl.untag(q)[2]['characteristics'] for q in qs])
-    return mtgl.retag('ob','card',{'characteristics':qs})
+    # first, get the protection from tokens/clauses
+    pros = []
+    prev = 0
+    for i in ll.indicesl(tkns,'pr<from>'):
+        if prev == i == 0: continue
+        pro = tkns[prev+1:i]
+        if 'and' in pro: pro,_,_ = ll.splitl(pro,pro.index('and'))
+        pros.append(pro)
+        prev = i
+    pro = tkns[prev+1:]
+    if 'and' in pro: pro,_,_ = ll.splitl(pro,pro.index('and'))
+    pros.append(pro)
+
+    # pros will be either be a list of one more items where each item is an object
+    # with a chararacteristic i.e. see Phyrexian Crusader pros will be
+    #  [['ob<card characteristics=white>'],['ob<card characteristics=black>']]
+    # or in edges cases single element list where the element is a list of tokens
+    # one of which is a meta characteristic.
+    # NOTE: have not seen anything that has more than singleton edge case see
+    # Mistmeadow Skulk but just in case will be prepared for multiple edgecases
+    ch = [] # list of found characterstics
+    for i,pro in enumerate(pros):
+        if len(pro) == 1:
+            # have either an object with a characteristic or a characteristic
+            if mtgl.is_mtg_char(pro[0]): ch.append(mtgl.untag(pro[0])[1])
+            else:
+                ps = mtgl.untag(pro[0])[2]
+                assert('characteristics' in ps)
+                ch.append(ps['characteristics'])
+        else:
+            # edge case - currently know of two possibilities, a meta-characteristic
+            # with value or a quantified meta-characteristic
+            mc = [mtgl.is_meta_char,mtgl.is_operator,mtgl.is_number]
+            qc = [mtgl.is_quantifier,mtgl.is_meta_char]
+            if ll.matchl(mc,pro,0) == 0:
+                ch.append("{}{}{}".format(
+                        mtgl.untag(pro[0])[1], # the meta-characteristic,
+                        mtgl.untag(pro[1])[1], # the operator
+                        mtgl.untag(pro[2])[1]  # the numeric value
+                    )
+                )
+            elif ll.matchl(qc,pro,0) == 0:
+                ch.append("{}{}{}".format(
+                        mtgl.untag(pro[1])[1], # the meta-chararcteristics
+                        mtgl.EQ,               # equal to sign
+                        mtgl.untag(pro[0])[1]  # the quantifier
+                    )
+                )
+            else:
+                # in the rule book, 702.16a discusses protection from a card name
+                # and 702.16j discusses protection from a player. Have not seen
+                # any of these
+                raise mtgl.MTGLGraphException("Unknown edge-case in protection")
+    return ch
 
 # TODO: have to look at is_mtg_obj vs is_thing there are cases (Contempt)
 #  at least in bi-chains where an mtg object should be conjoined with a lituus obj
@@ -1923,5 +1979,3 @@ put - xa<put> Card (from Zone) to Zone or xa<put> n counter(s) on object
 distribute - xa<distribute> n1 counters among n2 objects
 phase in/phase out: object xa<phase_in> or object xa<phase_out>
 """
-
-# phase in and phase out is going to require tokens prior to the the action word

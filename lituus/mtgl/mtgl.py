@@ -504,6 +504,7 @@ word_hacks = {
     'an':"a",
     "werewolves":"werewolf",
     "allies":"ally",
+    "elves":"elf",
     "end of turn":"eot",
     "converted mana cost":"cmc",
     "paid":"pay",

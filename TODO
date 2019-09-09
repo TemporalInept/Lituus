@@ -141,8 +141,6 @@ could read as
  -- think the commas are being dropped in the activated-ability graphing in the _subcosts_ portion with prev = i + 1 # skip the comma
 however not skipping the comma also leads to issues
 
-and in the parse tree, named still needs to be handled see 119
-
 181. see Conjured Currency  "target permanent you neither own nor control" only card I can find with that phrasing. There are also both own and control (5 total) both of these cases need to be merged somehow
 
 Conjured Currency ...
@@ -364,3 +362,18 @@ because we are working backwords and getting the object belonging to phase out, 
 
 283. Have to relook at add mana - find a sampling of land and mana rocks etc and test them out
 
+285. have to look at keywords inside non-keyword lines. i.e. 
+ Metalcraft — Etched Champion has protection from all colors as long as you control three or more artifacts.
+<root>
+└ line:0
+   └aw-line:0
+    ├ability-word:0(word=metalcraft)
+    └ability-word-definition:0
+     └effect-clause:0
+      ├clause:0(tkns=['ob<card ref=self>'])
+      ├lituus-action-clause:0
+      │└lituus-action:0(word=has)
+      ├clause:1(tkns=['kw<protection>', 'pr<from>', 'xq<all>', 'ch<color>', 'sq<as_long_as>', 'xp<you>', 'xc<control>', 'ob<permanent num=≥3 characteristics=artifact>'])
+      └punctuation:0(symbol=.)
+
+286. Need a way to track mechanics, types and token names that have been added and pending additions from the release of new sets.
