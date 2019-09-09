@@ -61,10 +61,6 @@ This is the only card with a 'clause' after enchant obj and, this clause specifi
  o this would be good to define an ETB node but how to place obj and status i.e. tapped
  0 would have to differniate from as enters.. and when ... enters
 
-146. see Graf Rats (other meld cards)
- 'sq<then>', 'ka<meld>', 'them', 'pr<into>', 'chittering', 'host']
-Chittering Host should be tagged as a card
-
 148. Mistmeadow Skulk 
 [['kw<lifelink>', ',', 'kw<protection>', 'pr<from>', 'ch<cmc>', 'op<≥>', 'nu<3>']]
 have to combine >= 3 into the ch<cmc>
