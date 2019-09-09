@@ -12,8 +12,6 @@
 
 92. how to handle overload
 
-101. Look at Spawnbroker.
-
 111. Have to find creature types like Assembly-Worker with hyphens. These will be replaced by _ and we should either leave as is or change back
   o assembly-worker, power-plant
   o jump-start
