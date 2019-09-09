@@ -41,7 +41,7 @@ The problem is that 'target' applies to both permanent and card but the two obje
   'xa<pay>', 'nu<3>', 'xc<life>'
 should we combine the nu and the xc into xc<life num=3> or consider that any xa has a nu and a xc
 
-133. pickle the n2r file
+133. pickle the n2r file and delete in multiverse once its not being used any long
 
 137. do we need to add_hanging for all prepositions i.e. 'from' or leave as is 
 
@@ -382,5 +382,3 @@ because we are working backwords and getting the object belonging to phase out, 
 
 283. Have to relook at add mana - find a sampling of land and mana rocks etc and test them out
 
-284, see Goblin Kaboomist, King Macar how to figure out how to handle
-named in the reference of token creation but Goblin Kaboomist brings a special issue to the front - it is easiest to take care of 'named' phrases after chaining but then in GK, the token named Land Mine becomes 'ob<permanent characteristics=land∧mine>'

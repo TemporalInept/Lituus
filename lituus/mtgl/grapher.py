@@ -1556,7 +1556,9 @@ def collate(t,tkns):
             #  the second object for other properties?
             tag,_,ps = mtgl.untag(tkns[0])
             _,val,ps1 = mtgl.untag(tkns[2])
-            ps['characteristics'] += mtgl.AND + ps1['characteristics']
+            if 'characteristics' in ps:
+                ps['characteristics'] += mtgl.AND + ps1['characteristics']
+            else: ps['characteristics'] = ps1['characteristics']
 
             # add a rootless node, then retag the chained object
             nid = t.add_ur_node('object')

@@ -55,7 +55,7 @@ def multiverse(update=False):
             fin = open(mvpath,'rb')
             mv = pickle.load(fin)
 
-            # create the n2r file
+            # create the n2r file # TODO: why are we creating this?
             n2r = {} # name to ref-id hash
             for cname in mv: n2r[cname] = md5(cname.encode()).hexdigest()
             mtgl.set_n2r(n2r)

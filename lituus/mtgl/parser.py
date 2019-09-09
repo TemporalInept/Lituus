@@ -363,11 +363,11 @@ def chain(olds):
         news.append(mtgl.retag(ti,_implied_obj_(cs),pl))
 
     # combine card named card and variants. Looking for ob<card> name ob<card...>
-    # or ch<...> named ob<card...> these phrases will be combined into a single
-    # token. This is performed here because characteristics will have been tagged
-    # as an object (Hanweir Battlements has 'creature named ...' at this point
-    # is now ob<permanent characteristics=creature> named ..." which is easier
-    # to process. Additionaly, if not done here it will be much harder to later
+    # this phrase will be combined into a single tagged token. This is performed
+    # here because characteristics will have been tagged as an object (Hanweir
+    # Battlements' 'creature named ...' at this point is now ob<permanent
+    # characteristics=creature> named ..." which is easier to process. Additionaly,
+    # if not done here it will be much harder to later
     cnc = [mtgl.is_mtg_obj,'named',mtgl.is_mtg_obj]
     i = ll.matchl(cnc,news)
     while i > -1:
@@ -377,11 +377,7 @@ def chain(olds):
         ctype = ps1['characteristics'] if 'characteristics' in ps1 else None
 
         # the last token should be a ob<card...> with a ref attribute
-        # TODO: right now, just exiting the loop if it doesn't meet the criteria,
-        #  (see Goblin Kaboomist, King Macar) but will have to code in the
-        #  appropriate change
         t2,v2,ps2 = mtgl.untag(news[i+2])
-        if t1 != t2 or 'ref' not in ps2: break
 
         # create a new token using the val from the first, the prop list from
         # the second (adding characterstics from the first one)

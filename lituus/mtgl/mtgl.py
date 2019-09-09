@@ -20,6 +20,7 @@ __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
 import re
+from hashlib import md5
 
 """
  Defines a series of regular of expressions and string replacements for tagging
@@ -418,8 +419,35 @@ def re_self_ref(name):
         r"\b(this spell|this permanent|this card|her|his|{}|{})\b".format(name,name.split(',')[0])
     )
 
-# other card referencing will be initialized once due to size of name to ref-id
-# dict
+# these are names of tokens that do exist in the multiverse including nont-token
+# copy cards (i.e. Ajani's Pridemante created by Ajani, Stength of the Pride
+# The majority of these can be found in the phrase
+#   "create a token ... named TOKEN_NAME" except
+# exceptions are Marit Lage, Kaldra which have the form
+#   "create TOKEN NAME, .... token."
+token_names = [
+    "Ajani's Pridemate","Minor Demon","Cloud Sprite","Gold","Mask","Rabid Sheep",
+    "Twin","Land Mine","Goldmeadow Harrier","Wood","Kobolds of Kher Keep",
+    "Llanowar Elves","Wolves of the Hunt","Stoneforged Blade","Lightning Rager",
+    "Festering Goblin","Metallic Sliver","Spark Elemental","Etherium Cell",
+    "Carnivore","Urami","Crow Storm","Butterfly","Hornet","Wirefly","Kelp",
+    "Tombspawn","Hive","Mowu","Kaldra","Marit Lage",
+]
+#TODO: break up the list of tokens by how they can be matched?
+TN2R = {n:md5(n.encode()).hexdigest() for n in token_names}
+
+# "create a token .... named NAME"
+re_tkn_ref1 = re.compile(
+    r"([C|c]reate\s.+?\snamed)\s({})".format('|'.join(list(TN2R.keys())))
+)
+
+re_tkn_ref2 = re.compile(
+    r"[C|c]reate ({}),\s(.+?)\stoken".format('|'.join(list(TN2R.keys())))
+)
+
+
+# other card referencing will be initialized once in the call to set n2r due to
+# size of name to ref-id dict
 re_oth_ref = None
 N2R = None
 
