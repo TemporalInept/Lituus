@@ -59,10 +59,6 @@ This is the only card with a 'clause' after enchant obj and, this clause specifi
  o this would be good to define an ETB node but how to place obj and status i.e. tapped
  0 would have to differniate from as enters.. and when ... enters
 
-148. Mistmeadow Skulk 
-[['kw<lifelink>', ',', 'kw<protection>', 'pr<from>', 'ch<cmc>', 'op<≥>', 'nu<3>']]
-have to combine >= 3 into the ch<cmc>
-
 151. fight
 Ezuri's Predation
 <root>
