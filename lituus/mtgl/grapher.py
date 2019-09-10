@@ -1387,6 +1387,7 @@ def graph_cost(t,pid,tkns):
     else: cid=t.add_node(pid,'conjunction',item_type='cost',coordinator='and')
     for s in ss: graph_clause(t,cid,s)
 
+# TODO: this needs testing for confirmation
 def subcosts(tkns):
     """
      extracts all subcosts from the list of tokens
@@ -1398,13 +1399,39 @@ def subcosts(tkns):
         tkns = tkns[1:]
         if tkns[-1] == mtgl.PER: tkns.pop()
 
+    # split the tkns into clauses by comma
     ss = []
     prev = 0
     for i in ll.indicesl(tkns,mtgl.CMA): # looking for middle splits
         ss.append(tkns[prev:i])          # don't include the comma
         prev = i+1                       # skip the comma
     ss.append(tkns[prev:])               # last (or only) subcost
-    return ss
+
+    # sanity check on the subcosts see Behemoth's Herald, the above loops breaks
+    # everything up by comma meaning meaning the ka<sacrifice clause gets broken
+    # into three subcosts when it is only one. Based on going through multiple card
+    # with more than 1 costs, it appears that each subcost will be a mtg token
+    # (a mana string or {t} or {q} etc) or an action clause.
+    ss1 = []     # the final list of subcosts
+    running = [] # list of clauses encountered that arent mtg tokens
+    for s in ss:
+        if mtgl.tkn_type(s[0]) == mtgl.MTGL_SYM:
+            # got a symbol
+            if running:
+                # close out running, joining the running list by comma & reset
+                ss1.append(ll.joinl(running,mtgl.CMA))
+                running = []
+            ss1.append(s) # add the symbol
+        else:
+            # got something else: if it's an action word, close out & append
+            # running then rest otherwise append the new clause to running
+            if mtgl.is_action(s[0]):
+                if running: ss1.append(ll.joinl(running,mtgl.CMA))
+                running = [s]
+            else: running.append(s)
+    if running: ss1.append(ll.joinl(running,mtgl.CMA))
+    print(ss1)
+    return ss1
 
 def ta_clause(tkns):
     """

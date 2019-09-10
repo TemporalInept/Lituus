@@ -131,7 +131,8 @@ could read as
      │└zone:1(zone=zn<library player=their>)
 
 178. see Behomoth's Herald
-1. for "Sacrifice a red creature, a green creature, and a white creature" need to figure out how to combine these under the sacrifice clause
+1. for "Sacrifice a red creature, a green creature, and a white creature" 
+ because this is a cost, it is run through subcosts, which breaks phrases up by commas
 
 2. the ',' between red creature and green creature is being dropped - it is present in the 'mtgl'
  -- think the commas are being dropped in the activated-ability graphing in the _subcosts_ portion with prev = i + 1 # skip the comma
