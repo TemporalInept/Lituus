@@ -292,24 +292,32 @@ def graph_level_line(t,pid,line):
     lu,_,line = ll.splitl(line,line.index('<break>'))
     lsym = lu[1].split('-')
     if len(lsym) == 2:
-        r = "{}-{}".format(mtgl.untag(lsym[0])[1],mtgl.untag(lsym[0])[1])
+        r = "{}-{}".format(mtgl.untag(lsym[0])[1],mtgl.untag(lsym[1])[1])
     else: r = "{}+".format(mtgl.untag(lsym[0])[1])
     t.add_attr(lsid,'range',r)
 
     # the level's P/T will be in the next clause (the tagger has tagged this as 'ls'
     # vice 'ch' in order to preserve it through the parser's processing
-    lp,_,line = ll.splitl(line,line.index('<break>'))
+    try:
+        lp,_,line = ll.splitl(line,line.index('<break>'))
+    except ValueError:
+        # nothing remains after the p/t
+        lp = line
+        line = []
     pt = mtgl.untag(lp[0])[2]
     t.add_attr(lpid,'p/t',pt['val'])
 
     # before moving to next clause(s), we have to take care of some artifacts
     # from the tagger related to leveler cards
-    # 1) replace ". <break> ." with "."
-    i = ll.matchl([mtgl.PER,'<break>',mtgl.PER],line)
-    if i > -1: line[i:] = mtgl.PER
+    # 1) replace double periods with a single period
+    # 2) replace KEYWORD PERIOD with just KEYWORD
+    line = ll.replacel(line,[mtgl.PER,mtgl.PER],[mtgl.PER])
+    if ll.matchl([mtgl.is_keyword,mtgl.PER],line,0) == 0: line = line[:-1]
+    #i = ll.matchl([mtgl.PER,'<break>',mtgl.PER],line)
+    #if i > -1: line[i:] = mtgl.PER
 
     # 2) replace singleton periods with the empty line
-    if line == [mtgl.PER]: line = []
+    #if line == [mtgl.PER]: line = []
 
     # the next clause can be keyword(s), ability, keyword(s) and ability or none
     # check if we have keywords, if so build the 'keyword line'
@@ -326,7 +334,7 @@ def graph_level_line(t,pid,line):
     if kws:
         laid = t.add_node(mid,'level-abilities')
         graph_kw_line(t,laid,kws)
-        if line == ['<break>',mtgl.PER] or line == [mtgl.PER]: line = []
+        #if line == ['<break>',mtgl.PER] or line == [mtgl.PER]: line = []
 
     # anything remaining is an ability, add level abilities node if necessary
     # and graph as a line
@@ -1430,7 +1438,6 @@ def subcosts(tkns):
                 running = [s]
             else: running.append(s)
     if running: ss1.append(ll.joinl(running,mtgl.CMA))
-    print(ss1)
     return ss1
 
 def ta_clause(tkns):

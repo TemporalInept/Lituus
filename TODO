@@ -1,5 +1,3 @@
-8. What to do with text inside double quotes
-
 30. See Stasis will read as xp{player} skip their ph{untap_step}. need to quantify with all or not
 
 52. tag additional? (see Ravaging Riftwurm)
@@ -21,9 +19,6 @@
  - Broodstar -> Broodstar's power and toughness are each equal to the number of artifacts you control.
 
 120. how to figure out what 'xo<it>' refers to?
-
-126. Protection i.e Iridescent Angel "protection from all colors". We need a way to merge the 'all' into colors. that is a quantifier and a characteristic
- - same goes for mox opal etc ('xa<add>', 'xo<mana num=1>', 'of', 'xq<any>', 'ch<color>')
 
 129. Add 'suspended' as a status. do the same for unattached See
 >>> mv['Clockspinning']._card['mtgl']
@@ -110,8 +105,6 @@ clause:0(tkns=['pr<top>', 'ob<card>', 'of', 'zn<library player=you>', 'and'])
 
 169. should we look at retagging keyword-actions that 'fail' during graph clause or leave as is
 
-173. move chain_zones into chain?
-
 174. look at coordinating conjuctions
 
 mtgl = cn<if>', 'xp<you>', 'xc<control>', 'ob<permanent characteristics=desert quantifier=a>', 'or', 'there', 'is', 'ob<card characteristics=desert quantifier=a>', 'pr<in>', 'zn<graveyard player=you>'
@@ -145,8 +138,6 @@ in both cases, the possessives are not being added to the respective objects
  o Gilded Drake "If you don't or can't make an exchange, sacrifice Gilded Drake." this exchange is being treated as a kwa,  (or can't make an exchange could all be dropped)
 
 183. See Puca's mischief an opponent controls with an equal or lesser converted mana cost. missed a phrasing for combining operators (this would be less than or equal to)
-
-187. Thinking that removing any tags from keyword actions that don't fit the patterns could be advantageous in finding cards that have keyword-actions i.e. Shadow of Doubt
 
 188. for stuff like ob<...> ch<power|toughness> how can we put the characteristic into the object and where should it be done
  - same goes for players and life total
@@ -195,10 +186,6 @@ the clause specifies what is to be revealed
    type=card
    zone=library
    location=top
-
-214. in collate objects have to extract num and push it up the tree but what other attributes do we need to look for? Lord of Shatterskull pass - some of the parameters an object can have ob<permanent characteristics=creature controller=player quantifier=each>
-
-217. Look at what tags we can untag in the grapher. Examples numbers & trigger words
 
 218. keyword action regenerate - sometimes is preceded by the 'object'. i.e. They cannot be regenerated In these cases, do we remove the kwa tag or what should we do
 
@@ -367,3 +354,8 @@ because we are working backwords and getting the object belonging to phase out, 
       └punctuation:0(symbol=.)
 
 286. Need a way to track mechanics, types and token names that have been added and pending additions from the release of new sets.
+
+287. Start identifying hanging clauses
+ o with ...
+ o thats ...
+ o where [X] ...

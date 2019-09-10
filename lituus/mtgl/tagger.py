@@ -226,7 +226,7 @@ def postprocess(txt):
     :param txt: oracle text after first pass
     :return: post processed oracles text
     """
-    ntxt = txt.replace("\n• ","•")                     # modal spells
+    ntxt = txt.replace("\n• ",mtgl.BLT)                # modal spells
     ntxt = merge_tags(ntxt)                            # merge multiple tags
     ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)     # relocate negated tags
     ntxt = mtgl.re_non_possessive.sub(r"xc<¬\1>",ntxt) # relocate non-possessive
@@ -269,23 +269,46 @@ def fix_lvl_up(txt):
     # get indexes for each level, add start and end
     ls = [0]+[m.start() for m in mtgl.re_lvl.finditer(txt)]+[len(txt)]
 
+    # get the level up keyword line
+    ltxt = txt[ls[0]:ls[1]]
+
+    # for each remaining level line, there will be more than one newline seperating
+    # the internal claues. IAW 710.2 we should see
+    #  level N+ [P/T] [Abilties] or
+    #  level N1=N2 [P/T] [Abiltiies]
+    # in the text we will see level symbol \n P\T \n Abilities. We need to replace
+    # the internal newlines with a <break> token for the grapher while keeping
+    # a newline at the end of each level line.
+    i = ls[1]
+    for j in ls[2:]:
+        # pull out the line, replace all newlines with a <break> token
+        line = txt[i:j].replace('\n',' <break> ')
+
+        # the last level line does not end with a newline and will therefore not
+        # end with a break
+        if line.endswith(' <break> '): ltxt += line[:line.rindex(' <break>' )] + '.\n'
+        else: ltxt += line + '.'
+
+        i=j # next line
+
+    # change ch<p/t to ls<p/t iot parser ignores it before returning
+    ltxt = ltxt.replace('ch<p/t', 'ls<p/t')
+    return ltxt
+
+def fix_lvl_up_old(txt):
+    """
+     rewrites txt so that all descriptions of each level in a level up card
+     are on a single line
+    :param txt: tagged oracle text for a level up card
+    :return: fixed level up text
+    """
+    # get indexes for each level, add start and end
+    ls = [0]+[m.start() for m in mtgl.re_lvl.finditer(txt)]+[len(txt)]
+
     # remove all newlines, then append a newline for each level
     ltxt = ""
     for i,j in enumerate(ls):
         if i < len(ls) - 1:
-            if i < len(ls) - 1:
-                if i == 0:
-                    # the first line is the level up COST line, remove any
-                    # <break>s & add one newline
-                    ltxt = ltxt.replace('<break>','')
-                    ltxt += '\n'
-                else:
-                    # for the remaining lines, add a period if one doesn't exist
-                    # and add a newline
-                    if not ltxt.endswith(mtgl.PER): ltxt += mtgl.PER
-                    ltxt += '\n'
-
-    # change ch<p/t to ls<p/t iot parser ignores it
-    ltxt = ltxt.replace('ch<p/t','ls<p/t')
-
+            ltxt += txt[j:ls[i+1]].replace("\n","") # remove all newlines
+            ltxt += '\n' if i == 0 else '.\n'       # add a period for level lines
     return ltxt
