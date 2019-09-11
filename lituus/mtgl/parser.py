@@ -20,8 +20,9 @@ __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
 import re
-import lituus.mtgl.list_util as ll
 import lituus.mtgl.mtgl as mtgl
+import lituus.mtgl.list_util as ll
+import lituus.mtgl.mtgltag as tag
 
 # constants/helpers
 re_draft = re.compile(r"draft(ing|ed)?")
@@ -70,12 +71,12 @@ def rectify(olds):
     )
 
     # b. combine xo<it> xp<...> and xp<their> xp<...>
-    i = ll.matchl([ll.ors(['xo<it>','xp<their>']),mtgl.is_player],olds)
+    i = ll.matchl([ll.ors(['xo<it>','xp<their>']),tag.is_player],olds)
     while i > -1:
-        t,v,ps = mtgl.untag(olds[i+1])
+        t,v,ps = tag.untag(olds[i+1])
         ps['of'] = 'it' if olds[i] == 'xo<it>' else 'them' # add of=? to proplist
-        olds[i:i+2] = [mtgl.retag(t,v,ps)]                 # retag
-        i = ll.matchl([ll.ors(['xo<it>', 'xp<their>']),mtgl.is_player],olds)
+        olds[i:i+2] = [tag.retag(t,v,ps)]                 # retag
+        i = ll.matchl([ll.ors(['xo<it>', 'xp<their>']),tag.is_player],olds)
 
     news = []
     skip = 0
@@ -86,11 +87,11 @@ def rectify(olds):
             continue
 
         # check 1 and 2 here if current token is an object
-        if mtgl.is_mtg_obj(tkn):
+        if tag.is_mtg_obj(tkn):
             # (1) move (non)token to right of characteristics
-            if 'token' in tkn and ll.matchl([mtgl.is_mtg_char],olds[i:],1) == 1:
+            if 'token' in tkn and ll.matchl([tag.is_mtg_char],olds[i:],1) == 1:
                 j = i+1
-                while ll.matchl([mtgl.is_mtg_char],olds[j:],0) == 0:
+                while ll.matchl([tag.is_mtg_char],olds[j:],0) == 0:
                     news.append(olds[j])
                     j += 1
                 skip = (j-i)-1
@@ -98,15 +99,15 @@ def rectify(olds):
                 continue
 
             # (2) make two and'ed/or'ed 'consecutive' singleton objs one
-            if ll.matchl([mtgl.is_coordinator,mtgl.is_mtg_obj],olds[i:],1) == 1:
+            if ll.matchl([tag.is_coordinator,tag.is_mtg_obj],olds[i:],1) == 1:
                 # see Glyph Keeper (spell or ability)
-                t,v,p = mtgl.untag(olds[i+2])
+                t,v,p = tag.untag(olds[i+2])
                 if not p: # don't join anything with a prop list
                     if olds[i+1] == 'or': op = mtgl.OR
                     elif olds[i+1] == 'and': op = mtgl.AND
                     else: op = mtgl.AOR
-                    news.append(mtgl.retag(
-                        t,"{}{}{}".format(mtgl.untag(tkn)[1],op,v),{})
+                    news.append(tag.retag(
+                        t,"{}{}{}".format(tag.untag(tkn)[1],op,v),{})
                     )
                     skip = 2
                     continue
@@ -118,9 +119,9 @@ def rectify(olds):
         if tkn == 'ob<copy>':
             # copy quantifier spell|ability, copy quantifier instant|sorcery
 
-            if ll.matchl([mtgl.is_quantifier,mtgl.is_mtg_obj],olds[i:],1) == 1:
+            if ll.matchl([tag.is_quantifier,tag.is_mtg_obj],olds[i:],1) == 1:
                 news.append('xa<copy>')
-            elif ll.matchl([mtgl.is_quantifier,mtgl.is_mtg_char],olds[i:],1) == 1:
+            elif ll.matchl([tag.is_quantifier,tag.is_mtg_char],olds[i:],1) == 1:
                 news.append('xa<copy>')
             elif ll.matchl(['xo<it>'],olds[i:],1) == 1:
                 # i.e. copy it
@@ -133,8 +134,8 @@ def rectify(olds):
                 k = ll.matchl(['ob<spell>', mtgl.CMA],news)
                 if j > -1 and i-j == 2: news.append('xa<copy>')
                 elif k > -1 and i-k == 2: news.append('xa<copy>')
-                elif ll.matchl(['the',mtgl.is_mtg_obj],olds[i:],1) == 1:
-                    _,v,ps = mtgl.untag(olds[i+2])
+                elif ll.matchl(['the',tag.is_mtg_obj],olds[i:],1) == 1:
+                    _,v,ps = tag.untag(olds[i+2])
                     if v == 'spell': news.append('xa<copy>')
                     else: news.append('ob<copy>')
                 else:
@@ -180,7 +181,7 @@ def rectify(olds):
         # change it to zone, otherwise leave it alone
         if tkn == 'ka<exile>':
             try:
-                if mtgl.is_preposition(news[-1]): news.append('zn<exile>')
+                if tag.is_preposition(news[-1]): news.append('zn<exile>')
                 else: news.append(tkn)
             except IndexError:
                 news.append(tkn)
@@ -192,7 +193,7 @@ def rectify(olds):
         # to the keyword action
         if tkn == 'ka<counter>':
             try:
-                if mtgl.is_quantifier(olds[i+1]) or\
+                if tag.is_quantifier(olds[i+1]) or\
                         news[i-2:i] == ['cn<cannot>','be']:
                     news.append(tkn)
                 else: news.append('xo<ctr>')
@@ -230,20 +231,20 @@ def rectify(olds):
 
             # if the next token is an object we have a status otherwise, we should
             # retag as an action
-            if ll.matchl([mtgl.is_mtg_obj],olds[i:],1) != 1:
-                news.append(mtgl.retag(t,v,{}))
+            if ll.matchl([tag.is_mtg_obj],olds[i:],1) != 1:
+                news.append(tag.retag(t,v,{}))
             else: news.append(tkn)
             continue
 
         # (4) combine numeric phrases
-        if mtgl.is_number(tkn):
+        if tag.is_number(tkn):
             # check for 'or' followed by 'more' or 'less'
             try:
                 op = None
                 if ll.matchl(['or','less'],olds[i+1:]) == 0: op = mtgl.LE
                 elif ll.matchl(['or','more'],olds[i+1:]) == 0: op = mtgl.GE
                 if op:
-                    news.append("nu<{}{}>".format(op,mtgl.untag(tkn)[1]))
+                    news.append("nu<{}{}>".format(op,tag.untag(tkn)[1]))
                     skip = 2
                     continue
             except IndexError: pass
@@ -283,20 +284,20 @@ def chain(olds):
     tp = "characteristics" # prop-list key
 
     for i,tkn in enumerate(olds):
-        if mtgl.is_mtg_char(tkn):
+        if tag.is_mtg_char(tkn):
             # only chain meta characteristics if they are p/t (& not incr/decr)
             # and not part of a level symbol
-            _,v,p = mtgl.untag(tkn)
-            if not mtgl.is_meta_char(tkn): cs.append(v)
+            _,v,p = tag.untag(tkn)
+            if not tag.is_meta_char(tkn): cs.append(v)
             else:
-                if v == 'p/t' and news and not mtgl.is_lituus_act(news[-1]):
+                if v == 'p/t' and news and not tag.is_lituus_act(news[-1]):
                     pt = p['val']
                 else:
                     # close out the chain if its open
                     if cs:
                         pl = {tp:op.join(cs)}
                         if pt: pl['meta'] = 'p/t' + mtgl.EQ + pt
-                        news.append(mtgl.retag(ti,_implied_obj_(cs),pl))
+                        news.append(tag.retag(ti,_implied_obj_(cs),pl))
                         op = mtgl.AND
                         cs = []
                         pt = None
@@ -317,7 +318,7 @@ def chain(olds):
                     if nop == mtgl.AND or nop == ',': # distinct objects
                         pl = {tp:op.join(cs)}
                         if pt: pl['meta'] = 'p/t'+mtgl.EQ+pt
-                        news.append(mtgl.retag(ti,_implied_obj_(cs),pl))
+                        news.append(tag.retag(ti,_implied_obj_(cs),pl))
                         news.append(',')
                         op = mtgl.AND
                         cs = []
@@ -332,16 +333,16 @@ def chain(olds):
                     else:
                         pl = {tp:op.join(cs)}
                         if pt: pl['meta'] = 'p/t'+mtgl.EQ+pt
-                        news.append(mtgl.retag(ti,_implied_obj_(cs),pl))
+                        news.append(tag.retag(ti,_implied_obj_(cs),pl))
                         news.append(tkn)
                         op = mtgl.AND
                         cs = []
                         pt = None
-                elif mtgl.is_mtg_obj(tkn):
-                    t,v,p = mtgl.untag(tkn)              # untag it
+                elif tag.is_mtg_obj(tkn):
+                    t,v,p = tag.untag(tkn)              # untag it
                     p[tp] = op.join(cs)                  # update it's prop list
                     if pt: p['meta'] = 'p/t'+mtgl.EQ+pt  # & meta if present
-                    news.append(mtgl.retag(t,v,p))       # retag and append
+                    news.append(tag.retag(t,v,p))       # retag and append
                     op = mtgl.AND                        # and reset the chain
                     cs = []
                     pt = None
@@ -349,7 +350,7 @@ def chain(olds):
                     # no object, end the chain and append the implied object
                     pl = {tp:op.join(cs)}
                     if pt: pl['meta'] = 'p/t'+mtgl.EQ+pt
-                    news.append(mtgl.retag(ti,_implied_obj_(cs),pl))
+                    news.append(tag.retag(ti,_implied_obj_(cs),pl))
                     news.append(tkn)
                     op = mtgl.AND
                     cs = []
@@ -360,7 +361,7 @@ def chain(olds):
     if cs:
         pl = {tp:mtgl.AND.join(cs)}
         if pt: pl['meta'] = 'p/t'+mtgl.EQ+pt
-        news.append(mtgl.retag(ti,_implied_obj_(cs),pl))
+        news.append(tag.retag(ti,_implied_obj_(cs),pl))
 
     # combine card named card and variants. Looking for ob<card> name ob<card...>
     # this phrase will be combined into a single tagged token. This is performed
@@ -368,16 +369,16 @@ def chain(olds):
     # Battlements' 'creature named ...' at this point is now ob<permanent
     # characteristics=creature> named ..." which is easier to process. Additionaly,
     # if not done here it will be much harder to later
-    cnc = [mtgl.is_mtg_obj,'named',mtgl.is_mtg_obj]
+    cnc = [tag.is_mtg_obj,'named',tag.is_mtg_obj]
     i = ll.matchl(cnc,news)
     while i > -1:
         # the first token should be a permanent with a type in the characteristics
         # attribute. if not, it should be ob<card>
-        t1,v1,ps1 = mtgl.untag(news[i])
+        t1,v1,ps1 = tag.untag(news[i])
         ctype = ps1['characteristics'] if 'characteristics' in ps1 else None
 
         # the last token should be a ob<card...> with a ref attribute
-        t2,v2,ps2 = mtgl.untag(news[i+2])
+        t2,v2,ps2 = tag.untag(news[i+2])
 
         # create a new token using the val from the first, the prop list from
         # the second (adding characterstics from the first one)
@@ -387,7 +388,7 @@ def chain(olds):
                 ps2['characteristics'] += mtgl.AND + ctype
             except KeyError:
                 ps2['characteristics'] = ctype
-        news[i:i+3] = [mtgl.retag(t1,v1,ps2)]
+        news[i:i+3] = [tag.retag(t1,v1,ps2)]
 
         # check for more
         i = ll.matchl(cnc,news)
@@ -404,12 +405,12 @@ def _comma_read_ahead_(tkns):
     # read ahead until we find 'or' or 'and' or a non-characteristic
     for i,tkn in enumerate(tkns):
         if tkn == 'or':
-            if ll.matchl([mtgl.is_mtg_char,mtgl.is_mtg_obj],tkns[i:],1) == 1:
+            if ll.matchl([tag.is_mtg_char,tag.is_mtg_obj],tkns[i:],1) == 1:
                 return mtgl.OR
             else: return mtgl.CMA
         elif tkn == 'and': return mtgl.AND
         elif tkn == ',': continue # skip the commas
-        elif not mtgl.is_mtg_char(tkn): return mtgl.CMA
+        elif not tag.is_mtg_char(tkn): return mtgl.CMA
     return mtgl.CMA
 
 def _chained_and_(i,tkns):
@@ -420,7 +421,7 @@ def _chained_and_(i,tkns):
     :return: True if the and should be chained, False otherwise
     """
     try:
-        if not mtgl.is_property(tkns[i+1]): return False
+        if not tag.is_property(tkns[i+1]): return False
         else: return True
     except IndexError:
         pass
@@ -456,31 +457,31 @@ def chain_zones(olds):
             skip -= 1
             continue
 
-        if mtgl.is_zone(tkn):
+        if tag.is_zone(tkn):
             # 'and has two cases (1) zone1 and zone2 (2) zone1, zone2, and zone3
             # possible to get an (3) and/or ('op<⊕>')
             try:
                 # case 1 and case 3
-                if olds[i+1] in ['and','op<⊕>'] and mtgl.is_zone(olds[i+2]):
+                if olds[i+1] in ['and','op<⊕>'] and tag.is_zone(olds[i+2]):
                     # untag both zones
-                    z1 = mtgl.untag(tkn)[1]
-                    z2 = mtgl.untag(olds[i+2])[1]
+                    z1 = tag.untag(tkn)[1]
+                    z2 = tag.untag(olds[i+2])[1]
 
                     # determine the operator to use
                     op = mtgl.AND if olds[i+1] == 'and' else mtgl.AOR
-                    news.append(mtgl.retag('zn',z1+op+z2,{}))
+                    news.append(tag.retag('zn',z1+op+z2,{}))
                     skip = 2
                     continue
 
                 # case 2
-                case2 = [mtgl.CMA,mtgl.is_zone,mtgl.CMA,'and',mtgl.is_zone]
+                case2 = [mtgl.CMA,tag.is_zone,mtgl.CMA,'and',tag.is_zone]
                 if ll.matchl(case2,olds,1) == 1:
                     zs = [
-                        mtgl.untag(tkn)[1],
-                        mtgl.untag(olds[i+2])[1],
-                        mtgl.untag(olds[i+5])[1]
+                        tag.untag(tkn)[1],
+                        tag.untag(olds[i+2])[1],
+                        tag.untag(olds[i+5])[1]
                     ]
-                    news.append(mtgl.retag('zn',mtgl.AND.join(zs),{}))
+                    news.append(tag.retag('zn',mtgl.AND.join(zs),{}))
                     skip = 5
                     continue
             except IndexError:
@@ -501,26 +502,26 @@ def group(olds):
     # check each token, if it's an object look back at preceding for status and
     # or quantifier tags
     for tkn in olds:
-        if mtgl.is_thing(tkn):
+        if tag.is_thing(tkn):
             qs = []        # quanitifier sequence
             ss = None      # status list
             sop = mtgl.AND # status operator
             n = None       # number specifier
             while len(news) > 0:
                 # check for preceding meta-characteristics quanitifiers, status
-                if mtgl.is_number(news[-1]): n = mtgl.untag(news.pop())[1]
+                if tag.is_number(news[-1]): n = tag.untag(news.pop())[1]
                 elif news[-1] == 'a': qs.append(news.pop())
-                elif mtgl.is_quantifier(news[-1]):
-                    qs.append(mtgl.untag(news.pop())[1])
-                elif mtgl.is_state(news[-1]): # status - may be and'ed or or'ed
-                    ss = [mtgl.untag(news.pop())[1]]
+                elif tag.is_quantifier(news[-1]):
+                    qs.append(tag.untag(news.pop())[1])
+                elif tag.is_state(news[-1]): # status - may be and'ed or or'ed
+                    ss = [tag.untag(news.pop())[1]]
                     while len(news) >= 1:
-                        if mtgl.is_state(news[-1]):
-                            ss.append(mtgl.untag(news.pop())[1])
-                        elif news[-1] == 'or' and mtgl.is_state(news[-2]):
+                        if tag.is_state(news[-1]):
+                            ss.append(tag.untag(news.pop())[1])
+                        elif news[-1] == 'or' and tag.is_state(news[-2]):
                             news.pop()
                             sop = mtgl.OR
-                        elif news[-1] == 'and' and mtgl.is_state(news[-2]):
+                        elif news[-1] == 'and' and tag.is_state(news[-2]):
                             news.pop()
                         else: break
                 else: break
@@ -528,7 +529,7 @@ def group(olds):
             # add status/quantifiers found
             if qs or ss or n:
                 # untag the object and add status/quantifiers found
-                t,v,p = mtgl.untag(tkn)
+                t,v,p = tag.untag(tkn)
                 if qs:
                     qs = mtgl.AND.join(qs)
                     if 'quantifier' in p: p['quantifier'] += mtgl.AND + qs
@@ -537,7 +538,7 @@ def group(olds):
                     if 'status' in p: p['status'] += mtgl.AND + sop.join(ss)
                     else: p['status'] = sop.join(ss)
                 if n: p['num'] = n
-                news.append(mtgl.retag(t,v,p))
+                news.append(tag.retag(t,v,p))
             else: news.append(tkn)
         else: news.append(tkn)
     return news
@@ -560,23 +561,23 @@ def add_hanging(olds):
 
         if tkn == 'pr<with>' or tkn == 'pr<without>':
             # if the last token added is an object untag it
-            if news and mtgl.is_mtg_obj(news[-1]):
-                ot,ov,ops = mtgl.untag(news[-1])
+            if news and tag.is_mtg_obj(news[-1]):
+                ot,ov,ops = tag.untag(news[-1])
 
                 # two possibilities following the with/without
                 #  keywords - the next 'phrase' is "kw<KW>" or "kw<KW> and kw<KW>"
                 #   we assume there won't be 'or'ed keywords or more than 2
                 #  NOTE: we have to check the double kw first
                 #  meta - the next 'phrase' is ch<META> op<OP> nu<NU>
-                skw = [mtgl.is_keyword]
-                dkw = [mtgl.is_keyword,'and',mtgl.is_keyword]
-                meta = [mtgl.is_meta_char,mtgl.is_operator,mtgl.is_number]
+                skw = [tag.is_keyword]
+                dkw = [tag.is_keyword,'and',tag.is_keyword]
+                meta = [tag.is_meta_char,tag.is_operator,tag.is_number]
 
                 if ll.matchl(dkw,olds[i+1:],0) == 0:
                     assert(tkn == 'pr<with>') # shouldn't have a neg in this case
                     # pull out both keywords and combine
                     kw = mtgl.AND.join(
-                        [mtgl.untag(olds[i+1])[1],mtgl.untag(olds[i+3])[1]]
+                        [tag.untag(olds[i+1])[1],tag.untag(olds[i+3])[1]]
                     )
 
                     # add the keyword to the objects meta or create meta parameter
@@ -585,12 +586,12 @@ def add_hanging(olds):
 
                     # retags and appends the popped object)
                     news.pop()
-                    news.append(mtgl.retag(ot,ov,ops))
+                    news.append(tag.retag(ot,ov,ops))
                     skip = 3
                     continue
                 elif ll.matchl(skw,olds[i+1:],0) == 0:
                     # single keyword, extract it, & check if should be negative
-                    kw = mtgl.untag(olds[i+1])[1]
+                    kw = tag.untag(olds[i+1])[1]
                     neg = '' if tkn == 'pr<with>' else mtgl.NOT
 
                     # add the keyword to the objects meta or create meta parameter
@@ -599,41 +600,41 @@ def add_hanging(olds):
 
                     # retags and appends the popped object)
                     news.pop()
-                    news.append(mtgl.retag(ot,ov,ops))
+                    news.append(tag.retag(ot,ov,ops))
                     skip = 1
                     continue
                 elif ll.matchl(meta,olds[i+1],0) == 0:
                     # 2) meta op number
-                    mv = mtgl.untag(olds[i+1])[1] # untag the meta characteristic
-                    ov = mtgl.untag(olds[i+2])[1] # and the operator
-                    nv= mtgl.untag(olds[i+3])[1] # and the number
+                    mv = tag.untag(olds[i+1])[1] # untag the meta characteristic
+                    ov = tag.untag(olds[i+2])[1] # and the operator
+                    nv= tag.untag(olds[i+3])[1] # and the number
 
                     # check if obj already has a meta parameter
                     if 'meta' in ops: ops['meta'] += mtgl.AND + mv + ov + nv
                     else: ops['meta'] = mv + ov + nv
                     # retags and appends the popped object)
                     news.pop()
-                    news.append(mtgl.retag(ot,ov,ops))
+                    news.append(tag.retag(ot,ov,ops))
                     skip = 3
                     continue
 
                 # if nothing happens, the preposition will fall through and
                 # be added
-        elif mtgl.is_state(tkn):
+        elif tag.is_state(tkn):
             # untag the last token added and verify it's an object
             try:
-                t,v,p = mtgl.untag(news[-1])
+                t,v,p = tag.untag(news[-1])
                 if t == 'ob':
                     # untag the current, saving the 'status' value
-                    ss = [mtgl.untag(tkn)[1]]
+                    ss = [tag.untag(tkn)[1]]
                     op = mtgl.AND
 
                     # read ahead while and/or and status are present
                     j = i+1
                     while True:
                         try:
-                            if mtgl.is_state(olds[j]):
-                                ss.append(mtgl.untag(olds[j])[1])
+                            if tag.is_state(olds[j]):
+                                ss.append(tag.untag(olds[j])[1])
                                 skip += 1
                                 j += 1
                             elif olds[j] == 'or':
@@ -651,7 +652,7 @@ def add_hanging(olds):
                     if 'status' in p: p['status'] += op.join(ss)
                     else: p['status'] = op.join(ss)
                     news.pop()
-                    news.append(mtgl.retag(t,v,p))
+                    news.append(tag.retag(t,v,p))
                     continue
             except mtgl.MTGLTagException: pass
         elif tkn == 'xc<devotion>':
@@ -661,26 +662,26 @@ def add_hanging(olds):
             # any player as viable
             try:
                 # last added will be xp, next 2 will be pr<to> and ch<...>
-                if mtgl.is_player(news[-1]) and olds[i+1] == 'pr<to>' and\
-                        mtgl.is_mtg_obj(olds[i+2]):
+                if tag.is_player(news[-1]) and olds[i+1] == 'pr<to>' and\
+                        tag.is_mtg_obj(olds[i+2]):
                     # for devotion, player should be simple & characteristics
                     # should be a color(s)
-                    ply = mtgl.untag(news.pop())[1] # should always be 'you'
-                    ps = mtgl.untag(olds[i+2])[2]
+                    ply = tag.untag(news.pop())[1] # should always be 'you'
+                    ps = tag.untag(olds[i+2])[2]
                     news.append(
-                        mtgl.retag('xp',ply,{'devotion':ps['characteristics']})
+                        tag.retag('xp',ply,{'devotion':ps['characteristics']})
                     )
                     skip = 2
                     continue
             except mtgl.MTGLTagException: pass
             except (IndexError,ValueError): pass
-        elif mtgl.is_zone(tkn):
+        elif tag.is_zone(tkn):
             # TODO: make sure this is working as expected
             # check if we have a phrase ob<OBJECT> pr<in> zn<ZONE>
             try:
-                if mtgl.is_mtg_obj(news[-2]) and news[-1] == 'pr<in>':
+                if tag.is_mtg_obj(news[-2]) and news[-1] == 'pr<in>':
                     # untag the zone and get owner or quantifer
-                    t,v,ps = mtgl.untag(tkn)
+                    t,v,ps = tag.untag(tkn)
                     assert(not('quantifier' in ps and 'player' in ps))
                     p = None
                     if 'quantifier' in ps: p = ps['quantifier']
@@ -689,13 +690,13 @@ def add_hanging(olds):
                     # untag the existing object (make it zone->player or
                     # zone->quantifier) and add to that object
                     news.pop() # pop the preposition
-                    ot,ov,ops = mtgl.untag(news.pop())
+                    ot,ov,ops = tag.untag(news.pop())
 
                     if p: ops['zone'] = '{}{}{}'.format(v,mtgl.ARW,p)
                     else: ops['zone'] = v
 
                     # add the ob back to news
-                    news.append(mtgl.retag(ot,ov,ops))
+                    news.append(tag.retag(ot,ov,ops))
                     continue
             except IndexError: pass
         news.append(tkn)
@@ -716,13 +717,13 @@ def merge_possessive(olds):
             skip -= 1
             continue
 
-        if mtgl.is_mtg_obj(tkn):
+        if tag.is_mtg_obj(tkn):
             # after chaining/grouping, objects that have possesives
             # will be follwed by xp<player> xc<[not]control|own>
-            if ll.matchl([mtgl.is_player,is_possessive],olds[i:],1) == 1:
-                ot,ov,op = mtgl.untag(tkn)          # object tag
-                pt,pv,pp = mtgl.untag(olds[i+1])    # player tag
-                _,v,_ = mtgl.untag(olds[i+2])       # possessive tag
+            if ll.matchl([tag.is_player,is_possessive],olds[i:],1) == 1:
+                ot,ov,op = tag.untag(tkn)          # object tag
+                pt,pv,pp = tag.untag(olds[i+1])    # player tag
+                _,v,_ = tag.untag(olds[i+2])       # possessive tag
 
                 # is the possessive negated? if so, strip it out
                 neg = mtgl.NOT in v
@@ -735,7 +736,7 @@ def merge_possessive(olds):
                 if pv == 'you':
                     if neg: pv = 'opponent' # make opponent if negated
                     op[prop] = pv
-                    news.append(mtgl.retag(ot,ov,op))
+                    news.append(tag.retag(ot,ov,op))
                 else:
                     # if there is a quantifier, AND it with player
                     if not 'quantifier' in pp: val = pv
@@ -747,18 +748,18 @@ def merge_possessive(olds):
                     #  AND or ARW or wrap in parenthesis etc - which is best?
                     if 'status' in pp: val = pp['status'] + mtgl.AND + val
                     op[prop] = val
-                    news.append(mtgl.retag(ot,ov,op))
+                    news.append(tag.retag(ot,ov,op))
 
                 # skip the merged tokens
                 skip = 2
                 continue
-        elif mtgl.is_player(tkn):
+        elif tag.is_player(tkn):
             # after chaining/grouping, players that possess a zone will be
             # followed by the zone
             try:
-                if mtgl.is_zone(olds[i+1]):
-                    pt,pv,pps = mtgl.untag(tkn)
-                    zt,zv,_ = mtgl.untag(olds[i+1]) # shouldnt be a prop-list
+                if tag.is_zone(olds[i+1]):
+                    pt,pv,pps = tag.untag(tkn)
+                    zt,zv,_ = tag.untag(olds[i+1]) # shouldnt be a prop-list
 
                     # check for quantifiers in the plaer
                     if not 'quantifier' in pps: val = pv
@@ -768,7 +769,7 @@ def merge_possessive(olds):
                     if 'of' in pps: val = pps['of'] + mtgl.ARW + val
 
                     # add the zone to news
-                    news.append(mtgl.retag(zt,zv,{'player':val}))
+                    news.append(tag.retag(zt,zv,{'player':val}))
                     skip = 1 # skip the next token (the zone)
 
                     continue
@@ -785,6 +786,6 @@ def is_possessive(tkn):
     :param tkn: token to check
     :return: True if possessive, False otherwise
     """
-    if mtgl.is_lituus_char(tkn) and ('control' in tkn or 'own' in tkn):
+    if tag.is_lituus_char(tkn) and ('control' in tkn or 'own' in tkn):
         return True
     return False

@@ -61,7 +61,8 @@ lands = {
     'Forest':'G',
     'Wastes': 'C'}
 legal_multicnt = [
-    "Rat Colony","Relentless Rats","Shadowborn Apostle","Persistent Petitioners"
+    "Rat Colony","Relentless Rats","Shadowborn Apostle","Persistent Petitioners",
+    "Seven Dwarves"
 ]
 mana_combinations = mana_colors + ["".join(x) for x in
                                    combinations(mana_colors, 2)] + \

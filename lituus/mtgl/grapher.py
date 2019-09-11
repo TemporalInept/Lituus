@@ -20,9 +20,10 @@ __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
 import re
-import lituus.mtgl.list_util as ll
 import lituus.mtgl.mtgl as mtgl
 import lituus.mtgl.mtgt as mtgt
+import lituus.mtgl.list_util as ll
+import lituus.mtgl.mtgltag as tag
 
 def graph(mtxt,ctype='other'):
     """
@@ -76,7 +77,7 @@ def graph_line(t,pid,line,ctype='other'):
     #  g) 714 Saga Cards
     #  h) 113.1a Granted abilities (preceded by has,have,gains,gain and
     #   double quoted
-    if mtgl.is_ability_word(line[0]): graph_aw_line(t,pid,line)
+    if tag.is_ability_word(line[0]): graph_aw_line(t,pid,line)
     elif is_kw_line(line): graph_kw_line(t,pid,line)
     else:
         # (112.3) add an ability-line or 'ability-clause' node
@@ -88,7 +89,7 @@ def graph_line(t,pid,line,ctype='other'):
         elif is_level(line): graph_level_line(t,lid,line) # f
         elif ctype == 'saga': graph_saga_line(t,lid,line) # g
         elif is_activated_ability(line): graph_activated_ability(t,lid,line)
-        elif mtgl.is_tgr_word(line[0]): graph_triggered_ability(t,lid,line)
+        elif tag.is_tgr_word(line[0]): graph_triggered_ability(t,lid,line)
         elif ctype == 'spell': graph_clause(t,t.add_node(lid,'spell-ability'),line)
         else:
             # graph_line may be called by intermediate nodes and this is the
@@ -122,7 +123,7 @@ def graph_aw_line(t,pid,line):
     """
     # add the aw-line, ability-word and ability-word-definition
     awid = t.add_node(pid,'aw-line')
-    t.add_node(awid,'ability-word',word=mtgl.untag(line[0])[1])
+    t.add_node(awid,'ability-word',word=tag.untag(line[0])[1])
     graph_line(t,t.add_node(awid,'ability-word-definition'),line[2:])
 
 def graph_kw_line(t,pid,line):
@@ -142,14 +143,14 @@ def graph_kw_line(t,pid,line):
         kwid = t.add_node(kwlid,'keyword-clause')
 
         # split the keyword clause into keyword and parameters
-        kw = mtgl.untag(kwc[0])[1]
+        kw = tag.untag(kwc[0])[1]
         ps = kwc[1:]
 
         # add the keyword node
         t.add_node(kwid,'keyword',word=kw)
 
         # handle 'special' and/or variation keywords first
-        if kw == 'equip' and ps and mtgl.is_mtg_obj(ps[0]):
+        if kw == 'equip' and ps and tag.is_mtg_obj(ps[0]):
             # 702.6s Equip [quality] creature [cost]
             # [quality] and creature will be merged an object tag
             t.add_node(kwid,'quality',quality=ps[0])
@@ -157,7 +158,7 @@ def graph_kw_line(t,pid,line):
             # graph the cost/subcosts
             graph_cost(t,t.add_node(kwid,'keyword-cost'),ps[1:])
         elif kw == 'hexproof' and\
-                ll.matchl(['pr<from>',mtgl.is_quality],ps,0) == 0:
+                ll.matchl(['pr<from>',tag.is_quality],ps,0) == 0:
             # 702.11d Hexproof from [quality]. 3 cards have this
             t.add_node(kwid,'from',quality=ps[1])
         elif kw == 'protection':
@@ -173,14 +174,14 @@ def graph_kw_line(t,pid,line):
                     kwid,'conjunction',coordinator='and',item_type='quality'
                 )
                 for q in qs: t.add_node(cid,'from',quality=q)
-        elif kw == 'cycling' and mtgl.is_mtg_obj(ps[0]):
+        elif kw == 'cycling' and tag.is_mtg_obj(ps[0]):
             # 702.28e [Type]cycling [cost] (Function kw_clauses rewrites
             # this as kw<cycling> [type] [cost]
             # NOTE: due to the parser's implementation of rule 109.2, the
             # [type] is tagged as a permanent vice a card as it should be
             # fix the issue here before adding to tree
             t.add_node(
-                kwid,'cycling-type',type=mtgl.retag('ob','card',mtgl.untag(ps[0])[2])
+                kwid,'cycling-type',type=tag.retag('ob','card',tag.untag(ps[0])[2])
             )
 
             # get the cost/subcosts
@@ -211,7 +212,7 @@ def graph_kw_line(t,pid,line):
             # 702.76a Reinforce N <long-hyphen> [cost]
             # 702.112a Awaken N <long-hyphen> [cost]
             # add the n
-            t.add_node(kwid,'n',value=mtgl.untag(ps[0])[1])
+            t.add_node(kwid,'n',value=tag.untag(ps[0])[1])
 
             # skipping the long hyphen, add a cost node to the tree
             graph_cost(t, t.add_node(kwid,'keyword-cost'),ps[2:])
@@ -222,13 +223,13 @@ def graph_kw_line(t,pid,line):
         elif len(ps) > 0:
             # singletons and special cases/variations have been added
             # three types remain, Object/Quality, N, Cost
-            if mtgl.is_number(ps[0]):
-                t.add_node(kwid,'n',value=mtgl.untag(ps[0])[1])
-                if ll.matchl([mtgl.is_variable,',','where'],ps,0) == 0:
+            if tag.is_number(ps[0]):
+                t.add_node(kwid,'n',value=tag.untag(ps[0])[1])
+                if ll.matchl([tag.is_variable,',','where'],ps,0) == 0:
                     # Thromok the Insatiable has Devour X, the only card I've
                     # found with a keyword and variable for n
                     t.add_node(kwid,'clause',tokens=ps[3:])
-            elif mtgl.is_mtg_obj(ps[0]):
+            elif tag.is_mtg_obj(ps[0]):
                 # TODO: check for need to collate, also should we continue
                 #  to constrain to obj and not Thing
                 t.add_attr(t.add_node(kwid,'object'),'object',ps[0])
@@ -249,7 +250,7 @@ def graph_modal_line(t,pid,line):
     mid = t.add_node(pid,'modal')
 
     # Some modals require an opp to choose - if so extract it and add
-    if mtgl.is_player(line[0]):
+    if tag.is_player(line[0]):
         t.add_node(mid,'player',player=line[0])
         line = line[1:]
 
@@ -271,7 +272,7 @@ def graph_modal_line(t,pid,line):
         # many choices can be made (n) and if the same mode can be chosen
         # more than once (repeatable)
         rep = 'yes' if mtgl.PER in instr else 'no'
-        t.add_node(iid,'choose',n=mtgl.untag(instr[1])[1],repeatable=rep)
+        t.add_node(iid,'choose',n=tag.untag(instr[1])[1],repeatable=rep)
     elif mtype == 3:
         # "as enters.." choose one of two options. There are only 5 cards
         # 'Seige' enchantments that fit this modal preamble and the choices
@@ -284,8 +285,8 @@ def graph_modal_line(t,pid,line):
         #  this clause should really be the parent of the modal
         c1 = instr[6] # first choice
         c2 = instr[8] # second choice
-        if mtgl.is_mtg_obj(c1): c1 = mtgl.untag(c1)[2]['characteristics']+'s'
-        if mtgl.is_mtg_obj(c2): c2 = mtgl.untag(c2)[2]['characteristics']+'s'
+        if tag.is_mtg_obj(c1): c1 = tag.untag(c1)[2]['characteristics']+'s'
+        if tag.is_mtg_obj(c2): c2 = tag.untag(c2)[2]['characteristics']+'s'
         graph_clause(t,iid,ll.splitl(instr,instr.index('xa<choose>'))[0])
         t.add_node(iid,'choose',option1=c1,option2=c2)
 
@@ -304,7 +305,7 @@ def graph_modal_line(t,pid,line):
         moid = t.add_node(mid,'mode')
         if mtype == 3:
             r,_,line = ll.splitl(m,m.index(mtgl.HYP))
-            if mtgl.is_mtg_obj(r[0]): r = mtgl.untag(r[0])[2]['characteristics']+'s'
+            if tag.is_mtg_obj(r[0]): r = tag.untag(r[0])[2]['characteristics']+'s'
             else: r = r[0]
             t.add_attr(moid,'option',r)
         else: line = m
@@ -336,8 +337,8 @@ def graph_level_line(t,pid,line):
     lu,_,line = ll.splitl(line,line.index('<break>'))
     lsym = lu[1].split('-')
     if len(lsym) == 2:
-        r = "{}-{}".format(mtgl.untag(lsym[0])[1],mtgl.untag(lsym[1])[1])
-    else: r = "{}+".format(mtgl.untag(lsym[0])[1])
+        r = "{}-{}".format(tag.untag(lsym[0])[1],tag.untag(lsym[1])[1])
+    else: r = "{}+".format(tag.untag(lsym[0])[1])
     t.add_attr(lsid,'range',r)
 
     # the level's P/T will be in the next clause (the tagger has tagged this as 'ls'
@@ -348,7 +349,7 @@ def graph_level_line(t,pid,line):
         # nothing remains after the p/t
         lp = line
         line = []
-    pt = mtgl.untag(lp[0])[2]
+    pt = tag.untag(lp[0])[2]
     t.add_attr(lpid,'p/t',pt['val'])
 
     # before moving to next clause(s), we have to take care of some artifacts
@@ -356,7 +357,7 @@ def graph_level_line(t,pid,line):
     # 1) replace double periods with a single period
     # 2) replace KEYWORD PERIOD with just KEYWORD
     line = ll.replacel(line,[mtgl.PER,mtgl.PER],[mtgl.PER])
-    if ll.matchl([mtgl.is_keyword,mtgl.PER],line,0) == 0: line = line[:-1]
+    if ll.matchl([tag.is_keyword,mtgl.PER],line,0) == 0: line = line[:-1]
     #i = ll.matchl([mtgl.PER,'<break>',mtgl.PER],line)
     #if i > -1: line[i:] = mtgl.PER
 
@@ -367,11 +368,11 @@ def graph_level_line(t,pid,line):
     # check if we have keywords, if so build the 'keyword line'
     laid = None
     kws = []
-    i = ll.matchl([mtgl.is_keyword],line)
+    i = ll.matchl([tag.is_keyword],line)
     while i > -1:
         kws.extend(line[:i+1])
         line = line[i+1:]
-        i = ll.matchl([mtgl.is_keyword],line)
+        i = ll.matchl([tag.is_keyword],line)
 
     # if there is a keyword line, create the level abilities node, graph it &
     # clean up any artifacts
@@ -489,7 +490,7 @@ def graph_triggered_ability(t,pid,line):
     word,cond,effect,instr = ta_clause(line)
 
     # add the trigger word node and graph the condition as a clause
-    t.add_node(taid,'triggered-ability-word',word=mtgl.untag(word)[1])
+    t.add_node(taid,'triggered-ability-word',word=tag.untag(word)[1])
     graph_clause(t,t.add_node(taid,'triggered-ability-condition'),cond)
 
     # for effect we add the node, then check if it is modal or not
@@ -536,7 +537,7 @@ def graph_clause(t,pid,tkns):
             skip -= 1
             continue
 
-        if mtgl.tkn_type(tkn) == mtgl.MTGL_PUN:
+        if tag.tkn_type(tkn) == tag.MTGL_PUN:
             # assume that any punctuation we get here signifies a separation
             # between clauses
             if cls:
@@ -556,27 +557,27 @@ def graph_clause(t,pid,tkns):
             #    if mtype > 0: graph_modal_line(t,pid,tkns[i:])
             #    #print("{}: {}".format(modal_type(tkns[i:]),tkns[i:]))
             else: t.add_node(pid,'punctuation',symbol=tkn)
-        elif mtgl.tkn_type(tkn) == mtgl.MTGL_SYM:
+        elif tag.tkn_type(tkn) == tag.MTGL_SYM:
             if cls:
                 t.add_node(pid,'clause',tkns=cls)
                 cls = []
-            if mtgl.is_mana_string(tkn): t.add_node(pid,'mana-string',mana=tkn)
+            if tag.is_mana_string(tkn): t.add_node(pid,'mana-string',mana=tkn)
             else: t.add_node(pid,'mtg-symbol',symbol=tkn)
-        elif mtgl.is_loyalty_cost(tkn) and len(tkns) == 1:
+        elif tag.is_loyalty_cost(tkn) and len(tkns) == 1:
             # extract the parameters adding only +/- and the digit/variable
             if not tkn.startswith('nu'):
                 s = tkn[0]
                 tkn = tkn[1:]
             else: s = ''
-            s += mtgl.untag(tkn)[1]
+            s += tag.untag(tkn)[1]
             t.add_node(pid,'loyalty-symbol',symbol=s)
-        elif mtgl.is_keyword_action(tkn):
+        elif tag.is_keyword_action(tkn):
             # in most cases, the keyword action gets its parameters from the
             # tokens following it. However, a few require some/all of the tokens
             # preceding it. Regardless, cls will be claused out
             skip = graph_keyword_action(t,pid,cls,tkn,tkns[i+1:])
             cls = []
-        elif mtgl.is_lituus_act(tkn):
+        elif tag.is_lituus_act(tkn):
             # special 'action' words we have identified as being common throughout
             # mtg oracle texts. Same as keyword actions where a few actions require
             # preceding tokens to grab their parameters
@@ -602,7 +603,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
      of items in tkns that have been processed
     """
     # extract the actual keyword-action
-    v = mtgl.untag(kwa)[1]
+    v = tag.untag(kwa)[1]
 
     # keyword-actions follow rules similar to keywords i.e.
     #     keyword-action object
@@ -623,7 +624,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
         # the keyword-action, meaning it has already been pushed
         # onto cls.
         ob = None  # havent seen any explore not preceded by an obj
-        if cls and mtgl.is_thing(cls[-1]): ob = cls.pop()
+        if cls and tag.is_thing(cls[-1]): ob = cls.pop()
 
         # add any open clauses
         if cls: t.add_node(pid,'clause',tkns=cls)
@@ -640,8 +641,8 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
         # fight 701.12 ob->creature ka<fight> ob->creature
         skip = 0
         o1 = o2 = None
-        if cls and mtgl.is_thing(cls[-1]): o1 = cls.pop()
-        if tkns and mtgl.is_thing(tkns[0]):  # could be an object or xo<it>
+        if cls and tag.is_thing(cls[-1]): o1 = cls.pop()
+        if tkns and tag.is_thing(tkns[0]):  # could be an object or xo<it>
             o2 = tkns[0]
             skip = 1
 
@@ -668,7 +669,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
     if v == 'search':
         # 701.18a search zone for card
         # ka<search> ZONE pr<for> card
-        if ll.matchl([mtgl.is_zone,'pr<for>',mtgl.is_mtg_obj],tkns,0) == 0:
+        if ll.matchl([tag.is_zone,'pr<for>',tag.is_mtg_obj],tkns,0) == 0:
             t.add_node(kwid,'zone',zone=tkns[0])
             t.add_node(kwid,'for',card=tkns[2])
             skip = 3
@@ -677,8 +678,8 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
     elif v == 'vote':
         # 701.31a vote for one choice
         # the keyword-action is always followed by a for
-        simple = ['pr<for>',mtgl.is_mtg_obj,'or',mtgl.is_mtg_obj]
-        embedded = ['pr<for>',mtgl.is_mtg_obj]
+        simple = ['pr<for>',tag.is_mtg_obj,'or',tag.is_mtg_obj]
+        embedded = ['pr<for>',tag.is_mtg_obj]
         if ll.matchl(simple,tkns,0) == 0:
             # simple case chocies are opt1 or opt2
             t.add_node(kwid,'option',choices=[tkns[1],tkns[3]])
@@ -688,7 +689,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
             # the object or as in one case (Council's Judgement)
             # the choices are implied depending on the game state
             cs = tkns[1]
-            ps = mtgl.untag(cs)[2]
+            ps = tag.untag(cs)[2]
             try:
                 if mtgl.OR in ps['characteristics']:
                     cs = ps['characteristics'].split(mtgl.OR)
@@ -709,8 +710,8 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
     elif v in KWA_N:
         # ka<KEYWORD-ACTION> N
         try:
-            if mtgl.is_number(tkns[0]):
-                t.add_node(kwid,'n',value=mtgl.untag(tkns[0])[1])
+            if tag.is_number(tkns[0]):
+                t.add_node(kwid,'n',value=tag.untag(tkns[0])[1])
                 skip = 1
         except IndexError:
             pass
@@ -743,21 +744,21 @@ def graph_kwa_exchange(t,pid,cls,tkns):
     #   for matching
     # NOTE: cobe will match everything cobs does so cobs must be
     #  matched first
-    cobs = ['xc<control>','of',mtgl.is_mtg_obj,'and',mtgl.is_mtg_obj]
-    cobe = ['xc<control>','of',mtgl.is_mtg_obj]
-    cobe_edge = ['xc<control>','of','the',mtgl.is_mtg_obj]
-    lt = ['xc<life>','totals','pr<with>',mtgl.is_player]
+    cobs = ['xc<control>','of',tag.is_mtg_obj,'and',tag.is_mtg_obj]
+    cobe = ['xc<control>','of',tag.is_mtg_obj]
+    cobe_edge = ['xc<control>','of','the',tag.is_mtg_obj]
+    lt = ['xc<life>','totals','pr<with>',tag.is_player]
     ltch = [
-        mtgl.is_player,'xc<life>','total','pr<with>',
-        mtgl.is_mtg_obj,mtgl.is_mtg_char
+        tag.is_player,'xc<life>','total','pr<with>',
+        tag.is_mtg_obj,tag.is_mtg_char
     ]
     val_edge = [
-        mtgl.is_thing,mtgl.is_mtg_char,'and','the',
-        mtgl.is_mtg_char,'of',mtgl.is_thing
+        tag.is_thing,tag.is_mtg_char,'and','the',
+        tag.is_mtg_char,'of',tag.is_thing
     ]
     v = 'exchange'
 
-    if ll.matchl([mtgl.is_zone],tkns,0) == 0:
+    if ll.matchl([tag.is_zone],tkns,0) == 0:
         # 701.10d exchange cards in one zone w/ cards in another zone
         # go ahead and add cls, then the kwa clause and kwa node, then
         # the kwa clause and subsequent nodes
@@ -766,14 +767,14 @@ def graph_kwa_exchange(t,pid,cls,tkns):
         t.add_node(kwid,'keyword-action',word=v,type='zone')
 
         # the 2 zones should be anded and a player should be specified
-        _, zs, ps = mtgl.untag(tkns[0])
+        _, zs, ps = tag.untag(tkns[0])
         zs = zs.split(mtgl.AND)
         assert(len(zs) == 2)
         assert('player' in ps)
 
         # recombine and add the nodes
-        t.add_node(kwid,'what',zone=mtgl.retag('zn',zs[0],ps))
-        t.add_node(kwid,'with',zone=mtgl.retag('zn',zs[1],ps))
+        t.add_node(kwid,'what',zone=tag.retag('zn',zs[0],ps))
+        t.add_node(kwid,'with',zone=tag.retag('zn',zs[1],ps))
 
         # we'll skip the zone
         return 1
@@ -809,7 +810,7 @@ def graph_kwa_exchange(t,pid,cls,tkns):
         if cls: t.add_node(pid,'clause',tkns=cls)
         kwid = t.add_node(pid,'keyword-action-clause')
         t.add_node(kwid,'keyword-action',word=v,type='life')
-        t.add_node(kwid,'who',player=mtgl.retag('xp','you',{}))
+        t.add_node(kwid,'who',player=tag.retag('xp','you',{}))
         t.add_node(kwid,'with',player=tkns[3])
         return 4
     elif tkns == ['xc<life>', 'totals']:
@@ -842,18 +843,18 @@ def graph_kwa_exchange(t,pid,cls,tkns):
         # TODO: see 188
         # add life total to player as a meta-charactersitic and
         # retag before adding the kwa subnodes
-        _,pv,pps=mtgl.untag(tkns[0])
+        _,pv,pps=tag.untag(tkns[0])
         assert('meta' not in pps)  # will trigger if 188 is fixed
         pps['meta'] = 'life'
-        t.add_node(kwid,'what',value=mtgl.retag('xp',pv,pps))
+        t.add_node(kwid,'what',value=tag.retag('xp',pv,pps))
 
         # TODO: see 188
         # add the the characteristic as as a meta-charactersitic and
         # retag before addint the kwa subnodes
-        _,ov,ops = mtgl.untag(tkns[4])
+        _,ov,ops = tag.untag(tkns[4])
         assert('meta' not in ops)  # will trigger if 188 is fixed
-        ops['meta'] = mtgl.untag(tkns[5])[1]
-        t.add_node(kwid,'with',value=mtgl.retag('ob',ov,ops))
+        ops['meta'] = tag.untag(tkns[5])[1]
+        t.add_node(kwid,'with',value=tag.retag('ob',ov,ops))
 
         # skip the six tokens we added
         return 6
@@ -870,18 +871,18 @@ def graph_kwa_exchange(t,pid,cls,tkns):
         # TODO: see 188
         # add the first charactersitic as a meta-characteristic
         # to the first 'thing'
-        ot,ov,ops = mtgl.untag(tkns[0])
+        ot,ov,ops = tag.untag(tkns[0])
         assert('meta' not in ops)  # will trigger if 188 is fixed
-        ops['meta'] = mtgl.untag(tkns[1])[1]
-        t.add_node(kwid,'what',value=mtgl.retag(ot,ov,ops))
+        ops['meta'] = tag.untag(tkns[1])[1]
+        t.add_node(kwid,'what',value=tag.retag(ot,ov,ops))
 
         # TODO: see 188
         # add the second charactersitic as a meta-characteristic
         # to the second 'thing'
-        ot,ov,ops = mtgl.untag(tkns[6])
+        ot,ov,ops = tag.untag(tkns[6])
         assert('meta' not in ops)  # will trigger if 188 is fixed
-        ops['meta'] = mtgl.untag(tkns[4])[1]
-        t.add_node(kwid,'with',value=mtgl.retag(ot,ov,ops))
+        ops['meta'] = tag.untag(tkns[4])[1]
+        t.add_node(kwid,'with',value=tag.retag(ot,ov,ops))
 
         # skip the seven tokens we added
         return 7
@@ -912,13 +913,13 @@ def graph_kwa_shuffle(t,kwid,tkns):
     # 701.19c shuffle card(s) into zone->library. This covers cases
     # of shuffle card into library and shuffle zone into library i.e. zone
     # = graveyard:
-    if ll.matchl([mtgl.is_thing,'pr<into>',mtgl.is_zone],tkns,0) == 0:
+    if ll.matchl([tag.is_thing,'pr<into>',tag.is_zone],tkns,0) == 0:
         t.add_node(kwid,'thing',thing=tkns[0])
         t.add_node(kwid,'zone',zone=tkns[2])
         return 3
 
     # 701.19c shuffle cards from zone into zone
-    sp = [mtgl.is_thing,'pr<from>',mtgl.is_zone,'pr<into>',mtgl.is_zone]
+    sp = [tag.is_thing,'pr<from>',tag.is_zone,'pr<into>',tag.is_zone]
     if ll.matchl(sp,tkns,0) == 0:
         t.add_node(kwid,'thing',thing=tkns[0])
         t.add_attr(t.add_node(kwid,'from'),'from',tkns[2])
@@ -929,7 +930,7 @@ def graph_kwa_shuffle(t,kwid,tkns):
     # ...  ka<shuffle> zn<library player=you> ...
     # or ... ka<shuffle> xo<it> ...
     try:
-        if mtgl.is_zone(tkns[0]) or tkns[0] == 'xo<it>':
+        if tag.is_zone(tkns[0]) or tkns[0] == 'xo<it>':
             t.add_node(kwid,'zone',zone=tkns[0])
             return 1
     except IndexError:
@@ -953,18 +954,18 @@ def graph_kwa_double(t,kwid,tkns):
     # double obj<creature> characteristic or the edge case
     # double [the|target] characteristic of obj<creature> (God-Eternal Rhonas)
     # primary case
-    if ll.matchl([mtgl.is_thing,mtgl.is_meta_char],tkns) == 0:
-        t.add_node(kwid,'P/T',characteristic=mtgl.untag(tkns[1])[1],creature=tkns[0])
+    if ll.matchl([tag.is_thing,tag.is_meta_char],tkns) == 0:
+        t.add_node(kwid,'P/T',characteristic=tag.untag(tkns[1])[1],creature=tkns[0])
         return 2
 
     # edge case
-    if ll.matchl(['the',mtgl.is_meta_char,'of',mtgl.is_mtg_obj],tkns) == 0:
-        t.add_node(kwid,'P/T',characteristic=mtgl.untag(tkns[1])[1],creature=tkns[3])
+    if ll.matchl(['the',tag.is_meta_char,'of',tag.is_mtg_obj],tkns) == 0:
+        t.add_node(kwid,'P/T',characteristic=tag.untag(tkns[1])[1],creature=tkns[3])
         return 4
 
     # 701.9d ka<double> player's life
     # looking for 'player life total'
-    i = ll.matchl([mtgl.is_player,'xc<life_total>'],tkns)
+    i = ll.matchl([tag.is_player,'xc<life_total>'],tkns)
     if i > - 1:
         t.add_node(kwid,'life-total',who=tkns[i])
         return i+2
@@ -973,22 +974,22 @@ def graph_kwa_double(t,kwid,tkns):
     # looking for "the number of CTR on obj|Thing
     # TODO: this might be a place to collate even though at this point, I have
     #  not seen a case of doubling counters on conjoined objects
-    if ll.matchl(['the','number','of',mtgl.is_lituus_obj],tkns,0) == 0:
+    if ll.matchl(['the','number','of',tag.is_lituus_obj],tkns,0) == 0:
         # split on the 3rd token (which should be the counter(s)
         _,ctr,rem = ll.splitl(tkns,3)
-        _,val,ps = mtgl.untag(ctr)
+        _,val,ps = tag.untag(ctr)
         assert(val == 'ctr')
 
         # grab the Thing
-        i = ll.matchl([mtgl.is_thing],rem)
+        i = ll.matchl([tag.is_thing],rem)
         ob = rem[i] # will throw an error if we don't have an object
 
         # is there an intermediate clause
         cls = rem[1:i]
         if cls:
             # see if we can find a quantifier & if so, untag it
-            j = ll.matchl([mtgl.is_quantifier],cls)
-            if j > -1: cls = mtgl.untag(cls[j])[1]
+            j = ll.matchl([tag.is_quantifier],cls)
+            if j > -1: cls = tag.untag(cls[j])[1]
 
         # create the node and ad quantifying clause if present
         nid = t.add_node(kwid,'counters',type=ps['type'],thing=ob)
@@ -1014,9 +1015,9 @@ def graph_kwa_double(t,kwid,tkns):
             x = tkns[i+1:i+j] # drop the first 'of' when adding
             t.add_node(kwid,'mana',by=x[1:] if x[0] == 'of' else x)
         else:
-            j = ll.matchl([mtgl.is_number],tkns)
+            j = ll.matchl([tag.is_number],tkns)
             assert(j > i)
-            t.add_node(kwid,'value',of=mtgl.untag(tkns[j])[1])
+            t.add_node(kwid,'value',of=tag.untag(tkns[j])[1])
         return i+j
 
     return 0
@@ -1034,7 +1035,7 @@ def graph_lituus_action(t,pid,cls,la,tkns):
     :return: skip, the number of items in tkns that have been processed
     """
     # extract the action word
-    v = mtgl.untag(la)[1]
+    v = tag.untag(la)[1]
 
     # a few lituus actions require tokens from cls
     if v == 'phase_in' or v == 'phase_out':
@@ -1081,7 +1082,7 @@ def graph_lituus_action_add(t,pid,tkns):
     #  sure there are no amplyifing clauses by not stopping matchl at 0
     #  and there are not qualifying clauses
     # try double first
-    dbl = [mtgl.is_mana_string,'or',mtgl.is_mana_string]
+    dbl = [tag.is_mana_string,'or',tag.is_mana_string]
     if ll.matchl(dbl,tkns,0) == 0:
         cid=t.add_node(mid,'conjunction',coordinator='or',item_type='mana-string')
         t.add_node(cid,'mana-string',mana=tkns[0])
@@ -1089,7 +1090,7 @@ def graph_lituus_action_add(t,pid,tkns):
         return len(dbl)
 
     # then triple
-    tpl = [mtgl.is_mana_string,',',mtgl.is_mana_string,',','or',mtgl.is_mana_string]
+    tpl = [tag.is_mana_string,',',tag.is_mana_string,',','or',tag.is_mana_string]
     if ll.matchl(tpl,tkns,0) == 0:
         cid = t.add_node(mid,'conjunction',coordinator='or',item_type='mana-string')
         t.add_node(cid,'mana-string',mana=tkns[0])
@@ -1098,7 +1099,7 @@ def graph_lituus_action_add(t,pid,tkns):
         return len(tpl)
 
     # single mana string find the index of the mana-string
-    sng = ll.matchl([mtgl.is_mana_string],tkns)
+    sng = ll.matchl([tag.is_mana_string],tkns)
     if sng > -1:
         amp,ms,rem = ll.splitl(tkns,sng)
 
@@ -1128,7 +1129,7 @@ def graph_lituus_action_add(t,pid,tkns):
     #  that start with a given query and end with a given query
 
     # case 1.a
-    nm1 = [mtgl.re_mana_tag,'of',ll.re_all,mtgl.is_mtg_char]
+    nm1 = [tag.re_mana_tag,'of',ll.re_all,tag.is_mtg_char]
     l1 = len(nm1)
     i = ll.matchl(nm1,tkns)
     if i > -1:
@@ -1141,9 +1142,9 @@ def graph_lituus_action_add(t,pid,tkns):
 
         # get the quantity and whether its color or type, then determine
         # what 'quantifier' to put in the 'of' parameter
-        q = mtgl.re_mana_tag.match(mc[0]).group(2) # gives us the number
-        o = mtgl.untag(mc[3])[1]                   # gives color or type
-        if mtgl.tkn_type(mc[2]) == mtgl.MTGL_TAG: x = mtgl.untag(mc[2])[1]
+        q = tag.re_mana_tag.match(mc[0]).group(2) # gives us the number
+        o = tag.untag(mc[3])[1]                   # gives color or type
+        if tag.tkn_type(mc[2]) == tag.MTGL_TAG: x = tag.untag(mc[2])[1]
         else: x = mc[2]
 
         # add amplfying clause (if it exists), the mana-clause and
@@ -1164,7 +1165,7 @@ def graph_lituus_action_add(t,pid,tkns):
     # but for future expansion etc, we will code for those eventualities
     # This is a more specific match than case 1.a as it requires
     #  'xq<any>','nu<1>'
-    nm2 = [mtgl.re_mana_tag,'of','xq<any>','nu<1>',mtgl.is_mtg_char]
+    nm2 = [tag.re_mana_tag,'of','xq<any>','nu<1>',tag.is_mtg_char]
     l2 = len(nm2)
     i = ll.matchl(nm2,tkns)
     if i > -1:
@@ -1174,8 +1175,8 @@ def graph_lituus_action_add(t,pid,tkns):
 
         # get the quantity and whether its color or type, then determine
         # what 'quantifier' to put in the 'of' parameter
-        q = mtgl.re_mana_tag.match(mc[0]).group(2) # gives us the number
-        o = mtgl.untag(mc[4])[1]                   # gives color or type
+        q = tag.re_mana_tag.match(mc[0]).group(2) # gives us the number
+        o = tag.untag(mc[4])[1]                   # gives color or type
 
         # add amplfying clause (if it exists), the mana-clause and
         # qualifying clause (if it exists)
@@ -1188,7 +1189,7 @@ def graph_lituus_action_add(t,pid,tkns):
         return len(amp)+len(mc)+len(rem)
 
     # case 1.c
-    nm3 = [mtgl.re_mana_tag,'of','the','xa<choose>',mtgl.is_mtg_char]
+    nm3 = [tag.re_mana_tag,'of','the','xa<choose>',tag.is_mtg_char]
     l3 = len(nm3)
     i = ll.matchl(nm3,tkns)
     if i > -1:
@@ -1198,8 +1199,8 @@ def graph_lituus_action_add(t,pid,tkns):
 
         # get the quantity and whether its color or type, then determine
         # what 'quantifier' to put in the 'of' parameter
-        q = mtgl.re_mana_tag.match(mc[0]).group(2) # gives us the number
-        o = mtgl.untag(mc[4])[1]                   # gives color or type
+        q = tag.re_mana_tag.match(mc[0]).group(2) # gives us the number
+        o = tag.untag(mc[4])[1]                   # gives color or type
 
         # add amplfying clause (if it exists), the mana-clause and
         # qualifying clause (if it exists)
@@ -1212,7 +1213,7 @@ def graph_lituus_action_add(t,pid,tkns):
         return len(amp)+len(mc)+len(rem)
 
     # case 1.d NOTE: there are not any "any combination of types"
-    nm4 = [mtgl.re_mana_tag,'pr<in>','xq<any>','combination','of','ch<color>']
+    nm4 = [tag.re_mana_tag,'pr<in>','xq<any>','combination','of','ch<color>']
     l4 = len(nm4)
     i = ll.matchl(nm4,tkns)
     if i > -1:
@@ -1222,7 +1223,7 @@ def graph_lituus_action_add(t,pid,tkns):
 
         # get the quantity and whether its color or type, then determine
         # what 'quantifier' to put in the 'of' parameter
-        q = mtgl.re_mana_tag.match(mc[0]).group(2)  # gives us the number
+        q = tag.re_mana_tag.match(mc[0]).group(2)  # gives us the number
 
         # add amplfying clause (if it exists), the mana-clause and
         # qualifying clause (if it exists)
@@ -1236,13 +1237,13 @@ def graph_lituus_action_add(t,pid,tkns):
 
     # case 2
     # have to find the index of mana then split tkns into amp, mana, qual
-    i = ll.matchl([mtgl.re_mana_tag],tkns)
+    i = ll.matchl([tag.re_mana_tag],tkns)
     if i > -1:
         amp,mc,rem = ll.splitl(tkns,i)
 
         # get quantity if present TODO: what to do if it isnt
         try:
-            q = mtgl.re_mana_tag.match(mc).group(2)
+            q = tag.re_mana_tag.match(mc).group(2)
         except AttributeError:
             q = None
 
@@ -1268,19 +1269,19 @@ def graph_lituus_action_add(t,pid,tkns):
     return 0
 
 # put-counter
-def is_ctr(tkn): return mtgl.is_lituus_obj(tkn) and mtgl.untag(tkn)[1] == 'ctr'
-put_ctr_sng = [is_ctr,'pr<on>',mtgl.is_thing]
-put_ctr_dbl = [is_ctr,'pr<on>',mtgl.is_thing,'and',is_ctr,'pr<on>',mtgl.is_thing]
+def is_ctr(tkn): return tag.is_lituus_obj(tkn) and tag.untag(tkn)[1] == 'ctr'
+put_ctr_sng = [is_ctr,'pr<on>',tag.is_thing]
+put_ctr_dbl = [is_ctr,'pr<on>',tag.is_thing,'and',is_ctr,'pr<on>',tag.is_thing]
 put_ctr_tpl = [
-    is_ctr,'pr<on>',mtgl.is_thing,',',
-    is_ctr,'pr<on>',mtgl.is_thing,',','and',
-    is_ctr,'pr<on>',mtgl.is_thing
+    is_ctr,'pr<on>',tag.is_thing,',',
+    is_ctr,'pr<on>',tag.is_thing,',','and',
+    is_ctr,'pr<on>',tag.is_thing
 ]
 # put-card
-def is_card(tkn): return mtgl.is_mtg_obj(tkn) and mtgl.untag(tkn)[1] == 'card'
-put_card1 = [is_card,mtgl.is_preposition,mtgl.is_zone]
+def is_card(tkn): return tag.is_mtg_obj(tkn) and tag.untag(tkn)[1] == 'card'
+put_card1 = [is_card,tag.is_preposition,tag.is_zone]
 put_card2 = [
-    is_card,mtgl.is_preposition,mtgl.is_zone,mtgl.is_preposition,mtgl.is_zone
+    is_card,tag.is_preposition,tag.is_zone,tag.is_preposition,tag.is_zone
 ]
 def graph_lituus_action_put(t,pid,tkns):
     """
@@ -1310,7 +1311,7 @@ def graph_lituus_action_put(t,pid,tkns):
         cid = t.add_node(pid,'conjunction',coordinator='and',item_type='counter')
         for i in [0,4,9]: # index of xo<ctr...>s
             # extract the counter type and number (if any)
-            ps = mtgl.untag(tkns[i])[2]
+            ps = tag.untag(tkns[i])[2]
             ctype = ps['type'] if 'type' in ps else 'any' # set to any if necessary
             n = ps['num'] if 'num' in ps else '1'         # set num to 1 if necessary
 
@@ -1324,7 +1325,7 @@ def graph_lituus_action_put(t,pid,tkns):
         cid = t.add_node(pid,'conjunction',coordinator='and',item_type='counter')
         for i in [0,4]: # index of xo<ctr...>s
             # extract the counter type and number (if any)
-            ps = mtgl.untag(tkns[i])[2]
+            ps = tag.untag(tkns[i])[2]
             ctype = ps['type'] if 'type' in ps else 'any' # set to any if necessary
             n = ps['num'] if 'num' in ps else '1'         # set to 1 if necessary
 
@@ -1338,7 +1339,7 @@ def graph_lituus_action_put(t,pid,tkns):
         # extract the counter type and number (if any)
         # TODO: haven't seen any quantifiers other than 'another' or 'a' both
         #  of which can be considered '1' do we need to check anyway
-        ps = mtgl.untag(tkns[0])[2]
+        ps = tag.untag(tkns[0])[2]
         ctype = ps['type'] if 'type' in ps else 'any' # set to any if necessary
         n = ps['num'] if 'num' in ps else '1'         # set num to 1 if necessary
         t.add_node(pid,'counter',type=ctype,num=n,on=tkns[2])
@@ -1351,7 +1352,7 @@ def graph_lituus_action_put(t,pid,tkns):
     #  this have an adverse effect?
     if ll.matchl(put_card2,tkns,0) == 0:
         # in this case, we have to determine the from zone and the to zone
-        if mtgl.untag(tkns[1])[1] == 'from':
+        if tag.untag(tkns[1])[1] == 'from':
             fz = tkns[2]
             tz = tkns[4]
         else:
@@ -1392,9 +1393,8 @@ def graph_lituus_action_distribute(t,pid,tkns):
 
         # have to read up to the first obj from the end of the phrase, then add
         # the two tokens from the initial phrase to get the index of the object
-        j = ll.matchl([mtgl.is_mtg_obj],tkns[i:])
+        j = ll.matchl([tag.is_mtg_obj],tkns[i:])
         assert(j != -1)
-        #if j == -1: return 0 # uh-oh something bad happened (throw an error?)
         j += i
 
         # betw/ the initial phrase & the obj will be the list of numbers (if any)
@@ -1409,26 +1409,26 @@ def graph_lituus_action_distribute(t,pid,tkns):
 
         # regardless of case, the # and type of counters are in the initial phrase
         # TODO don't do any error checking now to see what happens
-        ps = mtgl.untag(tkns[0])[2]
+        ps = tag.untag(tkns[0])[2]
         ctype = ps['type']
         cnum = ps['num']
 
         # and the object will be always be at j. the last (or only) num of 'target'
         # objects will be in the object's prop list, pull the number out of the
         # object then retag it
-        ot,ov,ops = mtgl.untag(tkns[j])
+        ot,ov,ops = tag.untag(tkns[j])
         onum = ops['num']
         del ops['num']
-        ob = mtgl.retag(ot,ov,ops)
+        ob = tag.retag(ot,ov,ops)
 
         # no further analysis needs to be done, since we can determine by
         # the distance between i and j what case we have
         diff = j-1
         if diff == 0: pass # could go an delete this
-        elif diff == 3: onum = "{}, {}".format(mtgl.untag(tkns[i])[1],onum)
+        elif diff == 3: onum = "{}, {}".format(tag.untag(tkns[i])[1],onum)
         elif diff == 6:
             onum = "{}, {}, {}".format(
-                mtgl.untag(tkns[i])[1],mtgl.untag(tkns[i+2])[1],onum
+                tag.untag(tkns[i])[1],tag.untag(tkns[i+2])[1],onum
             )
         t.add_node(pid,'counter',type=ctype,num_ctr=cnum,num_obj=onum,on=ob)
         return j # skip up the object
@@ -1516,7 +1516,7 @@ def subcosts(tkns):
     ss1 = []     # the final list of subcosts
     running = [] # list of clauses encountered that arent mtg tokens
     for s in ss:
-        if mtgl.tkn_type(s[0]) == mtgl.MTGL_SYM:
+        if tag.tkn_type(s[0]) == tag.MTGL_SYM:
             # got a symbol
             if running:
                 # close out running, joining the running list by comma & reset
@@ -1526,7 +1526,7 @@ def subcosts(tkns):
         else:
             # got something else: if it's an action word, close out & append
             # running then rest otherwise append the new clause to running
-            if mtgl.is_action(s[0]):
+            if tag.is_action(s[0]):
                 if running: ss1.append(ll.joinl(running,mtgl.CMA))
                 running = [s]
             else: running.append(s)
@@ -1542,7 +1542,7 @@ def ta_clause(tkns):
     """
     # break tkns into trigger-word and remaining
     _,tw,rem = ll.splitl(tkns,0)
-    assert(mtgl.is_tgr_word(tw))
+    assert(tag.is_tgr_word(tw))
 
     # get the list of comma indices
     idx = ll.indicesl(rem,mtgl.CMA) # looking for middle split
@@ -1571,21 +1571,21 @@ def ta_clause(tkns):
         if i == 0:
             # the first clause is always in the condition but, if it ends with
             # a phase, it is the only part of the condition
-            if ll.matchl([mtgl.is_phase],s[-1:],0) == 0: split = 1
+            if ll.matchl([tag.is_phase],s[-1:],0) == 0: split = 1
             else: continue
-        if ll.matchl([mtgl.is_thing,mtgl.is_action],s,0) == 0:
+        if ll.matchl([tag.is_thing,tag.is_action],s,0) == 0:
             split = i
             break
-        elif ll.matchl([mtgl.is_player,'cn<may>',mtgl.is_action],s,0) == 0:
+        elif ll.matchl([tag.is_player,'cn<may>',tag.is_action],s,0) == 0:
             split = i
             break
-        elif mtgl.is_action(s[0]):
+        elif tag.is_action(s[0]):
             split = i
             break
         elif s[0] == 'cn<if>':
             split = i+1
             break
-        elif ll.matchl(['where',mtgl.is_variable],s,0) == 0:
+        elif ll.matchl(['where',tag.is_variable],s,0) == 0:
             split = i-1
             break
     if not split: split = -1
@@ -1643,28 +1643,28 @@ def _pro_from_(tkns):
     for i,pro in enumerate(pros):
         if len(pro) == 1:
             # have either an object with a characteristic or a characteristic
-            if mtgl.is_mtg_char(pro[0]): ch.append(mtgl.untag(pro[0])[1])
+            if tag.is_mtg_char(pro[0]): ch.append(tag.untag(pro[0])[1])
             else:
-                ps = mtgl.untag(pro[0])[2]
+                ps = tag.untag(pro[0])[2]
                 assert('characteristics' in ps)
                 ch.append(ps['characteristics'])
         else:
             # edge case - currently know of two possibilities, a meta-characteristic
             # with value or a quantified meta-characteristic
-            mc = [mtgl.is_meta_char,mtgl.is_operator,mtgl.is_number]
-            qc = [mtgl.is_quantifier,mtgl.is_meta_char]
+            mc = [tag.is_meta_char,tag.is_operator,tag.is_number]
+            qc = [tag.is_quantifier,tag.is_meta_char]
             if ll.matchl(mc,pro,0) == 0:
                 ch.append("{}{}{}".format(
-                        mtgl.untag(pro[0])[1], # the meta-characteristic,
-                        mtgl.untag(pro[1])[1], # the operator
-                        mtgl.untag(pro[2])[1]  # the numeric value
+                        tag.untag(pro[0])[1], # the meta-characteristic,
+                        tag.untag(pro[1])[1], # the operator
+                        tag.untag(pro[2])[1]  # the numeric value
                     )
                 )
             elif ll.matchl(qc,pro,0) == 0:
                 ch.append("{}{}{}".format(
-                        mtgl.untag(pro[1])[1], # the meta-chararcteristics
-                        mtgl.EQ,               # equal to sign
-                        mtgl.untag(pro[0])[1]  # the quantifier
+                        tag.untag(pro[1])[1], # the meta-chararcteristics
+                        mtgl.EQ,              # equal to sign
+                        tag.untag(pro[0])[1]  # the quantifier
                     )
                 )
             else:
@@ -1677,18 +1677,18 @@ def _pro_from_(tkns):
 # TODO: have to look at is_mtg_obj vs is_thing there are cases (Contempt)
 #  at least in bi-chains where an mtg object should be conjoined with a lituus obj
 qud_chain = [ # only a few quad chain cards (see Decimate)
-    mtgl.is_mtg_obj,mtgl.CMA,                                    # 0,1
-    mtgl.is_mtg_obj,mtgl.CMA,                                    # 2,3
-    mtgl.is_mtg_obj,mtgl.CMA,mtgl.is_coordinator,mtgl.is_mtg_obj # 4,5,6,7
+    tag.is_mtg_obj,mtgl.CMA,                                    # 0,1
+    tag.is_mtg_obj,mtgl.CMA,                                    # 2,3
+    tag.is_mtg_obj,mtgl.CMA,tag.is_coordinator,tag.is_mtg_obj # 4,5,6,7
 ]
 tri_chain = [
-    mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',mtgl.is_coordinator,mtgl.is_mtg_obj
+    tag.is_mtg_obj,',',tag.is_mtg_obj,',',tag.is_coordinator,tag.is_mtg_obj
 ]
 tri_chain_alt = [ # three objects (missed by the parser) that should be 'chained'
-    mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,',',mtgl.is_mtg_obj,
+    tag.is_mtg_obj,',',tag.is_mtg_obj,',',tag.is_mtg_obj,
 ]
-bi_chain = [mtgl.is_thing,mtgl.is_coordinator,mtgl.is_thing]
-bi_chain_alt = [mtgl.is_mtg_obj,',',mtgl.is_mtg_obj]
+bi_chain = [tag.is_thing,tag.is_coordinator,tag.is_thing]
+bi_chain_alt = [tag.is_mtg_obj,',',tag.is_mtg_obj]
 def collate(t,tkns):
     """
      given that the first token in tkns is a Thing, gathers and combines all
@@ -1711,14 +1711,15 @@ def collate(t,tkns):
     # 'fixing' an inability of the parser to chain these under a single object
     if ll.matchl(tri_chain_alt,tkns,0) == 0:
         # TODO: this will fail if any of the objects do not have characteristics
-        tag,val,ps = mtgl.untag(tkns[0]) # untag the first object
-        ps2 = mtgl.untag(tkns[2])[2]
-        ps3 = mtgl.untag(tkns[4])[2]
+        # TODO: oh-uh
+        tg,val,ps = tag.untag(tkns[0]) # untag the first object
+        ps2 = tag.untag(tkns[2])[2]
+        ps3 = tag.untag(tkns[4])[2]
         ps['characteristics'] = mtgl.AND.join(
             [ps['characteristics'],ps2['characteristics'],ps3['characteristics']]
         )
         nid = t.add_ur_node('object')
-        t.add_attr(nid,'object',mtgl.retag(tag,val,ps))
+        t.add_attr(nid,'object',tag.retag(tg,val,ps))
         return nid,len(tri_chain_alt)
 
     # check bi-chain
@@ -1737,19 +1738,19 @@ def collate(t,tkns):
             # permanent if it wasn't stated.
             # TODO: i don't think there is any problem but should we check
             #  the second object for other properties?
-            tag,_,ps = mtgl.untag(tkns[0])
-            _,val,ps1 = mtgl.untag(tkns[2])
+            tg,_,ps = tag.untag(tkns[0])
+            _,val,ps1 = tag.untag(tkns[2])
             if 'characteristics' in ps:
                 ps['characteristics'] += mtgl.AND + ps1['characteristics']
             else: ps['characteristics'] = ps1['characteristics']
 
             # add a rootless node, then retag the chained object
             nid = t.add_ur_node('object')
-            t.add_attr(nid,'object',mtgl.retag(tag,val,ps))
+            t.add_attr(nid,'object',tag.retag(tg,val,ps))
             return nid,len(bi_chain_alt)
 
     # single token?
-    if ll.matchl([mtgl.is_thing],tkns,0) == 0:
+    if ll.matchl([tag.is_thing],tkns,0) == 0:
         nid = t.add_ur_node('object')
         t.add_attr(nid,'object',tkns[0])
         return nid,1
@@ -1779,7 +1780,7 @@ def conjoin(t,objs,c):
 
     # get any quantifier and/or number from the first object
     # TODO: do we need to verify that val is the same for each object?
-    tag,val,ps = mtgl.untag(objs[0])
+    tg,val,ps = tag.untag(objs[0])
     qtr = ps['quantifier'] if 'quantifier' in ps else None
 
     if qtr: del ps['quantifier']
@@ -1787,16 +1788,16 @@ def conjoin(t,objs,c):
         # for number, store it, delete the attribute from the object & retag it
         num = ps['num']
         del ps['num']
-    objs[0] = mtgl.retag(tag,val,ps)
+    objs[0] = tag.retag(tg,val,ps)
 
     # get any possessor from the last object
-    tag,val,ps = mtgl.untag(objs[-1])
+    tg,val,ps = tag.untag(objs[-1])
     if 'owner' in ps or 'controller' in ps:
         # for possesive, store it, delete the attr. from the object & retag it
         pk = 'owner' if 'owner' in ps else 'controller'
         pv = ps[pk]
         del ps[pk]
-    objs[-1] = mtgl.retag(tag,val,ps)
+    objs[-1] = tag.retag(tg,val,ps)
 
     # create a (rootless) conjunction node and add attributes if present
     nid = t.add_ur_node('conjunction',coordinator=crd,item_type='object')
@@ -1806,9 +1807,9 @@ def conjoin(t,objs,c):
 
     # iterate the objects and add to the conjuction node
     for obj in objs:
-        tag,val,ps = mtgl.untag(obj)
+        tg,val,ps = tag.untag(obj)
         if 'quantifier' in ps: del ps['quantifier']
-        t.add_attr(t.add_node(nid,'item'),'object',mtgl.retag(tag,val,ps))
+        t.add_attr(t.add_node(nid,'item'),'object',tag.retag(tg,val,ps))
 
     return nid
 
@@ -1829,14 +1830,14 @@ def conjoin_bi_chain(tkns):
         nxt = tkns[len(bi_chain)]
     except IndexError: return True
     else:
-        if mtgl.is_action(nxt): return False
-        if mtgl.is_conditional(nxt) or nxt == 'doesnt': return False
-        if mtgl.is_property(nxt): return False
+        if tag.is_action(nxt): return False
+        if tag.is_conditional(nxt) or nxt == 'doesnt': return False
+        if tag.is_property(nxt): return False
         return True
 
-modal1 = ['xa<choose>',mtgl.is_number,mtgl.HYP]
+modal1 = ['xa<choose>',tag.is_number,mtgl.HYP]
 modal2 = [
-    'xa<choose>',mtgl.is_number,mtgl.PER,'xp<you>','cn<may>','xa<choose>',
+    'xa<choose>',tag.is_number,mtgl.PER,'xp<you>','cn<may>','xa<choose>',
     'the','same','mode','more','than','once',mtgl.PER
 ]
 modal3 = [ # Siege enchantments
@@ -1852,7 +1853,7 @@ def modal_type(tkns):
     # modal1 may be preceded by 'an opponent' other modals start the line
     if not mtgl.BLT in tkns: return 0 # ignore any matches if there are no bullets
     i = ll.matchl(modal1,tkns,1)
-    if i == 1 and mtgl.is_mtg_obj(tkns[0]) or i == 0: return 1
+    if i == 1 and tag.is_mtg_obj(tkns[0]) or i == 0: return 1
     if i == 0: return 1
     if ll.matchl(modal2,tkns,0) == 0: return 2
     if ll.matchl(modal3,tkns,0) == 0: return 3
@@ -1864,7 +1865,7 @@ def is_level(tkns):
     :param tkns: tokens to check
     :return: True if tkns is a level description
     """
-    return ll.matchl(['level',mtgl.is_number],tkns,0) == 0
+    return ll.matchl(['level',tag.is_number],tkns,0) == 0
 
 def is_activated_ability(tkns):
     """
@@ -1898,12 +1899,12 @@ def is_kw_line(line):
     #  graphed correctly)
     # standard keyword ability line is one or more comma separated keyword clauses
     # and does not end with a period or a period and a double quote
-    if not line[-1] in [mtgl.PER,mtgl.DBL] and ll.matchl([mtgl.is_keyword],line) > -1:
+    if not line[-1] in [mtgl.PER,mtgl.DBL] and ll.matchl([tag.is_keyword],line) > -1:
         return True
 
     # keyword clauses with non-mana cost will have a long hyphen, start with a
     # keyword and end with a period
-    if mtgl.is_keyword(line[0]) and mtgl.HYP in line and line[-1] == mtgl.PER:
+    if tag.is_keyword(line[0]) and mtgl.HYP in line and line[-1] == mtgl.PER:
         return True
 
     return False
@@ -1919,8 +1920,8 @@ def kw_clauses(line):
     news = []
     for tkn in line:
         try:
-            if mtgl.is_keyword(tkn):
-                if mtgl.untag(tkn)[1] in KW_VARIATION and mtgl.is_quality(news[-1]):
+            if tag.is_keyword(tkn):
+                if tag.untag(tkn)[1] in KW_VARIATION and tag.is_quality(news[-1]):
                     t = news.pop()
                     news.append(tkn)
                     news.append(t)
@@ -1932,12 +1933,12 @@ def kw_clauses(line):
     kwc = []  # the current keyword ability clause
     try:
         for tkn in news:
-            if not mtgl.is_keyword(tkn): kwc.append(tkn)
+            if not tag.is_keyword(tkn): kwc.append(tkn)
             else: # found a keyword, process the last clause if any
                 if kwc:
                     # one keyword: modular (in one card) has the form
                     # modular-sunburst
-                    if mtgl.untag(tkn)[1] == 'sunburst' and\
+                    if tag.untag(tkn)[1] == 'sunburst' and\
                         kwc == ['kw<modular>', '—']:
                         kwc.append(tkn)
                     else:
