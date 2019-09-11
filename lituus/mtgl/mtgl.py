@@ -491,6 +491,7 @@ word_hacks = {
     "it's":"it is",
     "isn't": "isnt",
     "haven't":"havent",
+    "hasn't":"hasnt",
     "its":"it",
     "aren't":"arent",
     "you're":"youre",
@@ -507,7 +508,6 @@ word_hacks = {
     "elves":"elf",
     "end of turn":"eot",
     "converted mana cost":"cmc",
-    "paid":"pay",
     "spells":"spell",
     "abilities":"ability",
     "cards":"card","copies":"copy",
@@ -751,9 +751,11 @@ keyword_actions = [
 re_kw_act = re.compile(r"(?<!<)\b({})\b".format('|'.join(keyword_actions)))
 
 # lituus actions actions which appear often in oracle text
+# NOTE: we differiante between pay and paid but still want paid tagged for now at
+# least
 lituus_actions = [
     'put','remove','distribute','get','return','draw','move','copy','look','pay',
-    'deal','gain','lose','attack','block','add','enter','leave','choose','die',
+    'paid','deal','gain','lose','attack','block','add','enter','leave','choose','die',
     'spend','take','skip','cycle','reduce','trigger','prevent','declare',
     'has','have','switch','phase in','phase out','flip','assign','win'
 ]

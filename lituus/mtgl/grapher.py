@@ -82,10 +82,9 @@ def graph_line(t,pid,line,ctype='other'):
         # (112.3) add an ability-line or 'ability-clause' node
         isline = pid.split(':')[0] == 'line'
         if isline: lid = t.add_node(pid,'ability-line')
-        #else: lid = t.add_node(pid,'ability-clause')
         else: lid = pid
 
-        if is_modal(line): graph_modal_line(t,lid,line) # e
+        if modal_type(line): graph_modal_line(t,lid,line) # e
         elif is_level(line): graph_level_line(t,lid,line) # f
         elif ctype == 'saga': graph_saga_line(t,lid,line) # g
         elif is_activated_ability(line): graph_activated_ability(t,lid,line)
@@ -97,6 +96,14 @@ def graph_line(t,pid,line,ctype='other'):
             # one of the above. But, static-abilities do not apply in all cases
             # 112.3d "...create continuous effects..." therefore, if this is not
             # a true line, it will be classified as an effect
+            # TODO: see Monastery Siege mode:1 we have
+            #  mode:1
+            #   effect-clause:1
+            #    ....
+            #  the problem is that this is really a static ability
+            #  should we just remove the below if else. But, if we do
+            #  we'll go back to the problem of spell-effect being called
+            #  static abilities
             if isline: nid = t.add_node(lid,'static-ability')
             else: nid = t.add_node(lid,'effect-clause') #TODO: need a better name
             graph_clause(t,nid,line)
@@ -183,7 +190,7 @@ def graph_kw_line(t,pid,line):
             # all costs should be mana costs but just in case
             k1,_,k2 = ll.splitl(ps,ps.index('op<⊕>'))
             graph_cost(t,t.add_node(kwid,'keyword-cost'),k1)
-            graph_cost(t, t.add_node(kwid,'keyword-cost'),k2)
+            graph_cost(t,t.add_node(kwid,'keyword-cost'),k2)
         elif kw == 'affinity':
             # 702.40a Affinity for [text] (i.e. object)
             t.add_node(kwid,'for',object=ps[-1])
@@ -237,34 +244,71 @@ def graph_modal_line(t,pid,line):
     :param pid: parent id
     :param line: the list of tokens to graph
     """
-    # 700.2 Modal spells always start a line however some modals require an opp.
-    # to choose - set up the modal node, if opp is the 1st token, extract & add it
+    # get the modal type and set up the modal node
+    mtype = modal_type(line)
     mid = t.add_node(pid,'modal')
+
+    # Some modals require an opp to choose - if so extract it and add
     if mtgl.is_player(line[0]):
         t.add_node(mid,'player',player=line[0])
         line = line[1:]
 
-    # two modal preambles (see modal1 & modal2 definitions) split the line into
-    # instruction & modes (instruction will be the length of the matching pattern
-    if ll.matchl(modal1,line,0) == 0: i = len(modal1)
-    else: i = len(modal2)
+    # several modal preambles (see modalN definitions) regardless, each will
+    # have instruction & modes (instruction will be the length of the matching
+    # pattern).
+    i = None
+    if mtype == 1: i = len(modal1)
+    elif mtype == 2: i = len(modal2)
+    elif mtype == 3: i = len(modal3)
     instr = line[:i]
     modes = line[i:]
 
-    # add instruction & choose node, if instructions contain a period, we have
-    # instructions that the same mode may be chosen more than once. the number
-    # is always the second node
+    # Add instruction & choose node. the 'choose' format is dependent on the
+    # modal type.
     iid = t.add_node(mid,'instruction')
-    rep = 'yes' if mtgl.PER in instr else 'no'
-    t.add_node(iid,'choose',n=mtgl.untag(instr[1])[1],repeatable=rep)
+    if mtype == 1 or mtype == 2:
+        # these are chosen at time of cast or activation and tell us how
+        # many choices can be made (n) and if the same mode can be chosen
+        # more than once (repeatable)
+        rep = 'yes' if mtgl.PER in instr else 'no'
+        t.add_node(iid,'choose',n=mtgl.untag(instr[1])[1],repeatable=rep)
+    elif mtype == 3:
+        # "as enters.." choose one of two options. There are only 5 cards
+        # 'Seige' enchantments that fit this modal preamble and the choices
+        # khans or dragons is already known but we'll code for the possibility
+        # of future cards using the same preamble (NOTE: in siege enchantments,
+        # dragons is tagged as a characteristice If future cards are released that
+        # match this preamble the below could throw errors)
+        # TODO: for now we are graphing the replacement "as NAME enters the
+        #  battlefield clause under the instruction node of the modal node -
+        #  this clause should really be the parent of the modal
+        c1 = instr[6] # first choice
+        c2 = instr[8] # second choice
+        if mtgl.is_mtg_obj(c1): c1 = mtgl.untag(c1)[2]['characteristics']+'s'
+        if mtgl.is_mtg_obj(c2): c2 = mtgl.untag(c2)[2]['characteristics']+'s'
+        graph_clause(t,iid,ll.splitl(instr,instr.index('xa<choose>'))[0])
+        t.add_node(iid,'choose',option1=c1,option2=c2)
 
-    # each mode clause will be '•', ... tkns ... , '.'
+    # each mode clause will be '•', [additional tokens], ... tkns ... , '.'
+    ms = []
     prev = 0
-    for i in ll.indicesl(modes,mtgl.BLT): # looking for left splits
-        if prev == i == 0: continue # the first slice is the empty list
-        graph_line(t,t.add_node(mid,'mode'),modes[prev+1:i]) # don't include bullet
+    for i in ll.indicesl(modes,mtgl.BLT):  # looking for left splits
+        if prev == i == 0: continue        # the first slice is the empty list
+        ms.append(modes[prev+1:i])
         prev = i
-    graph_line(t,t.add_node(mid,'mode'),modes[prev+1:]) # add the last mode
+    ms.append(modes[prev + 1:])
+
+    # if the modal preamble is type 3, we have to do additional processing
+    # before graphing
+    for m in ms:
+        moid = t.add_node(mid,'mode')
+        if mtype == 3:
+            r,_,line = ll.splitl(m,m.index(mtgl.HYP))
+            if mtgl.is_mtg_obj(r[0]): r = mtgl.untag(r[0])[2]['characteristics']+'s'
+            else: r = r[0]
+            t.add_attr(moid,'option',r)
+        else: line = m
+        graph_line(t,moid,line)
 
 def graph_level_line(t,pid,line):
     """
@@ -392,7 +436,7 @@ def graph_activated_ability(t,pid,line):
     eid = t.add_node(aaid,'activated-ability-effect')
 
     # if it's modal, graph as a line under effect
-    if is_modal(rem): graph_line(t,eid,rem)
+    if modal_type(rem): graph_line(t,eid,rem)
     else:
         # TODO: hanlding periods followed by double quotes is too hacky
         #  figure out a better way of doing this
@@ -453,7 +497,7 @@ def graph_triggered_ability(t,pid,line):
 
     # for modal, we need to recombine effect and instructions
     # TODO: this is nearly the same as activated_ability can we subfunction it
-    if is_modal(effect): graph_line(t,eid,effect+instr)
+    if modal_type(effect): graph_line(t,eid,effect+instr)
     else:
         # NOTE: function ta_clause takes care of hanging double quotes betw/
         # effect and instruction, no need to check here
@@ -493,16 +537,24 @@ def graph_clause(t,pid,tkns):
             continue
 
         if mtgl.tkn_type(tkn) == mtgl.MTGL_PUN:
+            # assume that any punctuation we get here signifies a separation
+            # between clauses
             if cls:
                 t.add_node(pid,'clause',tkns=cls)
                 cls = []
 
-            # for double quotes, grab the encapsulated tokens & graph them as a
-            # line otherwise add the punctuation
+            # check for
+            #  double quotes - grab the quoted tokens & graph them
+            #  bullet - graph as a modal spell
+            #  otherwise add the punctuation
             if tkn == mtgl.DBL:
                 dbl = tkns[i+1:ll.indexl(tkns,mtgl.DBL,i)]
                 graph_line(t,t.add_node(pid,'quoted-clause'),dbl)
                 skip = len(dbl) + 1 # skip the right double quote
+            #elif tkn == mtgl.BLT:
+            #    mtype = modal_type(tkns[i:])
+            #    if mtype > 0: graph_modal_line(t,pid,tkns[i:])
+            #    #print("{}: {}".format(modal_type(tkns[i:]),tkns[i:]))
             else: t.add_node(pid,'punctuation',symbol=tkn)
         elif mtgl.tkn_type(tkn) == mtgl.MTGL_SYM:
             if cls:
@@ -1008,6 +1060,7 @@ def graph_lituus_action(t,pid,cls,la,tkns):
     if v == 'add': return graph_lituus_action_add(t,laid,tkns)
     elif v == 'put': return graph_lituus_action_put(t,laid,tkns)
     elif v == 'distribute': return graph_lituus_action_distribute(t,laid,tkns)
+    #elif v == 'pay': return graph_lituus_action_pay(t,laid,tkns) # TODO
     else: return 0
 
 def graph_lituus_action_add(t,pid,tkns):
@@ -1202,8 +1255,8 @@ def graph_lituus_action_add(t,pid,tkns):
         #  Drain Power (['the'], 'xo<mana>', ['xa<lose>', 'xq<this>', 'way', mtgl.PER])
         if amp: t.add_node(mid,'amplifying-clause',tkns=amp)
         mcid=t.add_node(mid,'mana-clause')
-        if q: t.add_attr(mcid,'quantity',q) # TODO: somewhere here we're missing
-                                            # the add mana portion
+        if q: t.add_attr(mcid,'quantity',q)
+
         if rem:
             stop = ll.matchl([mtgl.PER],rem)
             if stop > -1: rem = rem[:stop]
@@ -1382,6 +1435,46 @@ def graph_lituus_action_distribute(t,pid,tkns):
 
     return 0
 
+def graph_lituus_action_pay(t,pid,tkns):
+    """
+     graphs a pay lituus action and associated parameters from tkns into
+     tree t at parent id pid.
+    :param t: the tree
+    :param pid: parent id in the tree
+    :param tkns: next tokens that haven't been added to the tree
+    :return: skip, the number of items in tkns that have been processed
+    """
+    # find the first period (if one exits), no need to go further than that
+    if mtgl.PER in tkns:
+        tkns,_,rem = ll.splitl(tkns,tkns.index(mtgl.PER))
+        skip = len(tkns)
+    else: skip = len(tkns)
+
+    # there are several cases where pay does not have subcosts,
+    # "This effect reduces only the amount of colored mana you pay." (Edgewalker,
+    # Ragemonger) and "If they dont' pay, ..." (Arcum's Whistle, Cyclone etc)
+    # exit if we get that case
+    if not tkns or tkns[0] == mtgl.CMA: return 0
+
+    try:
+        ss = subcosts(tkns)
+        if ss == [['ob<card ref=self>', 'kw<cumulative_upkeep>']]:
+            raise RuntimeError
+        print(ss)
+        #_ = subcosts(tkns)
+    except:
+        #print(tkns)
+        raise
+    # now, take the tokens and graph as subcosts
+    #assert(tkns != [])
+    #try:
+    #    #print(subcosts(tkns))
+    #    _ = subcosts(tkns)
+    #except IndexError:
+    #    print(tkns)
+
+    return 0
+
 def graph_cost(t,pid,tkns):
     """
      graphs a cost (and subsequent subcosts) contained in tkns at parent id
@@ -1413,7 +1506,7 @@ def subcosts(tkns):
     for i in ll.indicesl(tkns,mtgl.CMA): # looking for middle splits
         ss.append(tkns[prev:i])          # don't include the comma
         prev = i+1                       # skip the comma
-    ss.append(tkns[prev:])               # last (or only) subcost
+    if prev != len(tkns): ss.append(tkns[prev:]) # last (or only) subcost
 
     # sanity check on the subcosts see Behemoth's Herald, the above loops breaks
     # everything up by comma meaning meaning the ka<sacrifice clause gets broken
@@ -1746,19 +1839,24 @@ modal2 = [
     'xa<choose>',mtgl.is_number,mtgl.PER,'xp<you>','cn<may>','xa<choose>',
     'the','same','mode','more','than','once',mtgl.PER
 ]
-def is_modal(tkns):
+modal3 = [ # Siege enchantments
+    'as','ob<card ref=self>', 'xa<enter>', 'zn<battlefield>',
+    ',', 'xa<choose>',ll.re_all,'or',ll.re_all,mtgl.PER
+]
+def modal_type(tkns):
     """
      determines if the list of tokens is modal
     :param tkns: tokens to check
-    :return: 1 if modal 1, 2 if modal 2 or 0 (False) otherwise)
+    :return: 1 if modal 1, 2 if modal 2, 3 if modal 3 or 0 (False) otherwise)
     """
-    # modal1 may be preceded by 'an opponent' modal2 will start at the beginning
-    # of the line
+    # modal1 may be preceded by 'an opponent' other modals start the line
+    if not mtgl.BLT in tkns: return 0 # ignore any matches if there are no bullets
     i = ll.matchl(modal1,tkns,1)
-    if i == 1 and mtgl.is_mtg_obj(tkns[0]): return 1
+    if i == 1 and mtgl.is_mtg_obj(tkns[0]) or i == 0: return 1
     if i == 0: return 1
     if ll.matchl(modal2,tkns,0) == 0: return 2
-    return 0
+    if ll.matchl(modal3,tkns,0) == 0: return 3
+    return 0 # should never get here
 
 def is_level(tkns):
     """
@@ -2000,7 +2098,7 @@ KWA_SPECIAL = [
 ####
 
 """
-    'remove','get','return','draw','move','copy','look','pay',
+    'remove','get','return','draw','move','copy','look','pay','paid',
     'deal','gain','lose','attack','block','enter','leave','choose','die',
     'spend','take','skip','cycle','reduce','become','trigger','prevent','declare',
     'has','have','switch','phase in','phase out','flip','assign','win','target'

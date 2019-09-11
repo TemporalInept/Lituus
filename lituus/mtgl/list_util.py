@@ -124,7 +124,7 @@ def indexl(ls,e,start=0):
      :param ls: the list to search
      :param e: the element to look for
      :param start: the index to start at
-     :return: the right index of e in ls (or throws a ValueError)
+     :return: the left index of e in ls (or throws a ValueError)
     """
     return (ls[start+1:].index(e))+(start+1)
 

@@ -46,8 +46,6 @@ look for phrases ", where VAR is the number of" and figure out how to add this a
 ['kw<enchant>', 'ob<permanent characteristics=creature>', 'pr<with>', 'ob<permanent characteristics=aura quantifier=another status=attached>', 'pr<to>', 'xo<it>']
 This is the only card with a 'clause' after enchant obj and, this clause specifies details about the object to be enchanted
 
-141. see Arcbound Wanderer, is there any other cases of a keyword<long hyphen>keyword?
-
 143. mtgcard keywords and ability words are tokenized i.e lowercased and with underscore replacing spaces. How do we want to tree these in the MTGCard objects that is should we replace the underscores and capitalize the first letter in the called function or let the caller handle this
 
 144. obj enters the battlefield tapped i.e. worn powerstone
@@ -202,10 +200,6 @@ to player='you' or only add it if it is present?
 
 229. after downloading the json including MH1 cards, need to look at Hexdrinker for accurate graphing
 
-230. tagger->fix_lvl_up is too hacky, need to go back and streamline it
-
-231. find out why '$' is not working in regexs
-
 232. Effects (609), events (700.1) etc what other rules terminilogy needs to be applied
 
 234. see Splintering Wind {2}{G}: Splintering Wind deals 1 damage to target creature. Create a 1/1 green Splinter creature token. It has flying and "Cumulative upkeep Green." When it leaves the battlefield, it deals 1 damage to you and each creature you control. with strict parsing, the phrase "When it leaves the battlefield, it deals 1 damage to you and each creature you control." will not apply to the token because it is not inside the double quotes, rather it will apply to Splintering Wind. Note the phrasing on the original card:
@@ -221,10 +215,6 @@ to player='you' or only add it if it is present?
 237. should we move commas preceding double quotes outside of the double quote
 
 238. Arlinn, Embraced by the Moon, Diabolical Salvation, Koth of the Hammer, Liliana of the Dark Realms, Mu Yanling, Sky Dancer, Nesting Dragon & Reef Worm have embedded singled-quoted clauses
-
-239. need to run on check on quoted-clauses to confirm it works
-
-240. add a replace for lists in list_util
 
 241. when we start looking for triggered abilities mid-clause, have to remember single-quotes inside double quotes
 
@@ -258,8 +248,6 @@ we do not want the vertical brace for kw-line:0 but do want it for keyword:0. Al
 
 249. see Greater Gargadon because of the order in which lines are partitioned and graphed, GG's activated ability cost "Sacrifice an artifact, creature, or land: ..." goes to graph_cost first where the commas are mistakenly used to break "an artifact", "creature" and "or land" into seperate subcosts
  - do we need to do a first pass and join stuff like decision points and conjoined node?
-
-251. Monastery siege and others have choose x or y and then descriptions of each choice, have to 'modalize' these. There are 18 enchantments (not including sagas) that have this behavior
 
 253. add a not capability to list_util->matchl
 
@@ -359,3 +347,10 @@ because we are working backwords and getting the object belonging to phase out, 
  o with ...
  o thats ...
  o where [X] ...
+ o for each ...
+
+288. Start thinking about graphing conditions
+
+289. Fixed the "siege" enchantments to be graphed as modal spell but two issues remain
+ o see Monastery Seige, the "as NAME enters the battlefield" replacement effect is being graphed 'under' the instruction clause where it should in reality be graphed directly under the ability line, then the modal portion would come under it
+ o still have other modal cards that are not being graphed as modals see Captive Audience
