@@ -23,10 +23,12 @@ import re
 
 re_all = re.compile(r".+") # catchall for match any token
 def ors(tkns): return re.compile(r"{}".format('|'.join([t for t in tkns])))
-def matchl(ss,ls,a=None):
+def matchl(ls,ss,start=0,stop=None):
     """
-     attempts to match the elements in ss to a sublist of ls but not after index
-     a (if present).
+     attempts to match the elements in ss to a sublist of ls. If set, the values
+     start and stop are used to limit the indexes of the list to look for a match
+     to ls[start:stop+1]. The elements of ss can be strings, functions (that
+     return True or False), and/or regular expressions)
      NOTE:
       1. This is a token for token match so it cannot be used to find for example
        a list of any length beginning with a specified regex and ending with a
@@ -37,16 +39,18 @@ def matchl(ss,ls,a=None):
      ls[0] == a and ls[1] == b ... and ls[n] = n it is much cleaner, it
      eliminates the need for IndexError check and eliminates the need to know
      what indices to check
-    :param ss: a list of functions, compiled re and/or strings
     :param ls: the list to match against
-    :param a: stop at index a. if present, matchl will not attempt to match
-     after the index
+    :param ss: a list of functions, compiled re and/or strings
+    :param start: the first index in the list look for a match
+    :param stop: the last index to look for a match. if present, matchl will not
+     attempt to match after the index
     :return: starting index of ss in ls or -1 if there is no match
     """
-    if len(ss) > len(ls): return -1 # the sublist cannot have more elements
-    elif len(ss) == 0: return -1    # don't allow empty sublists
-    for i in range(0,len(ls)-len(ss)+1):
-        if a is not None and i > a: break
+    if len(ss) > len(ls) or len(ss) == 0: return -1 # don't bother with these
+    if start >= len(ls): return -1
+    if stop and start > stop: return -1
+    for i in range(start,len(ls)-len(ss)+1):
+        if stop and i > stop: return -1
         ls1 = ls[i:i+len(ss)]
         found = True
         for j,s in enumerate(ss):
@@ -62,7 +66,6 @@ def matchl(ss,ls,a=None):
                 if not s == ls1[j]:
                     found = False
                     break
-            else: raise TypeError("matchl: invalid type {}".format(type(s)))
         if found: return i
     return -1
 
@@ -112,9 +115,6 @@ def splicel(ls,t1,t2,t3=None):
     i = matchl([ts[2]],ls,j-1)
     if i < 0: raise ValueError
     return [i,j,k], (ls[:i],ls[i],ls[i+1:j],ls[j],ls[j+1:k],ls[k],ls[k+1:])
-
-
-
 
 def replacel(ls,ss,ns):
     """

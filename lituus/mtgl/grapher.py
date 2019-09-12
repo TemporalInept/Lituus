@@ -150,7 +150,7 @@ def graph_kw_line(t,pid,line):
             # graph the cost/subcosts
             graph_cost(t,t.add_node(kwid,'keyword-cost'),ps[1:])
         elif kw == 'hexproof' and\
-                ll.matchl(['pr<from>',tag.is_quality],ps,0) == 0:
+                ll.matchl(ps,['pr<from>',tag.is_quality],stop=0) == 0:
             # 702.11d Hexproof from [quality]. 3 cards have this
             t.add_node(kwid,'from',quality=ps[1])
         elif kw == 'protection':
@@ -187,7 +187,7 @@ def graph_kw_line(t,pid,line):
         elif kw == 'affinity':
             # 702.40a Affinity for [text] (i.e. object)
             t.add_node(kwid,'for',object=ps[-1])
-        elif kw == 'modular' and ll.matchl([mtgl.HYP,'kw<modular>'],ps) == 0:
+        elif kw == 'modular' and ll.matchl(ps,[mtgl.HYP,'kw<modular>']) == 0:
             # rule 702.43c (arcbound wanderer) has the form
             # Modular-Sunburst where Sunburst is a stand-in for N
             t.add_node(kwid,'n',value='sunburst')
@@ -215,7 +215,7 @@ def graph_kw_line(t,pid,line):
             # three types remain, Object/Quality, N, Cost
             if tag.is_number(ps[0]):
                 t.add_node(kwid,'n',value=tag.untag(ps[0])[1])
-                if ll.matchl([tag.is_variable,',','where'],ps,0) == 0:
+                if ll.matchl(ps,[tag.is_variable,',','where'],stop=0) == 0:
                     # Thromok the Insatiable has Devour X, the only card I've
                     # found with a keyword and variable for n
                     t.add_node(kwid,'clause',tokens=ps[3:])
@@ -356,22 +356,17 @@ def graph_level_line(t,pid,line):
     # 1) replace double periods with a single period
     # 2) replace KEYWORD PERIOD with just KEYWORD
     line = ll.replacel(line,[mtgl.PER,mtgl.PER],[mtgl.PER])
-    if ll.matchl([tag.is_keyword,mtgl.PER],line,0) == 0: line = line[:-1]
-    #i = ll.matchl([mtgl.PER,'<break>',mtgl.PER],line)
-    #if i > -1: line[i:] = mtgl.PER
-
-    # 2) replace singleton periods with the empty line
-    #if line == [mtgl.PER]: line = []
+    if ll.matchl(line,[tag.is_keyword,mtgl.PER],stop=0) == 0: line = line[:-1]
 
     # the next clause can be keyword(s), ability, keyword(s) and ability or none
     # check if we have keywords, if so build the 'keyword line'
     laid = None
     kws = []
-    i = ll.matchl([tag.is_keyword],line)
+    i = ll.matchl(line,[tag.is_keyword])
     while i > -1:
         kws.extend(line[:i+1])
         line = line[i+1:]
-        i = ll.matchl([tag.is_keyword],line)
+        i = ll.matchl(line,[tag.is_keyword])
 
     # if there is a keyword line, create the level abilities node, graph it &
     # clean up any artifacts
@@ -664,7 +659,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
     if v == 'search':
         # 701.18a search zone for card
         # ka<search> ZONE pr<for> card
-        if ll.matchl([tag.is_zone,'pr<for>',tag.is_mtg_obj],tkns,0) == 0:
+        if ll.matchl(tkns,[tag.is_zone,'pr<for>',tag.is_mtg_obj],stop=0) == 0:
             t.add_node(kwid,'zone',zone=tkns[0])
             t.add_node(kwid,'for',card=tkns[2])
             skip = 3
@@ -675,11 +670,11 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
         # the keyword-action is always followed by a for
         simple = ['pr<for>',tag.is_mtg_obj,'or',tag.is_mtg_obj]
         embedded = ['pr<for>',tag.is_mtg_obj]
-        if ll.matchl(simple,tkns,0) == 0:
+        if ll.matchl(tkns,simple,stop=0) == 0:
             # simple case chocies are opt1 or opt2
             t.add_node(kwid,'option',choices=[tkns[1],tkns[3]])
             skip = 4
-        elif ll.matchl(embedded,tkns,0) == 0:
+        elif ll.matchl(tkns,embedded,stop=0) == 0:
             # the choices are embedded in the characterisitics of
             # the object or as in one case (Council's Judgement)
             # the choices are implied depending on the game state
@@ -753,7 +748,7 @@ def graph_kwa_exchange(t,pid,cls,tkns):
     ]
     v = 'exchange'
 
-    if ll.matchl([tag.is_zone],tkns,0) == 0:
+    if ll.matchl(tkns,[tag.is_zone],stop=0) == 0:
         # 701.10d exchange cards in one zone w/ cards in another zone
         # go ahead and add cls, then the kwa clause and kwa node, then
         # the kwa clause and subsequent nodes
@@ -773,7 +768,7 @@ def graph_kwa_exchange(t,pid,cls,tkns):
 
         # we'll skip the zone
         return 1
-    elif ll.matchl(cobs,tkns,0) == 0:
+    elif ll.matchl(tkns,cobs,stop=0) == 0:
         # 701.10b is always worded exchange control of. here the
         # objs being exchanged are 'and' seperated i.e. ob1 and ob2
         # we no longer need cls, add it, then the kwa etc
@@ -783,7 +778,7 @@ def graph_kwa_exchange(t,pid,cls,tkns):
         t.add_attr(t.add_node(kwid,'what'),'object',tkns[2])
         t.add_attr(t.add_node(kwid,'with'),'object',tkns[4])
         return 5
-    elif ll.matchl(cobe,tkns,0) == 0 or ll.matchl(cobe_edge,tkns,0) == 0:
+    elif ll.matchl(tkns,cobe,stop=0) == 0 or ll.matchl(tkns,cobe_edge,stop=0) == 0:
         # 701.10b (same as above) but here, the objects are embedded.
         # Have one edge juxtaposition which has a preceding 'the'
         # go ahead and add cls, kwa clause and kwa node
@@ -799,7 +794,7 @@ def graph_kwa_exchange(t,pid,cls,tkns):
             t.add_node(kwid, 'what', objects=tkns[2])
             skip = 3
         return skip
-    elif ll.matchl(lt,tkns,0) == 0:
+    elif ll.matchl(tkns,lt,stop=0) == 0:
         # 701.10c exchange life totals
         # do not need the cls, go ahead and add then kwa etc
         if cls: t.add_node(pid,'clause',tkns=cls)
@@ -826,7 +821,7 @@ def graph_kwa_exchange(t,pid,cls,tkns):
         t.add_node(kwid,'keyword-action',word=v,type='life')
         t.add_node(kwid,'who',players=ply)
         return 2
-    elif ll.matchl(ltch,tkns,0) == 0:
+    elif ll.matchl(tkns,ltch,stop=0) == 0:
         # 701.10g exchange numerical values. So far have only seen
         #  three cards with this specific value exchange which is
         # exchange a life total with the toughness of a creature
@@ -853,7 +848,7 @@ def graph_kwa_exchange(t,pid,cls,tkns):
 
         # skip the six tokens we added
         return 6
-    elif ll.matchl(val_edge,tkns,0) == 0:
+    elif ll.matchl(tkns,val_edge,stop=0) == 0:
         # 701.10g exchange numerical values - edge case So far have
         # only seen 1 card (Serene Master) with this specific value
         # exchange which is exchange the characterisitic of and object
@@ -908,14 +903,14 @@ def graph_kwa_shuffle(t,kwid,tkns):
     # 701.19c shuffle card(s) into zone->library. This covers cases
     # of shuffle card into library and shuffle zone into library i.e. zone
     # = graveyard:
-    if ll.matchl([tag.is_thing,'pr<into>',tag.is_zone],tkns,0) == 0:
+    if ll.matchl(tkns,[tag.is_thing,'pr<into>',tag.is_zone],stop=0) == 0:
         t.add_node(kwid,'thing',thing=tkns[0])
         t.add_node(kwid,'zone',zone=tkns[2])
         return 3
 
     # 701.19c shuffle cards from zone into zone
     sp = [tag.is_thing,'pr<from>',tag.is_zone,'pr<into>',tag.is_zone]
-    if ll.matchl(sp,tkns,0) == 0:
+    if ll.matchl(tkns,sp,stop=0) == 0:
         t.add_node(kwid,'thing',thing=tkns[0])
         t.add_attr(t.add_node(kwid,'from'),'from',tkns[2])
         t.add_node(kwid,'zone',zone=tkns[4])
@@ -949,18 +944,18 @@ def graph_kwa_double(t,kwid,tkns):
     # double obj<creature> characteristic or the edge case
     # double [the|target] characteristic of obj<creature> (God-Eternal Rhonas)
     # primary case
-    if ll.matchl([tag.is_thing,tag.is_meta_char],tkns) == 0:
+    if ll.matchl(tkns,[tag.is_thing,tag.is_meta_char]) == 0:
         t.add_node(kwid,'P/T',characteristic=tag.untag(tkns[1])[1],creature=tkns[0])
         return 2
 
     # edge case
-    if ll.matchl(['the',tag.is_meta_char,'of',tag.is_mtg_obj],tkns) == 0:
+    if ll.matchl(tkns,['the',tag.is_meta_char,'of',tag.is_mtg_obj]) == 0:
         t.add_node(kwid,'P/T',characteristic=tag.untag(tkns[1])[1],creature=tkns[3])
         return 4
 
     # 701.9d ka<double> player's life
     # looking for 'player life total'
-    i = ll.matchl([tag.is_player,'xc<life_total>'],tkns)
+    i = ll.matchl(tkns,[tag.is_player,'xc<life_total>'])
     if i > - 1:
         t.add_node(kwid,'life-total',who=tkns[i])
         return i+2
@@ -969,21 +964,21 @@ def graph_kwa_double(t,kwid,tkns):
     # looking for "the number of CTR on obj|Thing
     # TODO: this might be a place to collate even though at this point, I have
     #  not seen a case of doubling counters on conjoined objects
-    if ll.matchl(['the','number','of',tag.is_lituus_obj],tkns,0) == 0:
+    if ll.matchl(tkns,['the','number','of',tag.is_lituus_obj],stop=0) == 0:
         # split on the 3rd token (which should be the counter(s)
         _,ctr,rem = ll.splitl(tkns,3)
         _,val,ps = tag.untag(ctr)
         assert(val == 'ctr')
 
         # grab the Thing
-        i = ll.matchl([tag.is_thing],rem)
+        i = ll.matchl(rem,[tag.is_thing])
         ob = rem[i] # will throw an error if we don't have an object
 
         # is there an intermediate clause
         cls = rem[1:i]
         if cls:
             # see if we can find a quantifier & if so, untag it
-            j = ll.matchl([tag.is_quantifier],cls)
+            j = ll.matchl(cls,[tag.is_quantifier])
             if j > -1: cls = tag.untag(cls[j])[1]
 
         # create the node and ad quantifying clause if present
@@ -998,19 +993,19 @@ def graph_kwa_double(t,kwid,tkns):
     # a. looking for 'amount' and then a reference to mana or b. 'value' followed
     # by a reference to a number or a number
     # TODO: check Unbound Flourshing once new allcards is download
-    i = ll.matchl([ll.ors(['amount','value'])],tkns)
+    i = ll.matchl(tkns,[ll.ors(['amount','value'])])
     if i > -1:
         # i should always be 1
         tkn = tkns[i]
         if tkn == 'amount':
-            j = ll.matchl(['xo<mana>'],tkns)
+            j = ll.matchl(tkns,['xo<mana>'])
             assert(j > i)
             # should have something along the lines of 'of .... mana'
             # TODO: have to graph the tokens or further parse somehow
             x = tkns[i+1:i+j] # drop the first 'of' when adding
             t.add_node(kwid,'mana',by=x[1:] if x[0] == 'of' else x)
         else:
-            j = ll.matchl([tag.is_number],tkns)
+            j = ll.matchl(tkns,[tag.is_number])
             assert(j > i)
             t.add_node(kwid,'value',of=tag.untag(tkns[j])[1])
         return i+j
@@ -1055,7 +1050,7 @@ def graph_lituus_action(t,pid,cls,la,tkns):
         # Ageless Sentinels.
         # TODO: see Alaborn Zealot block can actually take two object(s) preceding
         #  and succeeding the action word
-        if ll.matchl([tag.is_mtg_obj],tkns,0) == 0:
+        if ll.matchl(tkns,[tag.is_mtg_obj],stop=0) == 0:
             # post action object, clause out any opened clause, create a
             # lituus-action-clause node and the action action node
             if cls: t.add_node(pid,'clause',tkns=cls)
@@ -1111,7 +1106,7 @@ def graph_lituus_action_add(t,pid,tkns):
     #  and there are not qualifying clauses
     # try double first
     dbl = [tag.is_mana_string,'or',tag.is_mana_string]
-    if ll.matchl(dbl,tkns,0) == 0:
+    if ll.matchl(tkns,dbl,stop=0) == 0:
         cid=t.add_node(mid,'conjunction',coordinator='or',item_type='mana-string')
         t.add_node(cid,'mana-string',mana=tkns[0])
         t.add_node(cid,'mana-string',mana=tkns[2])
@@ -1119,7 +1114,7 @@ def graph_lituus_action_add(t,pid,tkns):
 
     # then triple
     tpl = [tag.is_mana_string,',',tag.is_mana_string,',','or',tag.is_mana_string]
-    if ll.matchl(tpl,tkns,0) == 0:
+    if ll.matchl(tkns,tpl,stop=0) == 0:
         cid = t.add_node(mid,'conjunction',coordinator='or',item_type='mana-string')
         t.add_node(cid,'mana-string',mana=tkns[0])
         t.add_node(cid,'mana-string',mana=tkns[2])
@@ -1127,7 +1122,7 @@ def graph_lituus_action_add(t,pid,tkns):
         return len(tpl)
 
     # single mana string find the index of the mana-string
-    sng = ll.matchl([tag.is_mana_string],tkns)
+    sng = ll.matchl(tkns,[tag.is_mana_string])
     if sng > -1:
         amp,ms,rem = ll.splitl(tkns,sng)
 
@@ -1135,7 +1130,7 @@ def graph_lituus_action_add(t,pid,tkns):
         t.add_node(mid,'mana-string',mana=ms)
 
         if rem:
-            stop = ll.matchl([mtgl.PER],rem)
+            stop = ll.matchl(rem,[mtgl.PER])
             if stop > -1: rem = rem[:stop]
             if rem: t.add_node(mid,'qualifying-clause',tkns=rem)
         return len(amp)+1+len(rem) # remember the mana-string is only 1 token
@@ -1159,7 +1154,7 @@ def graph_lituus_action_add(t,pid,tkns):
     # case 1.a
     nm1 = [tag.re_mana_tag,'of',ll.re_all,tag.is_mtg_char]
     l1 = len(nm1)
-    i = ll.matchl(nm1,tkns)
+    i = ll.matchl(tkns,nm1)
     if i > -1:
         # i will gives us [amplifying clause] mana clause [qualifying clause]
         # NOTE: I havent seen any with all three clauses but there are single
@@ -1181,7 +1176,7 @@ def graph_lituus_action_add(t,pid,tkns):
         mcid=t.add_node(mid,'mana-clause',of="{} {}".format(x,o))
         if q: t.add_attr(mcid,'quantity',q)
         if rem:
-            stop = ll.matchl([mtgl.PER],rem)
+            stop = ll.matchl(rem,[mtgl.PER])
             if stop > -1: rem = rem[:stop]
             t.add_node(mid,'qualifying-clause',tkns=rem)
         return len(amp)+len(mc)+len(rem)
@@ -1195,7 +1190,7 @@ def graph_lituus_action_add(t,pid,tkns):
     #  'xq<any>','nu<1>'
     nm2 = [tag.re_mana_tag,'of','xq<any>','nu<1>',tag.is_mtg_char]
     l2 = len(nm2)
-    i = ll.matchl(nm2,tkns)
+    i = ll.matchl(tkns,nm2)
     if i > -1:
         amp = tkns[:i]
         mc = tkns[i:i+l2]
@@ -1211,7 +1206,7 @@ def graph_lituus_action_add(t,pid,tkns):
         if amp: t.add_node(mid,'amplifying-clause',tkns=amp)
         t.add_node(mid,'mana-clause',quantity=q,of="any one {}".format(o))
         if rem:
-            stop = ll.matchl([mtgl.PER],rem)
+            stop = ll.matchl(rem,[mtgl.PER])
             if stop > -1: rem = rem[:stop]
             t.add_node(mid,'qualifying-clause',tkns=rem)
         return len(amp)+len(mc)+len(rem)
@@ -1219,7 +1214,7 @@ def graph_lituus_action_add(t,pid,tkns):
     # case 1.c
     nm3 = [tag.re_mana_tag,'of','the','xa<choose>',tag.is_mtg_char]
     l3 = len(nm3)
-    i = ll.matchl(nm3,tkns)
+    i = ll.matchl(tkns,nm3)
     if i > -1:
         amp = tkns[:i]
         mc = tkns[i:i+l3]
@@ -1235,7 +1230,7 @@ def graph_lituus_action_add(t,pid,tkns):
         if amp: t.add_node(mid,'amplifying-clause',tkns=amp)
         t.add_node(mid,'mana-clause',quantity=q,of="chosen {}".format(o))
         if rem:
-            stop = ll.matchl([mtgl.PER],rem)
+            stop = ll.matchl(rem,[mtgl.PER])
             if stop > -1: rem = rem[:stop]
             t.add_node(mid, 'qualifying-clause',tkns=rem)
         return len(amp)+len(mc)+len(rem)
@@ -1243,7 +1238,7 @@ def graph_lituus_action_add(t,pid,tkns):
     # case 1.d NOTE: there are not any "any combination of types"
     nm4 = [tag.re_mana_tag,'pr<in>','xq<any>','combination','of','ch<color>']
     l4 = len(nm4)
-    i = ll.matchl(nm4,tkns)
+    i = ll.matchl(tkns,nm4)
     if i > -1:
         amp = tkns[:i]
         mc = tkns[i:i+l4]
@@ -1258,14 +1253,14 @@ def graph_lituus_action_add(t,pid,tkns):
         if amp: t.add_node(mid,'amplifying-clause',tkns=amp)
         t.add_node(mid,'mana-clause',quantity=q,of="any combination")
         if rem:
-            stop = ll.matchl([mtgl.PER], rem)
+            stop = ll.matchl(rem,[mtgl.PER])
             if stop > -1: rem = rem[:stop]
             t.add_node(mid,'qualifying-clause',tkns=rem)
         return len(amp)+len(mc)+len(rem)
 
     # case 2
     # have to find the index of mana then split tkns into amp, mana, qual
-    i = ll.matchl([tag.re_mana_tag],tkns)
+    i = ll.matchl(tkns,[tag.re_mana_tag])
     if i > -1:
         amp,mc,rem = ll.splitl(tkns,i)
 
@@ -1287,7 +1282,7 @@ def graph_lituus_action_add(t,pid,tkns):
         if q: t.add_attr(mcid,'quantity',q)
 
         if rem:
-            stop = ll.matchl([mtgl.PER],rem)
+            stop = ll.matchl(rem,[mtgl.PER])
             if stop > -1: rem = rem[:stop]
             t.add_node(mid,'qualifying-clause',tkns=rem)
         return len(amp)+len(mc)+len(rem)
@@ -1335,7 +1330,7 @@ def graph_lituus_action_put(t,pid,tkns):
     # TODO: we need to relook at quantifiers, will there be cards with something
     #  other than 'any'
     # triple counter conjunction (only 2 cards Incremental Growth, Incremental Blight
-    if ll.matchl(put_ctr_tpl,tkns,0) == 0:
+    if ll.matchl(tkns,put_ctr_tpl,stop=0) == 0:
         cid = t.add_node(pid,'conjunction',coordinator='and',item_type='counter')
         for i in [0,4,9]: # index of xo<ctr...>s
             # extract the counter type and number (if any)
@@ -1349,7 +1344,7 @@ def graph_lituus_action_put(t,pid,tkns):
         return len(put_ctr_tpl)
 
     # double counter conjunction
-    if ll.matchl(put_ctr_dbl,tkns,0) == 0:
+    if ll.matchl(tkns,put_ctr_dbl,stop=0) == 0:
         cid = t.add_node(pid,'conjunction',coordinator='and',item_type='counter')
         for i in [0,4]: # index of xo<ctr...>s
             # extract the counter type and number (if any)
@@ -1363,7 +1358,7 @@ def graph_lituus_action_put(t,pid,tkns):
         return len(put_ctr_dbl)
 
     # single put counter
-    if ll.matchl(put_ctr_sng,tkns,0) == 0:
+    if ll.matchl(tkns,put_ctr_sng,stop=0) == 0:
         # extract the counter type and number (if any)
         # TODO: haven't seen any quantifiers other than 'another' or 'a' both
         #  of which can be considered '1' do we need to check anyway
@@ -1378,7 +1373,7 @@ def graph_lituus_action_put(t,pid,tkns):
     # 2.b - do this first to avoid false positives from 2.a
     # TODO: we are dropping the specific preposition i.e. 'onto' and 'into' will
     #  this have an adverse effect?
-    if ll.matchl(put_card2,tkns,0) == 0:
+    if ll.matchl(tkns,put_card2,stop=0) == 0:
         # in this case, we have to determine the from zone and the to zone
         if tag.untag(tkns[1])[1] == 'from':
             fz = tkns[2]
@@ -1391,7 +1386,7 @@ def graph_lituus_action_put(t,pid,tkns):
         return len(put_card2)
 
     # 2.a
-    if ll.matchl(put_card1,tkns,0) == 0:
+    if ll.matchl(tkns,put_card1,stop=0) == 0:
         # in this case, we assume that the preposition is always 'onto' or 'into'
         # and therefore defines 'to'. 'from' is not stated in the clause
         t.add_node(pid,'card',to=tkns[2],what=tkns[0])
@@ -1416,12 +1411,12 @@ def graph_lituus_action_distribute(t,pid,tkns):
 
     # determine if tkns has the initial distribute clause
     # TODO: see Vastwood Hydra
-    if ll.matchl([is_ctr,'among'],tkns,0) == 0:
+    if ll.matchl(tkns,[is_ctr,'among'],stop=0) == 0:
         i = 2
 
         # have to read up to the first obj from the end of the phrase, then add
         # the two tokens from the initial phrase to get the index of the object
-        j = ll.matchl([tag.is_mtg_obj],tkns[i:])
+        j = ll.matchl(tkns[i:],[tag.is_mtg_obj])
         assert(j != -1)
         j += i
 
@@ -1599,12 +1594,12 @@ def ta_clause(tkns):
         if i == 0:
             # the first clause is always in the condition but, if it ends with
             # a phase, it is the only part of the condition
-            if ll.matchl([tag.is_phase],s[-1:],0) == 0: split = 1
+            if ll.matchl(s[-1:],[tag.is_phase],stop=0) == 0: split = 1
             else: continue
-        if ll.matchl([tag.is_thing,tag.is_action],s,0) == 0:
+        if ll.matchl(s,[tag.is_thing,tag.is_action],stop=0) == 0:
             split = i
             break
-        elif ll.matchl([tag.is_player,'cn<may>',tag.is_action],s,0) == 0:
+        elif ll.matchl(s,[tag.is_player,'cn<may>',tag.is_action],stop=0) == 0:
             split = i
             break
         elif tag.is_action(s[0]):
@@ -1613,7 +1608,7 @@ def ta_clause(tkns):
         elif s[0] == 'cn<if>':
             split = i+1
             break
-        elif ll.matchl(['where',tag.is_variable],s,0) == 0:
+        elif ll.matchl(s,['where',tag.is_variable],stop=0) == 0:
             split = i-1
             break
     if not split: split = -1
@@ -1681,14 +1676,14 @@ def _pro_from_(tkns):
             # with value or a quantified meta-characteristic
             mc = [tag.is_meta_char,tag.is_operator,tag.is_number]
             qc = [tag.is_quantifier,tag.is_meta_char]
-            if ll.matchl(mc,pro,0) == 0:
+            if ll.matchl(pro,mc,stop=0) == 0:
                 ch.append("{}{}{}".format(
                         tag.untag(pro[0])[1], # the meta-characteristic,
                         tag.untag(pro[1])[1], # the operator
                         tag.untag(pro[2])[1]  # the numeric value
                     )
                 )
-            elif ll.matchl(qc,pro,0) == 0:
+            elif ll.matchl(pro,qc,stop=0) == 0:
                 ch.append("{}{}{}".format(
                         tag.untag(pro[1])[1], # the meta-chararcteristics
                         mtgl.EQ,              # equal to sign
@@ -1728,16 +1723,16 @@ def collate(t,tkns):
     # check in decreasing number of conjoined object to avoid false positives
 
     # check quad-chains
-    if ll.matchl(qud_chain,tkns,0) == 0:
+    if ll.matchl(tkns,qud_chain,stop=0) == 0:
         return conjoin(t,[tkns[0],tkns[2],tkns[4],tkns[7]],tkns[6]),len(qud_chain)
 
     # check tri-chains
-    if ll.matchl(tri_chain,tkns,0) == 0:
+    if ll.matchl(tkns,tri_chain,stop=0) == 0:
         return conjoin(t,[tkns[0],tkns[2],tkns[5]],tkns[4]),len(tri_chain)
 
     # check tri-chain alternate (create a single object) see Victim of Night
     # 'fixing' an inability of the parser to chain these under a single object
-    if ll.matchl(tri_chain_alt,tkns,0) == 0:
+    if ll.matchl(tkns,tri_chain_alt,stop=0) == 0:
         # TODO: this will fail if any of the objects do not have characteristics
         tg,val,ps = tag.untag(tkns[0]) # untag the first object
         ps2 = tag.untag(tkns[2])[2]
@@ -1750,11 +1745,11 @@ def collate(t,tkns):
         return nid,len(tri_chain_alt)
 
     # check bi-chain
-    if ll.matchl(bi_chain,tkns,0) == 0 and conjoin_bi_chain(tkns):
+    if ll.matchl(tkns,bi_chain,stop=0) == 0 and conjoin_bi_chain(tkns):
         return conjoin(t,[tkns[0],tkns[2]],tkns[1]),len(bi_chain)
 
     # check bi-chain alternate, once again, create a single object
-    if ll.matchl(bi_chain_alt,tkns,0) == 0:
+    if ll.matchl(tkns,bi_chain_alt,stop=0) == 0:
         # based on review of cards, these can be chained into a single object
         # unless one of the objects is a self-reference
         if tkns[0] != 'ob<card ref=self>' and tkns[2] != 'ob<card ref=self>':
@@ -1777,7 +1772,7 @@ def collate(t,tkns):
             return nid,len(bi_chain_alt)
 
     # single token?
-    if ll.matchl([tag.is_thing],tkns,0) == 0:
+    if ll.matchl(tkns,[tag.is_thing],stop=0) == 0:
         nid = t.add_ur_node('object')
         t.add_attr(nid,'object',tkns[0])
         return nid,1
@@ -1893,20 +1888,14 @@ def modal_type(tkns):
     """
     # modal1 may be preceded by 'an opponent' other modals start the line
     if not mtgl.BLT in tkns: return 0 # ignore any matches if there are no bullets
-    if ll.matchl(modal1,tkns,1) > -1: return 1
-    elif ll.matchl(modal2,tkns,0) == 0: return 2
-    elif ll.matchl(modal3,tkns,0) == 0: return 3
-    elif ll.matchl(modal4,tkns,0) == 0: return 4
-    elif ll.matchl(modal5,tkns,0) == 0: return 5
-    elif ll.matchl(modal6,tkns,0) == 0: return 6
+    if ll.matchl(tkns,modal1,stop=1) > -1: return 1
+    elif ll.matchl(tkns,modal2,stop=0) == 0: return 2
+    elif ll.matchl(tkns,modal3,stop=0) == 0: return 3
+    elif ll.matchl(tkns,modal4,stop=0) == 0: return 4
+    elif ll.matchl(tkns,modal5,stop=0) == 0: return 5
+    elif ll.matchl(tkns,modal6,stop=0) == 0: return 6
 
-def is_level(tkns):
-    """
-     determines if the list of tkns is a level description
-    :param tkns: tokens to check
-    :return: True if tkns is a level description
-    """
-    return ll.matchl(['level',tag.is_number],tkns,0) == 0
+def is_level(tkns): return ll.matchl(tkns,['level',tag.is_number],stop=0) == 0
 
 def is_activated_ability(tkns):
     """
@@ -1940,7 +1929,7 @@ def is_kw_line(line):
     #  graphed correctly)
     # standard keyword ability line is one or more comma separated keyword clauses
     # and does not end with a period or a period and a double quote
-    if not line[-1] in [mtgl.PER,mtgl.DBL] and ll.matchl([tag.is_keyword],line) > -1:
+    if not line[-1] in [mtgl.PER,mtgl.DBL] and ll.matchl(line,[tag.is_keyword]) > -1:
         return True
 
     # keyword clauses with non-mana cost will have a long hyphen, start with a
