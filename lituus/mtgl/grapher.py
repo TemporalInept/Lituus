@@ -2112,11 +2112,10 @@ KWA_SPECIAL = [
 """
     'remove','get','return','draw','move','copy','look','pay','paid',
     'deal','gain','lose','attack','block','enter','leave','choose','die',
-    'spend','take','skip','cycle','reduce','become','trigger','prevent','declare',
-    'has','have','switch','phase in','phase out','flip','assign','win','target'
+    'spend','take','skip','cycle','reduce',,'trigger','prevent','declare',
+    'has','have','switch','assign','win','target'
 """
-
-#NOTE: pay behaves similarily to add however, it could also be pay life
+#TODO flip could be a coin or an object
 """ REFERENCE ONLY 
 add - xa<add> Mana ((symbol, string or xo<mana...>)
 put - xa<put> Card (from Zone) to Zone or xa<put> n counter(s) on object

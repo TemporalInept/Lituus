@@ -352,7 +352,7 @@ re_lituus_ply = re.compile(r"\b({})\b".format('|'.join(lituus_players)))
 # lituus objects
 lituus_objects = [
     'city blessing','game','mana pool','commander','mana','attacker','blocker',
-    'it','them'
+    'it','them','coin'
 ]
 re_lituus_obj = re.compile(r"\b({})\b(?!>)".format('|'.join(lituus_objects)))
 
