@@ -251,7 +251,7 @@ def graph_modal_line(t,pid,line):
     # several modal preambles (see modalN definitions) regardless, each will
     # have instruction & modes (instruction will be the length of the matching
     # pattern).
-    i = eval("len(modal{})".format(mtype))
+    i = line.index(mtgl.BLT)
     instr = line[:i]
     modes = line[i:]
 
@@ -287,6 +287,9 @@ def graph_modal_line(t,pid,line):
     elif mtype == 5:
         # an event based decreasing number of options
         t.add_node(iid,'choose',n=1,option='has not been chosen')
+    elif mtype == 6:
+        # one card vindictive lich
+        t.add_node(iid,'choose',n=mtgl.GE+'1',option='one mode per player')
 
     # each mode clause will be '•', [additional tokens], ... tkns ... , '.'
     ms = []
@@ -496,7 +499,7 @@ def graph_triggered_ability(t,pid,line):
 
     # for modal, we need to recombine effect and instructions
     # TODO: this is nearly the same as activated_ability can we subfunction it
-    if modal_type(effect): graph_line(t,eid,effect+instr)
+    if modal_type(effect+instr): graph_line(t,eid,effect+instr)
     else:
         # NOTE: function ta_clause takes care of hanging double quotes betw/
         # effect and instruction, no need to check here
@@ -1831,13 +1834,15 @@ def conjoin_bi_chain(tkns):
 
 # modal preambles
 # TODO: modal3 (Siege) needs to be redone once we have graphed replacements
+# TODO: by splitting on the first bullet, we can look at condesing and reducing
+#  the number of modal preambles
 modal1 = ['xa<choose>',tag.is_number,mtgl.HYP]
 modal2 = [
     'xa<choose>',tag.is_number,mtgl.PER,'xp<you>','cn<may>','xa<choose>',
     'the','same','mode','more','than','once',mtgl.PER
 ]
 modal3 = [ # choose any
-    'xa<choose>',tag.is_number,'or','both',mtgl.HYP # TODO not tested
+    'xa<choose>',tag.is_number,'or','both',mtgl.HYP
 ]
 modal4 = [ # Siege enchantments
     'as','ob<card ref=self>', 'xa<enter>', 'zn<battlefield>',
@@ -1846,9 +1851,9 @@ modal4 = [ # Siege enchantments
 modal5 = [ # decreasing options (choose one that hasn't been chose)
     'xa<choose>',tag.is_number,'xq<that>','hasnt','been','xa<choose>',mtgl.HYP
 ]
-modal6 = [ # edge case Vindictive Lich
-    'xa<choose>',mtgl.is_number,mtgl.PER,'xq<each>','mode','must','xq<target>',
-    'a','different','xp<player',mtgl.PER
+modal6 = [ # edge case Vindictive Lich (very similar to modal 2 initially)
+    'xa<choose>',tag.is_number,mtgl.PER,'xq<each>','mode','must','xa<target>',
+    'a','different','xp<player>',mtgl.PER
 ]
 def modal_type(tkns):
     """
@@ -1863,6 +1868,7 @@ def modal_type(tkns):
     elif ll.matchl(modal3,tkns,0) == 0: return 3
     elif ll.matchl(modal4,tkns,0) == 0: return 4
     elif ll.matchl(modal5,tkns,0) == 0: return 5
+    elif ll.matchl(modal6,tkns,0) == 0: return 6
 
 def is_level(tkns):
     """
