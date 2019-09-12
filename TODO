@@ -354,3 +354,8 @@ because we are working backwords and getting the object belonging to phase out, 
 289. Fixed the "siege" enchantments to be graphed as modal spell but two issues remain
  o see Monastery Seige, the "as NAME enters the battlefield" replacement effect is being graphed 'under' the instruction clause where it should in reality be graphed directly under the ability line, then the modal portion would come under it
  o still have other modal cards that are not being graphed as modals see Captive Audience
+
+290. see Monastery Siege mode:1 we have
+ |-mode:1
+   |-effect-clause:1
+the problem is that this is really a static ability should we just remove the below if else. But, if we do we'll go back to the problem of some effects being called static abilities

@@ -97,14 +97,6 @@ def graph_line(t,pid,line,ctype='other'):
             # one of the above. But, static-abilities do not apply in all cases
             # 112.3d "...create continuous effects..." therefore, if this is not
             # a true line, it will be classified as an effect
-            # TODO: see Monastery Siege mode:1 we have
-            #  mode:1
-            #   effect-clause:1
-            #    ....
-            #  the problem is that this is really a static ability
-            #  should we just remove the below if else. But, if we do
-            #  we'll go back to the problem of spell-effect being called
-            #  static abilities
             if isline: nid = t.add_node(lid,'static-ability')
             else: nid = t.add_node(lid,'effect-clause') #TODO: need a better name
             graph_clause(t,nid,line)
@@ -250,30 +242,33 @@ def graph_modal_line(t,pid,line):
     mid = t.add_node(pid,'modal')
 
     # Some modals require an opp to choose - if so extract it and add
+    ply = None
     if tag.is_player(line[0]):
-        t.add_node(mid,'player',player=line[0])
+        #t.add_node(mid,'player',player=line[0])
+        ply = line[0]
         line = line[1:]
 
     # several modal preambles (see modalN definitions) regardless, each will
     # have instruction & modes (instruction will be the length of the matching
     # pattern).
-    i = None
-    if mtype == 1: i = len(modal1)
-    elif mtype == 2: i = len(modal2)
-    elif mtype == 3: i = len(modal3)
+    i = eval("len(modal{})".format(mtype))
     instr = line[:i]
     modes = line[i:]
 
     # Add instruction & choose node. the 'choose' format is dependent on the
     # modal type.
     iid = t.add_node(mid,'instruction')
+    if ply: t.add_node(iid,'player',player=ply)
     if mtype == 1 or mtype == 2:
         # these are chosen at time of cast or activation and tell us how
         # many choices can be made (n) and if the same mode can be chosen
         # more than once (repeatable)
-        rep = 'yes' if mtgl.PER in instr else 'no'
-        t.add_node(iid,'choose',n=tag.untag(instr[1])[1],repeatable=rep)
+        rep = 'repeatable' if mtgl.PER in instr else 'not-repetable'
+        t.add_node(iid,'choose',n=tag.untag(instr[1])[1],option=rep)
     elif mtype == 3:
+        # multiple options 1 or more can be chose
+        t.add_node(iid,'choose',n=mtgl.GE+'1',option='one or both')
+    elif mtype == 4:
         # "as enters.." choose one of two options. There are only 5 cards
         # 'Seige' enchantments that fit this modal preamble and the choices
         # khans or dragons is already known but we'll code for the possibility
@@ -288,7 +283,10 @@ def graph_modal_line(t,pid,line):
         if tag.is_mtg_obj(c1): c1 = tag.untag(c1)[2]['characteristics']+'s'
         if tag.is_mtg_obj(c2): c2 = tag.untag(c2)[2]['characteristics']+'s'
         graph_clause(t,iid,ll.splitl(instr,instr.index('xa<choose>'))[0])
-        t.add_node(iid,'choose',option1=c1,option2=c2)
+        t.add_node(iid,'choose',n=1,option1=c1,option2=c2)
+    elif mtype == 5:
+        # an event based decreasing number of options
+        t.add_node(iid,'choose',n=1,option='has not been chosen')
 
     # each mode clause will be '•', [additional tokens], ... tkns ... , '.'
     ms = []
@@ -303,7 +301,7 @@ def graph_modal_line(t,pid,line):
     # before graphing
     for m in ms:
         moid = t.add_node(mid,'mode')
-        if mtype == 3:
+        if mtype == 4:
             r,_,line = ll.splitl(m,m.index(mtgl.HYP))
             if tag.is_mtg_obj(r[0]): r = tag.untag(r[0])[2]['characteristics']+'s'
             else: r = r[0]
@@ -494,7 +492,7 @@ def graph_triggered_ability(t,pid,line):
     graph_clause(t,t.add_node(taid,'triggered-ability-condition'),cond)
 
     # for effect we add the node, then check if it is modal or not
-    eid = t.add_node(taid,'effect')
+    eid = t.add_node(taid,'triggered-ability-effect')
 
     # for modal, we need to recombine effect and instructions
     # TODO: this is nearly the same as activated_ability can we subfunction it
@@ -552,10 +550,6 @@ def graph_clause(t,pid,tkns):
                 dbl = tkns[i+1:ll.indexl(tkns,mtgl.DBL,i)]
                 graph_line(t,t.add_node(pid,'quoted-clause'),dbl)
                 skip = len(dbl) + 1 # skip the right double quote
-            #elif tkn == mtgl.BLT:
-            #    mtype = modal_type(tkns[i:])
-            #    if mtype > 0: graph_modal_line(t,pid,tkns[i:])
-            #    #print("{}: {}".format(modal_type(tkns[i:]),tkns[i:]))
             else: t.add_node(pid,'punctuation',symbol=tkn)
         elif tag.tkn_type(tkn) == tag.MTGL_SYM:
             if cls:
@@ -1835,29 +1829,40 @@ def conjoin_bi_chain(tkns):
         if tag.is_property(nxt): return False
         return True
 
+# modal preambles
+# TODO: modal3 (Siege) needs to be redone once we have graphed replacements
 modal1 = ['xa<choose>',tag.is_number,mtgl.HYP]
 modal2 = [
     'xa<choose>',tag.is_number,mtgl.PER,'xp<you>','cn<may>','xa<choose>',
     'the','same','mode','more','than','once',mtgl.PER
 ]
-modal3 = [ # Siege enchantments
+modal3 = [ # choose any
+    'xa<choose>',tag.is_number,'or','both',mtgl.HYP # TODO not tested
+]
+modal4 = [ # Siege enchantments
     'as','ob<card ref=self>', 'xa<enter>', 'zn<battlefield>',
     ',', 'xa<choose>',ll.re_all,'or',ll.re_all,mtgl.PER
+]
+modal5 = [ # decreasing options (choose one that hasn't been chose)
+    'xa<choose>',tag.is_number,'xq<that>','hasnt','been','xa<choose>',mtgl.HYP
+]
+modal6 = [ # edge case Vindictive Lich
+    'xa<choose>',mtgl.is_number,mtgl.PER,'xq<each>','mode','must','xq<target>',
+    'a','different','xp<player',mtgl.PER
 ]
 def modal_type(tkns):
     """
      determines if the list of tokens is modal
     :param tkns: tokens to check
-    :return: 1 if modal 1, 2 if modal 2, 3 if modal 3 or 0 (False) otherwise)
+    :return: positive number matching the modal type or 0 if not modal
     """
     # modal1 may be preceded by 'an opponent' other modals start the line
     if not mtgl.BLT in tkns: return 0 # ignore any matches if there are no bullets
-    i = ll.matchl(modal1,tkns,1)
-    if i == 1 and tag.is_mtg_obj(tkns[0]) or i == 0: return 1
-    if i == 0: return 1
-    if ll.matchl(modal2,tkns,0) == 0: return 2
-    if ll.matchl(modal3,tkns,0) == 0: return 3
-    return 0 # should never get here
+    if ll.matchl(modal1,tkns,1) > -1: return 1
+    elif ll.matchl(modal2,tkns,0) == 0: return 2
+    elif ll.matchl(modal3,tkns,0) == 0: return 3
+    elif ll.matchl(modal4,tkns,0) == 0: return 4
+    elif ll.matchl(modal5,tkns,0) == 0: return 5
 
 def is_level(tkns):
     """

@@ -167,10 +167,10 @@ def rectify(olds):
             elif ll.matchl(['new'],news[-1:]) == 0:
                 # last object check if the preceding word is new
                 news.append('xo<target>')
-            elif ll.matchl([ll.ors(['xq<that>','could','ob<copy>'])],news[-1:]) == 0:
+            elif ll.matchl([ll.ors(['xq<that>','could','ob<copy>','must'])],news[-1:]) == 0:
                 # determine if 'target' is an action, the easiest is to check the
-                # preceding tokens if we find, 'that', 'could' or 'copy' it's an
-                # action NOTE: based on the assumption that rectify has correctly
+                # preceding tokens if we find, 'that', 'could', 'copy', must it's
+                # an action NOTE: based on the assumption that rectify has correctly
                 # fixed copy tokens
                 news.append('xa<target>')
             else:
