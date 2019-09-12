@@ -34,8 +34,6 @@ The problem is that 'target' applies to both permanent and card but the two obje
   'xa<pay>', 'nu<3>', 'xc<life>'
 should we combine the nu and the xc into xc<life num=3> or consider that any xa has a nu and a xc
 
-133. pickle the n2r file and delete in multiverse once its not being used any long
-
 137. do we need to add_hanging for all prepositions i.e. 'from' or leave as is 
 
 138. Thromok the Insatiable

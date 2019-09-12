@@ -37,6 +37,7 @@ import lituus.mtgcard as mtgcard
 url_cards = "https://mtgjson.com/json/AllCards.json"
 mvpath    = os.path.join(mtg.pth_sto,'multiverse.pkl')
 tcpath    = os.path.join(mtg.pth_sto,'transformed.pkl')
+n2rpath   = os.path.join(mtg.pth_sto,'n2r.pkl')
 
 def multiverse(update=False):
     """
@@ -47,6 +48,7 @@ def multiverse(update=False):
     # files to create
     mv = {}  # multiverse
     tc = {}  # transformed cards
+    n2r = {} # name to reference dict
 
     # don't reparse the mutliverse unless update is set
     if os.path.exists(mvpath) and not update:
@@ -54,12 +56,7 @@ def multiverse(update=False):
         try:
             fin = open(mvpath,'rb')
             mv = pickle.load(fin)
-
-            # create the n2r file # TODO: why are we creating this?
-            n2r = {} # name to ref-id hash
-            for cname in mv: n2r[cname] = md5(cname.encode()).hexdigest()
-            mtgl.set_n2r(n2r)
-
+            fin.close()
             return mv
         except pickle.PickleError as e:
             print("Error loading multiverse: {}. Loading from JSON".format(e))
@@ -88,7 +85,7 @@ def multiverse(update=False):
     fin = None
     try:
         print("Loading the Multiverse")
-        fin = open(os.path.join(mtg.pth_resources, 'AllCards.json'), 'r')
+        fin = open(os.path.join(mtg.pth_resources,'AllCards.json'),'r')
         mverse = json.load(fin)
         fin.close()
     except IOError as e:
@@ -99,23 +96,8 @@ def multiverse(update=False):
 
     # parse the mverse
     print('Parsing the Multiverse')
-    import_cards(mv,tc,mverse)
+    import_cards(mv,tc,n2r,mverse)
     print("Imported {} cards and {} transformed cards.".format(len(mv), len(tc)))
-
-    #fin = None
-    #try:
-    #    # get the AllCards.json and import
-    #    print("Parsing local copy AllCards")
-    #    fin = open(os.path.join(mtg.pth_resources,'AllCards.json'),'r')
-    #    mverse = json.load(fin)
-    #    fin.close()
-    #    import_cards(mv,tc,mverse)
-    #    print("Imported {} cards and {} transformed cards.".format(len(mv),len(tc)))
-    #except IOError as e:
-    #    print("Error reading the cards file {}".format(e))
-    #    return None
-    #finally:
-    #    if fin: fin.close()
 
     # pickle the multiverse
     fout = None
@@ -149,17 +131,33 @@ def multiverse(update=False):
     finally:
         if fout: fout.close()
 
+    # & then the n2r dict
+    fout = None
+    try:
+        print("Writing Name Reference file")
+        fout = open(n2rpath,'wb')
+        pickle.dump(n2r,fout)
+        fout.close()
+    except pickle.PickleError as e:
+        print("Failed to pickle name reference: {}".format(e))
+        raise
+    except IOError as e:
+        print("Failed to name reference: {}".format(e))
+        raise
+    finally:
+        if fout: fout.close()
+
     return mv
 
-def import_cards(mv,tc,mverse):
+def import_cards(mv,tc,n2r,mverse):
     """
      imports cards into multiverse mv and transformed cards tc from json mverse
      :param mv: multiverse dict
      :param tc: transformed dict
+     :param n2r: the name to reference hash
      :param mverse: json multiverse
     """
     # calculate the name to ref-id dict and initialize it
-    n2r = {} # name to ref-id hash
     for cname in mverse:
         # skip banned cards
         try:
@@ -240,6 +238,9 @@ def import_cards(mv,tc,mverse):
         del mv[a]
         del mv[b]
         mv[name] = mtgcard.MTGCard(dcard)
+
+    # once done, release the global n2r in mtgl
+    mtgl.release_n2r()
 
 def harvest(name,jcard):
     """

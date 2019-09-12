@@ -194,6 +194,12 @@ def set_n2r(n2r):
         )
         N2R = n2r
 
+def release_n2r():
+    global N2R
+    if not N2R is None:
+        N2R = {}
+        del N2R
+
 # SPECIAL KEYWORD PREPROCESSING
 re_cycling_pre = re.compile(r"\b(\w+?)cycling\b")             # seperate type & cycling
 re_landwalk_pre = re.compile(r"(\w+?)(?<!\sland)walk(?!er)")  # seperate type & landwalk
