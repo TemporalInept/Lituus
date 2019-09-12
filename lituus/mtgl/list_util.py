@@ -25,7 +25,8 @@ re_all = re.compile(r".+") # catchall for match any token
 def ors(tkns): return re.compile(r"{}".format('|'.join([t for t in tkns])))
 def matchl(ss,ls,a=None):
     """
-     attempts to match the elements in ss to a sublist of ls.
+     attempts to match the elements in ss to a sublist of ls but not after index
+     a (if present).
      NOTE:
       1. This is a token for token match so it cannot be used to find for example
        a list of any length beginning with a specified regex and ending with a
@@ -64,6 +65,56 @@ def matchl(ss,ls,a=None):
             else: raise TypeError("matchl: invalid type {}".format(type(s)))
         if found: return i
     return -1
+
+def splicel(ls,t1,t2,t3=None):
+    """
+     finds sublists in ls between the tokens t1, t2 and t3 (if present).
+     NOTE:
+      o each token t1 - t3 can appear no more than once in the ls
+      o the tokens t1 - t3 are found via matchl so they can be a string, function
+       or regeular expression
+    :param ls: the list to search in
+    :param t1: the first token
+    :param t2: the second  (or last token)
+    :param t3: the third and last token if present
+    :return: a list l and tuple t where
+      l = list of indexes where the tokens are located in ls
+      t = (variable length)
+       (before, - list of tokens before t1
+        t1, - match for t1
+        between1, - list of tokens between t1 and t2
+        t2, - match for t2
+        [ if t3 is set
+         between2, list of tokens between t2 and t3
+         t3 - mathc for t3
+        ]
+        after, - list of tokens after t3 (or t2)
+    """
+    # TODO: using functions will fail if they are the same function (note 1)
+    #  i.e splicel(ls,tag.is_conditional,tag.is_conditional,tag.is_conditional)
+    #  because the functions works 'right' to 'left' (i.e. from t3 to t1 and
+    #  matchl works 'left' to 'right'. We'd have to start 'left' to 'right' (i.e.
+    #  from t1 to t3) and matchl would have to include a 'start at' parameter
+    # put the tokens in a list in reverse order
+    ts = [t2,t1]
+    if t3: ts.insert(0,t3)
+
+    # starting from last to first
+    k = matchl([ts[0]],ls)
+    if k < 0: raise ValueError # technically could check for < # of tokens
+
+    # find the next token
+    j = matchl([ts[1]],ls,k-1)
+    if j < 0: raise ValueError
+
+    # find the last token (unless only two were queried for)
+    if len(ts) < 3: return [j,k], (ls[:j],ls[j],ls[j+1:k],ls[k],ls[k+1:])
+    i = matchl([ts[2]],ls,j-1)
+    if i < 0: raise ValueError
+    return [i,j,k], (ls[:i],ls[i],ls[i+1:j],ls[j],ls[j+1:k],ls[k],ls[k+1:])
+
+
+
 
 def replacel(ls,ss,ns):
     """
