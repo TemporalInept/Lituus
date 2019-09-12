@@ -239,7 +239,7 @@ def import_cards(mv,tc,n2r,mverse):
         del mv[b]
         mv[name] = mtgcard.MTGCard(dcard)
 
-    # once done, release the global n2r in mtgl
+    # once done - release the global n2r in mtgl
     mtgl.release_n2r()
 
 def harvest(name,jcard):

@@ -195,6 +195,7 @@ def set_n2r(n2r):
         N2R = n2r
 
 def release_n2r():
+    # release/delete the global N2R file (once its no longer needed)
     global N2R
     if not N2R is None:
         N2R = {}
