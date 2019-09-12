@@ -98,7 +98,6 @@ def tkn_type(tkn):
         return MTGL_PUN
     return MTGL_WRD
 
-
 # match a mtg symbol
 def is_mtg_symbol(tkn): return re_mtg_sym.match(tkn) is not None
 
@@ -142,6 +141,14 @@ def retag(tag,val,ps):
     return re_hanging.sub(
         '>',"{}<{} {}>".format(tag,val," ".join(["=".join([p,ps[p]]) for p in ps]))
     )
+
+def same_tag(tkns):
+    tid = None
+    for tkn in tkns:
+        t = mtgl.untag(tkn)[0]
+        if not tid: tid = t
+        elif t != tid: return False
+    return True
 
 def is_tgr_word(tkn):
     try:
@@ -276,6 +283,13 @@ def is_variable(tkn):
     try:
         t,v,_ = untag(tkn)
         return t == 'nu' and v in ['x','y','z']
+    except mtgl.MTGLTagException:
+        return False
+
+def is_expression(tkn):
+    try:
+        t,v,_ = untag(tkn)
+        return t == 'nu' and v in [mtgl.LT,mtgl.GT,mtgl.LE,mtgl.GE,mtgl.EQ]
     except mtgl.MTGLTagException:
         return False
 

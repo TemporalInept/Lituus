@@ -281,8 +281,8 @@ re_stat_fix = re.compile(r"(face|phased)(-)(up|down|in|out)")
 # lituus status
 # TODO: add these 'suspended','unattached'
 lituus_status = [
-    'attacking','blocking','defending','transformed','enchanted','equipped',
-    'exiled','attached','activated','triggered','revealed'
+    'attacking','blocking','blocked','defending','transformed','enchanted',
+    'equipped','exiled','attached','activated','triggered','revealed'
 ]
 re_lituus_stat = re.compile(r"\b({})\b".format('|'.join(lituus_status)))
 
@@ -487,7 +487,7 @@ all_acts = {
     **{w+'s':w for w in all_acts if w[-1] not in ['s','h']},
     **{w+'es':w for w in all_acts if w[-1] in ['s','h']},
     **{w+'d':w for w in all_acts if w not in ['activate','exile'] and w[-1] == 'e'},
-    **{w+'ed':w for w in all_acts if w not in ['trigger','reveal','attach'] and w[-1] != 'e'},
+    **{w+'ed':w for w in all_acts if w not in ['block','trigger','reveal','attach'] and w[-1] != 'e'},
     **{w+'ing':w for w in all_acts if w not in ['attack','block'] and w[-1] != 'e'},
     **{w[:-1]+'ing': w for w in all_acts if w not in ['vote','cycle'] and w[-1] == 'e'}
 }

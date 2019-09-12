@@ -348,12 +348,22 @@ because we are working backwords and getting the object belonging to phase out, 
  o thats ...
  o where [X] ...
  o for each ...
+ o other than ...
+ o by ...
 
 288. Start thinking about graphing conditions
 
 290. see Monastery Siege mode:1 we have
  |-mode:1
    |-effect-clause:1
-the problem is that this is really a static ability should we just remove the below if else. But, if we do we'll go back to the problem of some effects being called static abilities
+the problem is that this is really a static ability should we just remove the below if else. But, if we do we'll go back to the problem of some effects being called static abilities when they're not static
 
 291. not satisfied with hand-jamming the attributes of the choose node in modals
+
+292. some actions may need to be collated, see Cunning Survivor
+
+294. collating action words i.e. ('cycles or discards a card'), ('is blocked or blocks')
+
+295. Have to relook at collating tkns prior to a word, collate takes a strict approach and the conjoined objects must start at the begining of the 'clause'. In some cases, clause will be sent where the objects start in the middle.
+
+296. lituus-action block graphing needs to be redone see Alaborn Zealot where block can have preceding object(s), (object blocks), post object(s) (blocks a object) or both (whenever alaborn zealot blocks a creature)

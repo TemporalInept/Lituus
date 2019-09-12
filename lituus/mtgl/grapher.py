@@ -190,8 +190,6 @@ def graph_kw_line(t,pid,line):
         elif kw == 'modular' and ll.matchl([mtgl.HYP,'kw<modular>'],ps) == 0:
             # rule 702.43c (arcbound wanderer) has the form
             # Modular-Sunburst where Sunburst is a stand-in for N
-            # TODO: are there any other cases where a long hyphen seperates
-            #  keyword and N
             t.add_node(kwid,'n',value='sunburst')
         elif kw == 'splice':
             # 702.46a Splice onto [subtype] [cost]
@@ -1035,19 +1033,49 @@ def graph_lituus_action(t,pid,cls,la,tkns):
     v = tag.untag(la)[1]
 
     # a few lituus actions require tokens from cls
-    if v == 'phase_in' or v == 'phase_out':
+    if v in THING_LA:
         # collate what we can from cls. Note that collate is grabbing from the
-        # beginning of cls meaning we may have tokens in cls that 'left over' and
+        # beginning of cls meaning we may have tokens in cls 'left over' and
         # between the rootless action node i.e. the last line of Ertai's familiar
         # "Ertai's Familiar cannot phase out" - the word 'cannot' will remain
+        # TODO: have to figure out how/where to graph the additional for
+        #  Ertai's Familar, it works but for adarkar Valkyrie it doesn't
         nid,skip = collate(t,cls)
-        if skip < len(cls): t.add_node(pid,'clause',tkns=cls[skip:])
+        #if skip < len(cls): graph_clause(t,pid,cls[skip:])
+        graph_clause(t,pid,cls[skip:])
 
         # now, create our hierarchy and add the collated subtree
         laid = t.add_node(pid,'lituus-action-clause')
         t.add_node(laid,'lituus-action',word=v)
         if nid: t.add_edge(laid,nid)
         return 0 # nothing in tokens was processed
+    elif v == 'block':
+        # block is different. it can refer to an object coming after the action
+        # see Alluring Scent or the object can come prior to the action see
+        # Ageless Sentinels.
+        # TODO: see Alaborn Zealot block can actually take two object(s) preceding
+        #  and succeeding the action word
+        if ll.matchl([tag.is_mtg_obj],tkns,0) == 0:
+            # post action object, clause out any opened clause, create a
+            # lituus-action-clause node and the action action node
+            if cls: t.add_node(pid,'clause',tkns=cls)
+            laid = t.add_node(pid,'lituus-action-clause')
+            t.add_node(laid,'lituus-action',word=v)
+            nid,skip = collate(t,tkns)
+            if nid: t.add_edge(laid,nid)
+        else:
+            # look behind
+            nid,skip = collate(t,cls)
+            #if skip < len(cls): t.add_node(pid,'clause',tkns=cls[skip:])
+            graph_clause(t,pid,cls[skip:])
+
+            laid = t.add_node(pid,'lituus-action-clause')
+            t.add_node(laid,'lituus-action',word=v)
+            if nid: t.add_edge(laid,nid)
+            skip = 0
+        return skip
+
+    # TODO: pay will go here as well
 
     # the following do not require tokens from cls, so we can close it out, then
     # add our hierarchy
@@ -1055,11 +1083,14 @@ def graph_lituus_action(t,pid,cls,la,tkns):
     laid = t.add_node(pid,'lituus-action-clause')
     t.add_node(laid,'lituus-action', word=v)
 
+    skip = 0
     if v == 'add': return graph_lituus_action_add(t,laid,tkns)
     elif v == 'put': return graph_lituus_action_put(t,laid,tkns)
     elif v == 'distribute': return graph_lituus_action_distribute(t,laid,tkns)
-    #elif v == 'pay': return graph_lituus_action_pay(t,laid,tkns) # TODO
-    else: return 0
+    elif v in LA_THING:
+        nid,skip = collate(t,tkns)
+        if nid: t.add_edge(laid,nid)
+    return skip
 
 def graph_lituus_action_add(t,pid,tkns):
     """
@@ -1672,7 +1703,7 @@ def _pro_from_(tkns):
     return ch
 
 # TODO: have to look at is_mtg_obj vs is_thing there are cases (Contempt)
-#  at least in bi-chains where an mtg object should be conjoined with a lituus obj
+#  in bi-chains where an mtg object should be conjoined with a lituus obj
 qud_chain = [ # only a few quad chain cards (see Decimate)
     tag.is_mtg_obj,mtgl.CMA,                                    # 0,1
     tag.is_mtg_obj,mtgl.CMA,                                    # 2,3
@@ -1708,7 +1739,6 @@ def collate(t,tkns):
     # 'fixing' an inability of the parser to chain these under a single object
     if ll.matchl(tri_chain_alt,tkns,0) == 0:
         # TODO: this will fail if any of the objects do not have characteristics
-        # TODO: oh-uh
         tg,val,ps = tag.untag(tkns[0]) # untag the first object
         ps2 = tag.untag(tkns[2])[2]
         ps3 = tag.untag(tkns[4])[2]
@@ -1741,7 +1771,7 @@ def collate(t,tkns):
                 ps['characteristics'] += mtgl.AND + ps1['characteristics']
             else: ps['characteristics'] = ps1['characteristics']
 
-            # add a rootless node, then retag the chained object
+            # add a rootless node & retag the chained object
             nid = t.add_ur_node('object')
             t.add_attr(nid,'object',tag.retag(tg,val,ps))
             return nid,len(bi_chain_alt)
@@ -2109,16 +2139,38 @@ KWA_SPECIAL = [
 # usage and parameters via how and where they are used in oracle texts
 ####
 
+LA_THING = [ # xa<LITUUS ACTION> Thing
+    'flip','cycle'
+]
+
+THING_LA = [ # Thing xa<LITUUS ACTION>
+    'phase_in','phase_out','die','attack',
+]
+
 """
     'remove','get','return','draw','move','copy','look','pay','paid',
-    'deal','gain','lose','attack','block','enter','leave','choose','die',
-    'spend','take','skip','cycle','reduce',,'trigger','prevent','declare',
+    'deal','gain','lose','block','enter','leave','choose','die',
+    'spend','take','skip','cycle','reduce','trigger','prevent','declare',
     'has','have','switch','assign','win','target'
 """
-#TODO flip could be a coin or an object
+
+"""
+ Working Notes
+  return will be very similar to shuffle 
+   it will have an object an a zone (return it to the battlefield)
+   it may also have two zones (return all Human creature cards from your 
+   graveyard to the battlefield)
+  declare
+   different, because we know we will get word,ob,word,la
+"""
+
 """ REFERENCE ONLY 
 add - xa<add> Mana ((symbol, string or xo<mana...>)
 put - xa<put> Card (from Zone) to Zone or xa<put> n counter(s) on object
 distribute - xa<distribute> n1 counters among n2 objects
 phase in/phase out: object xa<phase_in> or object xa<phase_out>
+flip - xa<flip> Thing (coin or object)
+cycle - xa<cycle> a card
+die - object xa<die>
+attack - object xa<attack>
 """

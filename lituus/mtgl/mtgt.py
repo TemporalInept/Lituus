@@ -284,9 +284,8 @@ class MTGTree:
         if self.parent(cid): raise MTGTException("{} has a parent".format(cid))
         self._t.add_edge(pid,cid)
 
-    """ emoves node nid, edges into nid and the subtree at node nid """
+    """ removes node nid, edges into nid and the subtree at node nid """
     def del_node(self,nid): self._t.remove_nodes_from(self.descendants(nid) + [nid])
-
 
     # TODO:
     def del_edge(self): pass
