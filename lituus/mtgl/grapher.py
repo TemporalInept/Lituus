@@ -88,7 +88,7 @@ def graph_line(t,pid,line,ctype='other'):
         else: lid = pid
 
         if has_repl_effect(line):
-            print("RE: {}".format(line))
+            pass
         elif modal_type(line): graph_modal_line(t,lid,line) # e
         elif is_level(line): graph_level_line(t,lid,line) # f
         elif ctype == 'saga': graph_saga_line(t,lid,line) # g
@@ -1868,7 +1868,14 @@ def conjoin_bi_chain(tkns):
 #  2) As [this permanent] enters the battlefield ....
 #  3) [This permanent] enters the battlefield as....
 # for #1 we can have two subcases, a) there is an if (Anavolver) and b) no if (Anthroplasm)
-repl614_1c_1_a = ['cn<if>',['xa<enter>','zn<battlefield>','pr<with>']]
+repl614_1c = {
+    1:['xa<enter>','zn<battlefield>','pr<with>'],
+    2:('as',['xa<enter>','zn<battlefield>']),
+    3:['xa<enter>','zn<battlefield>','as']
+}
+
+
+_1_a = ('cn<if>',['xa<enter>','zn<battlefield>','pr<with>'])
 def has_repl_effect(line):
     """
      determines if line contains a replacment effect
@@ -1876,7 +1883,8 @@ def has_repl_effect(line):
     :return: True if there is a replacement, False otherwise
     """
     try:
-        _,_bs = ll.splicel(line,[],[])
+        _,_bs = ll.splicel(line,repl614_1c[1])
+        print(line)
     except ValueError:
         pass
     return False

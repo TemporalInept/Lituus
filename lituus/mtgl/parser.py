@@ -285,13 +285,13 @@ def chain(olds):
 
     for i,tkn in enumerate(olds):
         if tag.is_mtg_char(tkn):
-            # only chain meta characteristics if they are p/t (& not incr/decr)
-            # and not part of a level symbol
+            # only chain meta characteristics if they are p/t & meet specific criteria
             _,v,p = tag.untag(tkn)
             if not tag.is_meta_char(tkn): cs.append(v)
             else:
-                if v == 'p/t' and news and not tag.is_lituus_act(news[-1]):
-                    pt = p['val']
+                # if we find a lituus action i.e. gets or the word of, do
+                # not add
+                if v == 'p/t' and _chain_pt_(news): pt = p['val']
                 else:
                     # close out the chain if its open
                     if cs:
@@ -394,6 +394,12 @@ def chain(olds):
         i = ll.matchl(news,cnc)
 
     return news
+
+# determines based on previously read tokens if pt should be chained
+def _chain_pt_(ns):
+    if ll.matchl(ns,[tag.is_lituus_act],start=len(ns)-1) > -1: return False
+    if ll.matchl(ns,['choice','of']) > -1: return False
+    return True
 
 def _comma_read_ahead_(tkns):
     """

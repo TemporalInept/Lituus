@@ -75,6 +75,7 @@ def splicel(ls,ts):
      finds sublists in ls between the terms in ts. The terms are found via matchl
      so they can be a single token or a list of tokens where each token can be a
      string, function or regular expression.
+     NOTE: ts must contain at least two terms
     :param ls: the list to search in
     :param ts: iterable of terms
     :return: three lists idx,matches,phrases where
