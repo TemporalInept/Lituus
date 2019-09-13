@@ -196,10 +196,12 @@ def set_n2r(n2r):
 
 def release_n2r():
     # release/delete the global N2R file (once its no longer needed)
+    global re_oth_ref
     global N2R
     if not N2R is None:
         N2R = {}
         del N2R
+        re_oth_ref = None
 
 # SPECIAL KEYWORD PREPROCESSING
 re_cycling_pre = re.compile(r"\b(\w+?)cycling\b")             # seperate type & cycling
