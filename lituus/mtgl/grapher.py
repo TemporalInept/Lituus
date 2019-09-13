@@ -270,9 +270,10 @@ def graph_modal_line(t,pid,line):
         # "as enters.." choose one of two options. There are only 5 cards
         # 'Seige' enchantments that fit this modal preamble and the choices
         # khans or dragons is already known but we'll code for the possibility
-        # of future cards using the same preamble (NOTE: in siege enchantments,
-        # dragons is tagged as a characteristice If future cards are released that
-        # match this preamble the below could throw errors)
+        # of future cards using the same preamble (NOTE: in anchored abilities i.e
+        # siege enchantments, dragons is tagged as a characteristice If future
+        # cards are released that match this preamble the below could throw
+        # errors)
         # TODO: for now we are graphing the replacement "as NAME enters the
         #  battlefield clause under the instruction node of the modal node -
         #  this clause should really be the parent of the modal

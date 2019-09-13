@@ -176,7 +176,8 @@ def import_cards(mv,tc,n2r,mverse):
             continue
 
         # get the parameters and parse the oracle
-        # TODO: once the bugs, are worked out, remove reraise of error
+        # TODO: once the bugs are worked out, remove reraise of error
+        # TODO: once debugging is done, dont store intermidiate parsing artifacts
         try:
             # harvest the json card dict and parse the oracle text
             jcard = mverse[cname]

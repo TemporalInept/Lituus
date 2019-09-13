@@ -12,8 +12,8 @@ Defines helper functions for list processing
 
 #__name__ = 'list_util'
 __license__ = 'GPLv3'
-__version__ = '0.0.1'
-__date__ = 'August 2019'
+__version__ = '0.0.2'
+__date__ = 'September 2019'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -72,39 +72,82 @@ def matchl(ls,ss,start=0,stop=None):
 
 def splicel(ls,t1,t2,t3=None):
     """
-     finds sublists in ls between the tokens t1, t2 and t3 (if present).
-     NOTE:
-      o each token t1 - t3 can appear no more than once in the ls
-      o the tokens t1 - t3 are found via matchl so they can be a string, function
-       or regeular expression
+     finds sublists in ls between the terms t1, t2 and t3 (if present). The terms
+     are found via matchl so they can be a single token or a list of tokens where
+     each token can be a string, function or regular expression.
     :param ls: the list to search in
-    :param t1: the first token
-    :param t2: the second  (or last token)
-    :param t3: the third and last token if present
-    :return: three lists idx,words,phrases where
-     idx is a list of the indices of matches for t1, t2, and t3
-     words is a list of the elements in ls with the corresponding to idx
-     phrases is a list of sublists of the form:
-      ls[:idx->t1],ls[idx->t1+1:idx->t2],ls[idx->t2+1:idx->t3],ls[idx->t3+1:]
-     i.e. before t1, bewteen t1 and t2, between t2 and t3, after t3
-     in other words, you could recreate the list with
-     phrases[0]+words[0]+phrases[1]+words[1]+phrases2+words[2]+phrases[3]
-    """
-    # TODO: allow variable number tokens or continue to force no more than 3?
-    #idx = [0]
-    i = matchl(ls,[t1])
-    if i < -1: raise ValueError
-    else: idx.append(i)
-    j = matchl(ls,[t2],start=i+1)
-    if j < -1: raise ValueError
-    else: idx.append(j)
-    if t3:
-        k = matchl(ls,[t3],start=j+1)
-        if k < -1: raise ValueError
-        idx.append(k)
-    #idx.append(len(ls))
+    :param t1: the first term
+    :param t2: the second  (or last) term
+    :param t3: the third and last term if present
+    :return: three lists idx,matches,phrases where
+     idx is a list of the starting indices of matches for t1, t2, and t3
+     matches is a list of the matches for t1, t2 and t3
+     phrases is a list of the sublists 'between' t1, t2 and t3
+      such that phrases[0] is always the sublist of tokens occurring prior to t1
+      and phrase[-1] is always the sublast following the last term t2 or t3
+      and phrase[1:-1] are the sublists between t1 and t2 and t2 and t3 (if present)
 
-    return idx, [ls[i] for i in idx], _pairwise_(ls,[0]+idx+[len(ls)])
+    As an example, consider the mtgl for the second line of Containment Priest
+    ls = ['cn<if>', 'ob<¬token quantifier=a characteristics=creature>', 'cn<would>',
+          'xa<enter>', 'zn<battlefield>', 'and', 'xo<it>', 'wasnt', 'ka<cast>', ',',
+          'ka<exile>', 'xo<it>', 'cn<instead>', '.']
+
+    and we want to splice on three conditionals (tag.is_conditional)
+    idx,matches,phrases = splicel(ls,tag.is_conditional,tag.is_conditional,tag.is_conditional)
+
+    returns:
+     idx = [0, 2, 13]
+     matches = [
+          match for t1 = ['cn<if>'],
+          match for t2 = ['cn<would>'],
+          match for t3 = ['cn<instead>']
+     ]
+     phrases = [
+         before = [],
+         between t1 and t2 = ['ob<¬token quantifier=a characteristics=creature>'],
+         between t2 and t3 = ['xa<enter>', 'zn<battlefield>', 'and', 'xo<it>', 'wasnt', 'ka<cast>',
+          ',', 'ka<exile>', 'xo<it>'],
+        after = ['.']
+     ]
+
+    """
+    # TODO: generalize this so we can use a list instead of t1, t2 and t3
+    idx  = [] # starting indices of matches
+    ms   = [] # the matched phrase
+    bs   = [] # betweens (list of tokens between ti and tj
+    last = 0  # stopping index of the last found match
+
+    # start at first term and work left to right
+    t1 = t1 if isinstance(t1,list) else [t1]
+    i = matchl(ls,t1)
+    if i < 0: raise ValueError
+    idx.append(i)
+    ms.append(ls[i:i+len(t1)])
+    bs.append(ls[:i]) # this will be before
+
+    # get the match for the second term
+    t2 = t2 if isinstance(t2,list) else [t2]
+    j = matchl(ls,t2,start=i+len(t1))
+    if j < 0: raise ValueError
+    idx.append(j)
+    ms.append(ls[j:j+len(t2)])
+    bs.append(ls[i+1:j]) # this will be between1
+    last = j+len(t2)
+
+    # if the third term is present get the match
+    if t3:
+        t3 = t3 if isinstance(t3,list) else [t3]
+        k = matchl(ls,t3,start=j+len(t2))
+        if k < 0: raise ValueError
+        idx.append(k)
+        ms.append(ls[k:k+len(t3)])
+        bs.append(ls[j+1:k]) # this will be between2
+        last = k+len(t3)
+
+    # append 'after'
+    bs.append(ls[last:])
+
+    return idx,ms,bs
 
 
 def replacel(ls,ss,ns):

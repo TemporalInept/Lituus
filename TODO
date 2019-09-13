@@ -365,3 +365,5 @@ the problem is that this is really a static ability should we just remove the be
 295. Have to relook at collating tkns prior to a word, collate takes a strict approach and the conjoined objects must start at the begining of the 'clause'. In some cases, clause will be sent where the objects start in the middle.
 
 296. lituus-action block graphing needs to be redone see Alaborn Zealot where block can have preceding object(s), (object blocks), post object(s) (blocks a object) or both (whenever alaborn zealot blocks a creature)
+
+297. update the siege enchantments and include mirrodin besieged to use the anchor word - ability phrases of rule 614.12b
