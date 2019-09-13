@@ -70,85 +70,76 @@ def matchl(ls,ss,start=0,stop=None):
         if found: return i
     return -1
 
-def splicel(ls,t1,t2,t3=None):
+def splicel(ls,ts):
     """
-     finds sublists in ls between the terms t1, t2 and t3 (if present). The terms
-     are found via matchl so they can be a single token or a list of tokens where
-     each token can be a string, function or regular expression.
+     finds sublists in ls between the terms in ts. The terms are found via matchl
+     so they can be a single token or a list of tokens where each token can be a
+     string, function or regular expression.
     :param ls: the list to search in
-    :param t1: the first term
-    :param t2: the second  (or last) term
-    :param t3: the third and last term if present
+    :param ts: iterable of terms
     :return: three lists idx,matches,phrases where
-     idx is a list of the starting indices of matches for t1, t2, and t3
-     matches is a list of the matches for t1, t2 and t3
-     phrases is a list of the sublists 'between' t1, t2 and t3
-      such that phrases[0] is always the sublist of tokens occurring prior to t1
-      and phrase[-1] is always the sublast following the last term t2 or t3
-      and phrase[1:-1] are the sublists between t1 and t2 and t2 and t3 (if present)
+     idx is a list of the starting indices of matches for each term in ts
+     matches is a list of the matches for each term in ts
+     phrases is a list of the sublists 'between' t_i and t_j for each pairwise tuple
+     of terms in ts
+      such that phrases[0] is always the sublist of tokens occurring prior to the
+      first term in ts, phrase[-1] is always the sublist following the last term
+      in ts and phrase[1:-1] are the sublists between the terms
 
-    As an example, consider the mtgl for the second line of Containment Priest
-    ls = ['cn<if>', 'ob<¬token quantifier=a characteristics=creature>', 'cn<would>',
-          'xa<enter>', 'zn<battlefield>', 'and', 'xo<it>', 'wasnt', 'ka<cast>', ',',
-          'ka<exile>', 'xo<it>', 'cn<instead>', '.']
+     As an example, consider the mtgl for the second line of Containment Priest
+     ls = ['cn<if>', 'ob<¬token quantifier=a characteristics=creature>', 'cn<would>',
+           'xa<enter>', 'zn<battlefield>', 'and', 'xo<it>', 'wasnt', 'ka<cast>', ',',
+           'ka<exile>', 'xo<it>', 'cn<instead>', '.']
 
-    and we want to splice on three conditionals (tag.is_conditional)
-    idx,matches,phrases = splicel(ls,tag.is_conditional,tag.is_conditional,tag.is_conditional)
+     and we want to splice on three conditionals (tag.is_conditional)
+     idx,matches,phrases = splicel(
+             ls,(tag.is_conditional,tag.is_conditional,tag.is_conditional)
+     )
 
-    returns:
-     idx = [0, 2, 13]
-     matches = [
-          match for t1 = ['cn<if>'],
-          match for t2 = ['cn<would>'],
-          match for t3 = ['cn<instead>']
-     ]
-     phrases = [
-         before = [],
-         between t1 and t2 = ['ob<¬token quantifier=a characteristics=creature>'],
-         between t2 and t3 = ['xa<enter>', 'zn<battlefield>', 'and', 'xo<it>', 'wasnt', 'ka<cast>',
-          ',', 'ka<exile>', 'xo<it>'],
-        after = ['.']
-     ]
-
+     returns:
+      idx = [0, 2, 12]
+      matches = [
+           match for t1 = ['cn<if>'],
+           match for t2 = ['cn<would>'],
+           match for t3 = ['cn<instead>']
+      ]
+      phrases = [
+          before = [],
+          between t1 and t2 = ['ob<¬token quantifier=a characteristics=creature>'],
+          between t2 and t3 = ['xa<enter>', 'zn<battlefield>', 'and', 'xo<it>', 'wasnt', 'ka<cast>',
+           ',', 'ka<exile>', 'xo<it>'],
+          after = ['.']
+      ]
     """
-    # TODO: generalize this so we can use a list instead of t1, t2 and t3
     idx  = [] # starting indices of matches
     ms   = [] # the matched phrase
     bs   = [] # betweens (list of tokens between ti and tj
     last = 0  # stopping index of the last found match
 
-    # start at first term and work left to right
-    t1 = t1 if isinstance(t1,list) else [t1]
-    i = matchl(ls,t1)
+    # get the first term
+    term = ts[0] if isinstance(ts[0],list) else [ts[0]]
+    i = matchl(ls,term)
     if i < 0: raise ValueError
     idx.append(i)
-    ms.append(ls[i:i+len(t1)])
-    bs.append(ls[:i]) # this will be before
+    ms.append(ls[i:i+len(term)])
+    bs.append(ls[:i])  # this will be before
+    last = i+len(term)
 
-    # get the match for the second term
-    t2 = t2 if isinstance(t2,list) else [t2]
-    j = matchl(ls,t2,start=i+len(t1))
-    if j < 0: raise ValueError
-    idx.append(j)
-    ms.append(ls[j:j+len(t2)])
-    bs.append(ls[i+1:j]) # this will be between1
-    last = j+len(t2)
+    # now try and match the remaining terms
+    for term in ts[1:]:
+        term = term if isinstance(term,list) else [term]
+        j = matchl(ls,term,start=last)
+        if j < 0: raise ValueError
+        idx.append(j)
+        ms.append(ls[j:j+len(term)])
+        bs.append(ls[i+1:j])  # this will be between1
+        last = j+len(term)
+        i = j
 
-    # if the third term is present get the match
-    if t3:
-        t3 = t3 if isinstance(t3,list) else [t3]
-        k = matchl(ls,t3,start=j+len(t2))
-        if k < 0: raise ValueError
-        idx.append(k)
-        ms.append(ls[k:k+len(t3)])
-        bs.append(ls[j+1:k]) # this will be between2
-        last = k+len(t3)
-
-    # append 'after'
+    # get 'after'
     bs.append(ls[last:])
 
     return idx,ms,bs
-
 
 def replacel(ls,ss,ns):
     """

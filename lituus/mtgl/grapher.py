@@ -63,29 +63,33 @@ def graph_line(t,pid,line,ctype='other'):
      'other' = card type plays no role in graphing
     """
     # three basic line types:
-    # 1) 207.2c "appears in italics at the beginning of some abilities". but is
-    #  not further defined. Heuristically, an ability word line starts with an
-    #  ability word, contain a long hyphen and ends with a 'line'
-    # 2) 702.1 "object lists only the name of an ability as a keyword" Again,
-    #  heuristically, a keyword line: contains one or more comma seperated keyword
+    # 1) ability word line (207.2c "an ability words appears in italics at the
+    #  beginning of some abilities"). But is not further defined. Heuristically,
+    #  an ability word line starts with an ability word, contain a long hyphen and ends with a 'line'
+    # 2) keywrod line (702.1 "... lists only the name of an ability as a keyword").
+    # Heuristically, a keyword line contains one or more comma seperated keyword
     #  clauses.
     # 3) ability line (not a keyword or ability word line) Four general types
-    # 112.3a Spell, 112.3b Activated, 112.3c Triggered & 112.3d static
+    # (112.3a Spell, 112.3b Activated, 112.3c Triggered & 112.3d static)
     # We also have (not specifically lsited in 112 but are handled here)
     #  e) 700.2 Modal spell or ability
     #  f) 710 Leveler Cards
     #  g) 714 Saga Cards
     #  h) 113.1a Granted abilities (preceded by has,have,gains,gain and
     #   double quoted
+    #  i) 614. replacment effects
     if tag.is_ability_word(line[0]): graph_aw_line(t,pid,line)
     elif is_kw_line(line): graph_kw_line(t,pid,line)
     else:
         # (112.3) add an ability-line or 'ability-clause' node
+        # TODO: not sure if i like this
         isline = pid.split(':')[0] == 'line'
         if isline: lid = t.add_node(pid,'ability-line')
         else: lid = pid
 
-        if modal_type(line): graph_modal_line(t,lid,line) # e
+        if has_repl_effect(line):
+            print("RE: {}".format(line))
+        elif modal_type(line): graph_modal_line(t,lid,line) # e
         elif is_level(line): graph_level_line(t,lid,line) # f
         elif ctype == 'saga': graph_saga_line(t,lid,line) # g
         elif is_activated_ability(line): graph_activated_ability(t,lid,line)
@@ -1858,9 +1862,28 @@ def conjoin_bi_chain(tkns):
         if tag.is_property(nxt): return False
         return True
 
+# replacement effects
+# 614.1c list three replacement effects
+#  1) [This permanent] enters the battlefield with ...
+#  2) As [this permanent] enters the battlefield ....
+#  3) [This permanent] enters the battlefield as....
+# for #1 we can have two subcases, a) there is an if (Anavolver) and b) no if (Anthroplasm)
+repl614_1c_1_a = ['cn<if>',['xa<enter>','zn<battlefield>','pr<with>']]
+def has_repl_effect(line):
+    """
+     determines if line contains a replacment effect
+    :param line: the line to check for a replacement effect
+    :return: True if there is a replacement, False otherwise
+    """
+    try:
+        _,_bs = ll.splicel(line,[],[])
+    except ValueError:
+        pass
+    return False
+
 # modal preambles
 # TODO: modal3 (Siege) needs to be redone once we have graphed replacements
-# TODO: by splitting on the first bullet, we can look at condesing and reducing
+# TODO: by splitting on the first bullet, we can look at condensing and reducing
 #  the number of modal preambles
 modal1 = ['xa<choose>',tag.is_number,mtgl.HYP]
 modal2 = [
@@ -1870,7 +1893,7 @@ modal2 = [
 modal3 = [ # choose any
     'xa<choose>',tag.is_number,'or','both',mtgl.HYP
 ]
-modal4 = [ # Siege enchantments
+modal4 = [ # Siege enchantments #TODO: 614.12b replace this with anchor-word ability
     'as','ob<card ref=self>', 'xa<enter>', 'zn<battlefield>',
     ',', 'xa<choose>',ll.re_all,'or',ll.re_all,mtgl.PER
 ]
