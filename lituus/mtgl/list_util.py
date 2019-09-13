@@ -166,8 +166,7 @@ def splitl(ls,i):
     :param i: the index to split on
     :return: left,tkn,right
     """
-    if i < 0 or i > len(ls) - 1:
-        raise IndexError("splitl: invalid index {} out of range".format(i))
+    if i < 0 or i > len(ls) - 1: raise IndexError("splitl index out of range")
     return ls[:i],ls[i],ls[i+1:]
 
 def indicesl(ls,e):
