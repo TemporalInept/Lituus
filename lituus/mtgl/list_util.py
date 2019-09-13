@@ -20,6 +20,7 @@ __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
 import re
+from itertools import tee
 
 re_all = re.compile(r".+") # catchall for match any token
 def ors(tkns): return re.compile(r"{}".format('|'.join([t for t in tkns])))
@@ -80,41 +81,31 @@ def splicel(ls,t1,t2,t3=None):
     :param t1: the first token
     :param t2: the second  (or last token)
     :param t3: the third and last token if present
-    :return: a list l and tuple t where
-      l = list of indexes where the tokens are located in ls
-      t = (variable length)
-       (before, - list of tokens before t1
-        t1, - match for t1
-        between1, - list of tokens between t1 and t2
-        t2, - match for t2
-        [ if t3 is set
-         between2, list of tokens between t2 and t3
-         t3 - mathc for t3
-        ]
-        after, - list of tokens after t3 (or t2)
+    :return: three lists idx,words,phrases where
+     idx is a list of the indices of matches for t1, t2, and t3
+     words is a list of the elements in ls with the corresponding to idx
+     phrases is a list of sublists of the form:
+      ls[:idx->t1],ls[idx->t1+1:idx->t2],ls[idx->t2+1:idx->t3],ls[idx->t3+1:]
+     i.e. before t1, bewteen t1 and t2, between t2 and t3, after t3
+     in other words, you could recreate the list with
+     phrases[0]+words[0]+phrases[1]+words[1]+phrases2+words[2]+phrases[3]
     """
-    # TODO: using functions will fail if they are the same function (note 1)
-    #  i.e splicel(ls,tag.is_conditional,tag.is_conditional,tag.is_conditional)
-    #  because the functions works 'right' to 'left' (i.e. from t3 to t1 and
-    #  matchl works 'left' to 'right'. We'd have to start 'left' to 'right' (i.e.
-    #  from t1 to t3) and matchl would have to include a 'start at' parameter
-    # put the tokens in a list in reverse order
-    ts = [t2,t1]
-    if t3: ts.insert(0,t3)
+    # TODO: allow variable number tokens or continue to force no more than 3?
+    #idx = [0]
+    i = matchl(ls,[t1])
+    if i < -1: raise ValueError
+    else: idx.append(i)
+    j = matchl(ls,[t2],start=i+1)
+    if j < -1: raise ValueError
+    else: idx.append(j)
+    if t3:
+        k = matchl(ls,[t3],start=j+1)
+        if k < -1: raise ValueError
+        idx.append(k)
+    #idx.append(len(ls))
 
-    # starting from last to first
-    k = matchl([ts[0]],ls)
-    if k < 0: raise ValueError # technically could check for < # of tokens
+    return idx, [ls[i] for i in idx], _pairwise_(ls,[0]+idx+[len(ls)])
 
-    # find the next token
-    j = matchl([ts[1]],ls,k-1)
-    if j < 0: raise ValueError
-
-    # find the last token (unless only two were queried for)
-    if len(ts) < 3: return [j,k], (ls[:j],ls[j],ls[j+1:k],ls[k],ls[k+1:])
-    i = matchl([ts[2]],ls,j-1)
-    if i < 0: raise ValueError
-    return [i,j,k], (ls[:i],ls[i],ls[i+1:j],ls[j],ls[j+1:k],ls[k],ls[k+1:])
 
 def replacel(ls,ss,ns):
     """
@@ -187,3 +178,20 @@ def rindexl(ls,e):
     :return: the right index of e in ls (or throws a ValueError)
     """
     return len(ls) - ls[::-1].index(e) - 1
+
+def _pairwise_(ls,idx):
+    """
+     uses the pairwise recipe in python docs itertools to return
+    :param ls: the list
+    :param idx: the indexes to split on
+    :return: ls[s0:s1], ls[s1+1,s2], ... ,ls[sn:sn]) for s = i in idx
+    """
+    k,l = tee(idx)
+    next(l,None)
+    return [ls[i+1:j] for i,j in zip(k,l)]
+    # below will return the phrases interspersed with the elements at the indices
+    # in idx
+    #bs = [ls[i+1:j] for i,j in zip(k,l)]
+    #rs = [bs[0]] # gives us before
+    #for i,j in enumerate(bs[1:]): rs.extend([ls[idx[i+1]],j])
+    #return rs
