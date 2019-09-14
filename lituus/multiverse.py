@@ -20,6 +20,7 @@ __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
 import os
+import sys
 import pickle
 import json
 import requests
@@ -168,6 +169,8 @@ def import_cards(mv,tc,n2r,mverse):
     mtgl.set_n2r(n2r)
 
     splits = []
+    i = 0
+    ttl = len(n2r)
     for cname in mverse:
         # skip banned cards
         try:
@@ -214,6 +217,10 @@ def import_cards(mv,tc,n2r,mverse):
         if jcard['layout'] == 'split':
             if not jcard['names'] in splits: splits.append(jcard['names'])
 
+        # update progress
+        i += 1
+        progress_bar(i,ttl)
+
     # combine the split cards and add to multiverse deleting the halves
     for split in splits:
         name = " // ".join(split)
@@ -226,7 +233,7 @@ def import_cards(mv,tc,n2r,mverse):
             'tag':"{} // {}".format(mv[a]._card['tag'],mv[b]._card['tag']),
             'tkn':mv[a]._card['tkn'] + [['//']] + mv[b]._card['tkn'],
             'mtgl':mv[a]._card['mtgl'] + [['//']] + mv[b]._card['mtgl'],
-            'mtgt':mtgt.fuse_tree(mv[a].tree,mv[b]._tree),
+            'mtgt':mtgt.fuse_tree(mv[a]._tree,mv[b]._tree),
             'super-type':mv[a]._card['super-type'] + mv[b]._card['super-type'],
             'type':mv[a]._card['type'] + mv[b]._card['type'],
             'sub-type':mv[a]._card['sub-type'] + mv[b]._card['sub-type'],
@@ -297,11 +304,25 @@ def _hack_oracle_(name,txt):
         # Dryad's arbor oracle text in its entirety is reminder text
         txt = "Dryad Arbor isn't a spell, it's affected by summoning sickness.\n{T}: Add {G}\n"
     elif name == "Raging River":
-        # Raging River double-quote encloses it pile labels which interact
-        # negatively with the grapher. Remove the quotes from left and right
-        # labels
+        # Raging River double-quote encloses the left and right labels which
+        # interact negatively with the grapher. Remove the quotes from left and
+        # right labels
         txt = txt.replace('"left"','left').replace('"right"','right').replace('"right."','right.')
     return txt
+
+def progress_bar(i,ttl):
+    """
+    prints a progress bar to console for step i with ttl steps, using carriage feed
+    to overwrite the previous progress bar.
+    CREDIT Greenstick (https://stackoverflow.com/users/2206251/greenstick)
+    :param i: current step
+    :param ttl: total steps
+    """
+    p = ("{0:.1f}").format(100 * (i/float(ttl)))
+    filledLength = int(60*i//ttl)
+    bar = '=' * filledLength + '-' * (60-filledLength)
+    print('|{}| {}'.format(bar,p),end='\r')
+    if i == ttl: print()
 
 def _precompile_types_(mv):
     """
