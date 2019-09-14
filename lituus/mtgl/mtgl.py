@@ -305,7 +305,7 @@ phases = [
     "declare blockers step","combat damage step","end of combat step",
     "end step","cleanup step","eot","turn","phase","step"
 ]
-re_phase = re.compile(r"\b({}\b)".format('|'.join(phases)))
+re_phase = re.compile(r"\b({})\b".format('|'.join(phases)))
 re_phase2 = re.compile(r"(?<!<)(upkeep(?!>\sstep)|combat(?!>\sdamage|step))(?!>)")
 
 # COUNTERS
