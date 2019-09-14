@@ -51,6 +51,7 @@ re_mtg_phy_ms = re.compile(r"{[wubrg]\/p}",flags=re.I)
 # match a mana tag xo<mana> with or without the num attribute where values
 # can be digits or one of the three variable designators (also allows for
 # one operator preceding the digit(s))
+# TODO: doesn't take into account mana 'objects' with other parameters
 re_mana_tag = re.compile(r"xo<mana( num=(≥?\d+|[xyz]))?>")
 
 # match a planeswalker loyalty cost
@@ -103,6 +104,14 @@ def is_mtg_symbol(tkn): return re_mtg_sym.match(tkn) is not None
 
 # match a mtg mana string
 def is_mana_string(tkn): return re_mtg_mstring.match(tkn) is not None
+
+# match a generic mana tag
+def is_mana(tkn):
+    try:
+        t,v,_ = untag(tkn)
+        return t == 'xo' and v == 'mana'
+    except mtgl.MTGLTagException:
+        return False
 
 def is_tag(tkn):
     try:

@@ -134,7 +134,7 @@ def rectify(olds):
                 k = ll.matchl(news,['ob<spell>',mtgl.CMA])
                 if j > -1 and i-j == 2: news.append('xa<copy>')
                 elif k > -1 and i-k == 2: news.append('xa<copy>')
-                elif ll.matchl(olds[i:],['the',tag.is_mtg_obj],stop=1) == 1:
+                elif ll.matchl(olds[i:],['xq<the>',tag.is_mtg_obj],stop=1) == 1:
                     _,v,ps = tag.untag(olds[i+2])
                     if v == 'spell': news.append('xa<copy>')
                     else: news.append('ob<copy>')
@@ -152,11 +152,11 @@ def rectify(olds):
 
             # NOTE: by using the slice "-n:" we avoid index errors
 
-            if ll.matchl(news[-3:],['cn<cannot>','be','the']) == 0:
+            if ll.matchl(news[-3:],['cn<cannot>','be','xq<the>']) == 0:
                 # check conversion to object first. The full phrase is "cannot be
                 # the target of..."  but we can check news for "cannot be the".
                 news.append('xo<target>')
-            elif ll.matchl(news[-2:],[ll.ors(['becomes','change']),'the']) == 0:
+            elif ll.matchl(news[-2:],[ll.ors(['becomes','change']),'xq<the>']) == 0:
                 # another conversion to object requires checking for 'becomes' or
                 # 'change' prior to the
                 news.append('xo<target>')

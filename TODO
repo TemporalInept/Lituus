@@ -359,8 +359,7 @@ the problem is that this is really a static ability should we just remove the be
 291. not satisfied with hand-jamming the attributes of the choose node in modals
 
 292. some actions may need to be collated, see Cunning Survivor
-
-294. collating action words i.e. ('cycles or discards a card'), ('is blocked or blocks')
+ o collating action words i.e. ('cycles or discards a card'), ('is blocked or blocks')
 
 295. Have to relook at collating tkns prior to a word, collate takes a strict approach and the conjoined objects must start at the begining of the 'clause'. In some cases, clause will be sent where the objects start in the middle.
 
@@ -369,5 +368,10 @@ the problem is that this is really a static ability should we just remove the be
 297. update the siege enchantments and include mirrodin besieged to use the anchor word - ability phrases of rule 614.12b
 
 301. should remove prevent as lituus action
+
+302. See Goblin Psychopath
+ o "If you lose the flip" is a good example of where an action word is in reality an object
+
+303. what to do with 'the'
 
 

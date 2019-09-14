@@ -549,8 +549,31 @@ def graph_replacement_effect(t,pid,line):
 
         # the next will be a 'Thing' & may have qualifying conditions (Worship)
         # and/or amplifying instructions (Kess, Dissident Mage)
-        # bs[1]
-        t.add_node(reid,'if',tkns=bs[1])
+        # IF-CLAUSE: bs[1]
+        iid = t.add_node(reid,'if-clause')
+        try:
+            # look for a comma in the thing clause (i.e Worship) which will
+            # seperate the clause into a qualifying condition & remainder
+            qc,_,b = ll.splitl(bs[1],bs[1].index(mtgl.CMA))
+            graph_clause(t,t.add_node(iid,'qualifying-condition'),qc)
+            #t.add_node(iid,'punctuation',symbol=mtgl.CMA) # TODO: keep???
+        except ValueError:
+            b = bs[1]
+
+        # find & collate the Thing(s) anything preceding it and after it will be
+        # processed seperately
+        i = ll.matchl(b,[tag.is_thing])
+        assert(i > -1)
+        nid,j = collate(t,b[i:])
+
+        # graph as clause anything preceding it and following it
+        if b[:i]:
+            print(line)
+            graph_clause(t,iid,b[:i])
+        t.add_edge(t.add_node(iid,'thing'),nid)
+        if b[i+j:]: graph_clause(t,iid,b[i+j:])
+
+        # dump the rest for now
         t.add_node(reid,'would',tkns=bs[2])
 
         # graph everything after the instead
@@ -788,14 +811,13 @@ def graph_kwa_exchange(t,pid,cls,tkns):
     #  matched first
     cobs = ['xc<control>','of',tag.is_mtg_obj,'and',tag.is_mtg_obj]
     cobe = ['xc<control>','of',tag.is_mtg_obj]
-    cobe_edge = ['xc<control>','of','the',tag.is_mtg_obj]
     lt = ['xc<life>','totals','pr<with>',tag.is_player]
     ltch = [
         tag.is_player,'xc<life>','total','pr<with>',
         tag.is_mtg_obj,tag.is_mtg_char
     ]
     val_edge = [
-        tag.is_thing,tag.is_mtg_char,'and','the',
+        tag.is_thing,tag.is_mtg_char,'and','xq<the>',
         tag.is_mtg_char,'of',tag.is_thing
     ]
     v = 'exchange'
@@ -830,22 +852,13 @@ def graph_kwa_exchange(t,pid,cls,tkns):
         t.add_attr(t.add_node(kwid,'what'),'object',tkns[2])
         t.add_attr(t.add_node(kwid,'with'),'object',tkns[4])
         return 5
-    elif ll.matchl(tkns,cobe,stop=0) == 0 or ll.matchl(tkns,cobe_edge,stop=0) == 0:
+    elif ll.matchl(tkns,cobe,stop=0) == 0:
         # 701.10b (same as above) but here, the objects are embedded.
-        # Have one edge juxtaposition which has a preceding 'the'
-        # go ahead and add cls, kwa clause and kwa node
         if cls: t.add_node(pid,'clause',tkns=cls)
         kwid = t.add_node(pid,'keyword-action-clause')
         t.add_node(kwid,'keyword-action',word=v,type='control')
-
-        # check for edge case
-        if tkns[2] == 'the':
-            t.add_node(kwid,'what',objects=tkns[3])
-            skip = 4
-        else:
-            t.add_node(kwid, 'what', objects=tkns[2])
-            skip = 3
-        return skip
+        t.add_node(kwid,'what',objects=tkns[2])
+        return 3
     elif ll.matchl(tkns,lt,stop=0) == 0:
         # 701.10c exchange life totals
         # do not need the cls, go ahead and add then kwa etc
@@ -1001,7 +1014,7 @@ def graph_kwa_double(t,kwid,tkns):
         return 2
 
     # edge case
-    if ll.matchl(tkns,['the',tag.is_meta_char,'of',tag.is_mtg_obj]) == 0:
+    if ll.matchl(tkns,['xq<the>',tag.is_meta_char,'of',tag.is_mtg_obj]) == 0:
         t.add_node(kwid,'P/T',characteristic=tag.untag(tkns[1])[1],creature=tkns[3])
         return 4
 
@@ -1016,7 +1029,7 @@ def graph_kwa_double(t,kwid,tkns):
     # looking for "the number of CTR on obj|Thing
     # TODO: this might be a place to collate even though at this point, I have
     #  not seen a case of doubling counters on conjoined objects
-    if ll.matchl(tkns,['the','number','of',tag.is_lituus_obj],stop=0) == 0:
+    if ll.matchl(tkns,['xq<the>','number','of',tag.is_lituus_obj],stop=0) == 0:
         # split on the 3rd token (which should be the counter(s)
         _,ctr,rem = ll.splitl(tkns,3)
         _,val,ps = tag.untag(ctr)
@@ -1264,7 +1277,7 @@ def graph_lituus_action_add(t,pid,tkns):
         return len(amp)+len(mc)+len(rem)
 
     # case 1.c
-    nm3 = [tag.re_mana_tag,'of','the','xa<choose>',tag.is_mtg_char]
+    nm3 = [tag.re_mana_tag,'of','xq<the>','xa<choose>',tag.is_mtg_char]
     l3 = len(nm3)
     i = ll.matchl(tkns,nm3)
     if i > -1:
@@ -1313,6 +1326,7 @@ def graph_lituus_action_add(t,pid,tkns):
     # case 2
     # have to find the index of mana then split tkns into amp, mana, qual
     i = ll.matchl(tkns,[tag.re_mana_tag])
+    if i < 0: i = ll.matchl(tkns,[tag.is_mana])
     if i > -1:
         amp,mc,rem = ll.splitl(tkns,i)
 
@@ -1326,9 +1340,8 @@ def graph_lituus_action_add(t,pid,tkns):
         # TODO: right now we have the following 'unprocessed' cards
         #  Jeweled Amulet: ([], 'xo<mana num=1>', ['of', 'ob<card ref=self>', 'last', 'noted', 'ch<type>'])
         #  Elemental Resonance ([], 'xo<mana>', ['op<≡>', 'ob<permanent status=enchanted>', 'ch<mana_cost>'])
-        #  Chrome Mox ([], 'xo<mana num=1>', ['of', 'xq<any>', 'of', 'the', 'ob<card status=exiled>', 'ch<color>'])
-        #  Jeweled Amulet (['ob<card ref=self>', 'last', 'noted', 'ch<type>', 'and', 'amount', 'of'], 'xo<mana>', [])
-        #  Drain Power (['the'], 'xo<mana>', ['xa<lose>', 'xq<this>', 'way', mtgl.PER])
+        #  Drain Power ('xo<mana quantifier=the>', ['xa<lose>', 'xq<this>', 'way', mtgl.PER])
+        #  Chrome Mox ([], 'xo<mana num=1>', ['of', 'xq<any>', 'of', 'ob<card quantifier=the status=exiled>', 'ch<color>'])
         if amp: t.add_node(mid,'amplifying-clause',tkns=amp)
         mcid=t.add_node(mid,'mana-clause')
         if q: t.add_attr(mcid,'quantity',q)
@@ -1340,7 +1353,7 @@ def graph_lituus_action_add(t,pid,tkns):
         return len(amp)+len(mc)+len(rem)
 
     # should never get here but leave in for debugging for now
-    print("Unprocessed Add Mana: {}".format(tkns))
+    assert(False)#print("Unprocessed Add Mana: {}".format(tkns))
     return 0
 
 # put-counter
@@ -1772,6 +1785,8 @@ def collate(t,tkns):
     :param tkns: list of unprocessed tokens
     :return: id for the 'rootless' conjunction node, number of tokens processed
     """
+    # TODO: how to label the attributes i.e thing, object, etc and do we
+    #  try to determien based on the node(s) types
     # check in decreasing number of conjoined object to avoid false positives
 
     # check quad-chains
@@ -1910,13 +1925,12 @@ def conjoin_bi_chain(tkns):
         return True
 
 # modal preambles
-# TODO: modal3 (Siege) needs to be redone once we have graphed replacements
 # TODO: by splitting on the first bullet, we can look at condensing and reducing
 #  the number of modal preambles
 modal1 = ['xa<choose>',tag.is_number,mtgl.HYP]
 modal2 = [
     'xa<choose>',tag.is_number,mtgl.PER,'xp<you>','cn<may>','xa<choose>',
-    'the','same','mode','more','than','once',mtgl.PER
+    'xq<the>','same','mode','more','than','once',mtgl.PER
 ]
 modal3 = [ # choose any
     'xa<choose>',tag.is_number,'or','both',mtgl.HYP

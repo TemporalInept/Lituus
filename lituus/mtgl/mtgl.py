@@ -340,7 +340,7 @@ re_mint = re.compile(r"(?<!{|\w|=)(\d+|x)(?!\w<)")
 # Quantifying words i.e. target, each, all, any, every,
 lituus_quantifiers = [
     'target','each','all','any','every','another','other',
-    'this','that','those','these'
+    'the','this','that','those','these'
     'first','second','third','fourth','fifth','sixth',
     'seventh','eighth','ninth','tenth'
 ]
@@ -348,9 +348,8 @@ re_lituus_qu = re.compile(r"\b({})\b".format('|'.join(lituus_quantifiers)))
 
 # EFFECTS
 
-# effects 610.1 ensure the effects are not already tagged
-# TODO: retag as object?
-re_ef = re.compile(r"(?<!combat\s)(damage)(?!>)")
+# effects ensure the effects are not already tagged
+re_ef = re.compile(r"(?<!combat\s)(damage|effect)(?!>)")
 
 # ENTITIES
 

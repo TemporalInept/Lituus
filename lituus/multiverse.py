@@ -219,7 +219,7 @@ def import_cards(mv,tc,n2r,mverse):
 
         # update progress
         i += 1
-        progress_bar(i,ttl)
+        #progress_bar(i,ttl)
 
     # combine the split cards and add to multiverse deleting the halves
     for split in splits:
@@ -326,7 +326,11 @@ def progress_bar(i,ttl):
     p = ("{0:.1f}").format(100 * (i/float(ttl)))
     filledLength = int(width*i//ttl)
     bar = '=' * filledLength + '-' * (width-filledLength)
-    print(' {}|{}| {}%'.format('/' if i%2 == 0 else '\\',bar,p),end='\r')
+    x = i%3
+    if x == 0: s = '/'
+    elif x == 1: s = '|'
+    else: s = '\\'
+    print(' {}|{}| {}%'.format(s,bar,p),end='\r')
     if i == ttl: print()
 
 def _precompile_types_(mv):

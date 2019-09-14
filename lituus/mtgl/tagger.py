@@ -54,7 +54,6 @@ def preprocess(name,txt):
       10. Some reminder text is removed, some paraenthesis is removed
       11. take care of keywords that are exemptions to keyword rules
       12. replace occurrences of command zone with command
-      13. remove simple determiners 'a', 'an' and 'the'
     :param name: name of this card
     :param txt: the mtgl text
     :return: preprocessed oracle text
@@ -100,20 +99,6 @@ def tag_ref(name,txt):
         lambda m: r"{} ob<card ref={}>".format(m.group(1),mtgl.N2R[m.group(2)]),ntxt
     )
 
-def standarize(txt):
-    """
-     standarizes common phrases
-    :param txt: the current text
-    :return: standarized text
-    """
-    ntxt = txt.replace(';',mtgl.CMA) # replace semi-colon in older card's keyword lists
-    ntxt = ntxt.replace("s' ","s ") # plural possessives
-    ntxt = mtgl.re_wh.sub(lambda m: mtgl.word_hacks[m.group(1)],ntxt)
-    ntxt = ntxt.replace("'s","")
-    ntxt = ntxt.replace("s'","s")
-    ntxt = ntxt.replace("command zone","command")
-    return ntxt.replace("your opponent","opponent")
-
 def pre_special_keywords(txt):
     """
      take special keywords (pre-tagged) cycling and landwalk and seperate the type
@@ -132,6 +117,20 @@ def pre_special_keywords(txt):
     # forestwalk = forest landwalk and legendary landwalk
     ntxt = mtgl.re_landwalk_pre.sub(r"\1 landwalk",ntxt)
     return ntxt
+
+def standarize(txt):
+    """
+     standarizes common phrases
+    :param txt: the current text
+    :return: standarized text
+    """
+    ntxt = txt.replace(';',mtgl.CMA) # replace semi-colon in older card's keyword lists
+    ntxt = ntxt.replace("s' ","s ") # plural possessives
+    ntxt = mtgl.re_wh.sub(lambda m: mtgl.word_hacks[m.group(1)],ntxt)
+    ntxt = ntxt.replace("'s","")
+    ntxt = ntxt.replace("s'","s")
+    ntxt = ntxt.replace("command zone","command")
+    return ntxt.replace("your opponent","opponent")
 
 #### FIRST PASS ####
 
