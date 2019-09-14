@@ -51,10 +51,8 @@ class MTGCard(object):
         for node in self._tree.findall('ability-word'):
             self._aws.append(self._tree.attr(node,'word'))
 
-    def print(self,attr=False):
-        """ pretty print card's tree """
-        print(self.name)
-        self._tree.print2(attr)
+    """ pretty print card's tree """
+    def print(self,attr=False): self._tree.print(self.name,attr)
 
     @property
     def name(self): return self._card['name']

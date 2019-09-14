@@ -34,13 +34,13 @@ SYM_BRANCH     = '─'
 
 class MTGTree:
     """
-     A ordered, rooted directed acyclic graph (DAG) using networkx's OrderedDiGraph
-     The ParseTree has one and only one root node identified as 'root' which has no
-     attributes and 0 or more subnodes. Each subnode in the tree is identified by a
-     one-up serial identifier of the form node-type:n and uses networkx's attr
-     parameter of the add_node function to define the data dictionary for the given
-     node. Every node (except root) can have 0 or more user defined attributes but
-     our intent is that only leaf nodes will have ddefined attributes.
+     A ordered, rooted directed acyclic graph (DAG) via networkx's OrderedDiGraph
+     The ParseTree has one and only one root node identified as 'root' which has
+     no attributes and 0 or more subnodes. Each subnode in the tree is identified
+     by a one-up serial identifier of the form node-type:n and uses networkx's
+     attr parameter of the add_node function to define the data dictionary for
+     the given node. Every node (except root) can have 0 or more user defined
+     attributes.
 
      Because the tree is an ordered, rooted DAG (1) there is a unique root or
      source node, (2) each node has one and only one parent (but a parent can
@@ -78,77 +78,39 @@ class MTGTree:
                     if node != 'root':
                         raise MTGTException('Invalid node-id: {}'.format(node))
 
-    def print(self,show_attr=False):
+    def print(self,cname,show_attr=False):
         """
-         prints the tree with each branch indented 2 spaces from parent.
-         :param show_attr: if set will shows the attributes as well
+         prints the tree with each branch indented 3 spaces from parent
+        :param cname: the name of this card
+        :param show_attr: if set, shows the attributes of the nodes
+        CREDIT Will (https://stackoverflow.com/users/15721/will)
         """
-        # get the depths of the node from the 'root', then traverse the tree in
-        # preorder (left to right) printing each node spacing by depth
-        try:
-            ds = nx.shortest_path_length(self._t,'root')
-            for n in nx.dfs_preorder_nodes(self._t,'root'):
-                if not show_attr: print("{}{}".format(" " * ds[n],n))
-                else:
-                    attrs = ["{}={}".format(k,v) for k,v in self._t.node[n].items()]
-                    if attrs: print("{}{} ({})".format(" " * ds[n],n," ".join(attrs)))
-                    else: print("{}{}".format(" " * ds[n],n))
-        except nx.NetworkXError as e:
-            raise MTGTException(e)
+        ds = nx.shortest_path_length(self._t, 'root')
+        print('<{}>'.format(cname))
+        for cid in self.children('root'): self._print_node_(cid," ",show_attr)
 
-    def print2(self,show_attr=False):
+    def _print_node_(self,nid,indent,show_attr=False):
         """
-         prints the tree with each branch indented 2 spaces from parent.
-         :param show_attr: if set will shows the attributes as well
+         recursively prints the tree starting at node with id nid
+        :param nid: node id
+        :param indent: the depth of this node
+        :param show_attr: if set shows the nodes attributes
         """
-        # get the depths of the node from the 'root', then traverse the tree in
-        # preorder (left to right) printing each node spacing by depth
-        cs = self.children('root')
-        lastchild = cs[-1]
+        print(indent,end='')
+        if self.right_sibling(nid):
+            print(SYM_CHILD+SYM_BRANCH,end='')
+            indent += SYM_2ND_ORDER + ' '
+        else:
+            print(SYM_LAST_CHILD+SYM_BRANCH,end='')
+            indent += '  '
 
-        try:
-            ds = nx.shortest_path_length(self._t, 'root')
-            for nid in nx.dfs_preorder_nodes(self._t,'root'):
-                if nid == 'root':
-                    print("<root>")
-                    continue
+        lbl = nid
+        if show_attr:
+            ps = ["{}={}".format(k,v) for k,v in self._t.node[nid].items()]
+            if ps: lbl = "{} ({})".format(nid," ".join(ps))
+        print(lbl)
 
-                # determine what the leftmost symbol will be
-                rsym = ''
-                msym = " " * ds[nid]
-                if nid in cs:
-                    # direct descendant of root
-                    if nid == lastchild: lsym = SYM_LAST_CHILD
-                    else: lsym = SYM_CHILD
-                else:
-                    # leftmost symbol will be a vertical line unless the last
-                    # child of root is a descendant of this node
-                    if lastchild in self.ancestors(nid): lsym = ' '
-                    else: lsym = SYM_2ND_ORDER
-
-                    # if the parent of this node has siblings and it is not
-                    # the last child change the mid symbols
-                    pid = self.parent(nid)
-                    ss = self.children(self.parent(pid))
-                    if self.siblings(pid) and pid != ss[-1]:
-                        msym = list(msym)
-                        msym[-1] = SYM_2ND_ORDER
-                        msym = "".join(msym)
-
-                    # determine what the rightmost symbol will be
-                    ss = self.children(self.parent(nid)) # get all nodes on same level
-                    if nid == ss[-1]: rsym = SYM_LAST_CHILD
-                    else: rsym = SYM_CHILD
-
-                # attributes?
-                attrs = ''
-                if show_attr:
-                    ps1 = ["{}={}".format(k,v) for k,v in self._t.node[nid].items()]
-                    if ps1: attrs = "({})".format(" ".join(ps1))
-
-                print("{}{}{}{}{}".format(lsym,msym,rsym,nid,attrs))
-        except nx.NetworkXError as e:
-            raise MTGTException(e)
+        for cid in self.children(nid): self._print_node_(cid,indent,show_attr)
 
     @property # return the root node-id (which should always be 'root')
     def root(self): return next(nx.topological_sort(self._t))
