@@ -133,7 +133,7 @@ def splicel(ls,ts):
         if j < 0: raise ValueError
         idx.append(j)
         ms.append(ls[j:j+len(term)])
-        bs.append(ls[i+1:j])  # this will be between1
+        bs.append(ls[i+1:j])  # this will be between i and j
         last = j+len(term)
         i = j
 

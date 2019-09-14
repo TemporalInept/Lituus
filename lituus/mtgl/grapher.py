@@ -49,7 +49,7 @@ def graph(mtxt,ctype='other'):
 
     # return only the networkx tree (currently due to pickling issues with
     # self-defined classes)
-    return t.tree
+    return t
 
 def graph_line(t,pid,line,ctype='other'):
     """
@@ -87,22 +87,25 @@ def graph_line(t,pid,line,ctype='other'):
         if isline: lid = t.add_node(pid,'ability-line')
         else: lid = pid
 
-        if has_repl_effect(line):
-            pass
-        elif modal_type(line): graph_modal_line(t,lid,line) # e
+        if modal_type(line): graph_modal_line(t,lid,line) # e
         elif is_level(line): graph_level_line(t,lid,line) # f
         elif ctype == 'saga': graph_saga_line(t,lid,line) # g
         elif is_activated_ability(line): graph_activated_ability(t,lid,line)
         elif tag.is_tgr_word(line[0]): graph_triggered_ability(t,lid,line)
         elif ctype == 'spell': graph_clause(t,t.add_node(lid,'spell-ability'),line)
         else:
-            # graph_line may be called by intermediate nodes and this is the
+            # NOTE: graph_line may be called by intermediate nodes and this is the
             # default handling of any line/clause that cannot be classified as
             # one of the above. But, static-abilities do not apply in all cases
             # 112.3d "...create continuous effects..." therefore, if this is not
             # a true line, it will be classified as an effect
+
+            # since there are so many replacement effect phrasings, we try and
+            # graph as a replacement effect first, if it fails, then move on
+            if graph_replacement_effect(t,lid,line): return
+
             if isline: nid = t.add_node(lid,'static-ability')
-            else: nid = t.add_node(lid,'effect-clause') #TODO: need a better name
+            else: nid = t.add_node(lid,'effect-clause')
             graph_clause(t,nid,line)
 
 def graph_aw_line(t,pid,line):
@@ -520,6 +523,26 @@ def graph_triggered_ability(t,pid,line):
             if not iid: iid = t.add_node(taid,'triggered-ability-instructions')
             graph_line(t,t.add_node(iid,'instruction'),instr[prev:i+left])
             prev = i+left # skip the period
+
+repl_iwi = ['cn<if>','cn<would>','cn<instead>']
+def graph_replacement_effect(t,pid,line):
+    """
+     attempts to graph line as a replacment effect in tree t under parent-id pid
+    :param t: the tree
+    :param pid: parent-id
+    :param line: the list of tokens
+    :return: True if the line was succesfully parsed, False otherwise
+    """
+    # NOTE: we are assuming that triggered abiltiies have already been checked
+    # start with 'instead' 614.1a "Most replacement effects use the word 'instead'"
+    # first: if-would-instead
+    #try:
+    #    idx,_,_=ll.splicel(line,repl_iwi)
+    #    print("{} -> {}".format(idx,line))
+    #except ValueError:
+    #    pass
+
+    return False
 
 def graph_clause(t,pid,tkns):
     """
@@ -1861,33 +1884,6 @@ def conjoin_bi_chain(tkns):
         if tag.is_conditional(nxt) or nxt == 'doesnt': return False
         if tag.is_property(nxt): return False
         return True
-
-# replacement effects
-# 614.1c list three replacement effects
-#  1) [This permanent] enters the battlefield with ...
-#  2) As [this permanent] enters the battlefield ....
-#  3) [This permanent] enters the battlefield as....
-# for #1 we can have two subcases, a) there is an if (Anavolver) and b) no if (Anthroplasm)
-repl614_1c = {
-    1:['xa<enter>','zn<battlefield>','pr<with>'],
-    2:('as',['xa<enter>','zn<battlefield>']),
-    3:['xa<enter>','zn<battlefield>','as']
-}
-
-
-_1_a = ('cn<if>',['xa<enter>','zn<battlefield>','pr<with>'])
-def has_repl_effect(line):
-    """
-     determines if line contains a replacment effect
-    :param line: the line to check for a replacement effect
-    :return: True if there is a replacement, False otherwise
-    """
-    try:
-        _,_bs = ll.splicel(line,repl614_1c[1])
-        print(line)
-    except ValueError:
-        pass
-    return False
 
 # modal preambles
 # TODO: modal3 (Siege) needs to be redone once we have graphed replacements

@@ -372,16 +372,16 @@ def fuse_tree(a,b):
     :param b: MTGTree b
     :return: a fused networkx tree
     """
-    # TODO: rather inefficient initializing each to MTGTrees but it simplifies
-    #  the code
     # initialize the MTGTrees
     tree = MTGTree()
     pid = tree.root
+
     apid = tree.add_node(pid,'card-half',side='a')
-    _fuse_copy_(tree,apid,MTGTree(a),'root')
+    _fuse_copy_(tree,apid,a,'root')
     bpid = tree.add_node(pid,'card-half',side='b')
-    _fuse_copy_(tree,bpid,MTGTree(b),'root')
-    return tree.tree
+    _fuse_copy_(tree,bpid,b,'root')
+
+    return tree
 
 def _fuse_copy_(nt,nid,ot,oid):
     """

@@ -226,7 +226,7 @@ def import_cards(mv,tc,n2r,mverse):
             'tag':"{} // {}".format(mv[a]._card['tag'],mv[b]._card['tag']),
             'tkn':mv[a]._card['tkn'] + [['//']] + mv[b]._card['tkn'],
             'mtgl':mv[a]._card['mtgl'] + [['//']] + mv[b]._card['mtgl'],
-            'mtgt':mtgt.fuse_tree(mv[a]._card['mtgt'],mv[b]._card['mtgt']),
+            'mtgt':mtgt.fuse_tree(mv[a].tree,mv[b]._tree),
             'super-type':mv[a]._card['super-type'] + mv[b]._card['super-type'],
             'type':mv[a]._card['type'] + mv[b]._card['type'],
             'sub-type':mv[a]._card['sub-type'] + mv[b]._card['sub-type'],

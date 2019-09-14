@@ -36,11 +36,11 @@ class MTGCard(object):
     """ a more manageable wrapper around a card dictionary """
     def __init__(self,card):
         # set the card dict then pass the networkx tree to a ParseTree
-        self._card = card                       # the card dict
-        self._kws = []                          # list of keywords
-        self._aws = []                          # list of ability words
-        self._kas = []                          # list of keyword actions
-        self._tree = mtgt.MTGTree(card['mtgt']) # initialize the parse tree
+        self._card = card         # the card dict
+        self._kws = []            # list of keywords
+        self._aws = []            # list of ability words
+        self._kas = []            # list of keyword actions
+        self._tree = card['mtgt'] # initialize the parse tree
 
         # pull out the keywords
         # NOTE: we only save the keywords themselves

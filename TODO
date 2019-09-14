@@ -368,8 +368,4 @@ the problem is that this is really a static ability should we just remove the be
 
 297. update the siege enchantments and include mirrodin besieged to use the anchor word - ability phrases of rule 614.12b
 
-299. After changing how N2R is creted in multiverse will get 
-AttributeError: module 'lituus.mtgl.mtgl' has no attribute 'N2R'
-when reloading the multiverse unless mtgl is reloaded
-
 300. have to fix turned (being tagged as ph<turn>ed (add a boundary to the regex)
