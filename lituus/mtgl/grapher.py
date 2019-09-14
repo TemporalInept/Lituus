@@ -555,7 +555,7 @@ def graph_replacement_effect(t,pid,line):
             # look for a comma in the thing clause (i.e Worship) which will
             # seperate the clause into a qualifying condition & remainder
             qc,_,b = ll.splitl(bs[1],bs[1].index(mtgl.CMA))
-            graph_clause(t,t.add_node(iid,'qualifying-condition'),qc)
+            graph_clause(t,t.add_node(iid,'replacment-condition'),qc)
             #t.add_node(iid,'punctuation',symbol=mtgl.CMA) # TODO: keep???
         except ValueError:
             b = bs[1]
@@ -567,24 +567,26 @@ def graph_replacement_effect(t,pid,line):
         nid,j = collate(t,b[i:])
 
         # graph as clause anything preceding it and following it
-        if b[:i]:
-            print(line)
-            graph_clause(t,iid,b[:i])
-        t.add_edge(t.add_node(iid,'thing'),nid)
-        if b[i+j:]: graph_clause(t,iid,b[i+j:])
+        # NOTE: As far as I can tell, anything that comes before the 'thing(s)'
+        # is related to timing
+        if b[:i]: graph_clause(t,t.add_node(iid,'replacement-timing'),b[:i])
+        t.add_edge(t.add_node(iid,'replacement-thing'),nid)
+        if b[i+j:]: graph_clause(t,t.add_node(iid,'replacement-quantifier'),b[i+j:])
 
-        # dump the rest for now
-        t.add_node(reid,'would',tkns=bs[2])
+        # following 'would', we have the "original" event & the "new" event which
+        # are comma seperated however, there are cases where the new event comes
+        # after the 'instead
+        i = ll.matchl(bs[2],mtgl.CMA) # should always have comma
+        assert(i > -1)
+        old,_,new = ll.splitl(bs[2],i)
+        graph_line(t,t.add_node(reid,'original-event',word='would'),old)
+        if new: graph_line(t,t.add_node(reid,'new-event',word='instead'),new)
+        else:
+            graph_line(t,t.add_node(reid,'new-event',word='instead'),bs[3])
+            bs[3] = []
 
-        # graph everything after the instead
+        # graph anything after the instead and return
         if bs[3]: graph_clause(t,pid,bs[3])
-
-        #if bs[0]: graph_line(t,pid,bs[0])
-        #reid=t.add_node(pid,'replacement-effect',type='if-would-instead')
-        #graph_clause(t,t.add_node(reid,'thing'),bs[1])
-        #graph_line(t,t.add_node(reid,'original-event'),bs[2])
-        #graph_line(t,t.add_node(reid,'new-event'),bs[3])
-        #graph_line(t,pid,bs[4])
         return True
     except ValueError:
         pass
