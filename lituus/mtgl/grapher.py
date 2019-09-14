@@ -99,14 +99,12 @@ def graph_line(t,pid,line,ctype='other'):
             # one of the above. But, static-abilities do not apply in all cases
             # 112.3d "...create continuous effects..." therefore, if this is not
             # a true line, it will be classified as an effect
-
-            # since there are so many replacement effect phrasings, we try and
-            # graph as a replacement effect first, if it fails, then move on
-            if graph_replacement_effect(t,lid,line): return
-
             if isline: nid = t.add_node(lid,'static-ability')
             else: nid = t.add_node(lid,'effect-clause')
-            graph_clause(t,nid,line)
+
+            # since there are so many replacement effect phrasings, we try and
+            # graph as a replacement effect first, if it fails, graph as a clause
+            if not graph_replacement_effect(t,nid,line): graph_clause(t,nid,line)
 
 def graph_aw_line(t,pid,line):
     """
@@ -524,7 +522,8 @@ def graph_triggered_ability(t,pid,line):
             graph_line(t,t.add_node(iid,'instruction'),instr[prev:i+left])
             prev = i+left # skip the period
 
-repl_iwi = ['cn<if>','cn<would>','cn<instead>']
+#rple_iwi = ('cn<if>','cn<would>',mtgl.CMA,'cn<instead>')
+rple_iwi = ('cn<if>','cn<would>','cn<instead>')
 def graph_replacement_effect(t,pid,line):
     """
      attempts to graph line as a replacment effect in tree t under parent-id pid
@@ -536,11 +535,36 @@ def graph_replacement_effect(t,pid,line):
     # NOTE: we are assuming that triggered abiltiies have already been checked
     # start with 'instead' 614.1a "Most replacement effects use the word 'instead'"
     # first: if-would-instead
-    #try:
-    #    idx,_,_=ll.splicel(line,repl_iwi)
-    #    print("{} -> {}".format(idx,line))
-    #except ValueError:
-    #    pass
+    try:
+        # NOTE: worship falls through this one
+        # TODO: graph line vs clause?
+        _,_,bs=ll.splicel(line,rple_iwi)
+
+        # some if-would-instead follow a line (Kess, Dissident Mage')
+        # and some have nothing
+        if bs[0]: graph_line(t,pid,bs[0])
+
+        # add a replacment-effect node
+        reid = t.add_node(pid,'replacement-effect',type='if-would-instead')
+
+        # the next will be a 'Thing' & may have qualifying conditions (Worship)
+        # and/or amplifying instructions (Kess, Dissident Mage)
+        # bs[1]
+        t.add_node(reid,'if',tkns=bs[1])
+        t.add_node(reid,'would',tkns=bs[2])
+
+        # graph everything after the instead
+        if bs[3]: graph_clause(t,pid,bs[3])
+
+        #if bs[0]: graph_line(t,pid,bs[0])
+        #reid=t.add_node(pid,'replacement-effect',type='if-would-instead')
+        #graph_clause(t,t.add_node(reid,'thing'),bs[1])
+        #graph_line(t,t.add_node(reid,'original-event'),bs[2])
+        #graph_line(t,t.add_node(reid,'new-event'),bs[3])
+        #graph_line(t,pid,bs[4])
+        return True
+    except ValueError:
+        pass
 
     return False
 

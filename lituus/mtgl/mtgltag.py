@@ -165,8 +165,9 @@ def is_quality(tkn):
         return False
 
 def is_thing(tkn):
+    # things are mtg objects, lituus objects, players, effects and zones
     try:
-        return untag(tkn)[0] in ['ob','xp','xo','zn']
+        return untag(tkn)[0] in ['ef','ob','xp','xo','zn']
     except mtgl.MTGLTagException:
         return False
 

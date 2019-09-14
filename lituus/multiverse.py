@@ -308,6 +308,10 @@ def _hack_oracle_(name,txt):
         # interact negatively with the grapher. Remove the quotes from left and
         # right labels
         txt = txt.replace('"left"','left').replace('"right"','right').replace('"right."','right.')
+    elif name == 'Worship':
+        # Worship is the only if-would-instead card that does not have a comma
+        # between the original effect and the replacement effect
+        txt = txt.replace("than 1 reduces it","than 1, reduces it")
     return txt
 
 def progress_bar(i,ttl):
@@ -318,10 +322,11 @@ def progress_bar(i,ttl):
     :param i: current step
     :param ttl: total steps
     """
+    width = 60
     p = ("{0:.1f}").format(100 * (i/float(ttl)))
-    filledLength = int(60*i//ttl)
-    bar = '=' * filledLength + '-' * (60-filledLength)
-    print('|{}| {}'.format(bar,p),end='\r')
+    filledLength = int(width*i//ttl)
+    bar = '=' * filledLength + '-' * (width-filledLength)
+    print(' {}|{}| {}%'.format('/' if i%2 == 0 else '\\',bar,p),end='\r')
     if i == ttl: print()
 
 def _precompile_types_(mv):

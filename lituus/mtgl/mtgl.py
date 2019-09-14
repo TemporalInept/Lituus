@@ -349,6 +349,7 @@ re_lituus_qu = re.compile(r"\b({})\b".format('|'.join(lituus_quantifiers)))
 # EFFECTS
 
 # effects 610.1 ensure the effects are not already tagged
+# TODO: retag as object?
 re_ef = re.compile(r"(?<!combat\s)(damage)(?!>)")
 
 # ENTITIES
