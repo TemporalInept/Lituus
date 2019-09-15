@@ -196,22 +196,30 @@ def joinl(ls,e):
 def indexl(ls,e,start=0):
     """
      finds the index of the first occurrence of element e in list ls after index
-     start
+     start. NOTE: unlike list.index returns None vice throwing an error if the
+    element is not in the list
      :param ls: the list to search
      :param e: the element to look for
      :param start: the index to start at
      :return: the left index of e in ls (or throws a ValueError)
     """
-    return (ls[start+1:].index(e))+(start+1)
+    try:
+        return (ls[start+1:].index(e))+(start+1)
+    except ValueError:
+        return None
 
 def rindexl(ls,e):
     """
-     finds the right index of an element e in the list ls
+     finds the right index of an element e in the list ls. NOTE: unlike list.index
+     returns None vice throwing an error if the element is not in the list
     :param ls: the list to search
     :param e: the element to look for
     :return: the right index of e in ls (or throws a ValueError)
     """
-    return len(ls) - ls[::-1].index(e) - 1
+    try:
+        return len(ls) - ls[::-1].index(e) - 1
+    except ValueError:
+        return None
 
 def _pairwise_(ls,idx):
     """

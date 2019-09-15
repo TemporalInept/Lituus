@@ -103,9 +103,14 @@ def graph_line(t,pid,line,ctype='other'):
             if isline: nid = t.add_node(lid,'static-ability')
             else: nid = t.add_node(lid,'effect-clause')
 
-            # since there are so many replacement effect phrasings, we try and
+            # since there are so many replacement effect phrasings, and the act
+            # of determining if a replacement effect exists is costly we try and
             # graph as a replacement effect first, if it fails, graph as a clause
-            if not graph_replacement_effect(t,nid,line): graph_clause(t,nid,line)
+            # However, we need to check for double-quoted clauses first
+            if mtgl.DBL in line: graph_clause(t,nid,line)
+            else:
+                if not graph_replacement_effect(t,nid,line):
+                    graph_clause(t,nid,line)
 
 def graph_aw_line(t,pid,line):
     """
@@ -524,7 +529,6 @@ def graph_triggered_ability(t,pid,line):
 
 rple_iwi = ('cn<if>','cn<would>','cn<instead>') # if would instead
 rple_ii = ('cn<if>','cn<instead>')              # if instead
-rple_ici = ('cn<if>',[mtgl.CMA,'cn<instead>'])              # if-,instead
 def graph_replacement_effect(t,pid,line):
     """
      attempts to graph line as a replacment effect in tree t under parent-id pid
@@ -537,7 +541,6 @@ def graph_replacement_effect(t,pid,line):
     # NOTE: we are assuming that triggered abiltiies have already been checked
     # start with 'instead' 614.1a "Most replacement effects use the word 'instead'"
     # order these are check matters
-
     # first: if-would-instead these are if THING would DO A, DO B instead
     try:
         # match a if-would-instead
@@ -612,13 +615,24 @@ def graph_replacement_effect(t,pid,line):
         reid = t.add_node(pid,'replacement-effect',type='if-instead')
         iid = t.add_node(reid,'if-clause')
 
-        # case a will commonly end with a comma
-        if bs[1][-1] == mtgl.CMA:
+        # in case a) the instead is last followed by a period. in
+        # case b, it commonly end with a comma
+        if bs[2] == [mtgl.PER]: # Case a
+            # the last comma will split the condition and replacement event
+            c,_,e = ll.splitl(bs[1],ll.rindexl(bs[1],mtgl.CMA))
+            graph_line(t,t.add_node(iid,'replacement-condition'),c)
+            # t.add_node(reid,'punctuation',symbol=mtgl.CMA) # TODO: keep???
+            graph_line(t,t.add_node(reid,'new-event'),e)
+
+            # graph the period
+            t.add_node(pid,'punctuation',symbol=mtgl.PER)
+            return True
+        elif ll.rindexl(bs[1],mtgl.CMA) == len(bs[1]) -1:
             graph_line(t,t.add_node(iid,'replacement-condition'),bs[1])
             graph_line(t,t.add_node(reid,'new-event'),bs[2])
             return True
 
-        #print(bs)
+        print(bs)
     except ValueError:
         pass
 
@@ -650,7 +664,6 @@ def graph_clause(t,pid,tkns):
 
             # check for
             #  double quotes - grab the quoted tokens & graph them
-            #  bullet - graph as a modal spell
             #  otherwise add the punctuation
             if tkn == mtgl.DBL:
                 dbl = tkns[i+1:ll.indexl(tkns,mtgl.DBL,i)]
