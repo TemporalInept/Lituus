@@ -354,8 +354,10 @@ the problem is that this is really a static ability should we just remove the be
 301. should remove 'prevent' as lituus action
 
 302. See Goblin Psychopath
- o "If you lose the flip" is a good example of where an action word is in reality an object
+ o "If you lose the flip" is a good example of where an action word is in reality an object 
 
 304. Desperate Gambit is not being picked up as a if-would-instead
 
 305. xc<control> precedes multiple conjunctions of objects
+
+306. how to handle process, graph and label timing/duration phrases i.e. "until you next turn', "the next time" etc.

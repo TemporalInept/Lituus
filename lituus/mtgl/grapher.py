@@ -78,6 +78,7 @@ def graph_line(t,pid,line,ctype='other'):
     #  h) 113.1a Granted abilities (preceded by has,have,gains,gain and
     #   double quoted
     #  i) 614. replacment effects
+    assert(line)
     if tag.is_ability_word(line[0]): graph_aw_line(t,pid,line)
     elif is_kw_line(line): graph_kw_line(t,pid,line)
     else:
@@ -224,10 +225,9 @@ def graph_kw_line(t,pid,line):
                     # Thromok the Insatiable has Devour X, the only card I've
                     # found with a keyword and variable for n
                     t.add_node(kwid,'clause',tokens=ps[3:])
-            elif tag.is_mtg_obj(ps[0]):
-                # TODO: check for need to collate, also should we continue
-                #  to constrain to obj and not Thing
-                t.add_attr(t.add_node(kwid,'object'),'object',ps[0])
+            elif tag.is_thing(ps[0]):
+                # TODO: check for need to collate
+                t.add_node(kwid,'thing',tag=ps[0])
                 if len(ps) > 1: graph_clause(t,kwid,ps[1:])
             else:  # should be a cost
                 # TODO: what if it isnt a cost?
@@ -533,12 +533,14 @@ def graph_replacement_effect(t,pid,line):
     :param line: the list of tokens
     :return: True if the line was succesfully parsed, False otherwise
     """
+    # TODO: graph the tokens between matching words as line or clause
     # NOTE: we are assuming that triggered abiltiies have already been checked
     # start with 'instead' 614.1a "Most replacement effects use the word 'instead'"
-    # order these are check matters - first: if-would-instead
+    # order these are check matters
+
+    # first: if-would-instead these are if THING would DO A, DO B instead
     try:
-        # NOTE: worship falls through this one
-        # TODO: graph line vs clause?
+        # match a if-would-instead
         _,_,bs=ll.splicel(line,rple_iwi)
 
         # some if-would-instead follow a line (Kess, Dissident Mage')
@@ -550,7 +552,6 @@ def graph_replacement_effect(t,pid,line):
 
         # the next will be a 'Thing' & may have qualifying conditions (Worship)
         # and/or amplifying instructions (Kess, Dissident Mage)
-        # IF-CLAUSE: bs[1]
         iid = t.add_node(reid,'if-clause')
         try:
             # look for a comma in the thing clause (i.e Worship) which will
@@ -592,10 +593,32 @@ def graph_replacement_effect(t,pid,line):
     except ValueError:
         pass
 
-    # second - if-instead
+    # second - if-instead these are if CONDITION instead REPLACEMENT
+    # these are generally found where the orginal event is on another line or in
+    # in some way seperate from the replacement effect i.e. in the Threshold
+    # definitions
     try:
-        # TODO: graph line vs clause?
+        # match a if-instead. this will give us three phrases
+        #    bs[0]   bs[1]            bs[2]
+        # a) .... if ....... instead   '.'    (Summary Judgement)
+        # b) .... if ....... instead   ...    (Cleansing Meditation)
+        # TODO: Blood Moon will throw this for a loop
         _,_,bs=ll.splicel(line,rple_ii)
+
+        # graph any tokens occurring to the if-instead
+        if bs[0]: graph_line(t,pid,bs[0])
+
+        # add a replacment-effect node
+        reid = t.add_node(pid,'replacement-effect',type='if-instead')
+        iid = t.add_node(reid,'if-clause')
+
+        # case a will commonly end with a comma
+        if bs[1][-1] == mtgl.CMA:
+            graph_line(t,t.add_node(iid,'replacement-condition'),bs[1])
+            graph_line(t,t.add_node(reid,'new-event'),bs[2])
+            return True
+
+        #print(bs)
     except ValueError:
         pass
 
@@ -709,7 +732,7 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
         # then the kwa clause node & sub-nodes
         kwid = t.add_node(pid,'keyword-action-clause')
         t.add_node(kwid,'keyword-action',word=v)
-        if ob: t.add_node(kwid,'object',object=ob)
+        if ob: t.add_node(kwid,'mtg-object',tag=ob)
 
         # return
         return 0
@@ -729,8 +752,8 @@ def graph_keyword_action(t,pid,cls,kwa,tkns):
         # then the kwa clause node & sub-nodes
         kwid = t.add_node(pid,'keyword-action-clause')
         t.add_node(kwid,'keyword-action',word=v)
-        if o1: t.add_attr(t.add_node(kwid,'object'),'object-1',o1)
-        if o2: t.add_attr(t.add_node(kwid,'object'),'object-2',o2)
+        if o1: t.add_attr(t.add_node(kwid,'mtg-object'),'tag-1',o1)
+        if o2: t.add_attr(t.add_node(kwid,'mtg-object'),'tag-2',o2)
 
         return skip
 
@@ -861,8 +884,8 @@ def graph_kwa_exchange(t,pid,cls,tkns):
         if cls: t.add_node(pid,'clause',tkns=cls)
         kwid = t.add_node(pid,'keyword-action-clause')
         t.add_node(kwid,'keyword-action',word=v,type='control')
-        t.add_attr(t.add_node(kwid,'what'),'object',tkns[2])
-        t.add_attr(t.add_node(kwid,'with'),'object',tkns[4])
+        t.add_node(kwid,'what',tag=tkns[2])
+        t.add_node(kwid,'with',tag=tkns[4])
         return 5
     elif ll.matchl(tkns,cobe,stop=0) == 0:
         # 701.10b (same as above) but here, the objects are embedded.
@@ -1819,8 +1842,8 @@ def collate(t,tkns):
         ps['characteristics'] = mtgl.AND.join(
             [ps['characteristics'],ps2['characteristics'],ps3['characteristics']]
         )
-        nid = t.add_ur_node('object')
-        t.add_attr(nid,'object',tag.retag(tg,val,ps))
+        nid = t.add_ur_node('mtg-object')
+        t.add_attr(nid,'tag',tag.retag(tg,val,ps))
         return nid,len(tri_chain_alt)
 
     # check bi-chain
@@ -1846,14 +1869,12 @@ def collate(t,tkns):
             else: ps['characteristics'] = ps1['characteristics']
 
             # add a rootless node & retag the chained object
-            nid = t.add_ur_node('object')
-            t.add_attr(nid,'object',tag.retag(tg,val,ps))
+            nid = t.add_ur_node('mtg-object',tag=tag.retag(tg,val,ps))
             return nid,len(bi_chain_alt)
 
     # single token?
     if ll.matchl(tkns,[tag.is_thing],stop=0) == 0:
-        nid = t.add_ur_node('object')
-        t.add_attr(nid,'object',tkns[0])
+        nid = t.add_ur_node('thing',tag=tkns[0])
         return nid,1
 
     return None,0
@@ -1901,7 +1922,7 @@ def conjoin(t,objs,c):
     objs[-1] = tag.retag(tg,val,ps)
 
     # create a (rootless) conjunction node and add attributes if present
-    nid = t.add_ur_node('conjunction',coordinator=crd,item_type='object')
+    nid = t.add_ur_node('conjunction',coordinator=crd,item_type='thing')
     if qtr: t.add_attr(nid,'quantifier',qtr)
     if num: t.add_attr(nid,'n',num)
     if pk: t.add_attr(nid,pk,pv)
@@ -1910,7 +1931,7 @@ def conjoin(t,objs,c):
     for obj in objs:
         tg,val,ps = tag.untag(obj)
         if 'quantifier' in ps: del ps['quantifier']
-        t.add_attr(t.add_node(nid,'item'),'object',tag.retag(tg,val,ps))
+        t.add_node(nid,'item',tag=tag.retag(tg,val,ps))
 
     return nid
 

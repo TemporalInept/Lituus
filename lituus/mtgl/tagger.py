@@ -81,7 +81,13 @@ def tag_ref(name,txt):
     NOTE: this does not handle words like "it" that require contextual understanding
      to determine if "it" referes to this card or something else
     """
+    # replace references to self by name and 'this spell', 'this permanent',
+    # 'this card', 'his', 'her' (planeswalkers)
     ntxt = mtgl.re_self_ref(name).sub(r"ob<card ref=self>",txt)
+
+    # token names like Etherium Cell which do not have a non-token representation
+    # in the multiverse & includes copy tokens (https://mtg.gamepedia.com/Token/Full_List)
+    # these are prefixed with 'create' and possibly 'named'
     ntxt = mtgl.re_tkn_ref1.sub(
         lambda m: r"{} ob<token ref={}>".format(
             m.group(1),mtgl.TN2R[m.group(2)]),ntxt
@@ -91,12 +97,21 @@ def tag_ref(name,txt):
             mtgl.TN2R[m.group(1)],m.group(2)
         ),ntxt
     )
+
+    # meld tokens from Eldritch Moon
     ntxt = mtgl.re_tkn_ref3.sub(
         lambda m: r"ob<token ref={}>".format(mtgl.MN2R[m.group(1)]),ntxt
     )
+
+    # references to other cards prefixed with 'named' or 'Partner with'
     assert(mtgl.re_oth_ref is not None)
-    return mtgl.re_oth_ref.sub(
+    ntxt = mtgl.re_oth_ref.sub(
         lambda m: r"{} ob<card ref={}>".format(m.group(1),mtgl.N2R[m.group(2)]),ntxt
+    )
+
+    # references to other cards we know a priori
+    return mtgl.re_oth_ref2.sub(
+        lambda m: r"ob<token ref={}>".format(mtgl.NC2R[m.group(1)]),ntxt
     )
 
 def pre_special_keywords(txt):

@@ -138,7 +138,7 @@ def re_self_ref(name):
         r"\b(this spell|this permanent|this card|her|his|{}|{})\b".format(name,name.split(',')[0])
     )
 
-# these are names of tokens that do exist in the multiverse including nont-token
+# these are names of tokens that do not exist in the multiverse including non-token
 # copy cards (i.e. Ajani's Pridemante created by Ajani, Stength of the Pride
 # The majority of these can be found in the phrase
 #   "create a token ... named TOKEN_NAME" except
@@ -171,14 +171,19 @@ meld_tokens = [
     'Brisela, Voice of Nightmares','Chittering Host','Hanweir, the Writhing Township'
 ]
 MN2R = {n:md5(n.encode()).hexdigest() for n in meld_tokens}
-re_tkn_ref3 = re.compile(
-    r"({})".format('|'.join(list(MN2R.keys())))
-)
+re_tkn_ref3 = re.compile(r"({})".format('|'.join(list(MN2R.keys()))))
 
 # other card referencing will be initialized once in the call to set n2r due to
 # size of name to ref-id dict
 re_oth_ref = None
 N2R = None
+
+# basically a hack to catch card names we know are referenced in other cards
+# but are not preceded by 'named' or 'Partner with'
+# TODO: we have to identify all of these card names
+named_cards = ["Urza's Power Plant","Urza's Mine","Urza's Tower"]
+NC2R = {n:md5(n.encode()).hexdigest() for n in named_cards}
+re_oth_ref2 = re.compile(r"({})".format('|'.join(list(NC2R.keys()))))
 
 def set_n2r(n2r):
     # call global IOT calculate the lengthy regex once during the first call
@@ -617,7 +622,8 @@ rephrase = {
     "council dilemma":"aw<council's_dilemma>",
     "ph<phase> out":"xa<phase_out>",
     "ph<phase> in":"xa<phase_in>",
-    "xa<deal> ka<double> xq<that>":"xa<deal> twice xq<that>" # double is not a keyword action here
+    "xa<deal> ka<double> xq<that>":"xa<deal> twice xq<that>", # double is not a keyword action here
+    "xq<the> xa<flip>":"xq<the> xo<flip>", # TODO: this is a hack
 }
 
 # don't get the tagged level_up
