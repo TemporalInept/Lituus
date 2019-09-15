@@ -61,6 +61,9 @@ class MTGCard(object):
     def rid(self): return self._card['rid']
 
     @property
+    def sets(self): return self._card['sets']
+
+    @property
     def super_type(self): return self._card['super-type']
 
     @property

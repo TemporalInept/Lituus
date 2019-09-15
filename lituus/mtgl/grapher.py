@@ -522,8 +522,9 @@ def graph_triggered_ability(t,pid,line):
             graph_line(t,t.add_node(iid,'instruction'),instr[prev:i+left])
             prev = i+left # skip the period
 
-#rple_iwi = ('cn<if>','cn<would>',mtgl.CMA,'cn<instead>')
-rple_iwi = ('cn<if>','cn<would>','cn<instead>')
+rple_iwi = ('cn<if>','cn<would>','cn<instead>') # if would instead
+rple_ii = ('cn<if>','cn<instead>')              # if instead
+rple_ici = ('cn<if>',[mtgl.CMA,'cn<instead>'])              # if-,instead
 def graph_replacement_effect(t,pid,line):
     """
      attempts to graph line as a replacment effect in tree t under parent-id pid
@@ -534,7 +535,7 @@ def graph_replacement_effect(t,pid,line):
     """
     # NOTE: we are assuming that triggered abiltiies have already been checked
     # start with 'instead' 614.1a "Most replacement effects use the word 'instead'"
-    # first: if-would-instead
+    # order these are check matters - first: if-would-instead
     try:
         # NOTE: worship falls through this one
         # TODO: graph line vs clause?
@@ -590,6 +591,15 @@ def graph_replacement_effect(t,pid,line):
         return True
     except ValueError:
         pass
+
+    # second - if-instead
+    try:
+        # TODO: graph line vs clause?
+        _,_,bs=ll.splicel(line,rple_ii)
+    except ValueError:
+        pass
+
+    # if 'cn<instead>' in line: print(line)
 
     return False
 

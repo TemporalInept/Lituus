@@ -226,21 +226,22 @@ def import_cards(mv,tc,n2r,mverse):
         name = " // ".join(split)
         a,b = split[0],split[1]
         dcard = {
-            'rid':"{} // {}".format(mv[a]._card['rid'],mv[b]._card['rid']),
-            'name': "{} // {}".format(mv[a]._card['name'], mv[b]._card['name']),
-            'mana-cost':"{} // {}".format(mv[a]._card['mana-cost'],mv[b]._card['mana-cost']),
-            'oracle':"{} // {}".format(mv[a]._card['oracle'],mv[b]._card['oracle']),
+            'rid':"{} // {}".format(mv[a].rid,mv[b].rid),
+            'name': "{} // {}".format(mv[a].name, mv[b].name),
+            'mana-cost':"{} // {}".format(mv[a].mana_cost,mv[b].mana_cost),
+            'oracle':"{} // {}".format(mv[a].oracle,mv[b].oracle),
             'tag':"{} // {}".format(mv[a]._card['tag'],mv[b]._card['tag']),
             'tkn':mv[a]._card['tkn'] + [['//']] + mv[b]._card['tkn'],
             'mtgl':mv[a]._card['mtgl'] + [['//']] + mv[b]._card['mtgl'],
             'mtgt':mtgt.fuse_tree(mv[a]._tree,mv[b]._tree),
-            'super-type':mv[a]._card['super-type'] + mv[b]._card['super-type'],
-            'type':mv[a]._card['type'] + mv[b]._card['type'],
-            'sub-type':mv[a]._card['sub-type'] + mv[b]._card['sub-type'],
-            'cmc':mv[a]._card['cmc'],
-            'color-ident':mv[a]._card['color-ident'],
-            'sets':mv[a]._card['sets'],
-            'P/T':None,
+            'super-type':list(set(mv[a].super_type+mv[b].super_type)),
+            'type':list(set(mv[a].type + mv[b].type)),
+            'sub-type':list(set(mv[a].sub_type + mv[b].sub_type)),
+            'cmc':mv[a].cmc, # same for both cards
+            'color':list(set(mv[a].color+mv[b].color)),
+            'color-ident':list(set(mv[a].color_ident+mv[b].color_ident)),
+            'sets':mv[a].sets,
+            'P/T':None,    # split cards are instants/sorcerie
             'loyalty':None
         }
         del mv[a]

@@ -226,22 +226,6 @@ to player='you' or only add it if it is present?
  o attached to it
 Have to handles these 
 
-245. tree printing
-<root>
-├ line:0
-│ │└kw-line:0
-│   ├keyword-clause:0
-│   │└keyword:0
-│   └keyword-clause:1
-│    ├keyword:1
-│    └keyword-param:0
-└ line:1
-   └kw-line:1
-    └keyword-clause:2
-     └keyword:2
-
-we do not want the vertical brace for kw-line:0 but do want it for keyword:0. Also in trees with greater branching/depths, only the first two immediate branch symbols are drawn (we may have to look into a recursive solution)
-
 246. create a new module for set updates and move multiverse->_precompile_types there. consider moving the downloading of allcards.json there as well and only allow update of the card json from there 
 
 249. see Greater Gargadon because of the order in which lines are partitioned and graphed, GG's activated ability cost "Sacrifice an artifact, creature, or land: ..." goes to graph_cost first where the commas are mistakenly used to break "an artifact", "creature" and "or land" into seperate subcosts
@@ -363,17 +347,15 @@ the problem is that this is really a static ability should we just remove the be
 
 295. Have to relook at collating tkns prior to a word, collate takes a strict approach and the conjoined objects must start at the begining of the 'clause'. In some cases, clause will be sent where the objects start in the middle.
 
-296. lituus-action block graphing needs to be redone see Alaborn Zealot where block can have preceding object(s), (object blocks), post object(s) (blocks a object) or both (whenever alaborn zealot blocks a creature)
+296. lituus-action block graphing needs to be redone see Alaborn Zealot where block can have preceding object(s), (object blocks), post object(s) (blocks a object) or both
 
 297. update the siege enchantments and include mirrodin besieged to use the anchor word - ability phrases of rule 614.12b
 
-301. should remove prevent as lituus action
+301. should remove 'prevent' as lituus action
 
 302. See Goblin Psychopath
  o "If you lose the flip" is a good example of where an action word is in reality an object
 
-303. what to do with 'the'
-
 304. Desperate Gambit is not being picked up as a if-would-instead
 
-
+305. xc<control> precedes multiple conjunctions of objects
