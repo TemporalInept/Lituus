@@ -403,8 +403,6 @@ Are effect-clause:0, effect-clause:1, and effect-clause:2 necessary? Is if-claus
 
 310. See # 309, we have to make sure that type c of if-insteads are being graphed correctly (splitting on the last comma may not be enough)
 
-311.look into 'type=kw<echo>>'
-
 312. replacement-effect graphing needs a major overhaul
 
 313. it doesn't look like instant/sorceries are all being run through graph_re_instead (Angel's Grace and Flaming Gambit isn't)
@@ -413,3 +411,5 @@ Are effect-clause:0, effect-clause:1, and effect-clause:2 necessary? Is if-claus
 315. have to rectify tapped as a action vs status see Ritual of subdial
 
 316. Really have to go through grapher and determine if the use of graph_line vs graph_clause (and vice-versa) makes sense
+
+317. Stop using N2R as a global, the overall memory required is neglible compared to the python is hogging memory anyway.

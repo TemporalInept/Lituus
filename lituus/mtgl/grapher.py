@@ -846,7 +846,7 @@ def graph_re_instead(t,pid,line):
         return
 
     # shouldn't get here
-    print('Ungraph instead replacement-effect {}'.format(line))
+    print('Ungraphed instead replacement-effect {}'.format(line))
     #assert(False)
 
 def graph_clause(t,pid,tkns):

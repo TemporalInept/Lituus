@@ -527,7 +527,7 @@ keywords = [
     'skulk','emerge','escalate','melee','crew','fabricate','partner with','partner',
     'undaunted','improvise','aftermath','embalm','eternalize','afflict','ascend',
     'assist','jump-start','mentor','afterlife','riot','spectacle']
-re_kw = re.compile(r"\b({})\b".format('|'.join(keywords)))
+re_kw = re.compile(r"(?<!<)\b({})\b(?!>)".format('|'.join(keywords)))
 
 # ZONES
 
