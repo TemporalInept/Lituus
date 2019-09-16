@@ -496,7 +496,7 @@ def graph_triggered_ability(t,pid,line):
 
     # add the trigger word node and graph the condition as a clause
     t.add_node(taid,'triggered-ability-word',word=tag.untag(word)[1])
-    graph_clause(t,t.add_node(taid,'triggered-ability-condition'),cond)
+    graph_line(t,t.add_node(taid,'triggered-ability-condition'),cond)
 
     # for effect we add the node, then check if it is modal or not
     eid = t.add_node(taid,'triggered-ability-effect')
@@ -527,7 +527,6 @@ def graph_triggered_ability(t,pid,line):
             graph_line(t,t.add_node(iid,'instruction'),instr[prev:i+left])
             prev = i+left # skip the period
 
-
 def graph_replacement_effect(t,pid,line):
     """
      attempts to graph line as a replacment effect in tree t under parent-id pid
@@ -556,9 +555,6 @@ def graph_re_instead(t,pid,line):
     :param pid: parent-id
     :param line: the list of tokens
     """
-    # whatever the case, we'll always have replacement-effect
-    reid = t.add_node(pid,'replacement-effect')
-
     # TODO: graph the tokens between matching words as line or clause
     # TODO: keep period where they are or removed them and put them as a child
     #  in the replacement-effect node?
@@ -573,6 +569,7 @@ def graph_re_instead(t,pid,line):
         if bs[0]: graph_line(t,pid,bs[0])
 
         # add the type to the replacment-effect node and add a if-clause node
+        reid = t.add_node(pid,'replacement-effect')
         t.add_attr(reid,'type','if-would-instead')
         iid = t.add_node(reid,'if-clause')
 
@@ -630,6 +627,7 @@ def graph_re_instead(t,pid,line):
         _,_,bs = ll.splicel(line,rple_iii)
 
         # add our replacement node, and if-clause node
+        reid = t.add_node(pid,'replacement-effect')
         t.add_attr(reid,'type','if-instead-if')
         iid = t.add_node(reid,'if-clause')
 
@@ -639,7 +637,7 @@ def graph_re_instead(t,pid,line):
         graph_clause(t,t.add_node(cid,'replacement-condition'),bs[2])
 
         # & then the new event
-        graph_clause(t, t.add_node(reid,'new-event'), bs[0])
+        graph_clause(t,t.add_node(reid,'new-event'), bs[0])
         return
     except ValueError:
         pass
@@ -662,10 +660,11 @@ def graph_re_instead(t,pid,line):
         # of any other type just amplifies the replacement)
         _,_,bs = ll.splicel(line,rple_ii1)
 
-        # graph any tokens occurring to the if-instead
+        # graph any tokens occurring prior to the if-instead
         if bs[0]: graph_line(t,pid,bs[0])
 
         # add a replacment-effect node
+        reid = t.add_node(pid,'replacement-effect')
         t.add_attr(reid,'type','if-instead')
         iid = t.add_node(reid,'if-clause')
 
@@ -700,6 +699,7 @@ def graph_re_instead(t,pid,line):
     i = ll.matchl(line,['cn<instead>','cn<if>'])
     if i > -1:
         # we have effect instead, if condition (split on the i)
+        reid = t.add_node(pid,'replacement-effect')
         t.add_attr(reid,'type','instead-if')
         iid = t.add_node(reid,'if-clause')
         graph_line(t,t.add_node(iid,'replacement-condition'),line[i+2:])
@@ -711,6 +711,7 @@ def graph_re_instead(t,pid,line):
     try:
         # check if we have a match, and if so, add the type to the re node
         _,_,(new,old,cond) = ll.splicel(line,rple_ii2)
+        reid = t.add_node(pid,'replacement-effect')
         t.add_attr(reid,'type','instead-if')
         iid = t.add_node(reid,'if-clause')
         graph_line(t,t.add_node(iid,'replacement-condition'),cond)
@@ -725,6 +726,7 @@ def graph_re_instead(t,pid,line):
         # check for would-instead. These are conditional but based on timing vice
         # an if clause
         _,_,bs = ll.splicel(line,rple_wi)
+        reid = t.add_node(pid,'replacement-effect')
         t.add_attr(reid,'type','would-instead')
 
         # the majority of these are broken down as bs[0], bs[1] and bs[2] = '.'
@@ -818,8 +820,34 @@ def graph_re_instead(t,pid,line):
     except ValueError:
         pass
 
-    # finally edges cases do not have if or would, only instead
+    # finally edges cases do not have if or would, only instead. these will have
+    # a new event, an old event and possibly quantifying information
+    # see Feather, the Redeemed, Soulfire Grand Master
+    # TODO: we may have to graph these by case which I don't like
+    i = ll.matchl(line,['cn<instead>','of'])
+    if i > 0:
+        # these all follow different patterns, but the instead of always
+        # seperates the condition/new event and the old event
+        # split on the match into left and new
+        l = line[:i]     # contains the new event and other details
+        old = line[i+2:] # skip the match to get the old event
 
+        # for now, we'll look for a period and use that to seperate l into
+        # preceding tokens (to be graphed) and the new event
+        if mtgl.CMA in l:
+            p,_,new = ll.splitl(l,ll.rindexl(l,mtgl.CMA))
+            graph_line(t,pid,p+[mtgl.CMA]) # put the comma bak
+        else: new = l
+
+        # now, we can graph it
+        reid = t.add_node(pid,'replacement-effect',type='instead-of')
+        graph_clause(t,t.add_node(reid,'original-event'),old)
+        graph_clause(t,t.add_node(reid,'new-event'),new)
+        return
+
+    # shouldn't get here
+    print('Ungraph instead replacement-effect {}'.format(line))
+    #assert(False)
 
 def graph_clause(t,pid,tkns):
     """
@@ -2218,16 +2246,19 @@ def is_kw_line(line):
     :param line: the line to check
     :return: True if line is a keyword line
     """
-    # TODO: have to fix this as it can fail (particulary if lines aren't being
-    #  graphed correctly)
-    # standard keyword ability line is one or more comma separated keyword clauses
-    # and does not end with a period or a period and a double quote
-    if not line[-1] in [mtgl.PER,mtgl.DBL] and ll.matchl(line,[tag.is_keyword]) > -1:
-        return True
-
     # keyword clauses with non-mana cost will have a long hyphen, start with a
     # keyword and end with a period
     if tag.is_keyword(line[0]) and mtgl.HYP in line and line[-1] == mtgl.PER:
+        return True
+
+    # standard keyword ability line is one or more comma separated keyword clauses
+    # and does not end with a period or a period and a double quote. However,
+    # due to the possibity of getting partial lines, the only way is to be positive
+    # is to pass the line to kw_clauses and check what comes back
+    if not line[-1] in [mtgl.PER,mtgl.DBL]:
+        for kwc in kw_clauses(line):
+            if kwc and tag.is_keyword(kwc[0]): pass
+            else: return False
         return True
 
     return False

@@ -407,4 +407,9 @@ Are effect-clause:0, effect-clause:1, and effect-clause:2 necessary? Is if-claus
 
 312. replacement-effect graphing needs a major overhaul
 
-313. it doesn't look like instant/sorceries are all being run through graph_re_instead (Angel's Grace isn't)
+313. it doesn't look like instant/sorceries are all being run through graph_re_instead (Angel's Grace and Flaming Gambit isn't)
+ o problem is spell abilities go directly to graph_clause
+
+315. have to rectify tapped as a action vs status see Ritual of subdial
+
+316. Really have to go through grapher and determine if the use of graph_line vs graph_clause (and vice-versa) makes sense

@@ -313,6 +313,11 @@ def _hack_oracle_(name,txt):
         # Worship is the only if-would-instead card that does not have a comma
         # between the original effect and the replacement effect
         txt = txt.replace("than 1 reduces it","than 1, reduces it")
+    elif name == 'Hall of Gemstone':
+        # has "Until end of turn, lands tapped for mana..." the tapped is tagged
+        # as a status and merged with the preceding
+        txt = txt.replace("lands tapped for mana produce",
+                          "if a land is tapped for mana, it produces")
     return txt
 
 def progress_bar(i,ttl):
