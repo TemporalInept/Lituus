@@ -355,7 +355,8 @@ the problem is that this is really a static ability should we just remove the be
 
 304. Desperate Gambit is not being picked up as a if-would-instead
 
-305. xc<control> precedes multiple conjunctions of objects
+305. xc<control> precedes multiple conjunctions of objects but where is the best
+place to graph this?
 
 306. how to handle process, graph and label timing/duration phrases i.e. "until you next turn', "the next time" etc.
 
@@ -368,3 +369,42 @@ but also come into effect in replacement effects (see Pulmonic Sliver). Is it po
 continue with a X trumps Y priority
 Regardless, we need to design a road map of how/when lines and/or clauses are graphed as one thing over another
 
+308. are we getting a lot of levels added in the grapher For example
+in Summary Judgement
+....
+ └─line:1
+   └─aw-line:0
+     ├─ability-word:0 (word=addendum)
+     └─ability-word-definition:0
+       └─effect-clause:0
+         ├─replacement-effect:0 (type=if-instead)
+         │ ├─if-clause:0
+         │ │ └─replacement-condition:0
+         │ │   └─effect-clause:1
+         │ │     ├─clause:2 (tkns=['xp<you>'])
+         │ │     ├─keyword-action-clause:0
+         │ │     │ ├─keyword-action:0 (word=cast)
+         │ │     │ └─thing:0 (tag=ob<card ref=self>)
+         │ │     └─clause:3 (tkns=['sq<during>', 'xp<you>', 'ph<main_phase>'])
+         │ └─new-event:0
+         │   └─effect-clause:2
+         │     ├─clause:4 (tkns=['xo<it>'])
+         │     ├─lituus-action-clause:1
+         │     │ └─lituus-action:1 (word=deal)
+         │     └─clause:5 (tkns=['ef<damage num=5>', 'pr<to>', 'ob<permanent quantifier=that characteristics=creature>'])
+         └─punctuation:1 (symbol=.)
+Are effect-clause:0, effect-clause:1, and effect-clause:2 necessary? Is if-clause:0 necessary?
+
+309. see Chaos Moon
+ o it has two triggered ability effects and the second one is being graphed as a triggered-ability-instruction
+  1. "If the number is odd, until end of turn, red creatures get +1/+1 and whenever a player taps a Mountain for mana, that player adds an additional {R}."
+  2. "If the number is even, until end of turn, red creatures get -1/-1 and if a player taps a Mountain for mana, that Mountain produces colorless mana instead of any other type."
+ o the second triggered ability has a "if-instead" replacement effect (type c) which is not being graphed correctly
+
+310. See # 309, we have to make sure that type c of if-insteads are being graphed correctly (splitting on the last comma may not be enough)
+
+311.look into 'type=kw<echo>>'
+
+312. replacement-effect graphing needs a major overhaul
+
+313. it doesn't look like instant/sorceries are all being run through graph_re_instead (Angel's Grace isn't)
