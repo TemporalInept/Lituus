@@ -71,12 +71,12 @@ def rectify(olds):
     )
 
     # b. combine xo<it> xp<...> and xp<their> xp<...>
-    i = ll.matchl(olds,[ll.ors(['xo<it>','xp<their>']),tag.is_player])
+    i = ll.matchl(olds,[ll.ors('xo<it>','xp<their>'),tag.is_player])
     while i > -1:
         t,v,ps = tag.untag(olds[i+1])
         ps['of'] = 'it' if olds[i] == 'xo<it>' else 'them' # add of=? to proplist
         olds[i:i+2] = [tag.retag(t,v,ps)]                 # retag
-        i = ll.matchl(olds,[ll.ors(['xo<it>', 'xp<their>']),tag.is_player])
+        i = ll.matchl(olds,[ll.ors('xo<it>', 'xp<their>'),tag.is_player])
 
     news = []
     skip = 0
@@ -156,7 +156,7 @@ def rectify(olds):
                 # check conversion to object first. The full phrase is "cannot be
                 # the target of..."  but we can check news for "cannot be the".
                 news.append('xo<target>')
-            elif ll.matchl(news[-2:],[ll.ors(['becomes','change']),'xq<the>']) == 0:
+            elif ll.matchl(news[-2:],[ll.ors('becomes','change'),'xq<the>']) == 0:
                 # another conversion to object requires checking for 'becomes' or
                 # 'change' prior to the
                 news.append('xo<target>')
@@ -167,7 +167,7 @@ def rectify(olds):
             elif ll.matchl(news[-1:],['new']) == 0:
                 # last object check if the preceding word is new
                 news.append('xo<target>')
-            elif ll.matchl(news[-1:],[ll.ors(['xq<that>','could','ob<copy>','must'])]) == 0:
+            elif ll.matchl(news[-1:],[ll.ors('xq<that>','could','ob<copy>','must')]) == 0:
                 # determine if 'target' is an action, the easiest is to check the
                 # preceding tokens if we find, 'that', 'could', 'copy', must it's
                 # an action NOTE: based on the assumption that rectify has correctly

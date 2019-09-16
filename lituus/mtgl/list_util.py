@@ -12,7 +12,7 @@ Defines helper functions for list processing
 
 #__name__ = 'list_util'
 __license__ = 'GPLv3'
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 __date__ = 'September 2019'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -23,7 +23,7 @@ import re
 from itertools import tee
 
 re_all = re.compile(r".+") # catchall for match any token
-def ors(tkns): return re.compile(r"{}".format('|'.join([t for t in tkns])))
+def ors(*args): return re.compile(r"{}".format('|'.join([arg for arg in args])))
 def matchl(ls,ss,start=0,stop=None):
     """
      attempts to match the elements in ss to a sublist of ls. If set, the values

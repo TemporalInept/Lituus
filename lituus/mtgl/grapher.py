@@ -103,14 +103,10 @@ def graph_line(t,pid,line,ctype='other'):
             if isline: nid = t.add_node(lid,'static-ability')
             else: nid = t.add_node(lid,'effect-clause')
 
-            # since there are so many replacement effect phrasings, and the act
-            # of determining if a replacement effect exists is costly we try and
-            # graph as a replacement effect first, if it fails, graph as a clause
-            # However, we need to check for double-quoted clauses first
+            # Check for double-quoted clauses first, then replacement effets
             if mtgl.DBL in line: graph_clause(t,nid,line)
-            else:
-                if not graph_replacement_effect(t,nid,line):
-                    graph_clause(t,nid,line)
+            elif is_replacement_effect(line): graph_replacement_effect(t,nid,line)
+            else: graph_clause(t,nid,line)
 
 def graph_aw_line(t,pid,line):
     """
@@ -527,6 +523,11 @@ def graph_triggered_ability(t,pid,line):
             graph_line(t,t.add_node(iid,'instruction'),instr[prev:i+left])
             prev = i+left # skip the period
 
+def is_replacement_effect(line):
+    if 'cn<instead>' in line: return True
+    if 'skip' in line or 'skips' in line: return True
+    return False
+
 def graph_replacement_effect(t,pid,line):
     """
      attempts to graph line as a replacment effect in tree t under parent-id pid
@@ -537,10 +538,8 @@ def graph_replacement_effect(t,pid,line):
     """
     # NOTE: we are assuming that triggered abiltiies have already been checked
     # start with 'instead' 614.1a "Most replacement effects use the word 'instead'"
-    if 'cn<instead>' in line:
-        graph_re_instead(t,pid,line)
-        return True
-    return False
+    if 'cn<instead>' in line: graph_re_instead(t,pid,line) # 614.14a 'instead'
+    elif 'skip' in line or 'skips' in line: graph_re_skip(t,pid,line)
 
 rple_iwi = ('cn<if>','cn<would>','cn<instead>') # if would instead
 rple_iii = ('cn<if>',['cn<instead>','cn<if>'])  # if instead if
@@ -550,12 +549,12 @@ rple_wi  = ('cn<would>','cn<instead>')          # would instead
 def is_damage(tkn): return tag.is_thing(tkn) and 'damage' in tag.untag(tkn)[1]
 def graph_re_instead(t,pid,line):
     """
-     attempts to graph line as a replacment effect in tree t under parent-id pid
+     graphs line as a replacement effect (instead 614.1a) in tree t under parent-id pid
     :param t: the tree
     :param pid: parent-id
     :param line: the list of tokens
     """
-    # TODO: graph the tokens between matching words as line or clause
+    # TODO: graph the tokens between matching words as line or clause?
     # TODO: keep period where they are or removed them and put them as a child
     #  in the replacement-effect node?
     # TODO: need better labels for these especially replacement thing
@@ -848,6 +847,20 @@ def graph_re_instead(t,pid,line):
     # shouldn't get here
     print('Ungraphed instead replacement-effect {}'.format(line))
     #assert(False)
+
+def graph_re_skip(t,pid,line):
+    """
+     graphs line as a replacment effect (skip 614.1b) in tree t under parent-id pid
+    :param t: the tree
+    :param pid: parent-id
+    :param line: the list of tokens
+    """
+    # 614.1b skip is used to indicate events or steps/phases/turns.
+    # NOTE: have to be congnizant of 'may'
+    # NOTE: I have only seen 'draw' as an event that is skipped
+
+    # split on the word skip or skips
+    i = ll.matchl(line,[ll.ors('skip','skips')])
 
 def graph_clause(t,pid,tkns):
     """
@@ -1315,7 +1328,7 @@ def graph_kwa_double(t,kwid,tkns):
     # a. looking for 'amount' and then a reference to mana or b. 'value' followed
     # by a reference to a number or a number
     # TODO: check Unbound Flourshing once new allcards is download
-    i = ll.matchl(tkns,[ll.ors(['amount','value'])])
+    i = ll.matchl(tkns,[ll.ors('amount','value')])
     if i > -1:
         # i should always be 1
         tkn = tkns[i]
@@ -2239,7 +2252,6 @@ def is_activated_ability(tkns):
 # clause has one keyword and associated definitions. the keyword clause may also
 # contain commas
 ####
-
 def is_kw_line(line):
     """
      determines if line is a keyword line
