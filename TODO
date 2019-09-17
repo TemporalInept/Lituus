@@ -1,5 +1,3 @@
-30. See Stasis will read as xp{player} skip their ph{untap_step}. need to quantify with all or not
-
 52. tag additional? (see Ravaging Riftwurm)
 
 66. Add english name conversion i.e. Lim-Dul's Vault
@@ -225,7 +223,7 @@ to player='you' or only add it if it is present?
  o with cmc less than 3
  o attached to it
 Have to handles these 
- o except for
+ o except
 
 246. create a new module for set updates and move multiverse->_precompile_types there. consider moving the downloading of allcards.json there as well and only allow update of the card json from there 
 
@@ -424,3 +422,19 @@ being sent to graph_replacement_effect
 we need a better means of partitioning etc 
 
 321. realized mistake with tagging their and your as a player what about other posseisives that conjugated out - are there any?
+
+322. in subgraphing functuality periods really belong with the higher levels
+for example in 
+....
+         └─new-event:0
+           └─effect-clause:1
+             ├─replacement-effect:1 (type=skip)
+             │ ├─player:0 (who=xp<player quantifier=that>)
+             │ └─replacement-event:0 (event=ef<draw quantifier=that>)
+             └─effect-clause:2
+               ├─clause:2 (tkns=['and', 'xp<you>'])
+               ├─lituus-action-clause:2
+               │ └─lituus-action:2 (word=draw)
+               ├─clause:3 (tkns=['ob<card quantifier=a>'])
+               └─punctuation:0 (symbol=.)
+the period doesn't belong to effect-clause:2 but should be a sibling with new-event:0
