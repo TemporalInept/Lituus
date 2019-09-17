@@ -219,7 +219,7 @@ def import_cards(mv,tc,n2r,mverse):
 
         # update progress
         i += 1
-        progress_bar(i,ttl)
+        #progress_bar(i,ttl)
 
     # combine the split cards and add to multiverse deleting the halves
     for split in splits:
@@ -233,7 +233,7 @@ def import_cards(mv,tc,n2r,mverse):
             'tag':"{} // {}".format(mv[a]._card['tag'],mv[b]._card['tag']),
             'tkn':mv[a]._card['tkn'] + [['//']] + mv[b]._card['tkn'],
             'mtgl':mv[a]._card['mtgl'] + [['//']] + mv[b]._card['mtgl'],
-            'mtgt':mtgt.fuse_tree(mv[a]._tree,mv[b]._tree),
+            'mtgt':mtgt.fuse_tree(mv[a].tree(),mv[b].tree()),
             'super-type':list(set(mv[a].super_type+mv[b].super_type)),
             'type':list(set(mv[a].type + mv[b].type)),
             'sub-type':list(set(mv[a].sub_type + mv[b].sub_type)),
@@ -336,7 +336,7 @@ def progress_bar(i,ttl):
     if x == 0: s = '/'
     elif x == 1: s = '|'
     else: s = '\\'
-    print(' {}|{}| {}%'.format(s,bar,p),end='\r')
+    print('{}|{}| {}%'.format(s,bar,p),end='\r')
     if i == ttl: print()
 
 def _precompile_types_(mv):

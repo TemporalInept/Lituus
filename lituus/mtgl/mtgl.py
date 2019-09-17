@@ -254,7 +254,7 @@ word_hacks = {
     "sources":"source",
     "targets":"target",
     "controls":"control",
-    "your":"you",
+    #"your":"you",
     "opponents":"opponent",
     "teammates":"teammate",
     "players":"player",
@@ -345,7 +345,7 @@ re_mint = re.compile(r"(?<!{|\w|=)(\d+|x)(?!\w<)")
 # Quantifying words i.e. target, each, all, any, every,
 lituus_quantifiers = [
     'target','each','all','any','every','another','other',
-    'the','this','that','those','these'
+    'the','this','that','those','these','their','your',
     'first','second','third','fourth','fifth','sixth',
     'seventh','eighth','ninth','tenth'
 ]
@@ -360,7 +360,7 @@ re_ef = re.compile(r"(?<!combat\s)(damage|effect)(?!>)")
 
 # lituus players # TODO: not sure if their should be tagged it can reference objs tool
 # NOTE: teammate is only referenced once outside of reminder text (Imperial Mask)
-lituus_players = ['you','opponent','teammate','player','owner','controller','their']
+lituus_players = ['you','opponent','teammate','player','owner','controller']
 re_lituus_ply = re.compile(r"\b({})\b".format('|'.join(lituus_players)))
 
 # lituus objects
@@ -623,7 +623,9 @@ rephrase = {
     "ph<phase> out":"xa<phase_out>",
     "ph<phase> in":"xa<phase_in>",
     "xa<deal> ka<double> xq<that>":"xa<deal> twice xq<that>", # double is not a keyword action here
-    "xq<the> xa<flip>":"xq<the> xo<flip>", # TODO: this is a hack
+    "xq<the> xa<flip>":"xq<the> ef<flip>",
+    "xq<that> xa<draw>":"xq<that> ef<draw>",
+    "xq<first> strike":"kw<first_strike>",
 }
 
 # don't get the tagged level_up

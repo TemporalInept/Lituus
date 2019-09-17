@@ -174,7 +174,7 @@ def is_quality(tkn):
         return False
 
 def is_thing(tkn):
-    # things are mtg objects, lituus objects, players, effects and zones
+    # things are mtg objects, lituus objects, players, effects/events and zones
     try:
         return untag(tkn)[0] in ['ef','ob','xp','xo','zn']
     except mtgl.MTGLTagException:
@@ -207,6 +207,12 @@ def is_zone(tkn):
 def is_phase(tkn):
     try:
         return untag(tkn)[0] == 'ph'
+    except mtgl.MTGLTagException:
+        return False
+
+def is_event(tkn):
+    try:
+        return untag(tkn)[0] == 'ef'
     except mtgl.MTGLTagException:
         return False
 
@@ -268,6 +274,12 @@ def is_state(tkn):
 def is_quantifier(tkn):
     try:
         return untag(tkn)[0] == 'xq'
+    except mtgl.MTGLTagException:
+        return False
+
+def is_sequence(tkn):
+    try:
+        return untag(tkn)[0] == 'sq'
     except mtgl.MTGLTagException:
         return False
 

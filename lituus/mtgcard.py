@@ -44,12 +44,14 @@ class MTGCard(object):
 
         # pull out the keywords
         # NOTE: we only save the keywords themselves
-        for node in self._tree.findall('keyword'):
-            self._kws.append(self._tree.attr(node,'word'))
+        #for node in self._tree.findall('keyword'):
+        #    self._kws.append(self._tree.attr(node,'word'))
 
         # & then ability words
-        for node in self._tree.findall('ability-word'):
-            self._aws.append(self._tree.attr(node,'word'))
+        #for node in self._tree.findall('ability-word'):
+        #    self._aws.append(self._tree.attr(node,'word'))
+
+    def tree(self): return self._tree
 
     """ pretty print card's tree """
     def print(self,attr=False): self._tree.print(self.name,attr)

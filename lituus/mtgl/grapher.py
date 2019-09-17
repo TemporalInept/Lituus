@@ -524,8 +524,8 @@ def graph_triggered_ability(t,pid,line):
             prev = i+left # skip the period
 
 def is_replacement_effect(line):
-    if 'cn<instead>' in line: return True
-    if 'skip' in line or 'skips' in line: return True
+    #if 'cn<instead>' in line: return True
+    #if 'skip' in line or 'skips' in line: return True
     return False
 
 def graph_replacement_effect(t,pid,line):
@@ -856,11 +856,139 @@ def graph_re_skip(t,pid,line):
     :param line: the list of tokens
     """
     # 614.1b skip is used to indicate events or steps/phases/turns.
-    # NOTE: have to be congnizant of 'may'
     # NOTE: I have only seen 'draw' as an event that is skipped
 
-    # split on the word skip or skips
+    # find the skip or skips
     i = ll.matchl(line,[ll.ors('skip','skips')])
+    if i > -1:
+        # split on the word skip or skips
+        l,_,r = ll.splitl(line,i)
+
+        # before adding the replacement-effect node - check for player, optionals
+        # i.e. 'may' and other tokens that should be graphed elsewhere in l
+        # TODO: if we pull out may here, we'll have to do it everywhere a may
+        #  could be found
+        j = ll.matchl(l,[tag.is_player,tag.is_conditional])
+        k = ll.matchl(l,[ll.ors('and',mtgl.CMA),tag.is_player])
+        if j > -1:
+            # split on j to get pull out the conditional
+            pre,ply,opt = ll.splitl(l,j)
+            assert(not pre) # shouldn't ever have anything here
+
+            if opt and len(opt) == 1:
+                v = tag.untag(opt[0])[1]
+                t.add_node(pid,'optional',word=v)
+            else: graph_clause(t,t.add_node(pid,'optional'),opt)
+            ply = [ply] # stupid but it will mess everything up otherwise
+        elif k > -1:
+            # we have a clause/line that needs to be graphed first send everything
+            # before 'and' or comma including the 'and' or comma to graph line
+            # then pull out the player
+            graph_line(t,pid,l[:k+1])
+            ply = l[k + 1:]
+        elif len(l) == 1: ply = l
+        else:
+            # nothing - add the implied player you
+            # TODO: is this good? or leave out?
+            assert(not l),"Ungraphed tokens in graph_re_skip"
+            ply = 'xp<you>'
+
+        # start off by adding the replacement-effect node
+        reid = t.add_node(pid,'replacement-effect',type='skip')
+
+        # in most cases, skip/skips are be procedeed by a player except in static
+        # ability lines i.e. Necropotence where the player (you) is implied
+        if ply:
+            # if we find only one token, a player, graph it as a single node
+            # under the replacement effect. Otherwise graph it as a clause
+            if len(ply) == 1 and tag.is_player(ply[0]):
+                # TODO: this is not the best place to handle this but for now we
+                #  we will fix issues with players skip their STEP that are parsed
+                #  as ['xp<player>', 'xp<their>', 'ph<untap_step>', '.' i.e. Stasis
+                #  by adding an 'each' quantifier if no quantifiers are present
+                ti,v,ps = tag.untag(ply[0])
+                if v != 'you' and not 'quantifier' in ps: ps['quantifier'] = 'each'
+                ply = tag.retag(ti,v,ps)
+                t.add_node(reid,'player',who=ply)
+            else: graph_clause(t,t.add_node(reid,'player'),ply)
+
+        # do we have an event i.e. a draw or a step/phase/turn?
+        print(r)
+        return
+        j = ll.matchl(r,[tag.is_event])
+        k = ll.matchl(r,[tag.is_phase])
+        if j > -1: # event
+            # split on the event/effet i.e. 'draw'
+            ev = r[:j+1]   # grab the effect/event
+            rem = r[j+1:]  # and the remainder
+
+            # we should only have 1 token in event if so, graph it directly
+            # otherwise, send it to graph_clause
+            if len(ev) == 1: t.add_node(reid,'replacement-event',event=ev[0])
+            else: graph_clause(t,t.add_node(reid,'replacment-event'),ev)
+
+            # the rest is not part of the replacement effet
+            if rem: graph_line(t,pid,rem)
+        elif k > -1: # a step/phase/turn/
+
+            #TODO: the player here is not a player but is kind of a quantifier for
+            # the phase being skipped
+            # before splitting make sure we don't have a conjunction
+            i = ll.matchl(r,[tag.is_phase,tag.is_coordinator,tag.is_phase],start=k)
+            if i > -1:
+                pre = r[:i]      # prior to phases
+                phase = r[i:i+3] # the phases
+                ais = r[i+3:]    # amplifying instruction
+            else:
+                pre = r[:k]      # prior
+                phase = r[k]     # the phase
+                ais = r[k+1:]    # amplifyng instruction
+
+            # check for a quantifier immediately preceding phase(s) & add
+            # any remaining instruction
+            q = None
+            if pre and tag.is_quantifier(pre[-1]): q = tag.untag(pre.pop())[1]
+            if pre: graph_clause(t,t.add_node(reid,'quanitifying-instruction'),pre)
+
+            # enumerates the tokens extracting key terms
+            ply = seq = None
+            qis = []
+            for tkn in pre:
+                if tag.is_player(tkn):
+                    ti,v,ps = tag.untag(tkn)
+                    if v != 'you' and not 'quantifier' in ps:
+                        ps['quantifier'] = 'each'
+                    ply = t.add_ur_node('player',tag=tag.retag(ti,v,ps))
+                elif tag.is_sequence(tkn):
+                    if seq: t.add_attr(seq,'time',tag.untag(tkn)[1])
+                    else: seq = t.add_ur_node('sequence',time=tag.untag(tkn)[1])
+                elif tag.is_number(tkn):
+                    if seq: t.add_attr(seq,'number',tag.untag(tkn)[1])
+                    else: seq = t.add_ur_node('sequence',number=tag.untag(tkn)[1])
+                else: qis.append(tkn)
+
+            # add edges to the found nodes
+            if ply: t.add_edge(reid,ply)
+            if seq: t.add_edge(reid,seq)
+
+            # add a phase node or a conjuction
+            if len(phase) == 1:
+                rpid=t.add_node(reid,'replacement-phase',phase=phase[0])
+                if q: t.add_attr(rpid,'quantifier',q)
+            else:
+                # make a conjunction
+                cid = t.add_node(
+                    reid,'conjunction',coordinator=phase[1],item_type='phase'
+                )
+                assert(q is None)
+                t.add_node(cid,'replacement-phase',phase=phase[0])
+                t.add_node(cid,'replacement-phase',phase=phase[2])
+
+            # add any amplifying instruction
+            if ais: graph_clause(t,t.add_node(reid,'amplifying-instruction'),ais)
+        else:
+            # something went wrong
+            assert(False),"No event or phase"
 
 def graph_clause(t,pid,tkns):
     """
@@ -1100,11 +1228,11 @@ def graph_kwa_exchange(t,pid,cls,tkns):
         kwid = t.add_node(pid,'keyword-action-clause')
         t.add_node(kwid,'keyword-action',word=v,type='zone')
 
-        # the 2 zones should be anded and a player should be specified
+        # the 2 zones should be anded and a possessive quantifier should be present
         _, zs, ps = tag.untag(tkns[0])
         zs = zs.split(mtgl.AND)
         assert(len(zs) == 2)
-        assert('player' in ps)
+        assert('quantifier' in ps)
 
         # recombine and add the nodes
         t.add_node(kwid,'what',zone=tag.retag('zn',zs[0],ps))

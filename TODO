@@ -225,6 +225,7 @@ to player='you' or only add it if it is present?
  o with cmc less than 3
  o attached to it
 Have to handles these 
+ o except for
 
 246. create a new module for set updates and move multiverse->_precompile_types there. consider moving the downloading of allcards.json there as well and only allow update of the card json from there 
 
@@ -413,3 +414,13 @@ Are effect-clause:0, effect-clause:1, and effect-clause:2 necessary? Is if-claus
 316. Really have to go through grapher and determine if the use of graph_line vs graph_clause (and vice-versa) makes sense
 
 317. Stop using N2R as a global, the overall memory required is neglible compared to the python is hogging memory anyway.
+
+318. have been using effect/event interhangeably in tagger, parser etc need to standarize, codify this 
+
+319. see Ivory Gargoyle
+ because of graph_triggered_ability, we are getting
+['xa<return>', 'xo<it>', 'pr<to>', 'zn<battlefield quantifier=the>', 'pr<under>', 'xp<owner of=it>', 'xc<control>', 'mt<at>', 'xq<the>', 'sq<beginning>', 'of', 'xq<the>', 'sq<next>', 'ph<end_step>', 'and', 'xp<you>', 'skip', 'xp<you>', 'sq<next>', 'ph<draw_step>', '.']
+being sent to graph_replacement_effect
+we need a better means of partitioning etc 
+
+321. realized mistake with tagging their and your as a player what about other posseisives that conjugated out - are there any?

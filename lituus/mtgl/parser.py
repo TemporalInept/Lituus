@@ -164,7 +164,7 @@ def rectify(olds):
                 # look for "with a single"
                 # TODO: are there cases where 'single' is not present or different
                 news.append('xo<target>')
-            elif ll.matchl(news[-1:],['new']) == 0:
+            elif ll.matchl(news[-1:],[ll.ors('new','xa<any>')]) == 0:
                 # last object check if the preceding word is new
                 news.append('xo<target>')
             elif ll.matchl(news[-1:],[ll.ors('xq<that>','could','ob<copy>','must')]) == 0:
