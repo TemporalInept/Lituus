@@ -12,7 +12,7 @@ Defines helper functions for list processing
 
 #__name__ = 'list_util'
 __license__ = 'GPLv3'
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 __date__ = 'September 2019'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -133,7 +133,7 @@ def splicel(ls,ts):
         if j < 0: raise ValueError
         idx.append(j)
         ms.append(ls[j:j+len(term)])
-        bs.append(ls[i+1:j])  # this will be between i and j
+        bs.append(ls[last:j])  # this will be between i and j
         last = j+len(term)
         i = j
 
@@ -192,6 +192,19 @@ def joinl(ls,e):
         js += ss
         if i < len(ls)-1: js += [e]
     return js
+
+def endswithl(ls,e):
+    """
+     determines if the last element in the list of tokens is e. Uses matchl so,
+     e can be a regex, function or string as well as a list of terms to match
+     NOTE: returns False vice throwing an error if the list is empty
+    :param ls: list of tokens
+    :param e: element to check for
+    :return: True if ls[-1] == e False otherwise
+    """
+    e = e if isinstance(e,list) else [e]
+    le = len(e)
+    return matchl(ls,e) == len(ls)-le
 
 def indexl(ls,e,start=0):
     """

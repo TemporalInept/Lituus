@@ -32,6 +32,9 @@ SYM_2ND_ORDER  = '│'
 SYM_LAST_CHILD = '└'
 SYM_BRANCH     = '─'
 
+""" returns the node type based on given node-id"""
+def node_type(nid): return nid.split(':')[0]
+
 class MTGTree:
     """
      A ordered, rooted directed acyclic graph (DAG) via networkx's OrderedDiGraph

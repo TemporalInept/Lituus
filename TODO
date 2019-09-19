@@ -331,6 +331,7 @@ because we are working backwords and getting the object belonging to phase out, 
  o for each ...
  o other than ...
  o by ...
+ o other prepositions
 
 288. Start thinking about graphing conditions
 
@@ -404,7 +405,7 @@ Are effect-clause:0, effect-clause:1, and effect-clause:2 necessary? Is if-claus
 
 312. replacement-effect graphing needs a major overhaul
 
-313. it doesn't look like instant/sorceries are all being run through graph_re_instead (Angel's Grace and Flaming Gambit isn't)
+313. it doesn't look like all instant/sorceries are all being run through graph_re_instead (Angel's Grace and Flaming Gambit isn't)
  o problem is spell abilities go directly to graph_clause
 
 315. have to rectify tapped as a action vs status see Ritual of subdial
@@ -438,3 +439,11 @@ for example in
                ├─clause:3 (tkns=['ob<card quantifier=a>'])
                └─punctuation:0 (symbol=.)
 the period doesn't belong to effect-clause:2 but should be a sibling with new-event:0
+
+323. need to take into account "the next time" phrases i.e. Aegis of Honor
+ o "the next time" ... EVENT "would" EVENT "instead"
+this could be handled the same is if-instead-would
+
+325. See Crown of Empires, Throne of Empires is not being ref tagged
+
+
