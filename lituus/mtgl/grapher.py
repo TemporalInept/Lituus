@@ -84,7 +84,7 @@ def graph_line(t,pid,line,ctype='other'):
     else:
         # (112.3) add an ability-line or 'ability-clause' node
         # TODO: not sure if i like this
-        isline = pid.split(':')[0] == 'line'
+        isline = mtgt.node_type(pid) == 'line'
         if isline: lid = t.add_node(pid,'ability-line')
         else: lid = pid
 
@@ -565,82 +565,56 @@ def graph_re_instead(t,pid,line):
 
     # first: if-would-instead these are if THING would DO A, DO B instead
     try:
+        # find and split the clauses
         _,_,bs = ll.splicel(line,rple_iwi)
 
-        # some if-would-instead follow a line (Kess, Dissident Mage')
+        # some if-would-instead follow a line (Kess, Dissident Mage'), these
+        # will be in bs[0], graph them first
         if bs[0]: graph_line(t,pid,bs[0])
 
-        # add a replacment-effect node then the 'if', 'would' & 'instead' clauses
+        # add a replacment-effect node and graph the if clause in bs[1]
         reid = t.add_node(pid,'replacement-effect',type='if-would-instead')
-        ifid = t.add_node(reid,'if-clause')
-        wid = t.add_node(reid,'would-clause')
-        inid = t.add_node(reid,'instead-clause')
-
-        # next will be a 'Thing' which may have qualifying conditions (Worship)
-        # and/or amplifying instructions (Kess, Dissident Mage)
-        try:
-            # look for a comma in the thing clause (i.e Worship) which will
-            # seperate the clause into a qualifying condition & remainder
-            qc,_,b = ll.splitl(bs[1],bs[1].index(mtgl.CMA))
-            graph_clause(t,t.add_node(ifid,'condition'),qc)
-        except ValueError:
-            b = bs[1]
-
-        # find & collate the Thing(s) anything preceding it and after it will be
-        # processed seperately
-        i = ll.matchl(b,[tag.is_thing])
-        assert(i > -1)
-        nid,j = collate(t,b[i:])
-
-        # graph as clause anything preceding it and following it
-        # NOTE: As far as I can tell, anything that comes before the 'thing(s)'
-        # is related to timing
-        if b[:i]: graph_clause(t,t.add_node(ifid,'sequence'),b[:i])
-        t.add_edge(ifid,nid)
-        if b[i+j:]: graph_clause(t,t.add_node(ifid,'quantifier'),b[i+j:])
+        graph_line(t,t.add_node(reid,'if-clause'),bs[1])
 
         # following 'would', we have the "original" event & the "new" event which
-        # are comma seperated however, there are cases where the new event comes
+        # are comma seperated. However, there are cases where the new event comes
         # after the 'instead in which case, it will be in bs[3]
-        i = ll.matchl(bs[2],mtgl.CMA) # should always have comma
-        assert(i > -1)
-        old,_,new = ll.splitl(bs[2],i)
-        graph_line(t,wid,old)
-        if new: graph_line(t,inid,new)
+        old,_,new = ll.splitl(bs[2],ll.matchl(bs[2],mtgl.CMA)) # always a comma
+        graph_line(t,t.add_node(reid,'would-clause'),old)
+        if new: graph_line(t,t.add_node(reid,'instead-clause'),new)
         else:
-            graph_line(t,inid,bs[3])
+            graph_line(t,t.add_node(reid,'instead-clause'),bs[3])
             bs[3] = []
 
-        # graph anything after the instead
+        # graph anything after the instead & the period if present
         if bs[3]: graph_clause(t,pid,bs[3])
+        if per: t.add_node(reid,'punctuation',symbol=mtgl.PER)
         return
     except ValueError:
         pass
 
-    # second, edge case Fatal Push which is a if-instead-if but basically the
-    # normal if-clause (i.e. in if-would-instead) is not preset but is implied
-    # from the first line (Destroy target creature if it has converted mana cost
-    # 2 or less.) the two if clauses form a conjunction of conditions
-    #  the creature has cmc <= 4 & a permanent you controlled left the battlefield
-    # In line 2, the condition has two parts 1. target creature has cmc 4 or less
-    #  and one of your permanents left the battlefield this turn
-    # everything prior to the instead clause is the "new event"
+    # second, an edge case Fatal Push which is a if-instead-if but the normal
+    # if-clause is not preset rather it is implied from the first line (Destroy
+    # target creature if it has converted mana cost 2 or less.) the two if clauses
+    # form a conjunction of conditions. In line 2, the condition has two parts 1.
+    # target creature has cmc 4 or less and one of your permanents left the
+    # battlefield this turn everything prior to the instead clause is the
+    # "new event"
     try:
         # splice the line and add our clauses
         _,_,bs = ll.splicel(line,rple_iii)
         reid = t.add_node(pid,'replacement-effect',type='if-instead-if')
-        iid = t.add_node(reid,'if-clause')
-        inid = t.add_node(reid,'instead-clause')
 
         # add the two if conditions under a conjuction
-        cid=t.add_node(iid,'conjunction',coordinator='and',item_type='condition')
+        cid=t.add_node(
+            t.add_node(reid,'if-clause'),'conjunction',
+            coordinator='and',item_type='condition'
+        )
         graph_clause(t,t.add_node(cid,'condition'),bs[1])
         graph_clause(t,t.add_node(cid,'condition'),bs[2])
 
-        # add the instead clause (i.e. the new event)
-        graph_clause(t,inid,bs[0])
-
-        # add the period (if found)
+        # add the instead clause (i.e. the new event) and period if present
+        graph_clause(t,t.add_node(reid,'instead-clause'),bs[0])
         if per: t.add_node(reid,'punctuation',symbol=mtgl.PER)
         return
     except ValueError:
@@ -648,21 +622,17 @@ def graph_re_instead(t,pid,line):
 
     # third - if-instead-of i.e. Library of Leng
     try:
-        # splice and create our clauses
+        # splice and create our clause the replacement-effect
         _, _,bs = ll.splicel(line,rple_iio)
         reid = t.add_node(pid,'replacement-effect',type='if-instead-of')
-        iid = t.add_node(reid,'if-clause')
-        inid = t.add_node(reid,'instead-clause')
-        oid = t.add_node(reid,'of-clause')
 
         # split on the last comma, which will give the condition (if) and
-        # effect (instead), the 'of' will be in the last phrase (pop the period)
+        # effect (instead), the 'of' will be in the last phrase. the 'of clause
+        # will be in bs[2]
         cond,_,effect = ll.splitl(bs[1],ll.rindexl(bs[1],mtgl.CMA))
-        graph_line(t,iid,cond)
-        graph_line(t,inid,effect)
-
-        # graph the 'of-clause' and period if present
-        graph_line(t,oid,bs[2])
+        graph_line(t,t.add_node(reid,'if-clause'),cond)
+        graph_line(t,t.add_node(reid,'instead-clause'),effect)
+        graph_line(t,t.add_node(reid,'of-clause'),bs[2])
         if per: t.add_node(reid,'punctuation',symbol=mtgl.PER)
         return
     except ValueError:
@@ -670,8 +640,7 @@ def graph_re_instead(t,pid,line):
 
     # fourth - if-instead these are if CONDITION instead REPLACEMENT
     # these are generally found where the orginal event is on another line or in
-    # in some way seperate from the replacement effect i.e. in the Threshold
-    # definitions
+    # in some way seperate from the replacement effect i.e. Threshold
     try:
         # match a if-instead. this will give us three phrases
         #    bs[0]   bs[1]             bs[2]
@@ -680,12 +649,10 @@ def graph_re_instead(t,pid,line):
         # In case a, the instead comes last and the condition and replacment are
         # found by splitting on the last comma. In case b, the instead seperates
         # the condition and the replacment.
+
+        # split the line and graph any tokens occurring prior to if-instead
         _,_,bs = ll.splicel(line,rple_ii1)
-
-        # graph any tokens occurring prior to the if-instead
         if bs[0]: graph_line(t,pid,bs[0])
-
-        # add a replacment-effect nodes
         reid = t.add_node(pid,'replacement-effect',type='if-instead')
         iid = t.add_node(reid,'if-clause')
         inid = t.add_node(reid,'instead-clause')
@@ -695,10 +662,10 @@ def graph_re_instead(t,pid,line):
         if not bs[2]: # Case a
             # the last comma will split the condition and replacement event
             cond,_,effect = ll.splitl(bs[1],ll.rindexl(bs[1],mtgl.CMA))
-            graph_line(t,t.add_node(iid,'condition'),cond)
+            graph_line(t,iid,cond)
             graph_line(t,inid,effect)
         elif ll.rindexl(bs[1],mtgl.CMA) == len(bs[1])-1: # Case b
-            graph_line(t,t.add_node(iid,'condition'),bs[1])
+            graph_line(t,iid,bs[1])
             graph_line(t,inid,bs[2])
         else: assert(False), "Ungraphed if-instead clause"
         if per: t.add_node(reid,'punctuation',symbol=mtgl.PER)
@@ -711,29 +678,22 @@ def graph_re_instead(t,pid,line):
     # the tokens following are the if clause
     i = ll.matchl(line,['cn<instead>','cn<if>'])
     if i > -1:
-        # we have effect instead, if condition (split on the i)
+        # we have effect instead, if condition (split on i)
         reid = t.add_node(pid,'replacement-effect',type='instead-if')
-        iid = t.add_node(reid,'if-clause')
-        inid = t.add_node(reid,'instead-clause')
-        graph_line(t,inid,line[:i])
-        graph_line(t,t.add_node(iid,'condition'),line[i+2:])
+        graph_line(t,t.add_node(reid,'instead-clause'),line[:i])
+        graph_line(t,t.add_node(reid,'if-clause'),line[i+2:])
         if per: t.add_node(reid,'punctuation',symbol=mtgl.PER)
         return
 
     # sixth, instead of - if, i.e. Caravan Vigil
     # REPLACEMENT instead ORIGINAL if CONDITION
     try:
-        # splie and make our nodes
+        # splice and graph
         _,_,bs = ll.splicel(line,rple_ioi)
         reid = t.add_node(pid,'replacement-effect',type='instead-of-if')
-        iid = t.add_node(reid,'if-clause')
-        inid = t.add_node(reid,'instead-clause')
-        oid = t.add_node(reid,'of-clause')
-
-        # the period will be in the if clause
-        graph_line(t,t.add_node(iid,'condition'),bs[2])
-        graph_line(t,inid,bs[0])
-        graph_line(t,oid,bs[1])
+        graph_line(t,t.add_node(reid,'if-clause'),bs[2])
+        graph_line(t,t.add_node(reid,'instead-clause'),bs[0])
+        graph_line(t,t.add_node(reid,'of-clause'),bs[1])
         if per: t.add_node(reid,'punctuation',symbol=mtgl.PER)
         return
     except ValueError:
@@ -745,96 +705,61 @@ def graph_re_instead(t,pid,line):
         # vice an if clause and have an event clause
         _,_,bs = ll.splicel(line,rple_twi)
         reid = t.add_node(pid,'replacement-effect',type='that-would-instead')
-        tid = t.add_node(reid,'thing-clause')
-        wid = t.add_node(reid,'would-clause')
-        iid = t.add_node(reid,'instead-clause')
 
         # the majority of these are broken down as:
         # bs[0] 'that would' bs[1] instead bs[2] = '.' (which has been popped)
-        # so, the would clause and instead clause are in bs[1]
-        if not bs[2]:
-            # in bs[1] we have an event. check for damage prevention/redirection
-            # which has different preambles but, ends with 'damage that' (possibly
-            # with quanitifiers) See Empyrial Archangel
-            i = ll.matchl(bs[0],[is_damage])
-            if i > -1:
-                # pull out the parameters
-                # TODO: if this works will have to go back and do for other
-                #  damage replacements
-                ti,v,ps = tag.untag(bs[0][i])
-                n = q = None
-                if 'quantifier' in ps: # move all to number
-                    if ps['quantifier'] == 'all': n = 'all'
-                    else: q = ps['quantifier']
-                if 'num' in ps: n = ps['num']
+        # i.e. bs[0] is thing, bs[1] contain both the would and instead clauses
+        graph_line(t,t.add_node(reid,'thing-clause'),bs[0])
 
-                # now check for condition (generally timing based)
-                qi = bs[0][:i]
-                if qi: graph_clause(t,t.add_node(tid,'sequence'),qi)
-
-                # add the attributes of the event node
-                thid = t.add_node(tid,'thing',what=v)
-                if n: t.add_attr(thid,'amount',n)
-                if q: t.add_attr(thid,'quantifier',q)
-            else:
-                # TODO: edge case, see Crafty Cutpurse,this is hacked and would
-                #  not be able to expand to meet future like cards
-                i = ll.matchl(bs[0],[tag.is_mtg_obj,'xq<that>'])
-                j = ll.matchl(bs[0],[tag.is_mtg_obj]) == len(bs[0])
-                if i > -1: t.add_node(reid,'thing',tag=bs[0][i])
-                elif j > -1:
-                    # edge case Pyramids # TODO: also hand-jammed
-                    # add an event node
-                    #eid = t.add_node(reid,'replacement-event')
-                    # check for quantifying information, then add the object
-                    qi = bs[0][:j]
-                    if qi: graph_clause(t,t.add_node(tid,'sequence'),qi)
-                    t.add_node(tid,'thing',tag=bs[0][i])
-
-            # graph the original and new event. Need better hueristics for this
-            # but for now, the first thing to look for is 'is', then a comma
+        # check first for cases where instead clause is in bs[2]
+        if bs[2]:
+            # see Whipoorwill
+            old = bs[1]
+            new = bs[2]
+        else:
+            # Need better hueristics for this but for now, check for 'is', then
+            # comma, then reduce
             if 'is' in bs[1]: i = bs[1].index('is')
             elif mtgl.CMA in bs[1]: i = bs[1].index(mtgl.CMA)
             elif 'xa<reduce>' in bs[1]: i = ll.rindexl(bs[1],'xa<reduce>')
-            else: assert(False)
-            old,el,new = ll.splitl(bs[1],i)
+            old,el,new = ll.splitl(bs[1],i) # split the found i
             if el == 'xa<reduce>': new.insert(0,el) # have to add reduce back
-            graph_line(t,wid,old)
-            graph_line(t,iid,new)
 
-            # finally graph the period if present
-            if per: t.add_node(pid,'punctuation',symbol=mtgl.PER)
+        # graph the would, instead clauses & period
+        graph_line(t,t.add_node(reid,'would-clause'),old)
+        graph_line(t,t.add_node(reid,'instead-clause'),new)
+        if per: t.add_node(pid,'punctuation',symbol=mtgl.PER)
         return
     except ValueError:
         pass
 
     # eighth would-instead, very similar to above, but these in general relate to
-    # timing i.e Shield Dancer
+    # timing i.e Shield Dancer, Aegis of Honor
     try:
         # check for would-instead (has to be done afte the above).
         _, _, bs = ll.splicel(line,rple_wi)
         reid = t.add_node(pid,'replacement-effect',type='would-instead')
-        sid = t.add_node(reid,'sequence-clause')
         wid = t.add_node(reid,'would-clause')
         iid = t.add_node(reid,'instead-clause')
 
         # the sequence (i.e., the next time...) is in the first set of betweens
-        graph_clause(t,sid,bs[0])
+        # TODO: should we label this as 'sequence-clause' ?
+        graph_clause(t,t.add_node(reid,'thing-clause'),bs[0])
 
-        # the would is always in the 2nd set but, the instead may be in the 2nd
-        # or in the 3rd
-        if not bs[2]:
+        # the 'would' is always in bs[1] but 'instead' may be in bs[1] or bs[2]
+        if bs[2]: # the would and instead clauses are already split
+            old = bs[1]
+            new = bs[2]
+        else:
             # have to split bs[1] to get would and instead, use the last comma
             # but we want to keep the comma in the would clause
             i = ll.rindexl(bs[1],mtgl.CMA)
-            graph_line(t,wid,bs[1][:i+1])
-            graph_line(t,iid,bs[1][i+1:])
-        else:
-            # the would and instead clauses are already split
-            graph_line(t,wid,bs[1])
-            graph_line(t,iid,bs[2])
+            old = bs[1][:i+1]
+            new = bs[1][i+1:]
 
-        # and graph the period if present
+        # graph the clauses and period if present
+        graph_line(t,t.add_node(reid,'would-clause'),old)
+        graph_line(t,t.add_node(reid,'instead-clause'),new)
         if per: t.add_node(reid,'punctuation',symbol=mtgl.PER)
         return
     except ValueError:
@@ -846,21 +771,16 @@ def graph_re_instead(t,pid,line):
     # TODO: can we generalize these to if-instead-of
     i = ll.matchl(line,['cn<instead>','of'])
     if i > 0:
+        # instead and of clauses seperated by i
         reid = t.add_node(pid,'replacement-effect', type='instead of')
-        iid = t.add_node(reid,'instead-clause')
-        oid = t.add_node(reid,'of-clause')
-
-        # split and graph the clauses
-        graph_line(t,iid,line[:i])
-        graph_line(t,oid,line[i+2:])
-
-        # and graph the period if present
+        graph_line(t,t.add_node(reid,'instead-clause'),line[:i])
+        graph_line(t,t.add_node(reid,'of-clause'),line[i+2:])
         if per: t.add_node(reid,'punctuation',symbol=mtgl.PER)
         return
 
     # shouldn't get here
     #print('Ungraphed instead replacement-effect {}'.format(line))
-    #assert(False), "New edgecase in instead replacements"
+    assert(False), "New edgecase in instead replacements"
 
 def graph_re_skip(t,pid,line):
     """
@@ -1023,7 +943,7 @@ def graph_clause(t,pid,tkns):
             if tkn == mtgl.DBL:
                 dbl = tkns[i+1:ll.indexl(tkns,mtgl.DBL,i)]
                 graph_line(t,t.add_node(pid,'quoted-clause'),dbl)
-                skip = len(dbl) + 1 # skip the right double quote
+                skip = len(dbl) + 2 # skip the double quotes
             else: t.add_node(pid,'punctuation',symbol=tkn)
         elif tag.tkn_type(tkn) == tag.MTGL_SYM:
             if cls:
