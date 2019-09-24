@@ -104,6 +104,9 @@ def tag_ref(name,txt):
     )
 
     # references to other cards prefixed with 'named' or 'Partner with'
+    # TODO: this will not catch cases where there is an and i.e. Throne of Empires
+    #  "... named Crown of Empires and Scepter of Empires. For now, have to hack
+    #  it using mtgl.re_oth_ref2
     assert(mtgl.re_oth_ref is not None)
     ntxt = mtgl.re_oth_ref.sub(
         lambda m: r"{} ob<card ref={}>".format(m.group(1),mtgl.N2R[m.group(2)]),ntxt

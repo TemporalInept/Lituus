@@ -181,7 +181,10 @@ N2R = None
 # basically a hack to catch card names we know are referenced in other cards
 # but are not preceded by 'named' or 'Partner with'
 # TODO: we have to identify all of these card names
-named_cards = ["Urza's Power Plant","Urza's Mine","Urza's Tower"]
+named_cards = [
+    "Urza's Power Plant","Urza's Mine","Urza's Tower",
+    "Throne of Empires","Crown of Empires","Scepter of Empires",
+]
 NC2R = {n:md5(n.encode()).hexdigest() for n in named_cards}
 re_oth_ref2 = re.compile(r"({})".format('|'.join(list(NC2R.keys()))))
 
