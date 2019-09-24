@@ -422,8 +422,6 @@ Are effect-clause:0, effect-clause:1, and effect-clause:2 necessary? Is if-claus
 being sent to graph_replacement_effect
 we need a better means of partitioning etc 
 
-321. realized mistake with tagging their and your as a player what about other posseisives that conjugated out - are there any?
-
 322. in subgraphing functuality periods really belong with the higher levels
 for example in 
 ....
@@ -446,7 +444,9 @@ this could be handled the same is if-instead-would
 
 325. See Crown of Empires, Throne of Empires is not being ref tagged
 
-326. double-quoted clause being called twice for Pulmonic Sliver, once with an
+327. code exile and others to take into account (from zone) i.e exile card from hand
  an empty list
 
 327. don't like how if-instead-of (see Library of Leng) are being graphed
+
+328. need a 'greatest common demonitor' function for combining things. i.e. if we're combining a card and permament does the permament trump card or vice versa

@@ -173,8 +173,8 @@ def is_quality(tkn):
     except mtgl.MTGLTagException:
         return False
 
+# things are mtg objects, lituus objects, players, effects/events and zones
 def is_thing(tkn):
-    # things are mtg objects, lituus objects, players, effects/events and zones
     try:
         return untag(tkn)[0] in ['ef','ob','xp','xo','zn']
     except mtgl.MTGLTagException:
@@ -189,6 +189,13 @@ def is_mtg_obj(tkn):
 def is_lituus_obj(tkn):
     try:
         return untag(tkn)[0] == 'xo'
+    except mtgl.MTGLTagException:
+        return False
+
+# an object is a mtg object or a lituus object
+def is_object(tkn):
+    try:
+        return untag(tkn)[0] in ['ob','xo']
     except mtgl.MTGLTagException:
         return False
 

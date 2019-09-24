@@ -523,9 +523,21 @@ def graph_triggered_ability(t,pid,line):
             graph_line(t,t.add_node(iid,'instruction'),instr[prev:i+left])
             prev = i+left # skip the period
 
+
+def is_enters_replacement_effect(line):
+    return ll.matchl(line, ['xa<enter>', 'zn<battlefield quantifier=the>']) > -1
+
 def is_replacement_effect(line):
+    """
+     given the list of tokens in line, returns whether the line represents a
+     replacement effect (614)
+     NOTE: triggered abilities must be checked first
+    :param line:
+    :return: True if line is a replacement effect
+    """
     if 'cn<instead>' in line: return True
     if 'skip' in line or 'skips' in line: return True
+    #if is_enters_replacement_effect(line): return True
     return False
 
 def graph_replacement_effect(t,pid,line):
@@ -537,18 +549,18 @@ def graph_replacement_effect(t,pid,line):
     :return: True if the line was succesfully parsed, False otherwise
     """
     # NOTE: we are assuming that triggered abiltiies have already been checked
-    # start with 'instead' 614.1a "Most replacement effects use the word 'instead'"
-    if 'cn<instead>' in line: graph_re_instead(t,pid,line) # 614.14a 'instead'
-    elif 'skip' in line or 'skips' in line: graph_re_skip(t,pid,line)
+    if 'cn<instead>' in line: graph_re_instead(t,pid,line) # 614.1a
+    elif 'skip' in line or 'skips' in line: graph_re_skip(t,pid,line) # 614.1b
+    elif is_enters_replacement_effect(line): graph_re_enters(t,pid,line) # 614.1c,d
 
-rple_iwi = ('cn<if>','cn<would>','cn<instead>')     # if would instead
-rple_iii = ('cn<if>',['cn<instead>','cn<if>'])      # if instead if
-rple_iio = ('cn<if>',['cn<instead>','of'])          # if instead of
-rple_ii1 = ('cn<if>','cn<instead>')                 # if instead
-rple_ii2 = ('cn<instead>','cn<if>')                 # instead if
-rple_twi = (['xq<that>','cn<would>'],'cn<instead>') # that would instead
-rple_wi  = ('cn<would>','cn<instead>')              # would instead
-rple_ioi = (['cn<instead>','of'],'cn<if>')          # instead-of-if
+rple_instead_iwi = ('cn<if>','cn<would>','cn<instead>')     # if would instead
+rple_instead_iii = ('cn<if>',['cn<instead>','cn<if>'])      # if instead if
+rple_instead_iio = ('cn<if>',['cn<instead>','of'])          # if instead of
+rple_instead_ii1 = ('cn<if>','cn<instead>')                 # if instead
+rple_instead_ii2 = ('cn<instead>','cn<if>')                 # instead if
+rple_instead_twi = (['xq<that>','cn<would>'],'cn<instead>') # that would instead
+rple_instead_wi  = ('cn<would>','cn<instead>')              # would instead
+rple_instead_ioi = (['cn<instead>','of'],'cn<if>')          # instead-of-if
 def is_damage(tkn): return tag.is_thing(tkn) and 'damage' in tag.untag(tkn)[1]
 def graph_re_instead(t,pid,line):
     """
@@ -566,7 +578,7 @@ def graph_re_instead(t,pid,line):
     # first: if-would-instead these are if THING would DO A, DO B instead
     try:
         # find and split the clauses
-        _,_,bs = ll.splicel(line,rple_iwi)
+        _,_,bs = ll.splicel(line,rple_instead_iwi)
 
         # some if-would-instead follow a line (Kess, Dissident Mage'), these
         # will be in bs[0], graph them first
@@ -602,7 +614,7 @@ def graph_re_instead(t,pid,line):
     # "new event"
     try:
         # splice the line and add our clauses
-        _,_,bs = ll.splicel(line,rple_iii)
+        _,_,bs = ll.splicel(line,rple_instead_iii)
         reid = t.add_node(pid,'replacement-effect',type='if-instead-if')
 
         # add the two if conditions under a conjuction
@@ -623,7 +635,7 @@ def graph_re_instead(t,pid,line):
     # third - if-instead-of i.e. Library of Leng
     try:
         # splice and create our clause the replacement-effect
-        _, _,bs = ll.splicel(line,rple_iio)
+        _, _,bs = ll.splicel(line,rple_instead_iio)
         reid = t.add_node(pid,'replacement-effect',type='if-instead-of')
 
         # split on the last comma, which will give the condition (if) and
@@ -651,7 +663,7 @@ def graph_re_instead(t,pid,line):
         # the condition and the replacment.
 
         # split the line and graph any tokens occurring prior to if-instead
-        _,_,bs = ll.splicel(line,rple_ii1)
+        _,_,bs = ll.splicel(line,rple_instead_ii1)
         if bs[0]: graph_line(t,pid,bs[0])
         reid = t.add_node(pid,'replacement-effect',type='if-instead')
         iid = t.add_node(reid,'if-clause')
@@ -689,7 +701,7 @@ def graph_re_instead(t,pid,line):
     # REPLACEMENT instead ORIGINAL if CONDITION
     try:
         # splice and graph
-        _,_,bs = ll.splicel(line,rple_ioi)
+        _,_,bs = ll.splicel(line,rple_instead_ioi)
         reid = t.add_node(pid,'replacement-effect',type='instead-of-if')
         graph_line(t,t.add_node(reid,'if-clause'),bs[2])
         graph_line(t,t.add_node(reid,'instead-clause'),bs[0])
@@ -703,7 +715,7 @@ def graph_re_instead(t,pid,line):
     try:
         # check for that-would-instead. These are conditional but based on timing
         # vice an if clause and have an event clause
-        _,_,bs = ll.splicel(line,rple_twi)
+        _,_,bs = ll.splicel(line,rple_instead_twi)
         reid = t.add_node(pid,'replacement-effect',type='that-would-instead')
 
         # the majority of these are broken down as:
@@ -737,7 +749,7 @@ def graph_re_instead(t,pid,line):
     # timing i.e Shield Dancer, Aegis of Honor
     try:
         # check for would-instead (has to be done afte the above).
-        _, _, bs = ll.splicel(line,rple_wi)
+        _, _, bs = ll.splicel(line,rple_instead_wi)
         reid = t.add_node(pid,'replacement-effect',type='would-instead')
         wid = t.add_node(reid,'would-clause')
         iid = t.add_node(reid,'instead-clause')
@@ -903,7 +915,7 @@ def graph_re_skip(t,pid,line):
                     else: assert(False)
 
         # add a phase node or a conjuction
-        if len(phase) == 1: rpid=t.add_node(reid,'phase',phase=phase[0])
+        if len(ph) == 1: rpid=t.add_node(reid,'phase',phase=ph[0])
         else:
             # make a conjunction (should always be 'or' but just in case
             cid = t.add_node(reid,'conjunction',coordinator=ph[1],item_type='phase')
@@ -914,6 +926,32 @@ def graph_re_skip(t,pid,line):
         if ais: graph_clause(t,t.add_node(reid,'amplifying-instruction'),ais)
         if per: t.add_node(reid,'punctuation',symbol=mtgl.PER)
     else: assert(False),"No event or phase"
+
+
+rple_enters_with = (tag.is_object,['xa<enter>',tag.is_zone,'pr<with>'])
+def graph_re_enters(t,pid,line):
+    """
+     graphs the 'enters' replacement effect in line
+    :param t: the tree
+    :param pid: the parent-id to graph under
+    :param line: the list of tokens
+    """
+    # 614.1c covers three cases:
+    #  1. [This permanent] enters the battlefield with ... (counters or a keyword)
+    #  2. As [this permanent] enters the battlefield ...
+    #  3. [This permanent] enters the battlefield as ...
+    # 614.1d covers two cases (continuous effects)
+    #  1. [This permanent] enters the battlefield ... (a state i.e. tapped)
+    #  2. [Objects] enter the battlefield ... (a state i.e. tapped)
+
+    # case 1 of 614.1c "enters the battlefield with".
+    try:
+        # in most cases, we will have a straight forward object enters the bf
+        _,ms,bs = ll.splicel(line,rple_enters_with)
+        #if bs[0]: print("ms = {} bs = {}".format(ms,bs))
+        return
+    except ValueError:
+        pass
 
 def graph_clause(t,pid,tkns):
     """
@@ -2088,22 +2126,22 @@ def _pro_from_(tkns):
 # TODO: have to look at is_mtg_obj vs is_thing there are cases (Contempt)
 #  in bi-chains where an mtg object should be conjoined with a lituus obj
 qud_chain = [ # only a few quad chain cards (see Decimate)
-    tag.is_mtg_obj,mtgl.CMA,                                    # 0,1
-    tag.is_mtg_obj,mtgl.CMA,                                    # 2,3
-    tag.is_mtg_obj,mtgl.CMA,tag.is_coordinator,tag.is_mtg_obj # 4,5,6,7
+    tag.is_thing,mtgl.CMA,                                # 0,1
+    tag.is_thing,mtgl.CMA,                                # 2,3
+    tag.is_thing,mtgl.CMA,tag.is_coordinator,tag.is_thing # 4,5,6,7
 ]
-tri_chain = [
-    tag.is_mtg_obj,',',tag.is_mtg_obj,',',tag.is_coordinator,tag.is_mtg_obj
-]
+tri_chain = [tag.is_thing,',',tag.is_thing,',',tag.is_coordinator,tag.is_thing]
 tri_chain_alt = [ # three objects (missed by the parser) that should be 'chained'
-    tag.is_mtg_obj,',',tag.is_mtg_obj,',',tag.is_mtg_obj,
+    tag.is_thing,',',tag.is_thing,',',tag.is_thing,
 ]
-bi_chain = [tag.is_thing,tag.is_coordinator,tag.is_thing]
-bi_chain_alt = [tag.is_mtg_obj,',',tag.is_mtg_obj]
+bi_chain_coord = [tag.is_thing,tag.is_coordinator,tag.is_thing]
+bi_chain_alt1 = [tag.is_thing,',',tag.is_thing] # Chrome Mox
+bi_chain_alt2 = [tag.is_thing,tag.is_thing] # see Assassin's Blade
 def collate(t,tkns):
     """
      given that the first token in tkns is a Thing, gathers and combines all
      subsequent tokens in tkns that refer to a Thing or Things under a conjuction
+     or single Thing
     :param t: the tree
     :param tkns: list of unprocessed tokens
     :return: id for the 'rootless' conjunction node, number of tokens processed
@@ -2114,53 +2152,87 @@ def collate(t,tkns):
 
     # check quad-chains
     if ll.matchl(tkns,qud_chain,stop=0) == 0:
-        return conjoin(t,[tkns[0],tkns[2],tkns[4],tkns[7]],tkns[6]),len(qud_chain)
+        things = [tkns[0],tkns[2],tkns[4],tkns[7]]
+        if compatible(things): return conjoin(t,things,tkns[6]),len(qud_chain)
 
     # check tri-chains
     if ll.matchl(tkns,tri_chain,stop=0) == 0:
-        return conjoin(t,[tkns[0],tkns[2],tkns[5]],tkns[4]),len(tri_chain)
+        things = [tkns[0],tkns[2],tkns[5]]
+        if compatible(things): return conjoin(t,things,tkns[4]),len(tri_chain)
 
     # check tri-chain alternate (create a single object) see Victim of Night
     # 'fixing' an inability of the parser to chain these under a single object
     if ll.matchl(tkns,tri_chain_alt,stop=0) == 0:
         # TODO: this will fail if any of the objects do not have characteristics
-        tg,val,ps = tag.untag(tkns[0]) # untag the first object
-        ps2 = tag.untag(tkns[2])[2]
-        ps3 = tag.untag(tkns[4])[2]
-        ps['characteristics'] = mtgl.AND.join(
-            [ps['characteristics'],ps2['characteristics'],ps3['characteristics']]
-        )
-        nid = t.add_ur_node('mtg-object')
-        t.add_attr(nid,'tag',tag.retag(tg,val,ps))
-        return nid,len(tri_chain_alt)
+        things = [tkns[0],tkns[2],tkns[4]]
+        if compatible(things) == COMP_COMBINE:
+            tg,val,ps = tag.untag(tkns[0]) # untag the first object
+            ps2 = tag.untag(tkns[2])[2]
+            ps3 = tag.untag(tkns[4])[2]
+            ps['characteristics'] = mtgl.AND.join(
+                [ps['characteristics'],
+                 ps2['characteristics'],
+                 ps3['characteristics']]
+            )
+            nid = t.add_ur_node('thing',tag=tag.retag(tg,val,ps))
+            return nid,len(tri_chain_alt)
 
-    # check bi-chain
-    if ll.matchl(tkns,bi_chain,stop=0) == 0 and conjoin_bi_chain(tkns):
-        return conjoin(t,[tkns[0],tkns[2]],tkns[1]),len(bi_chain)
+    # check bi-chain with coordinator
+    if ll.matchl(tkns,bi_chain_coord,stop=0) == 0:
+        things = [tkns[0],tkns[2]]
+        if compatible(things) and conjoin_bi_chain(tkns):
+            return conjoin(t,things,tkns[1]),len(bi_chain_coord)
 
-    # check bi-chain alternate, once again, create a single object
-    if ll.matchl(tkns,bi_chain_alt,stop=0) == 0:
-        # based on review of cards, these can be chained into a single object
-        # unless one of the objects is a self-reference
-        if tkns[0] != 'ob<card ref=self>' and tkns[2] != 'ob<card ref=self>':
-            # from the 1st object, we want the tag (should be 'ob') and the prop
-            # list. from the 2nd object we want the val and the prop list. Due to
-            # the parser, the 1st object will have a value of permanent the 2nd
-            # will have the value as found in the oracle text (if any) or
-            # permanent if it wasn't stated.
-            # TODO: i don't think there is any problem but should we check
-            #  the second object for other properties?
-            tg,_,ps = tag.untag(tkns[0])
-            _,val,ps1 = tag.untag(tkns[2])
-            if 'characteristics' in ps:
-                ps['characteristics'] += mtgl.AND + ps1['characteristics']
-            else: ps['characteristics'] = ps1['characteristics']
+    # check bi-chain alternates creating a single object
+    if ll.matchl(tkns,bi_chain_alt1,stop=0) == 0:
+        # based on review of cards, these can be chained into a single thing
+        # unless one of the things is a self-reference
+        things = [tkns[0],tkns[2]]
+        if compatible(things):
+            if conjoin_bi_chain(tkns) and 'ob<card ref=self>' not in things:
+                # from the 1st object, we want the tag (should be 'ob') and the
+                # prop list. from the 2nd object we want the val and the prop list.
+                # Due to the parser, the 1st object will have a value of permanent
+                # the 2nd will have the value as found in the oracle text (if any)
+                # or permanent if it wasn't stated.
+                # TODO: i don't think there is any problem but should we check
+                #  the second object for other properties?
+                tg,_,ps = tag.untag(tkns[0])
+                _,val,ps1 = tag.untag(tkns[2])
+                if 'characteristics' in ps:
+                    ps['characteristics'] += mtgl.AND + ps1['characteristics']
+                else: ps['characteristics'] = ps1['characteristics']
 
-            # add a rootless node & retag the chained object
-            nid = t.add_ur_node('mtg-object',tag=tag.retag(tg,val,ps))
-            return nid,len(bi_chain_alt)
+                # add a rootless node & retag the chained object
+                nid = t.add_ur_node('thing',tag=tag.retag(tg,val,ps))
+                return nid,len(bi_chain_alt1)
 
-    # single token?
+    if ll.matchl(tkns,bi_chain_alt2,stop=0) == 0:
+        # see Assassin's Blade, a status is present between two characteristics
+        # which causes the parser to tag the characteristics as two seperate objects
+        # untag both objects
+        things = [tkns[0],tkns[1]]
+        if compatible(things) == COMP_COMBINE:
+            # combine the two tokens under a single token. Take the tag-id from
+            # the first object and the tag value from the second then combine
+            # the prop list
+            # TODO: is using the 2nd obj's value the best option
+            nt,_,ps1 = tag.untag(tkns[0])
+            _,nv,ps2 = tag.untag(tkns[1])
+
+            # combine the prop list
+            nps = {}
+            for k in set([*ps1.keys()] + [*ps2.keys()]):
+                v = ps1[k] if k in ps1 else ""
+                if k in ps2:
+                    if v: v += mtgl.AND + ps2[k]
+                    else: v = ps2[k]
+                nps[k] = v
+
+            nid = t.add_ur_node('thing',tag=tag.retag(nt,nv,nps))
+            return nid,len(bi_chain_alt2)
+
+    # single token? Should not have to do a match on thing here but just in case
     if ll.matchl(tkns,[tag.is_thing],stop=0) == 0:
         nid = t.add_ur_node('thing',tag=tkns[0])
         return nid,1
@@ -2237,7 +2309,7 @@ def conjoin_bi_chain(tkns):
     #   i.e. 'cn<may>' or 'doesnt'
     #  3. the word immediately after the bi-chain is a characteristic
     try:
-        nxt = tkns[len(bi_chain)]
+        nxt = tkns[len(bi_chain_coord)]
     except IndexError: return True
     else:
         if tag.is_action(nxt): return False
@@ -2381,6 +2453,50 @@ def kw_clauses(line):
         raise mtgl.MTGLException("Invalid keyword ability clause")
 
     return kwcs
+
+####
+# HELPER FUNCTIONS
+####
+
+COMP_INCOMP  = 0
+COMP_CONJOIN = 1
+COMP_COMBINE = 2
+def compatible(things):
+    """
+    determines if the list of things are compatible for conjoining or combining
+    :param things: list of things
+    :return: True if compatible
+    """
+    # untag all the things, then 'unzip' into individual lists
+    us = [tag.untag(thing) for thing in things]
+    ts,vs,ps = zip(*us)
+
+    # basically, if all the tag-ids are the same, the things can be
+    # combined, if there is two tag-ids we have to do some checks
+    # and anything with more than two tag-ids are incompatible
+    sts = set(ts)
+    if len(sts) == 1:
+        # have to be careful with 'it'
+        return COMP_COMBINE
+    elif len(sts) == 2:
+        # xo<it,them> is compatible with ob
+        # TODO: is it?
+        if 'xo' in sts and 'ob' in sts:
+            for i,t in enumerate(ts):
+                if t == 'xo' and vs[i] not in ['it','them']: return COMP_INCOMP
+            return COMP_CONJOIN
+
+        # planeswalkers are compatible with players
+        if 'xp' in sts and 'ob' in sts:
+            for i,t in enumerate(ts):
+                if t == 'ob':
+                    try:
+                        if not 'planeswalker' in ps[i]['characteristics']:
+                            return COMP_INCOMP
+                    except KeyError:
+                        return COMP_INCOMP
+                return COMP_CONJOIN
+    return COMP_INCOMP
 
 ####
 # KEYWORD ABILITY REFERENCES Section 702
