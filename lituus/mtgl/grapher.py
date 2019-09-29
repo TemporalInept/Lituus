@@ -101,7 +101,7 @@ def graph_line(t,pid,line,ctype='other'):
             # 112.3d "...create continuous effects..." therefore, if this is not
             # a true line, it will be classified as an effect
             if isline: nid = t.add_node(lid,'static-ability')
-            else: nid = t.add_node(lid,'effect-clause')
+            else: nid = pid
 
             # Check for double-quoted clauses first, then replacement effets
             if mtgl.DBL in line: graph_clause(t,nid,line)
@@ -524,9 +524,6 @@ def graph_triggered_ability(t,pid,line):
             prev = i+left # skip the period
 
 
-def is_enters_replacement_effect(line):
-    return ll.matchl(line, ['xa<enter>', 'zn<battlefield quantifier=the>']) > -1
-
 def is_replacement_effect(line):
     """
      given the list of tokens in line, returns whether the line represents a
@@ -537,8 +534,11 @@ def is_replacement_effect(line):
     """
     if 'cn<instead>' in line: return True
     if 'skip' in line or 'skips' in line: return True
-    #if is_enters_replacement_effect(line): return True
+    if is_enters_replacement_effect(line): return True
     return False
+
+def is_enters_replacement_effect(line):
+    return ll.matchl(line, ['xa<enter>', 'zn<battlefield quantifier=the>']) > -1
 
 def graph_replacement_effect(t,pid,line):
     """
@@ -791,7 +791,6 @@ def graph_re_instead(t,pid,line):
         return
 
     # shouldn't get here
-    #print('Ungraphed instead replacement-effect {}'.format(line))
     assert(False), "New edgecase in instead replacements"
 
 def graph_re_skip(t,pid,line):
@@ -898,7 +897,7 @@ def graph_re_skip(t,pid,line):
                     ss = pre[i:]
                     pre = pre[:i]
 
-            # check for and any leftovers as a clause
+            # check for any leftovers as a clause
             # TODO: this only shows up in Fatespinner and is really a sequence
             if pre: graph_clause(t,t.add_node(reid,'quantifying-instruction'),pre)
 
@@ -927,8 +926,14 @@ def graph_re_skip(t,pid,line):
         if per: t.add_node(reid,'punctuation',symbol=mtgl.PER)
     else: assert(False),"No event or phase"
 
-
-rple_enters_with = (tag.is_object,['xa<enter>',tag.is_zone,'pr<with>'])
+# TODO: also need as Thing enters the battlefield, choose i.e. Metallic Mimic
+#enters_re_match = {
+#    'with':['xa<enter>',tag.is_zone,'pr<with>'],
+#    'as-1':['as',tag.is_thing,'xa<enter>',tag.is_zone],
+#    'as-2':['xa<enter>',tag.is_zone,'as'],
+#    'state':['xa<enter>',tag.is_zone,tag.is_state],
+#}
+rple_enters_with = ['xa<enter>','zn<battlefield quantifier=the>','pr<with>']
 def graph_re_enters(t,pid,line):
     """
      graphs the 'enters' replacement effect in line
@@ -944,14 +949,27 @@ def graph_re_enters(t,pid,line):
     #  1. [This permanent] enters the battlefield ... (a state i.e. tapped)
     #  2. [Objects] enter the battlefield ... (a state i.e. tapped)
 
+    # pull out the period here so its not graphed under the with clause
+    per = True if ll.endswithl(line, mtgl.PER) else False
+    if per: line.pop()
+
     # case 1 of 614.1c "enters the battlefield with".
-    try:
+    i = ll.matchl(line,rple_enters_with)
+    if i > -1:
+        # add the replacement node
+        reid = t.add_node(pid,'replacement-effect',type='enters-with')
+
+        # get the left and right side of the match
+        l,r = line[:i],line[i+3:]
+
         # in most cases, we will have a straight forward object enters the bf
-        _,ms,bs = ll.splicel(line,rple_enters_with)
-        #if bs[0]: print("ms = {} bs = {}".format(ms,bs))
-        return
-    except ValueError:
-        pass
+        if len(l) == 1 and tag.is_thing(l[0]):
+            t.add_node(reid,'thing',tag=l[0])
+            graph_line(t,t.add_node(reid,'with-clause'),r)
+            if per: t.add_node(reid, 'punctuation', symbol=mtgl.PER)
+        else:
+            print("l={} r={}".format(l,r))
+
 
 def graph_clause(t,pid,tkns):
     """
@@ -2123,8 +2141,6 @@ def _pro_from_(tkns):
                 raise mtgl.MTGLGraphException("Unknown edge-case in protection")
     return ch
 
-# TODO: have to look at is_mtg_obj vs is_thing there are cases (Contempt)
-#  in bi-chains where an mtg object should be conjoined with a lituus obj
 qud_chain = [ # only a few quad chain cards (see Decimate)
     tag.is_thing,mtgl.CMA,                                # 0,1
     tag.is_thing,mtgl.CMA,                                # 2,3

@@ -170,6 +170,7 @@ def splitl(ls,i):
     if i < 0 or i > len(ls) - 1: raise IndexError("splitl index out of range")
     return ls[:i],ls[i],ls[i+1:]
 
+# TODO: changes this to use matchl
 def indicesl(ls,e):
     """
      finds all indices of the element e in ls

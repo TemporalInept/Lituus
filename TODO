@@ -448,3 +448,11 @@ this could be handled the same is if-instead-would
 327. don't like how if-instead-of (see Library of Leng) are being graphed
 
 328. need a 'greatest common demonitor' function for combining things. i.e. if we're combining a card and permanent does the permanent trump card or vice versa
+
+329. For enters have to consider cards like Spark Double
+
+330. Shimatsu the Blooksaoked - 'Shimatsu' is not getting picked up as self reference
+
+331. See Frankenstein's Monster 
+  'a', ',', ',', 'or', 'xo<ctr type=+0/+2>', 'pr<on>', 'xo<it>', '.'
+the +2/+0 and +1/+1 counters are being dropped somewhere
