@@ -12,8 +12,8 @@ Defines the MTGCard class - a wrapper around a  card dict
 
 #__name__ = 'mtgcard'
 __license__ = 'GPLv3'
-__version__ = '0.1.6'
-__date__ = 'August 2019'
+__version__ = '0.1.7'
+__date__ = 'March 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -40,7 +40,7 @@ class MTGCard(object):
         self._kws = []            # list of keywords
         self._aws = []            # list of ability words
         self._kas = []            # list of keyword actions
-        self._tree = card['mtgt'] # initialize the parse tree
+        #self._tree = card['mtgt'] # initialize the parse tree
 
         # pull out the keywords
         # NOTE: we only save the keywords themselves
@@ -81,6 +81,9 @@ class MTGCard(object):
 
     @property
     def cmc(self): return self._card['cmc']
+
+    @property
+    def face_cmc(self): return self._card['face-cmc']
 
     @property
     def mana_cost(self): return self._card['mana-cost']

@@ -16,8 +16,8 @@ Tokenizes tagged oracle text
 
 #__name__ = 'lexer'
 __license__ = 'GPLv3'
-__version__ = '0.0.3'
-__date__ = 'June 2019'
+__version__ = '0.1.0'
+__date__ = 'March 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -25,14 +25,4 @@ __status__ = 'Production'
 
 import lituus.mtgl.mtgl as mtgl
 
-def tokenize(txt):
-    """
-     tokenizes tagged oracle text
-    :param txt: the tagged oracle text
-    :return: a list of lines where each line is a list of tokens
-    """
-    return [
-        [
-            t for t in mtgl.re_tkn_delim.split(l) if t != '' and t != ' '
-        ] for l in txt.split('\n') if l
-    ]
+def tokenize(txt): return

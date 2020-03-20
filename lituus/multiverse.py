@@ -12,8 +12,8 @@ Parser and MTGCard generator for all cEDH legal cards in the multiverse
 
 #__name__ = 'multiverse'
 __license__ = 'GPLv3'
-__version__ = '0.2.2'
-__date__ = 'July 2019'
+__version__ = '0.2.4'
+__date__ = 'March 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -36,6 +36,7 @@ import lituus.mtgcard as mtgcard
 
 # file paths and urls
 url_cards = "https://mtgjson.com/json/AllCards.json"
+jpath     = os.path.join(mtg.pth_resources,'AllCards.json')
 mvpath    = os.path.join(mtg.pth_sto,'multiverse.pkl')
 tcpath    = os.path.join(mtg.pth_sto,'transformed.pkl')
 n2rpath   = os.path.join(mtg.pth_sto,'n2r.pkl')
@@ -71,7 +72,7 @@ def multiverse(update=False):
             print("Requesting AllCards.json")
             jurl = requests.get(url_cards)
             if jurl.status_code != 200: raise RuntimeError
-            fout = open(os.path.join(mtg.pth_resources,'AllCards.json'),'w')
+            fout = open(jpath,'w')
             fout.write(jurl.json())
             fout.close()
             print("AllCards.json updated")
@@ -86,8 +87,8 @@ def multiverse(update=False):
     fin = None
     try:
         print("Loading the Multiverse")
-        fin = open(os.path.join(mtg.pth_resources,'AllCards.json'),'r')
-        mverse = json.load(fin)
+        fin = open(jpath,'r')
+        mverse = _hack_cards_(json.load(fin)) # fix errors in cards
         fin.close()
     except IOError as e:
         print("Error reading the cards file {}".format(e))
@@ -158,9 +159,8 @@ def import_cards(mv,tc,n2r,mverse):
      :param n2r: the name to reference hash
      :param mverse: json multiverse
     """
-    # calculate the name to ref-id dict and initialize it
+    # calculate the name to ref-id dict and initialize it, skipping banned cards
     for cname in mverse:
-        # skip banned cards
         try:
             if mverse[cname]['legalities']['commander'] != 'Legal': continue
             n2r[cname] = md5(cname.encode()).hexdigest()
@@ -171,13 +171,7 @@ def import_cards(mv,tc,n2r,mverse):
     splits = []
     i = 0
     ttl = len(n2r)
-    for cname in mverse:
-        # skip banned cards
-        try:
-            if mverse[cname]['legalities']['commander'] != 'Legal': continue
-        except KeyError:
-            continue
-
+    for cname in n2r: # only enumerate legal names
         # get the parameters and parse the oracle
         # TODO: once the bugs are worked out, remove reraise of error
         # TODO: once debugging is done, dont store intermidiate parsing artifacts
@@ -186,17 +180,16 @@ def import_cards(mv,tc,n2r,mverse):
             jcard = mverse[cname]
             dcard = harvest(cname,jcard)
             dcard['tag'] = tagger.tag(cname,dcard['oracle'])
-            dcard['tkn'] = lexer.tokenize(dcard['tag'])
-            dcard['mtgl'] = parser.parse(dcard['tkn'])
+            #dcard['tkn'] = lexer.tokenize(dcard['tag'])
+            #dcard['mtgl'] = parser.parse(dcard['tkn'])
 
             # graph the parsed oracle text
-            ctype = 'other'
-            if 'Instant' in dcard['type'] or 'Sorcery' in dcard['type']:
-                ctype = 'spell'
-            elif 'Saga' in dcard['sub-type']: ctype = 'saga'
-            dcard['mtgt'] = grapher.graph(dcard['mtgl'],ctype)
+            #ctype = 'other'
+            #if 'Instant' in dcard['type'] or 'Sorcery' in dcard['type']:
+            #    ctype = 'spell'
+            #elif 'Saga' in dcard['sub-type']: ctype = 'saga'
+            #dcard['mtgt'] = grapher.graph(dcard['mtgl'],ctype)
         except KeyError as e:
-            # this is bad, lost a card in mverse
             print("Mverse error, lost card {}".format(e))
             raise
         except mtgl.MTGLException:
@@ -213,35 +206,36 @@ def import_cards(mv,tc,n2r,mverse):
             tc[cname] = mtgcard.MTGCard(dcard)
         else: mv[cname] = mtgcard.MTGCard(dcard)
 
-        # save split cards for combing later
-        if jcard['layout'] == 'split':
+        # save split cards for combining later
+        if jcard['layout'] in ['split','aftermath','adventure']:
             if not jcard['names'] in splits: splits.append(jcard['names'])
 
         # update progress
         i += 1
         #progress_bar(i,ttl)
 
-    # combine the split cards and add to multiverse deleting the halves
+    # combine split cards & add to multiverse deleting the original halves
     for split in splits:
         name = " // ".join(split)
         a,b = split[0],split[1]
         dcard = {
-            'rid':"{} // {}".format(mv[a].rid,mv[b].rid),
+            'rid': "{} // {}".format(mv[a].rid,mv[b].rid),
             'name': "{} // {}".format(mv[a].name, mv[b].name),
             'mana-cost':"{} // {}".format(mv[a].mana_cost,mv[b].mana_cost),
             'oracle':"{} // {}".format(mv[a].oracle,mv[b].oracle),
-            'tag':"{} // {}".format(mv[a]._card['tag'],mv[b]._card['tag']),
-            'tkn':mv[a]._card['tkn'] + [['//']] + mv[b]._card['tkn'],
-            'mtgl':mv[a]._card['mtgl'] + [['//']] + mv[b]._card['mtgl'],
-            'mtgt':mtgt.fuse_tree(mv[a].tree(),mv[b].tree()),
+            #'tag':"{} // {}".format(mv[a]._card['tag'],mv[b]._card['tag']),
+            #'tkn':mv[a]._card['tkn'] + [['//']] + mv[b]._card['tkn'],
+            #'mtgl':mv[a]._card['mtgl'] + [['//']] + mv[b]._card['mtgl'],
+            #'mtgt':mtgt.fuse_tree(mv[a].tree(),mv[b].tree()),
             'super-type':list(set(mv[a].super_type+mv[b].super_type)),
             'type':list(set(mv[a].type + mv[b].type)),
             'sub-type':list(set(mv[a].sub_type + mv[b].sub_type)),
+            'face-cmc':[mv[a].face_cmc,mv[b].face_cmc],
             'cmc':mv[a].cmc, # same for both cards
             'color':list(set(mv[a].color+mv[b].color)),
-            'color-ident':list(set(mv[a].color_ident+mv[b].color_ident)),
+            'color-ident':mv[a].color_ident,
             'sets':mv[a].sets,
-            'P/T':None,    # split cards are instants/sorcerie
+            'P/T':None,
             'loyalty':None
         }
         del mv[a]
@@ -262,6 +256,7 @@ def harvest(name,jcard):
         dcard = {
             'rid':md5(name.encode()).hexdigest(),
             'name':name,
+            'layout': jcard['layout'],
             'super-type': jcard['supertypes'],
             'type': jcard['types'],
             'sub-type': jcard['subtypes'],
@@ -271,7 +266,7 @@ def harvest(name,jcard):
             'loyalty':None,
             'color-ident': jcard['colorIdentity'],
             'colors': jcard['colors'],
-            'oracle':_hack_oracle_(name,jcard['text']) if 'text' in jcard else "",
+            'oracle': jcard['text'] if 'text' in jcard else "",
             'tag': "",
             'tkn':[],
             'mtgl':[],
@@ -287,38 +282,67 @@ def harvest(name,jcard):
         dcard['loyalty'] = jcard['loyalty']
     elif 'Creature' in jcard['types']:
         dcard['P/T'] = "{}/{}".format(jcard['power'],jcard['toughness'])
+    if 'faceConvertedManacost' in jcard: dcard['face-cmc'] = jcard['faceConvertedManacost']
+    else: dcard['face-cmc'] = dcard['cmc']
 
     return dcard
 
-def _hack_oracle_(name,txt):
+def _hack_cards_(jv):
     """
-    Hard coded hacks to modify card contents to enable better processing
-    :param name: the name of the card
-    :param txt: the oracle text
-    :return: modified oracle text
+    Fixes errors in json representation and hard codes hacks to modify card
+    contents to enable easier processing
+    :param jv: the json multiverse
+    :return: the modified json multiverse
     """
-    if name == "Urborg, Tomb of Yawgmoth":
-        # Urborg has an implied "Add B" because it makes itself a swamp
-        txt += "\n{T}: Add {B}.\n"
-    elif name == "Drayd Arbor":
-        # all reminded text is removed because it is in most cases redudant. But
-        # Dryad's arbor oracle text in its entirety is reminder text
-        txt = "Dryad Arbor isn't a spell, it's affected by summoning sickness.\n{T}: Add {G}\n"
-    elif name == "Raging River":
-        # Raging River double-quote encloses the left and right labels which
-        # interact negatively with the grapher. Remove the quotes from left and
-        # right labels
-        txt = txt.replace('"left"','left').replace('"right"','right').replace('"right."','right.')
-    elif name == 'Worship':
-        # Worship is the only if-would-instead card that does not have a comma
-        # between the original effect and the replacement effect
-        txt = txt.replace("than 1 reduces it","than 1, reduces it")
-    elif name == 'Hall of Gemstone':
-        # has "Until end of turn, lands tapped for mana..." the tapped is tagged
-        # as a status and merged with the preceding
-        txt = txt.replace("lands tapped for mana produce",
-                          "if a land is tapped for mana, it produces")
-    return txt
+    for cname in jv:
+        # older versions of cards may have semi-colon rather than a comma
+        if 'text' in jv[cname]: jv[cname]['text'] = jv[cname]['text'].replace(';',',')
+
+        # hard-code hacks for easier processing
+        if cname == "Urborg, Tomb of Yawgmoth":
+            # Urborg has an implied "Add B" because it makes itself a swamp
+            jv[cname]['text'] += "\n{T}: Add {B}.\n"
+        elif cname == "Drayd Arbor":
+            # all reminded text is removed because it is in most cases redudant. But
+            # Dryad's arbor oracle text in its entirety is reminder text
+            jv[cname]['text'] = "Dryad Arbor isn't a spell, it's affected by summoning sickness.\n{T}: Add {G}\n"
+        elif cname == "Raging River":
+            # Raging River double-quote encloses the left and right labels which
+            # interact negatively with the grapher. Remove the quotes from left and
+            # right labels
+            jv[cname]['text'] = jv[cname]['text'].replace('"left"','left')
+            jv[cname]['text'] = jv[cname]['text'].replace('"right"','right')
+        elif cname == 'Worship':
+            # Worship is the only if-would-instead card that does not have a comma
+            # between the original effect and the replacement effect
+            jv[cname]['text'] = jv[cname]['text'].replace(
+                "than 1 reduces it", "than 1, reduces it"
+            )
+        elif cname == 'Hall of Gemstone':
+            # has "Until end of turn, lands tapped for mana..." the tapped is tagged
+            # as a status and merged with the preceding
+            jv[cname]['text'] = jv[cname]['text'].replace(
+                "lands tapped for mana produce",
+                "if a land is tapped for mana, it produces"
+            )
+
+        """
+         bugs in mtgjson for Start // Finish related to side A, Start
+          1. names listed as ['Start','Fire'] 
+          2. incorrect layout 'split' vice 'aftermath'
+          3. legalities is empty
+          4. converted mana cost is wrong
+          5. color identity states R & W
+          6. printings say CMB1 vice AKH
+        """
+        if cname == 'Start':
+            jv[cname]['legalities']['commander'] = 'Legal'
+            jv[cname]['names'] = ['Start', 'Finish']
+            jv[cname]['layout'] = 'aftermath'
+            jv[cname]['convertedManaCost'] = 6.0
+            jv[cname]['colorIdentity'] = ['W', 'B']
+            jv[cname]['printings'] = ['AKH']
+    return jv
 
 def progress_bar(i,ttl):
     """
@@ -338,22 +362,3 @@ def progress_bar(i,ttl):
     else: s = '\\'
     print('{}|{}| {}%'.format(s,bar,p),end='\r')
     if i == ttl: print()
-
-def _precompile_types_(mv):
-    """
-     writes a precompiled list of super types, types and subtypes
-     :param mv: the multiverse dict
-     :return: a types dict
-     NOTE: this is only necessary to check after set updates for new subtypes
-    """
-    # TODO: after adding mtgcard, will have to convert the below to use the
-    # card object vice the dict
-    types = {'super':[],'main':[],'sub':[]}
-    for card in mv:
-        for stype in mv[card]['super-type']:
-            if not stype.lower() in types['super']: types['super'].append(stype.lower())
-        for stype in mv[card]['type']:
-            if not stype.lower() in types['main']: types['main'].append(stype.lower())
-        for stype in mv[card]['sub-type']:
-            if not stype.lower() in types['sub']: types['sub'].append(stype.lower())
-    return types
