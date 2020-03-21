@@ -1,1 +1,10 @@
 2. How to combine/use face converted mana cost in MTGCard
+
+3. Do we need to remove zone from command zone (in tagger)
+
+4. Do we need to switch shuffle your library clause - will now read ", then shuffle your
+          library" rather as a seperate sentence (tagger)
+
+5. Keep replacement of "your opponent(s)" with "opponents" (tagger)
+
+6. Group all exceptions under a single one?

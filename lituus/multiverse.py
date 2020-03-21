@@ -26,6 +26,7 @@ import json
 import requests
 from hashlib import md5
 import lituus.mtg as mtg
+import lituus.pack as pack
 import lituus.mtgl.mtgl as mtgl
 import lituus.mtgl.tagger as tagger
 import lituus.mtgl.lexer as lexer
@@ -41,32 +42,38 @@ mvpath    = os.path.join(mtg.pth_sto,'multiverse.pkl')
 tcpath    = os.path.join(mtg.pth_sto,'transformed.pkl')
 n2rpath   = os.path.join(mtg.pth_sto,'n2r.pkl')
 
-def multiverse(update=False):
+def multiverse(update=0):
     """
-     :param update: if set, will download and use multiverse data from 
+     :param update: one of
+        0 = load saved multiverse
+        1 = reparse json file and create new multiverse
+        2 = download json file and create new multiverse
       https://mtgjson.com/json/AllSets.json 
      :returns multiverse dict
     """
     # files to create
-    mv = {}  # multiverse
-    tc = {}  # transformed cards
-    n2r = {} # name to reference dict
+    mv = pack.Pack() # multiverse
+    tc = {}          # transformed cards
+    n2r = {}         # name to reference dict
 
-    # don't reparse the mutliverse unless update is set
-    if os.path.exists(mvpath) and not update:
+    if update == 0:
         fin = None
         try:
             fin = open(mvpath,'rb')
             mv = pickle.load(fin)
             fin.close()
             return mv
+        except FileNotFoundError:
+            print("Saved multiverse does not exist")
+            return {}
         except pickle.PickleError as e:
-            print("Error loading multiverse: {}. Loading from JSON".format(e))
+            print("Error loading multiverse: {}. Recreating...".format(e))
         finally:
             if fin: fin.close()
 
     # there is no version checking. on update, downloads AllCards.json & reparses
-    if update and False: # TODO: disable downloading allcards until debugging is complete
+    # TODO: Downloading allcards disabled until debugging is complete
+    if update == 2 and False:
         fout = None
         try:
             print("Requesting AllCards.json")
@@ -99,7 +106,7 @@ def multiverse(update=False):
     # parse the mverse
     print('Parsing the Multiverse')
     import_cards(mv,tc,n2r,mverse)
-    print("Imported {} cards and {} transformed cards.".format(len(mv), len(tc)))
+    print("Imported {} cards and {} transformed cards.".format(mv.qty(),len(tc)))
 
     # pickle the multiverse
     fout = None
@@ -168,6 +175,7 @@ def import_cards(mv,tc,n2r,mverse):
             continue
     mtgl.set_n2r(n2r)
 
+    temp = {}   # tempory dict for cards until splits are combined
     splits = []
     i = 0
     ttl = len(n2r)
@@ -180,15 +188,6 @@ def import_cards(mv,tc,n2r,mverse):
             jcard = mverse[cname]
             dcard = harvest(cname,jcard)
             dcard['tag'] = tagger.tag(cname,dcard['oracle'])
-            #dcard['tkn'] = lexer.tokenize(dcard['tag'])
-            #dcard['mtgl'] = parser.parse(dcard['tkn'])
-
-            # graph the parsed oracle text
-            #ctype = 'other'
-            #if 'Instant' in dcard['type'] or 'Sorcery' in dcard['type']:
-            #    ctype = 'spell'
-            #elif 'Saga' in dcard['sub-type']: ctype = 'saga'
-            #dcard['mtgt'] = grapher.graph(dcard['mtgl'],ctype)
         except KeyError as e:
             print("Mverse error, lost card {}".format(e))
             raise
@@ -204,7 +203,7 @@ def import_cards(mv,tc,n2r,mverse):
             tc[cname] = mtgcard.MTGCard(dcard)
         elif jcard['layout'] == 'meld' and jcard['side'] == 'c':
             tc[cname] = mtgcard.MTGCard(dcard)
-        else: mv[cname] = mtgcard.MTGCard(dcard)
+        else: temp[cname] = dcard
 
         # save split cards for combining later
         if jcard['layout'] in ['split','aftermath','adventure']:
@@ -219,31 +218,32 @@ def import_cards(mv,tc,n2r,mverse):
         name = " // ".join(split)
         a,b = split[0],split[1]
         dcard = {
-            'rid': "{} // {}".format(mv[a].rid,mv[b].rid),
-            'name': "{} // {}".format(mv[a].name, mv[b].name),
-            'mana-cost':"{} // {}".format(mv[a].mana_cost,mv[b].mana_cost),
-            'oracle':"{} // {}".format(mv[a].oracle,mv[b].oracle),
-            #'tag':"{} // {}".format(mv[a]._card['tag'],mv[b]._card['tag']),
-            #'tkn':mv[a]._card['tkn'] + [['//']] + mv[b]._card['tkn'],
-            #'mtgl':mv[a]._card['mtgl'] + [['//']] + mv[b]._card['mtgl'],
-            #'mtgt':mtgt.fuse_tree(mv[a].tree(),mv[b].tree()),
-            'super-type':list(set(mv[a].super_type+mv[b].super_type)),
-            'type':list(set(mv[a].type + mv[b].type)),
-            'sub-type':list(set(mv[a].sub_type + mv[b].sub_type)),
-            'face-cmc':[mv[a].face_cmc,mv[b].face_cmc],
-            'cmc':mv[a].cmc, # same for both cards
-            'color':list(set(mv[a].color+mv[b].color)),
-            'color-ident':mv[a].color_ident,
-            'sets':mv[a].sets,
+            'rid': "{} // {}".format(temp[a]['rid'],temp[b]['rid']),
+            #'name': "{} // {}".format(temp[a]['name'],temp[b]['name']),
+            'name':name,
+            'mana-cost':"{} // {}".format(temp[a]['mana-cost'],temp[b]['mana-cost']),
+            'oracle':"{} // {}".format(temp[a]['oracle'],temp[b]['oracle']),
+            #'tag':"{} // {}".format(temp[a]['_card['tag']'],temp[b]['_card['tag']']),
+            'super-type':list(set(temp[a]['super-type']+temp[b]['super-type'])),
+            'type':list(set(temp[a]['type'] + temp[b]['type'])),
+            'sub-type':list(set(temp[a]['sub-type'] + temp[b]['sub-type'])),
+            'face-cmc':(temp[a]['face-cmc'],temp[b]['face-cmc']),
+            'cmc':temp[a]['cmc'], # same for both cards
+            'colors':list(set(temp[a]['colors']+temp[b]['colors'])),
+            'color-ident':temp[a]['color-ident'],
+            'sets':temp[a]['sets'],
             'P/T':None,
             'loyalty':None
         }
-        del mv[a]
-        del mv[b]
-        mv[name] = mtgcard.MTGCard(dcard)
+        del temp[a]
+        del temp[b]
+        temp[name] = dcard
 
-    # once done - release the global n2r in mtgl
+    # release the global n2r in mtgl
     mtgl.release_n2r()
+
+    # create the multiverse
+    for cname in temp: mv.add_card(mtgcard.MTGCard(temp[cname]))
 
 def harvest(name,jcard):
     """

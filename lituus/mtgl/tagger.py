@@ -29,8 +29,8 @@ def tag(name,txt):
     :return: tagged mtgl text
     """
     ntxt = preprocess(name,txt)
-    #ntxt = first_pass(ntxt)
-    #return postprocess(ntxt)
+    ntxt = first_pass(ntxt)
+    #ntxt = postprocess(ntxt)
     return ntxt
 
 #### PREPROCESSING ####
@@ -40,35 +40,27 @@ def preprocess(name,txt):
      conducts an initial scrub of the oracle text. Then:
        1. replaces card name references with ref-id or self as necessary
        2. lowercases oracle text
-       3. standarizes some common phrases
-         (MOVE THIS) a. shuffle your library clause - will now read ", then shuffle your
-          library" rather as a seperate sentence
-         (???) b. "command zone" - "zone" is implied replaced with "command" only
-         c. "your opponent(s)" - "your" is implied, replaced with "opponent(s)" only
-       (STOP) 4. possessive "'s" removed
-       5. english number words for 0 through 10 are replacing with corresponding ints,
-       6. contractions are replaced with full words
-       7. common phrases replaced by acronyms
-       (HANDLED ABOVE ???) 8. pluralities i.e. 'y' to 'ies' hacked to read 'ys'
-       (STOP) 9. action word pluralities replaced with singular form
-      10. Some reminder text is removed, some paraenthesis is removed
-      11. take care of keywords that are exemptions to keyword rules
+       3. english number words for 0 through 10 are replacing with corresponding ints,
+       4. contractions are replaced with full words
+       5. Some reminder text is removed, some paraenthesis is removed
+       6. take care of keywords that are exemptions to keyword rules
     :param name: name of this card
     :param txt: the mtgl text
     :return: preprocessed oracle text
     """
     # a keyword
-    ntxt = tag_ref(name,txt).lower()
+    ntxt = tag_ref(name,txt).lower() # lowercase everything after referencing
     ntxt = pre_special_keywords(ntxt)
-    ntxt = standarize(ntxt)
+    ntxt = mtgl.re_wh.sub(lambda m: mtgl.word_hacks[m.group(1)],ntxt)
     ntxt = mtgl.re_wd2int.sub(lambda m: mtgl.E2I[m.group(1)],ntxt)
-    ntxt = mtgl.re_mana_rtxt.sub(r"\1",ntxt)
+    ntxt = mtgl.re_mana_remtxt.sub(r"\1",ntxt) # remove paranthesis around (Add {G})
     ntxt = mtgl.re_rem_txt.sub("",ntxt)
-    ntxt = mtgl.re_non.sub(r"non-\1",ntxt)
-    ntxt = mtgl.re_acts_conj.sub(lambda m: mtgl.all_acts[m.group(1)],ntxt)
-    return mtgl.re_characteristics_conj.sub(
-        lambda m: mtgl.all_characteristics[m.group(1)],ntxt
-    )
+    return mtgl.re_non.sub(r"non-\1",ntxt)
+
+    #ntxt = mtgl.re_acts_conj.sub(lambda m: mtgl.all_acts[m.group(1)],ntxt)
+    #return mtgl.re_characteristics_conj.sub(
+    #    lambda m: mtgl.all_characteristics[m.group(1)],ntxt
+    #)
 
 def tag_ref(name,txt):
     """
@@ -80,13 +72,10 @@ def tag_ref(name,txt):
     NOTE: this does not handle words like "it" that require contextual understanding
      to determine if "it" referes to this card or something else
     """
-    # replace references to self by name and 'this spell', 'this permanent',
-    # 'this card', 'his', 'her' (planeswalkers)
+    # replace self references
     ntxt = mtgl.re_self_ref(name).sub(r"ob<card ref=self>",txt)
 
-    # token names like Etherium Cell which do not have a non-token representation
-    # in the multiverse & includes copy tokens (https://mtg.gamepedia.com/Token/Full_List)
-    # these are prefixed with 'create' and possibly 'named'
+    # token names
     ntxt = mtgl.re_tkn_ref1.sub(
         lambda m: r"{} ob<token ref={}>".format(
             m.group(1),mtgl.TN2R[m.group(2)]),ntxt
@@ -103,15 +92,61 @@ def tag_ref(name,txt):
     )
 
     # references to other cards prefixed with 'named' or 'Partner with'
-    # TODO: this will not catch cases where there is an and i.e. Throne of Empires
+    # This does not catch cases where there is an 'and' i.e. Throne of Empires
     #  "... named Crown of Empires and Scepter of Empires. For now, have to hack
     #  it using mtgl.re_oth_ref2
-    assert(mtgl.re_oth_ref is not None)
     ntxt = mtgl.re_oth_ref.sub(
         lambda m: r"{} ob<card ref={}>".format(m.group(1),mtgl.N2R[m.group(2)]),ntxt
     )
-
-    # references to other cards we know a priori
-    return mtgl.re_oth_ref2.sub(
+    ntxt = mtgl.re_oth_ref2.sub(
         lambda m: r"ob<token ref={}>".format(mtgl.NC2R[m.group(1)]),ntxt
     )
+    return ntxt
+
+def pre_special_keywords(txt):
+    """
+     take special keywords (pre-tagged) cycling and landwalk and seperate the type
+     from the keyword
+    :param txt: lower-cased oracle text (not tagged)
+    :return: processed oracle text
+    NOTE: this has to occur after self tagging, lowercasing
+    """
+    # cycling has two forms 1) Cycling [cost] and 2) [Type]cycling [cost] where
+    # type may consist of two seperate words i.e. basic landcycling
+    ntxt = mtgl.re_cycling_pre.sub(r"\1 cycling",txt)
+
+    # landwalk will have the form [type]walk where type could be a basic land type
+    # i.e. forestwalk or a nonbasic land as in legendary landwalk. In both cases
+    # isolate (and make the word if necessary) landwalk and the type(s) as in
+    # forestwalk = forest landwalk and legendary landwalk
+    ntxt = mtgl.re_landwalk_pre.sub(r"\1 landwalk",ntxt)
+    return ntxt
+
+def first_pass(txt):
+    """
+     performs a first pass of the oracle txt after pre-processing, tagging mtg
+     'reserved' words and lituus 'reserved' words. does not consider context
+    :param txt: preprocessed oracle txt (lowered case)
+    :return: tagged oracle text
+     NOTE: many (but not all) of the below require certain replacements/tagging
+      to be carried out prior to their execution, rearranging the order of the
+      below will negatively effect the results
+    """
+    # first pass, tag everything without context inspection
+    ntxt = tag_status(txt)
+    #ntxt = tag_phases(ntxt)
+    #ntxt = tag_numbers(ntxt)
+    #ntxt = tag_quantifiers(ntxt)
+    #ntxt = tag_effects(ntxt)
+    #ntxt = tag_entities(ntxt)
+    #ntxt = tag_characteristics(ntxt)
+    #ntxt = tag_counters(ntxt)
+    #ntxt = tag_awkws(ntxt)
+    #ntxt = tag_zones(ntxt)
+    #ntxt = tag_trigger(ntxt)
+    #ntxt = tag_english(ntxt)
+    return ntxt
+
+def tag_status(txt):
+    ntxt = mtgl.re_stat.sub(r"st<\1>",txt)
+    return mtgl.re_lituus_stat.sub(r"xs<\1>",ntxt)

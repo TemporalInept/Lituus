@@ -114,10 +114,10 @@ MIN = '−' # not used yet (found in negative loyalty costs)
 ####
 
 # CATCHALLS
-# re_dbl_qte = r'".*?"'                          # double quoted string
-re_rem_txt = re.compile(r"\(.+?\)")              # reminder text
-re_mana_rtxt = re.compile(r"\(({t}: add.+?)\)")  # find add mana inside ()
-re_non = re.compile(r"non(\w)")                  # find 'non' without hyphen
+# re_dbl_qte = r'".*?"'                            # double quoted string
+re_rem_txt = re.compile(r"\(.+?\)")                # reminder text
+re_mana_remtxt = re.compile(r"\(({t}: add.+?)\)")  # find add mana inside ()
+re_non = re.compile(r"non(\w)")                    # find 'non' without hyphen
 
 # DELIMITER
 re_tkn_delim = re.compile( # matches mtg punctuation & spaces not inside a tag
@@ -142,18 +142,23 @@ def re_self_ref(name):
         )
     )
 
-# these are names of tokens that do not exist in the multiverse including non-token
-# copy cards (i.e. Ajani's Pridemante created by Ajani, Stength of the Pride
+# Token Names with special needs
 # The majority of these can be found in the phrase
 #   "create a token ... named TOKEN_NAME" except Marit Lage, Kaldra which have
 # the form "create TOKEN NAME, .... token."
 token_names = [
-    "Ajani's Pridemate","Minor Demon","Cloud Sprite","Gold","Mask","Rabid Sheep",
-    "Twin","Land Mine","Goldmeadow Harrier","Wood","Kobolds of Kher Keep",
-    "Llanowar Elves","Wolves of the Hunt","Stoneforged Blade","Lightning Rager",
-    "Festering Goblin","Metallic Sliver","Spark Elemental","Etherium Cell",
-    "Carnivore","Urami","Crow Storm","Butterfly","Hornet","Wirefly","Kelp",
-    "Tombspawn","Hive","Mowu","Kaldra","Marit Lage",
+    # Tokens that have been printed as a non-token card.
+    #  See https://mtg.gamepedia.com/Token/Full_List#Printed_as_non-token
+    "Ajani's Pridemate","Spark Elemental","Llanowar Elves","Cloud Sprite",
+    "Goldmeadow Harrier","Kobolds of Kher Keep","Metallic Sliver"
+    "Festering Goblin",
+    # Tokens that have not been printed as a non-token card
+    # See https://mtg.gamepedia.com/Token/Full_List#Tokens
+    "Etherium Cell","Land Mine","Mask","Marit Lage","Kaldra","Carnivore","Twin",
+    "Minor Demon","Urami","Karox Bladewing","Ashaya, the Awoken World",
+    "Lightning Rager","Stoneforged Blade","Tuktuk the Returned","Mowu","Stang Twin",
+    "Butterfly","Hornet","Wasp","Wirefly","Ragavan","Kelp","Wood",
+    "Wolves of the Hunt","Voja, Friend to Elves","Tombspawn"
 ]
 TN2R = {n:md5(n.encode()).hexdigest() for n in token_names}
 
@@ -237,14 +242,14 @@ word_hacks = {
     "copies":"copys","sorceries":"sorcerys","libraries":"librarys","armies":"armys",
     "aurochses":"aurochss","cyclopes":"cyclops","fishes":"fishs","fungi":"fungess",
     "homunculuses":"homunculuss","jellyfishes":"jellyfishs","leeches":"leechs",
-    "mercenaries":"mercenarys","mongeese":"mongooss","mice":"mouses",
+    "mercenaries":"mercenarys","mongeese":"mongooss","mice":"mouses","foxes":"foxs",
     "nautiluses":"nautiluss","octopi":"octopuss","sphinxes":"sphinxs",
     "thalakoses":"thalokoss",
     # acronyms
     "end of turn":"eot","converted mana cost":"cmc",
     # suffixes/tense/possessive
     "dealt":"dealed","left":"leaveed","lost":"loseed","its":"it's","spent":"spended",
-    "dying":"dieing","chosen":"chooseed","drawn":"drawed",
+    "dying":"dieing","died":"dieed","chosen":"chooseed","drawn":"drawed",
 }
 re_wh = re.compile(r"\b({})\b".format('|'.join(word_hacks.keys())))
 
@@ -255,3 +260,94 @@ E2I = {
     'eleven':'11','twelve':'12','thirteen':'13','fourteen':'14','fifteen':'15',
 }
 re_wd2int = re.compile(r"\b({})\b".format('|'.join(list(E2I.keys()))))
+
+# CHARACTERISTICS
+# NOTE: sub_characteristics must be updated with the release of new sets to
+#  include adding any token specific types
+
+# characteristics 109.3
+meta_characteristics = [
+    'p/t','everything','text','name','mana cost','cmc','power','toughness',
+    'color identity','color','type'
+]
+color_characteristics = [
+    'white','blue','black','green','red','colorless','multicolored','monocolored'
+]
+super_characteristics = ['legendary','basic','snow','world','tribal'] # 205.4a
+type_characteristics = [  # NOTE: we added historic
+    'instant','creature','sorcery','planeswalker',
+    'enchantment','land','artifact','historic'
+]
+sub_characteristics = [ # Updated 24-Jan-20 with Theros Beyond Death
+    # 205.3g artifact subtypes
+    "clue","equipment","food","fortification","gold","treasure","vehicle",
+    # 205.3h enchantment subtypes
+    "aura","cartouche","curse","saga","shrine",
+    # 205.3i land subtypes
+    "desert","forest","gate","island","lair","locus","mine","mountain","plains",
+    "power-plant","swamp","tower","urza’s",
+    # 205.3j planeswalker types
+    "ajani","aminatou","angrath","arlinn","ashiok","bolas","calix,chandra","dack",
+    "daretti","davriel","domri","dovin","elspeth","estrid","freyalise","garruk",
+    "gideon,huatli","jace","jaya","karn","kasmina","kaya","kiora","koth","liliana",
+    "nahiri","narset","nissa","nixilis","oko","ral","rowan","saheeli","samut",
+    "sarkhan","serra","sorin","tamiyo","teferi","teyo","tezzeret,tibalt","ugin",
+    "venser","vivien","vraska","will","windgrace","wrenn","xenagos","yanggu",
+    "yanling",
+    # 205.3k instant/sorcery subtypes
+    "adventure","arcane","trap",
+    # 205.3m creature subtypes
+    "advisor","aetherborn","ally","angel","antelope","ape","archer","archon",
+    "army","artificer","assassin","assembly-worker","atog","aurochs","avatar",
+    "azra","badger","barbarian","basilisk","bat","bear","beast","beeble",
+    "berserker","bird","blinkmoth","boar","bringer","brushwagg","camarid","camel",
+    "caribou","carrier","cat","centaur","cephalid","chimera","citizen","cleric",
+    "cockatrice","construct","coward","crab","crocodile","cyclops","dauthi",
+    "demigod","demon","deserter","devil","dinosaur","djinn","dragon","drake",
+    "dreadnought","drone","druid","dryad","dwarf","efreet","egg","elder","eldrazi",
+    "elemental","elephant","elf","elk","eye","faerie","ferret","fish","flagbearer",
+    "fox","frog","fungus","gargoyle","germ","giant","gnome","goat","goblin","god",
+    "golem","gorgon","graveborn","gremlin","griffin","hag","harpy","hellion","hippo",
+    "hippogriff","homarid","homunculus","horror","horse","hound","human","hydra",
+    "hyena","illusion","imp","incarnation","insect","jackal","jellyfish","juggernaut",
+    "kavu","kirin","kithkin","knight","kobold","kor","kraken","lamia","lammasu",
+    "leech","leviathan","lhurgoyf","licid","lizard","manticore","masticore",
+    "mercenary","merfolk","metathran","minion","minotaur","mole","monger","mongoose",
+    "monk","monkey","moonfolk","mouse","mutant","myr","mystic","naga","nautilus",
+    "nephilim","nightmare","nightstalker","ninja","noble","noggle","nomad","nymph",
+    "octopus","ogre","ooze","orb","orc","orgg","ouphe","ox","oyster","pangolin",
+    "peasant","pegasus","pentavite","pest","phelddagrif","phoenix","pilot","pincher",
+    "pirate","plant","praetor","prism","processor","rabbit","rat","rebel",
+    "reflection","rhino","rigger","rogue","sable","salamander","samurai","sand",
+    "saproling","satyr","scarecrow","scion","scorpion","scout","sculpture","serf",
+    "serpent","servo","shade","shaman","shapeshifter","sheep","siren","skeleton",
+    "slith","sliver","slug","snake","soldier","soltari","spawn","specter",
+    "spellshaper","sphinx","spider","spike","spirit","splinter","sponge","squid",
+    "squirrel","starfish","surrakar","survivor","tentacle","tetravite","thalakos",
+    "thopter","thrull","treefolk","trilobite","triskelavite","troll","turtle",
+    "unicorn","vampire","vedalken","viashino","volver","wall","warlock","warrior",
+    "weird","werewolf","whale","wizard","wolf","wolverine","wombat","worm","wraith",
+    "wurm","yeti","zombie","zubera",
+]
+characteristics = meta_characteristics + \
+                  color_characteristics + \
+                  super_characteristics + \
+                  type_characteristics + \
+                  sub_characteristics
+re_ch = re.compile(r"\b({})\b".format('|'.join(characteristics)))
+
+# status 110.6 may include hyphens or spaces (after tagging, replace the hyphen)
+status = [
+    'tapped','untapped','flipped','unflipped',
+    'face[ |-]up','face[ |-]down','phased[ |-]in','phased[ |-]out'
+]
+re_stat = re.compile(r"\b({})\b".format('|'.join(status)))
+re_stat_fix = re.compile(r"(face|phased)(-)(up|down|in|out)")
+
+# lituus status
+lituus_status = [
+    'attacking','blocking','blocked','defending','transformed','enchanted',
+    'equipped','exiled','attached','unattached','activated','triggered','revealed',
+    'suspended',
+]
+re_lituus_stat = re.compile(r"\b({})\b".format('|'.join(lituus_status)))
