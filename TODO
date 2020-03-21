@@ -8,3 +8,8 @@
 5. Keep replacement of "your opponent(s)" with "opponents" (tagger)
 
 6. Group all exceptions under a single one?
+
+7. turn 'un' into 'non' i.e. unattached or unblocked
+
+8. Look for cards like Tolaria, "bands with other" which may/will cause problems
+ with double quoted words

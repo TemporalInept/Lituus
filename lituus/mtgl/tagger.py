@@ -134,7 +134,7 @@ def first_pass(txt):
     """
     # first pass, tag everything without context inspection
     ntxt = tag_status(txt)
-    #ntxt = tag_phases(ntxt)
+    ntxt = tag_turn_structure(ntxt)
     #ntxt = tag_numbers(ntxt)
     #ntxt = tag_quantifiers(ntxt)
     #ntxt = tag_effects(ntxt)
@@ -148,5 +148,12 @@ def first_pass(txt):
     return ntxt
 
 def tag_status(txt):
-    ntxt = mtgl.re_stat.sub(r"st<\1>",txt)
-    return mtgl.re_lituus_stat.sub(r"xs<\1>",ntxt)
+    """ tags status words in txt returning tagged text """
+    return mtgl.re_stat.sub(r"st<\1>",txt)
+
+def tag_turn_structure(txt):
+    """ tags turn structure phrases in in txt returning tagged text """
+    ntxt = mtgl.re_phase.sub(r"ph<\1>",txt)
+    ntxt = mtgl.re_step1.sub(r"sp<\1>",ntxt)
+    ntxt = mtgl.re_step2.sub(r"sp<\1>",ntxt)
+    return ntxt

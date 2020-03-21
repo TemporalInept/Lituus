@@ -47,7 +47,7 @@ from hashlib import md5
   Zone (4) = zn<ZONE>
   Objects (109) = ob<OBJECT>
   Characteristics (109.3) ch<characteristic>
-  Phases & Steps (5) = ph<PHASE>
+  Phases & Steps (5) = ph<PHASE> and sp<STEP>
   Effects (610.1), only covers damage/combat damage = ef<EFFECT>
   Status (110.6) = st<STATUS>
   Numbers (107.1, 107.3) (not inside mana symbols) = nu<NUMBER> #TODO add X
@@ -61,7 +61,6 @@ from hashlib import md5
   Conditional cn<CONDITONAL>
 
  Special lituus tags
-  Lituus Status = xs<LITUUS STATUS>
   Lituus Action = xa<LITUUS ACTION>
   Lituus Chacteristics = xc<LITUUS CHARACTERISTIC>
   Lituus Objects = xo<LITUUS OBJECT>
@@ -112,6 +111,17 @@ MIN = '−' # not used yet (found in negative loyalty costs)
 ####
 # REGEX AND STRING MANIP FOR PARSING
 ####
+
+"""
+ NOTE:
+  Instead of relying on the strict ordering of matching calls to avoid double 
+  tagging words as in previous versions, we make use of the negative lookbehind 
+  (?<!<|w) to ensure the character preceding the tagged word is not a '<' or an
+  alphanumeric character  
+  and occasionally, the negative lookbehind (?!>) to ensure the character 
+  following the tagged word is not a '>'
+    
+"""
 
 # CATCHALLS
 # re_dbl_qte = r'".*?"'                            # double quoted string
@@ -334,20 +344,51 @@ characteristics = meta_characteristics + \
                   super_characteristics + \
                   type_characteristics + \
                   sub_characteristics
-re_ch = re.compile(r"\b({})\b".format('|'.join(characteristics)))
+re_ch = re.compile(r"(?<!<)({})(?!>)".format('|'.join(characteristics)))
+
+# STATUS
 
 # status 110.6 may include hyphens or spaces (after tagging, replace the hyphen)
 status = [
     'tapped','untapped','flipped','unflipped',
     'face[ |-]up','face[ |-]down','phased[ |-]in','phased[ |-]out'
 ]
-re_stat = re.compile(r"\b({})\b".format('|'.join(status)))
-re_stat_fix = re.compile(r"(face|phased)(-)(up|down|in|out)")
+re_stat = re.compile(r"(?<!<|\w)({})(?!>)".format('|'.join(status)))
 
-# lituus status
-lituus_status = [
-    'attacking','blocking','blocked','defending','transformed','enchanted',
-    'equipped','exiled','attached','unattached','activated','triggered','revealed',
-    'suspended',
+# PHASES & STEPS
+#  TODO: because some phases and steps are not suffixed with the word 'phase' or
+#   'step' we have to figure out special handling
+
+# phases 500 to 514 (including steps and turns)
+# requires two regex, the second to capture singleton upkeep and combat
+#phases = [
+#    "untap step","upkeep step","draw step","main phase","combat phase",
+#    "beginning of combat step","beginning of combat","declare attackers step",
+#    "declare blockers step","combat damage step","end of combat step",
+#    "end step","cleanup step","eot","turn","phase","step"
+#]
+#re_phase = re.compile(r"\b({})\b".format('|'.join(phases)))
+#re_phase2 = re.compile(r"(?<!<)(upkeep(?!>\sstep)|combat(?!>\sdamage|step))(?!>)")
+
+# phases 500.1 & 505.1 (collective Main Phase)
+# Note: the only card that 'beginning phase' occurs is the unstable clocknapper
+# Note: this will drop the word phase
+phases = [
+    'beginning','precombat main','combat','postcombat main','ending','main'
 ]
-re_lituus_stat = re.compile(r"\b({})\b".format('|'.join(lituus_status)))
+re_phase = re.compile(r"\b({}) phase\b".format('|'.join(phases)))
+
+# steps
+# 501.1 beginning phase steps - untap, upkeep, draw
+# 506.1 combat phase steps - beginning of combat,  declare attackers,
+#  declare blockers, combat damage, end of combat
+# Note: this will drop the word step
+# Note: because some steps do not include the word 'step' and some steps may mean
+#  multiple things (i.e. untap, draw, end), there are two regexs
+steps1 = ['untap','draw','end','combat damage'] # must be followed by 'step'
+steps2 = [ # may or may not be followed by 'step'
+    'upkeep','beginning of combat','declare attackers',
+    'declare blockers','end of combat','cleanup',
+]
+re_step1 = re.compile(r"(?<!<|\w)({}) step(?!>)".format('|'.join(steps1)))
+re_step2 = re.compile(r"(?<!<|\w)({})( step)?(?!>)".format('|'.join(steps2)))
