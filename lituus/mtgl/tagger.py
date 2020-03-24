@@ -121,16 +121,15 @@ def first_pass(txt):
     ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)    # then nubmers
     ntxt = tag_entities(ntxt)                    # entities
     ntxt = tag_turn_structure(ntxt)              # phases & steps
+    ntxt = tag_english(ntxt)                     # english words
+    ntxt = tag_counters(ntxt)                    # markers
     ntxt = tag_awkws(ntxt)                       # ability words, keywords & actions
     #ntxt mtgl.re_stat.sub(r"st<\1>",ntxt)       # TODO: not sure about this
-
-    #ntxt = tag_numbers(ntxt)
-    #ntxt = tag_effects(ntxt)
-    #ntxt = tag_characteristics(ntxt) # has to be done after tagging numbers
-    #ntxt = tag_counters(ntxt)
+    #ntxt = mtgl.re_effect.sub(r"ef<\1>",ntxt)   # TODO: not usre about this
+    ntxt = tag_characteristics(ntxt)             # chars. - done after #s
     #ntxt = tag_zones(ntxt)
     #ntxt = tag_trigger(ntxt)
-    #ntxt = tag_english(ntxt)
+
     return ntxt
 
 def tag_entities(txt):
@@ -147,6 +146,18 @@ def tag_turn_structure(txt):
     ntxt = mtgl.re_step2.sub(r"sp<\1>",ntxt)
     return ntxt
 
+def tag_english(txt):
+    """ tags important english words """
+    ntxt = mtgl.re_op.sub(lambda m: "op<{}>".format(mtgl.OP[m.group(1)]),txt) # operators
+    ntxt = mtgl.re_prep.sub(r"pr<\1>",ntxt) # tag prepositions
+    ntxt = mtgl.re_cond.sub(r"cn<\1>",ntxt) # & conditional/rqmt
+    return mtgl.re_seq.sub(r"sq<\1>",ntxt)  # & sequence words
+
+def tag_counters(txt):
+    """ tags counters (markers) in txt returning tagged txt """
+    ntxt = mtgl.re_pt_ctr.sub(r"xo<ctr type=\1\2/\3\4>",txt)  # tag p/t counters
+    return mtgl.re_named_ctr.sub(r"xo<ctr type=\1>",ntxt)     # & named counters
+
 def tag_awkws(txt):
     """ tags ability words, keywords and action words returning tagged txt """
     ntxt = mtgl.re_aw.sub(r"aw<\1>",txt)          # tag ability words
@@ -160,6 +171,7 @@ def tag_effects(txt):
     return mtgl.re_effect.sub(r"ef<\1>",txt)
 
 def tag_characteristics(txt):
+    """ tags characterisitcs in txt returning tagged txt """
     ntxt = mtgl.re_ch.sub(r"ch<\1>",txt)                    # tag characteristics
     ntxt = mtgl.re_ch_pt.sub(r"ch<p/t val=\1\2/\3\4>",ntxt) # tag p/t
     return mtgl.re_lituus_ch.sub(r"xc<\1>",ntxt)            # tag lituus char. & return

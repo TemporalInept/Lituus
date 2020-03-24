@@ -288,24 +288,39 @@ word_hacks = {
     "putting":"puting",
     # flip, phase in/out
     "won":"wined","winning":"winned",
+    "skipped":'"skiped',"skipping":"skiping",
 }
-re_word_hack = re.compile(r"\b({})\b".format('|'.join(word_hacks.keys())))
+word_hack_tkns = '|'.join(word_hacks.keys())
+re_word_hack = re.compile(r"\b({})\b".format(word_hack_tkns))
 
 ####
 ## EHGLISH WORD NUMBERS
 ####
+
 E2I = {
     'one':'1','two':'2','three':'3','four':'4','five':'5',
     'six':'6','seven':'7','eight':'8','nine':'9','ten':'10',
     'eleven':'11','twelve':'12','thirteen':'13','fourteen':'14','fifteen':'15',
 }
-re_wd2int = re.compile(r"\b({})\b".format('|'.join(list(E2I.keys()))))
+e2i_tkns = '|'.join(list(E2I.keys()))
+re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
 
 ####
 ## BEGIN MTGL REG EX
 ####
 
-#intag = "(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]?)"
+"""
+ intag = "\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)" a word bounary and not preceded by an 
+  opening tag mark follwoed by 0 or more tag characters or spaces
+ allowed suffixes are:
+  "r", "s", "ing", "ed", "'s" a space or the punctuation ':', ',', '.', 
+ the below will tag only tokens that are not already tagged and are followed only
+ by allowed suffixes 
+  r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)"
+  \b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*) -> preceded by a word boundary and not inside a tag
+  ({}) -> group to catch specified tokens 
+  (?=r|s|ing|ed|'s|:|.|,|\s) -> only followed by allowed suffixes
+"""
 
 ####
 ## QUANTIFIERS
@@ -318,7 +333,8 @@ lituus_quantifiers = [
     'those','these','their','first','second','third','fourth','fifth',
     'sixth','seventh','eighth','ninth','tenth'
 ]
-re_quantifier = re.compile(r"\b({})\b".format('|'.join(lituus_quantifiers)))
+quantifier_tkns = '|'.join(lituus_quantifiers)
+re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 
 ####
 ## NUMBERS
@@ -337,21 +353,26 @@ re_number = re.compile(r"(?<!{)(\d+|x)\b")
 objects = [ # objects 109.1
     'ability','card','copy','token','spell','permanent','emblem','source'
 ]
-re_obj = re.compile(r"(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(objects)))
+obj_tkns = '|'.join(objects)
+re_obj = re.compile(
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(obj_tkns)
+)
 
 # keep suffix but check word boundary in beginning
 lituus_objects = [ # lituus objects
     "city's blessing",'game','mana pool','commander','mana','attacker','blocker',
     'it','them','coin'
 ]
+lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
-    r"(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(lituus_objects))
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(lituus_obj_tkns)
 )
 
 # lituus players - keep suffix but check word boundary in beginning
 lituus_players = ['you','opponent','teammate','player','owner','controller']
+lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
-    r"(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(lituus_players))
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(lituus_ply_tkns)
 )
 
 ####
@@ -380,6 +401,69 @@ re_step1 = re.compile(r"\b({}) step".format('|'.join(steps1)))
 re_step2 = re.compile(r"\b({})( step)?".format('|'.join(steps2)))
 
 ####
+## ENGLISH
+## tag important reoccuring english words, preoposition, & sequence/time
+####
+
+# TODO: need to tag less, more?
+OP = {
+    "less than or equal to":LE,"greater than or equal to":GE,
+    "less than":LT,"greater than":GT,"equal to":EQ,"equal":EQ,
+    "plus":'+',"minus":'-',"and/or":AOR,
+}
+re_op = re.compile(r"\b({})\b".format('|'.join(list(OP.keys()))))
+
+# prepositions (check for ending tags)
+prepositions = [
+    'on top of','up to','on bottom of','from','to','into','in','on','under','onto',
+    'top of','top','bottom of','bottom','without','with','for'
+]
+re_prep = re.compile(r"\b({})\b(?!>)".format('|'.join(prepositions)))
+
+# conditional/requirement related
+conditionals = [
+    'only if','if','would','unless','rather than','instead','may','except','not',
+    'only','cannot'
+]
+re_cond = re.compile(r"\b({})\b".format('|'.join(conditionals)))
+
+# sequence/time related  words
+sequences = [
+    'before','next','after','until','begin','beginning',
+    'end','ending','then','during','as long as'
+]
+re_seq = re.compile(r"\b({})\b".format('|'.join(sequences)))
+
+####
+## COUNTERS
+####
+
+# counters 122.1 Updated 24-Jan-20 with Theros Beyond Death
+# two types p/t counters i.e +/-M/+/-N or a named counters (122 total ATT)
+# see (https://mtg.gamepedia.com/Counter_(marker)/Full_List)
+# NOTE: this must be done prior to keyword actions processing
+re_pt_ctr = re.compile(r"(\+|-)nu<(\d+)>/(\+|-)nu<(\d+)> (counters*)\b")
+named_counters = [
+    'age','aim','arrow','arrowhead','awakening','blaze','blood','bounty','bribery',
+    'brick','cage','carrion','charge','coin','credit','corpse','crystal','cube',
+    'currency','death','delay','depletion','despair','devotion','divinity','doom',
+    'dream','echo','egg','elixir','energy','eon','experience','eyeball','fade',
+    'fate','feather','filibuster','flood','flying','fungus','fuse','gem','glyph',
+    'gold','growth','hatchling','healing','hit','hoofprint','hour','hourglass',
+    'hunger','ice','incubation','infection','intervention','isolation','javelin',
+    'ki','level','lore','loyalty','luck','magnet','manifestation','mannequin',
+    'mask','matrix','mine','mining','mire','music','muster','net','omen','ore',
+    'page','pain','paralyzation','petal','petrification','phylactery','pin',
+    'plague','poison','polyp','pressure','prey','pupa','quest','rust','scream',
+    'shell','shield','silver','shred','sleep','sleight','slime','slumber','soot',
+    'spark','spore','storage','strife','study','task','theft','tide','time','tower',
+    'training','trap','treasure','velocity','verse','vitality','volatile','wage',
+    'winch','wind','wish'
+]
+named_ctr_tkns = '|'.join(named_counters)
+re_named_ctr = re.compile(r"\b({}) (counters*)\b".format(named_ctr_tkns))
+
+####
 ## ABILITY WORDS, KEYWORDS, KEYWORD ACTIONS
 ####
 
@@ -391,7 +475,8 @@ ability_words = [ # ability words 207.2c Updated 24-Jan-20 with Theros Beyond De
     "morbid","parley","radiance","raid","rally","revolt","spell mastery","strive",
     "sweep","tempting offer","threshold","undergrowth","will of the council"
 ]
-re_aw = re.compile(r"(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(ability_words)))
+aw_tkns = '|'.join(ability_words)
+re_aw = re.compile(r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format(aw_tkns))
 
 # TODO: how to handle untap and unattach?
 keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Jan-20
@@ -402,39 +487,46 @@ keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Ja
     'support','investigate','meld','goad','exert','explore','surveil','adapt',
     'amass',
 ]
-re_kw_act = re.compile(r"(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(keyword_actions)))
+kw_act_tkns = '|'.join(keyword_actions)
+re_kw_act = re.compile(
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(kw_act_tkns)
+)
 
 keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
-    'deathtouch','defender','double strike','enchant','equip','first strike','flash',
-    'flying','haste','hexproof','indestructible','intimidate','landwalk','lifelink',
-    'protection','reach','shroud','trample','vigilance','banding','rampage',
-    'cumulative upkeep','flanking','phasing','buyback','shadow','cycling','echo',
-    'horsemanship','fading','kicker','multikicker','flashback','madness','fear',
-    'morph','megamorph','amplify','provoke','storm','affinity','entwine','modular',
-    'sunburst','bushido','soulshift','splice','offering','ninjutsu','commander ninjutsu',
-    'epic','convoke','dredge','transmute','bloodthirst','haunt','replicate','forecast',
-    'graft','recover','ripple','split second','suspend','vanishing','absorb',
-    'aura swap','delve','fortify','frenzy','gravestorm','poisonous','transfigure',
-    'champion','changeling','evoke','hideaway','prowl','reinforce','conspire',
-    'persist','wither','retrace','devour','exalted','unearth','cascade','annihilator',
-    'level up','rebound','totem armor','infect','battle cry','living weapon',
-    'undying','miracle','soulbond','overload','scavenge','unleash','cipher',
-    'evolve','extort','fuse','bestow','tribute','dethrone','outlast','prowess',
-    'dash','exploit','menace','renown','awaken','devoid','ingest','myriad','surge',
-    'skulk','emerge','escalate','melee','crew','fabricate','partner with','partner',
-    'undaunted','improvise','aftermath','embalm','eternalize','afflict','ascend',
-    'assist','jump-start','mentor','afterlife','riot','spectacle','escape']
-re_kw = re.compile(r"(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(keywords)))
+    'deathtouch','defender','double strike','enchant','equip','first strike',
+    'flash','flying','haste','hexproof','indestructible','intimidate','landwalk',
+    'lifelink','protection','reach','shroud','trample','vigilance','banding',
+    'rampage','cumulative upkeep','flanking','phasing','buyback','shadow','cycling',
+    'echo','horsemanship','fading','kicker','multikicker','flashback','madness',
+    'fear','morph','megamorph','amplify','provoke','storm','affinity','entwine',
+    'modular','sunburst','bushido','soulshift','splice','offering','ninjutsu',
+    'commander ninjutsu','epic','convoke','dredge','transmute','bloodthirst',
+    'haunt','replicate','forecast','graft','recover','ripple','split second',
+    'suspend','vanishing','absorb','aura swap','delve','fortify','frenzy',
+    'gravestorm','poisonous','transfigure','champion','changeling','evoke',
+    'hideaway','prowl','reinforce','conspire','persist','wither','retrace','devour',
+    'exalted','unearth','cascade','annihilator','level up','rebound','totem armor',
+    'infect','battle cry','living weapon','undying','miracle','soulbond','overload',
+    'scavenge','unleash','cipher','evolve','extort','fuse','bestow','tribute',
+    'dethrone','outlast','prowess','dash','exploit','menace','renown','awaken',
+    'devoid','ingest','myriad','surge','skulk','emerge','escalate','melee','crew',
+    'fabricate','partner with','partner','undaunted','improvise','aftermath',
+    'embalm','eternalize','afflict','ascend','assist','jump-start','mentor',
+    'afterlife','riot','spectacle','escape'
+]
+kw_tkns = '|'.join(keywords)
+re_kw = re.compile(r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format(kw_tkns))
 
 # TODO: what to do with cycle, copy, phase (in, out), flip
 lituus_actions = [ # words not defined in the rules but important any way
     'put','remove','distribute','get','return','draw','move','look','pay','deal',
     'gain','lose','attack','block','add','enter','leave','choose','die','spend',
     'take','reduce','trigger','prevent','declare','have','switch','assign','win',
-    'defend','cost',
+    'defend','cost','skip',
 ]
+lituus_act_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(lituus_actions))
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(lituus_act_tkns)
 )
 
 ####
@@ -446,6 +538,14 @@ status = [ # status 110.5 (may include hyphens or spaces)
     'face[ |-]up','face[ |-]down','phased[ |-]in','phased[ |-]out'
 ]
 re_stat = re.compile(r"(?<!<|\w)({})(?!\w|>)".format('|'.join(status)))
+
+####
+## EFFECTS
+####
+
+# effects ensure the effects are not already tagged
+# TODO: not sure if this necessary
+re_effect = re.compile(r"(?<!combat\s)(damage|effect)(?!\w|>)")
 
 ####
 ## CHARACTERISTICS
@@ -521,19 +621,18 @@ characteristics = meta_characteristics + \
                   super_characteristics + \
                   type_characteristics + \
                   sub_characteristics
-re_ch = re.compile(r"(?<!<)({})(?!>)".format('|'.join(characteristics))) # leave suffixes
+char_tkns = '|'.join(characteristics)
+re_ch = re.compile(
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(char_tkns)
+)
 
-# seperate procedure for tagging p/t
-# has to be done after numbers are tagged
+# seperate procedure for tagging p/t has to be done after numbers are tagged
 re_ch_pt = re.compile(r"(\+|-)?nu<(\d+)>/(\+|-)?nu<(\d+)>(?!\scounter)")
 
-# lituus characteristics - have to make sure it has not already been tagged
-lituus_characteristics = [  # NOTE: these apply primarily to player
-'life total','control','own','life','hand size','devotion'
-]
-re_lituus_ch = re.compile(r"(?<!<)({})\b(?!>)".format('|'.join(lituus_characteristics)))
-
-# EFFECTS
-
-# effects ensure the effects are not already tagged
-re_effect = re.compile(r"(?<!combat\s)(damage|effect)(?!\w|>)")
+# lituus characteristics
+# TODO: keep control, own?
+lituus_characteristics = ['life total','control','own','life','hand size','devotion']
+lituus_char_tkns = '|'.join(lituus_characteristics)
+re_lituus_ch = re.compile(
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(lituus_char_tkns)
+)
