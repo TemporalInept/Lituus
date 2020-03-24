@@ -33,34 +33,34 @@ def tag(name,txt):
     #ntxt = postprocess(ntxt)
     return ntxt
 
-#### PREPROCESSING ####
+####
+## PREPROCESSING
+####
 
 def preprocess(name,txt):
     """
      conducts an initial scrub of the oracle text. Then:
        1. replaces card name references with ref-id or self as necessary
-       2. lowercases oracle text
-       3. english number words for 0 through 10 are replacing with corresponding ints,
-       4. contractions are replaced with full words
-       5. Some reminder text is removed, some paraenthesis is removed
-       6. take care of keywords that are exemptions to keyword rules
+       2. lowercases everything
+       3. standardize keywords, cycling and landwalk
+       4. hack words with anamolies contractions, etc
+       5. english number words 0 - 10 are replacing with corresponding ints,
+       6. Some reminder text is removed, some paraenthesis is removed
+       7. replace any 'non' w.out hypen to 'non-' w/ hyphen
     :param name: name of this card
     :param txt: the mtgl text
     :return: preprocessed oracle text
     """
     # a keyword
-    ntxt = tag_ref(name,txt).lower() # lowercase everything after referencing
-    ntxt = pre_special_keywords(ntxt)
-    ntxt = mtgl.re_wh.sub(lambda m: mtgl.word_hacks[m.group(1)],ntxt)
-    ntxt = mtgl.re_wd2int.sub(lambda m: mtgl.E2I[m.group(1)],ntxt)
-    ntxt = mtgl.re_mana_remtxt.sub(r"\1",ntxt) # remove paranthesis around (Add {G})
-    ntxt = mtgl.re_rem_txt.sub("",ntxt)
-    return mtgl.re_non.sub(r"non-\1",ntxt)
-
-    #ntxt = mtgl.re_acts_conj.sub(lambda m: mtgl.all_acts[m.group(1)],ntxt)
-    #return mtgl.re_characteristics_conj.sub(
-    #    lambda m: mtgl.all_characteristics[m.group(1)],ntxt
-    #)
+    ntxt = tag_ref(name,txt).lower()                                         # 1 & 2
+    ntxt = mtgl.re_cycling_pre.sub(r"\1 cycling",ntxt)                       # 3
+    ntxt = mtgl.re_landwalk_pre.sub(r"\1 landwalk",ntxt)                     # 3
+    ntxt = mtgl.re_word_hack.sub(lambda m: mtgl.word_hacks[m.group(1)],ntxt) # 4
+    ntxt = mtgl.re_wd2int.sub(lambda m: mtgl.E2I[m.group(1)],ntxt)           # 5
+    ntxt = mtgl.re_mana_remtxt.sub(r"\1",ntxt)                               # 6
+    ntxt = mtgl.re_rem_txt.sub("",ntxt)                                      # 6
+    ntxt = mtgl.re_non.sub(r"non-\1", ntxt)                                  # 7
+    return ntxt
 
 def tag_ref(name,txt):
     """
@@ -103,24 +103,9 @@ def tag_ref(name,txt):
     )
     return ntxt
 
-def pre_special_keywords(txt):
-    """
-     take special keywords (pre-tagged) cycling and landwalk and seperate the type
-     from the keyword
-    :param txt: lower-cased oracle text (not tagged)
-    :return: processed oracle text
-    NOTE: this has to occur after self tagging, lowercasing
-    """
-    # cycling has two forms 1) Cycling [cost] and 2) [Type]cycling [cost] where
-    # type may consist of two seperate words i.e. basic landcycling
-    ntxt = mtgl.re_cycling_pre.sub(r"\1 cycling",txt)
-
-    # landwalk will have the form [type]walk where type could be a basic land type
-    # i.e. forestwalk or a nonbasic land as in legendary landwalk. In both cases
-    # isolate (and make the word if necessary) landwalk and the type(s) as in
-    # forestwalk = forest landwalk and legendary landwalk
-    ntxt = mtgl.re_landwalk_pre.sub(r"\1 landwalk",ntxt)
-    return ntxt
+####
+# FIRST PASS
+####
 
 def first_pass(txt):
     """
@@ -132,28 +117,49 @@ def first_pass(txt):
       to be carried out prior to their execution, rearranging the order of the
       below will negatively effect the results
     """
-    # first pass, tag everything without context inspection
-    ntxt = tag_status(txt)
-    ntxt = tag_turn_structure(ntxt)
+    ntxt = mtgl.re_quantifier.sub(r"xq<\1>",txt) # tag quantifiers
+    ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)    # then nubmers
+    ntxt = tag_entities(ntxt)                    # entities
+    ntxt = tag_turn_structure(ntxt)              # phases & steps
+    ntxt = tag_awkws(ntxt)                       # ability words, keywords & actions
+    #ntxt mtgl.re_stat.sub(r"st<\1>",ntxt)       # TODO: not sure about this
+
     #ntxt = tag_numbers(ntxt)
-    #ntxt = tag_quantifiers(ntxt)
     #ntxt = tag_effects(ntxt)
-    #ntxt = tag_entities(ntxt)
-    #ntxt = tag_characteristics(ntxt)
+    #ntxt = tag_characteristics(ntxt) # has to be done after tagging numbers
     #ntxt = tag_counters(ntxt)
-    #ntxt = tag_awkws(ntxt)
     #ntxt = tag_zones(ntxt)
     #ntxt = tag_trigger(ntxt)
     #ntxt = tag_english(ntxt)
     return ntxt
 
-def tag_status(txt):
-    """ tags status words in txt returning tagged text """
-    return mtgl.re_stat.sub(r"st<\1>",txt)
+def tag_entities(txt):
+    """ tags entities (players & objects returntning tagged txt """
+    ntxt = mtgl.re_obj.sub(r"ob<\1>",txt)          # tag mtg objects
+    ntxt = mtgl.re_lituus_obj.sub(r"xo<\1>",ntxt)  # tag lituus objects
+    ntxt = mtgl.re_lituus_ply.sub(r"xp<\1>",ntxt)  # tag players
+    return ntxt
 
 def tag_turn_structure(txt):
-    """ tags turn structure phrases in in txt returning tagged text """
+    """ tags turn structure phrases in txt returning tagged text """
     ntxt = mtgl.re_phase.sub(r"ph<\1>",txt)
     ntxt = mtgl.re_step1.sub(r"sp<\1>",ntxt)
     ntxt = mtgl.re_step2.sub(r"sp<\1>",ntxt)
     return ntxt
+
+def tag_awkws(txt):
+    """ tags ability words, keywords and action words returning tagged txt """
+    ntxt = mtgl.re_aw.sub(r"aw<\1>",txt)          # tag ability words
+    ntxt = mtgl.re_kw.sub(r"kw<\1>",ntxt)         # tag keywords
+    ntxt = mtgl.re_kw_act.sub(r"ka<\1>",ntxt)     # tag keyword actions
+    ntxt = mtgl.re_lituus_act.sub(r"xa<\1>",ntxt) # tag lituus actions
+    return ntxt
+
+def tag_effects(txt):
+    """ tags effects in txt returning tagged txt """
+    return mtgl.re_effect.sub(r"ef<\1>",txt)
+
+def tag_characteristics(txt):
+    ntxt = mtgl.re_ch.sub(r"ch<\1>",txt)                    # tag characteristics
+    ntxt = mtgl.re_ch_pt.sub(r"ch<p/t val=\1\2/\3\4>",ntxt) # tag p/t
+    return mtgl.re_lituus_ch.sub(r"xc<\1>",ntxt)            # tag lituus char. & return

@@ -43,6 +43,7 @@ which, when combined with other characterisitics of cards, will give us the tool
  1. **Python 3.x** It has only been tested on my machine using Python 3.5.2 is not guaranteed to work on anything else. I have no intention of trying to port it to Python 2.x
  2. **networkx** (https://networkx.github.io) to create parse trees
  3. **BeautifulSoup** (https://www.crummy.com/software/BeautifulSoup/) for scraping online decklists
+ 4. **RegEx** (https://pypi.org/project/regex/)
 
 ## 3 BACKGROUND, OBJECTIVES AND CURRENT ISSUES
 Lituus is a follow on to a personal project that attempted to create a program that could compare my decks to other decks (specifically cEDH) but, it became grossly unmaintable due to a mess of regular expressions and string finds. Furthermore, the final aim of Lituus is to compare cEDH decks to each other in a quantifiable way and programmatically discern their Archetypes which requires a more robust method.

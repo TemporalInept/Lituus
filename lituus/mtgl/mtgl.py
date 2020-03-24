@@ -19,7 +19,8 @@ __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
-import re
+#import re
+import regex as re
 from hashlib import md5
 
 """
@@ -112,17 +113,6 @@ MIN = '−' # not used yet (found in negative loyalty costs)
 # REGEX AND STRING MANIP FOR PARSING
 ####
 
-"""
- NOTE:
-  Instead of relying on the strict ordering of matching calls to avoid double 
-  tagging words as in previous versions, we make use of the negative lookbehind 
-  (?<!<|w) to ensure the character preceding the tagged word is not a '<' or an
-  alphanumeric character  
-  and occasionally, the negative lookbehind (?!>) to ensure the character 
-  following the tagged word is not a '>'
-    
-"""
-
 # CATCHALLS
 # re_dbl_qte = r'".*?"'                            # double quoted string
 re_rem_txt = re.compile(r"\(.+?\)")                # reminder text
@@ -135,9 +125,10 @@ re_tkn_delim = re.compile( # matches mtg punctuation & spaces not inside a tag
     r"(?![\w\s\+\/\-=¬∧∨⊕⋖⋗≤≥≡→]+>)"
 )
 
-# CARD REFERENCES
-# Named cards will have the form ob<card ref=#> where x can be self or a md5
-# has of the card name
+####
+## CARD REFERENCES
+## Named cards will have the form ob<card ref=#> where x can be self or a md5
+####
 
 # self references
 def re_self_ref(name):
@@ -228,16 +219,19 @@ def release_n2r():
         del N2R
         re_oth_ref = None
 
-# SPECIAL KEYWORD PREPROCESSING
+####
+## SPECIAL KEYWORD PREPROCESSING
+####
 re_cycling_pre = re.compile(r"\b(\w+?)cycling\b")             # seperate type & cycling
 re_landwalk_pre = re.compile(r"(\w+?)(?<!\sland)walk(?!er)")  # seperate type & landwalk
 
-# WORD HACKS
+####
+## WORD HACKS
+## word hacks 1) replace contractions with full words, 2) common mtg phrases with
+## acronyms 3) idiosyncratic conjugations, contractions
+## TODO: could we just standarize a regular expression to catch anamolies
+####
 
-# word hacks 1) replace contractions with full words, 2) common mtg phrases with
-# acronyms and 3) idiosyncratic conjugations and 4) categories with a limited
-# number of items
-# TODO: could we just standarize a regular expression to catch anamolies
 word_hacks = {
     # contractions
     "can't":"cannot","don't":"do not","didn't":"did not","it's":"it is",
@@ -249,7 +243,7 @@ word_hacks = {
     'an':"a",
     # plural
     "werewolves":"werewolfs","allies":"allys","elves":"elfs","abilities":"abilitys",
-    "copies":"copys","sorceries":"sorcerys","libraries":"librarys","armies":"armys",
+    "sorceries":"sorcerys","libraries":"librarys","armies":"armys",
     "aurochses":"aurochss","cyclopes":"cyclops","fishes":"fishs","fungi":"fungess",
     "homunculuses":"homunculuss","jellyfishes":"jellyfishs","leeches":"leechs",
     "mercenaries":"mercenarys","mongeese":"mongooss","mice":"mouses","foxes":"foxs",
@@ -257,13 +251,49 @@ word_hacks = {
     "thalakoses":"thalokoss",
     # acronyms
     "end of turn":"eot","converted mana cost":"cmc",
-    # suffixes/tense/possessive
-    "dealt":"dealed","left":"leaveed","lost":"loseed","its":"it's","spent":"spended",
-    "dying":"dieing","died":"dieed","chosen":"chooseed","drawn":"drawed",
+    # suffixes/tense/possessive (ing,ed,s,'s)
+    "activating":"activateing","activated":"activated",
+    "creating":"createing","created":"createed",
+    "doubling":"doubleing","doubled":"doubled",
+    "exchanging":"exchangeing","exchanged":"exchangeed",
+    "exiling":"exileing","exiled":"exileed",
+    "fought":"fighted",
+    "regenerating":"regenerateing","regenerated":"regenerateed",
+    "sacrificing":"sacrificeing","sacrificed":"sacrificeed",
+    "shuffling":"shuffleing","shuffled":"shuffleed",
+    "dealt":"dealed",
+    "leaving":"leaveing","left":"leaveed",
+    "lost":"loseed","losing":"loseing",
+    "its":"it's",
+    "died":"dieed","dying":"dieing",
+    "choosing":"chooseing","chosen":"chooseed",
+    "drawn":"drawed",
+    "spent":"spended",
+    "proliferating":"proliferateing","proliferated":"proliferateed",
+    "populating":"populateing","populated":"populateed",
+    "voting":"voteing","voted":"voteed",
+    "investigating":"investigateing","investigated":"investigateed",
+    "exploring":"exploreing","explored":"explored",
+    "copied":"copyied","copies":"copys",
+    "removing":"removeing","removed":"removeed",
+    "distributing":"distributeing","distributed":"distributeed",
+    "got":"getted","getting":"geting",
+    "moving":"moveing","moved":"moveed",
+    "paid":"payed",
+    "taking":"takeing","took":"takeed",
+    "cycled":"cyclinged", # IOT to match it as the past tense of a keyword
+    "reducing":"reduceing","reduced":"reduceed",
+    "declaring":"declareing","declared":"declareed",
+    "has":"haves","had":"haveed","having":"haveing",
+    "putting":"puting",
+    # flip, phase in/out
+    "won":"wined","winning":"winned",
 }
-re_wh = re.compile(r"\b({})\b".format('|'.join(word_hacks.keys())))
+re_word_hack = re.compile(r"\b({})\b".format('|'.join(word_hacks.keys())))
 
-# replace english words for 0 to 10 with corresponding integers
+####
+## EHGLISH WORD NUMBERS
+####
 E2I = {
     'one':'1','two':'2','three':'3','four':'4','five':'5',
     'six':'6','seven':'7','eight':'8','nine':'9','ten':'10',
@@ -271,24 +301,171 @@ E2I = {
 }
 re_wd2int = re.compile(r"\b({})\b".format('|'.join(list(E2I.keys()))))
 
-# CHARACTERISTICS
-# NOTE: sub_characteristics must be updated with the release of new sets to
-#  include adding any token specific types
+####
+## BEGIN MTGL REG EX
+####
 
-# characteristics 109.3
-meta_characteristics = [
+#intag = "(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]?)"
+
+####
+## QUANTIFIERS
+####
+
+# Quantifying words i.e. target, each, all, any, every,
+# include word boundaries here so we don't tag every letter 'a'
+lituus_quantifiers = [
+    'a','target','each','all','any','every','another','other','this','that',
+    'those','these','their','first','second','third','fourth','fifth',
+    'sixth','seventh','eighth','ninth','tenth'
+]
+re_quantifier = re.compile(r"\b({})\b".format('|'.join(lituus_quantifiers)))
+
+####
+## NUMBERS
+####
+
+# numbers are 1 or more digits or the variable X and are not preceded by a brace,
+# '{', which indicates a mana symbol
+#re_number = re.compile(r"(?<!{|\w|=)(\d+|x)(?!\w|>)")
+re_number = re.compile(r"(?<!{)(\d+|x)\b")
+
+####
+## ENTITIES
+####
+
+# keep suffix but check word boundary in beginning
+objects = [ # objects 109.1
+    'ability','card','copy','token','spell','permanent','emblem','source'
+]
+re_obj = re.compile(r"(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(objects)))
+
+# keep suffix but check word boundary in beginning
+lituus_objects = [ # lituus objects
+    "city's blessing",'game','mana pool','commander','mana','attacker','blocker',
+    'it','them','coin'
+]
+re_lituus_obj = re.compile(
+    r"(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(lituus_objects))
+)
+
+# lituus players - keep suffix but check word boundary in beginning
+lituus_players = ['you','opponent','teammate','player','owner','controller']
+re_lituus_ply = re.compile(
+    r"(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(lituus_players))
+)
+
+####
+## TURN STRUCTURE
+####
+
+# phases 500.1 & 505.1 (collective Main Phase) Note: this will drop the word phase
+phases = [
+    'beginning','precombat main','combat','postcombat main','ending','main'
+]
+re_phase = re.compile(r"\b({}) phase".format('|'.join(phases)))
+
+# steps
+# 501.1 beginning phase steps - untap, upkeep, draw
+# 506.1 combat phase steps - beginning of combat,  declare attackers,
+#  declare blockers, combat damage, end of combat
+# Note: this will drop the word step
+# Note: because some steps do not include the word 'step' and some steps may mean
+#  multiple things (i.e. untap, draw, end), there are two regexs
+steps1 = ['untap','draw','end','combat damage'] # must be followed by 'step'
+steps2 = [ # may or may not be followed by 'step'
+    'upkeep','beginning of combat','declare attackers',
+    'declare blockers','end of combat','cleanup',
+]
+re_step1 = re.compile(r"\b({}) step".format('|'.join(steps1)))
+re_step2 = re.compile(r"\b({})( step)?".format('|'.join(steps2)))
+
+####
+## ABILITY WORDS, KEYWORDS, KEYWORD ACTIONS
+####
+
+ability_words = [ # ability words 207.2c Updated 24-Jan-20 with Theros Beyond Death
+    "adamant","addendum","battalion","bloodrush","channel","chroma","cohort",
+    "constellation","converge","council’s dilemma","delirium","domain","eminence",
+    "enrage","fateful hour","ferocious","formidable","grandeur","hellbent","heroic",
+    "imprint","inspired","join forces","kinship","landfall","lieutenant","metalcraft",
+    "morbid","parley","radiance","raid","rally","revolt","spell mastery","strive",
+    "sweep","tempting offer","threshold","undergrowth","will of the council"
+]
+re_aw = re.compile(r"(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(ability_words)))
+
+# TODO: how to handle untap and unattach?
+keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Jan-20
+    'activate','attach','cast','counter','create','destroy','discard','double',
+    'exchange','exile','fight','play','regenerate','reveal','sacrifice','scry',
+    'search','shuffle','tap','untap','fateseal','clash','abandon','proliferate',
+    'transform','detain','populate','monstrosity','vote','bolster','manifest',
+    'support','investigate','meld','goad','exert','explore','surveil','adapt',
+    'amass',
+]
+re_kw_act = re.compile(r"(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(keyword_actions)))
+
+keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
+    'deathtouch','defender','double strike','enchant','equip','first strike','flash',
+    'flying','haste','hexproof','indestructible','intimidate','landwalk','lifelink',
+    'protection','reach','shroud','trample','vigilance','banding','rampage',
+    'cumulative upkeep','flanking','phasing','buyback','shadow','cycling','echo',
+    'horsemanship','fading','kicker','multikicker','flashback','madness','fear',
+    'morph','megamorph','amplify','provoke','storm','affinity','entwine','modular',
+    'sunburst','bushido','soulshift','splice','offering','ninjutsu','commander ninjutsu',
+    'epic','convoke','dredge','transmute','bloodthirst','haunt','replicate','forecast',
+    'graft','recover','ripple','split second','suspend','vanishing','absorb',
+    'aura swap','delve','fortify','frenzy','gravestorm','poisonous','transfigure',
+    'champion','changeling','evoke','hideaway','prowl','reinforce','conspire',
+    'persist','wither','retrace','devour','exalted','unearth','cascade','annihilator',
+    'level up','rebound','totem armor','infect','battle cry','living weapon',
+    'undying','miracle','soulbond','overload','scavenge','unleash','cipher',
+    'evolve','extort','fuse','bestow','tribute','dethrone','outlast','prowess',
+    'dash','exploit','menace','renown','awaken','devoid','ingest','myriad','surge',
+    'skulk','emerge','escalate','melee','crew','fabricate','partner with','partner',
+    'undaunted','improvise','aftermath','embalm','eternalize','afflict','ascend',
+    'assist','jump-start','mentor','afterlife','riot','spectacle','escape']
+re_kw = re.compile(r"(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(keywords)))
+
+# TODO: what to do with cycle, copy, phase (in, out), flip
+lituus_actions = [ # words not defined in the rules but important any way
+    'put','remove','distribute','get','return','draw','move','look','pay','deal',
+    'gain','lose','attack','block','add','enter','leave','choose','die','spend',
+    'take','reduce','trigger','prevent','declare','have','switch','assign','win',
+    'defend','cost',
+]
+re_lituus_act = re.compile(
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format('|'.join(lituus_actions))
+)
+
+####
+## STATUS
+####
+# TODO: not sure whether to keep or drop
+status = [ # status 110.5 (may include hyphens or spaces)
+    'tapped','untapped','flipped','unflipped',
+    'face[ |-]up','face[ |-]down','phased[ |-]in','phased[ |-]out'
+]
+re_stat = re.compile(r"(?<!<|\w)({})(?!\w|>)".format('|'.join(status)))
+
+####
+## CHARACTERISTICS
+####
+
+meta_characteristics = [ # 100.3
     'p/t','everything','text','name','mana cost','cmc','power','toughness',
     'color identity','color','type'
 ]
-color_characteristics = [
+color_characteristics = [ # 105.1, 105.2a, 105.2b, 105.2c
     'white','blue','black','green','red','colorless','multicolored','monocolored'
 ]
 super_characteristics = ['legendary','basic','snow','world','tribal'] # 205.4a
-type_characteristics = [  # NOTE: we added historic
+type_characteristics = [  # 301.5, NOTE: we added historic
     'instant','creature','sorcery','planeswalker',
     'enchantment','land','artifact','historic'
 ]
 sub_characteristics = [ # Updated 24-Jan-20 with Theros Beyond Death
+    # NOTE: sub_characteristics must be updated with the release of new sets to
+    #  include adding any token specific types
     # 205.3g artifact subtypes
     "clue","equipment","food","fortification","gold","treasure","vehicle",
     # 205.3h enchantment subtypes
@@ -344,51 +521,19 @@ characteristics = meta_characteristics + \
                   super_characteristics + \
                   type_characteristics + \
                   sub_characteristics
-re_ch = re.compile(r"(?<!<)({})(?!>)".format('|'.join(characteristics)))
+re_ch = re.compile(r"(?<!<)({})(?!>)".format('|'.join(characteristics))) # leave suffixes
 
-# STATUS
+# seperate procedure for tagging p/t
+# has to be done after numbers are tagged
+re_ch_pt = re.compile(r"(\+|-)?nu<(\d+)>/(\+|-)?nu<(\d+)>(?!\scounter)")
 
-# status 110.6 may include hyphens or spaces (after tagging, replace the hyphen)
-status = [
-    'tapped','untapped','flipped','unflipped',
-    'face[ |-]up','face[ |-]down','phased[ |-]in','phased[ |-]out'
+# lituus characteristics - have to make sure it has not already been tagged
+lituus_characteristics = [  # NOTE: these apply primarily to player
+'life total','control','own','life','hand size','devotion'
 ]
-re_stat = re.compile(r"(?<!<|\w)({})(?!>)".format('|'.join(status)))
+re_lituus_ch = re.compile(r"(?<!<)({})\b(?!>)".format('|'.join(lituus_characteristics)))
 
-# PHASES & STEPS
-#  TODO: because some phases and steps are not suffixed with the word 'phase' or
-#   'step' we have to figure out special handling
+# EFFECTS
 
-# phases 500 to 514 (including steps and turns)
-# requires two regex, the second to capture singleton upkeep and combat
-#phases = [
-#    "untap step","upkeep step","draw step","main phase","combat phase",
-#    "beginning of combat step","beginning of combat","declare attackers step",
-#    "declare blockers step","combat damage step","end of combat step",
-#    "end step","cleanup step","eot","turn","phase","step"
-#]
-#re_phase = re.compile(r"\b({})\b".format('|'.join(phases)))
-#re_phase2 = re.compile(r"(?<!<)(upkeep(?!>\sstep)|combat(?!>\sdamage|step))(?!>)")
-
-# phases 500.1 & 505.1 (collective Main Phase)
-# Note: the only card that 'beginning phase' occurs is the unstable clocknapper
-# Note: this will drop the word phase
-phases = [
-    'beginning','precombat main','combat','postcombat main','ending','main'
-]
-re_phase = re.compile(r"\b({}) phase\b".format('|'.join(phases)))
-
-# steps
-# 501.1 beginning phase steps - untap, upkeep, draw
-# 506.1 combat phase steps - beginning of combat,  declare attackers,
-#  declare blockers, combat damage, end of combat
-# Note: this will drop the word step
-# Note: because some steps do not include the word 'step' and some steps may mean
-#  multiple things (i.e. untap, draw, end), there are two regexs
-steps1 = ['untap','draw','end','combat damage'] # must be followed by 'step'
-steps2 = [ # may or may not be followed by 'step'
-    'upkeep','beginning of combat','declare attackers',
-    'declare blockers','end of combat','cleanup',
-]
-re_step1 = re.compile(r"(?<!<|\w)({}) step(?!>)".format('|'.join(steps1)))
-re_step2 = re.compile(r"(?<!<|\w)({})( step)?(?!>)".format('|'.join(steps2)))
+# effects ensure the effects are not already tagged
+re_effect = re.compile(r"(?<!combat\s)(damage|effect)(?!\w|>)")
