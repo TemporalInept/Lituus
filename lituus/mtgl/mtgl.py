@@ -52,7 +52,7 @@ from hashlib import md5
   Effects (610.1), only covers damage/combat damage = ef<EFFECT>
   Status (110.6) = st<STATUS>
   Numbers (107.1, 107.3) (not inside mana symbols) = nu<NUMBER> #TODO add X
-  Trigger Preambles (603.1) mt<TRIGGER>
+  Trigger Preambles (603.1) tp<TRIGGER>
 
  English
   Prepositions pr<PREPOSITION>
@@ -316,10 +316,10 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
   "r", "s", "ing", "ed", "'s" a space or the punctuation ':', ',', '.', 
  the below will tag only tokens that are not already tagged and are followed only
  by allowed suffixes 
-  r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)"
+  r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])"
   \b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*) -> preceded by a word boundary and not inside a tag
   ({}) -> group to catch specified tokens 
-  (?=r|s|ing|ed|'s|:|.|,|\s) -> only followed by allowed suffixes
+  (?=[r|s|ing|ed|'s|:|.|,|\s]) -> only followed by allowed suffixes
 """
 
 ####
@@ -355,7 +355,7 @@ objects = [ # objects 109.1
 ]
 obj_tkns = '|'.join(objects)
 re_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(obj_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(obj_tkns)
 )
 
 # keep suffix but check word boundary in beginning
@@ -365,14 +365,14 @@ lituus_objects = [ # lituus objects
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(lituus_obj_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(lituus_obj_tkns)
 )
 
 # lituus players - keep suffix but check word boundary in beginning
 lituus_players = ['you','opponent','teammate','player','owner','controller']
 lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(lituus_ply_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(lituus_ply_tkns)
 )
 
 ####
@@ -435,6 +435,13 @@ sequences = [
 re_seq = re.compile(r"\b({})\b".format('|'.join(sequences)))
 
 ####
+## TRIGGER PREAMBLES
+###
+
+# trigger preambles 603.1
+re_trigger = re.compile(r"\b(at|whenever|when)\b")
+
+####
 ## COUNTERS
 ####
 
@@ -489,7 +496,7 @@ keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Ja
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(kw_act_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(kw_act_tkns)
 )
 
 keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
@@ -526,7 +533,7 @@ lituus_actions = [ # words not defined in the rules but important any way
 ]
 lituus_act_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(lituus_act_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(lituus_act_tkns)
 )
 
 ####
@@ -623,7 +630,7 @@ characteristics = meta_characteristics + \
                   sub_characteristics
 char_tkns = '|'.join(characteristics)
 re_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(char_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(char_tkns)
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
@@ -634,5 +641,18 @@ re_ch_pt = re.compile(r"(\+|-)?nu<(\d+)>/(\+|-)?nu<(\d+)>(?!\scounter)")
 lituus_characteristics = ['life total','control','own','life','hand size','devotion']
 lituus_char_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|.|,|\s)".format(lituus_char_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(lituus_char_tkns)
+)
+
+####
+## ZONES
+####
+
+# zones 400.1
+zones = [
+    'library','hand','battlefield','graveyard','stack','exile','command','anywhere'
+]
+zn_tkns = '|'.join(zones)
+re_zone = re.compile(
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(zn_tkns)
 )

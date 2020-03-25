@@ -122,14 +122,13 @@ def first_pass(txt):
     ntxt = tag_entities(ntxt)                    # entities
     ntxt = tag_turn_structure(ntxt)              # phases & steps
     ntxt = tag_english(ntxt)                     # english words
+    ntxt = mtgl.re_trigger.sub(r"tp<\1>",ntxt)   # trigger preambles
     ntxt = tag_counters(ntxt)                    # markers
     ntxt = tag_awkws(ntxt)                       # ability words, keywords & actions
-    #ntxt mtgl.re_stat.sub(r"st<\1>",ntxt)       # TODO: not sure about this
+    #ntx mtgl.re_stat.sub(r"st<\1>",ntxt)       # TODO: not sure about this
     #ntxt = mtgl.re_effect.sub(r"ef<\1>",ntxt)   # TODO: not usre about this
     ntxt = tag_characteristics(ntxt)             # chars. - done after #s
-    #ntxt = tag_zones(ntxt)
-    #ntxt = tag_trigger(ntxt)
-
+    ntxt = mtgl.re_zone.sub(r"zn<\1>",ntxt)      # zones
     return ntxt
 
 def tag_entities(txt):
