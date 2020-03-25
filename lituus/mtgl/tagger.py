@@ -140,9 +140,10 @@ def tag_entities(txt):
 
 def tag_turn_structure(txt):
     """ tags turn structure phrases in txt returning tagged text """
-    ntxt = mtgl.re_phase.sub(r"ph<\1>",txt)
-    ntxt = mtgl.re_step1.sub(r"sp<\1>",ntxt)
-    ntxt = mtgl.re_step2.sub(r"sp<\1>",ntxt)
+    ntxt = mtgl.re_phase.sub(r"ts<\1>",txt)
+    ntxt = mtgl.re_step1.sub(r"ts<\1>",ntxt)
+    ntxt = mtgl.re_step2.sub(r"ts<\1>",ntxt)
+    ntxt = mtgl.re_generic_turn.sub(r"ts<\1>",ntxt)
     return ntxt
 
 def tag_english(txt):

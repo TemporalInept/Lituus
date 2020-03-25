@@ -48,7 +48,7 @@ from hashlib import md5
   Zone (4) = zn<ZONE>
   Objects (109) = ob<OBJECT>
   Characteristics (109.3) ch<characteristic>
-  Phases & Steps (5) = ph<PHASE> and sp<STEP>
+  Turn Structure: Phases & Steps (5) = st<T
   Effects (610.1), only covers damage/combat damage = ef<EFFECT>
   Status (110.6) = st<STATUS>
   Numbers (107.1, 107.3) (not inside mana symbols) = nu<NUMBER> #TODO add X
@@ -399,6 +399,10 @@ steps2 = [ # may or may not be followed by 'step'
 ]
 re_step1 = re.compile(r"\b({}) step".format('|'.join(steps1)))
 re_step2 = re.compile(r"\b({})( step)?".format('|'.join(steps2)))
+
+# generic terms
+generic_turns = ["turn","phase","step"]
+re_generic_turn = re.compile(r"\b({})\b".format('|'.join(generic_turns)))
 
 ####
 ## ENGLISH
