@@ -286,9 +286,12 @@ word_hacks = {
     "declaring":"declareing","declared":"declareed",
     "has":"haves","had":"haveed","having":"haveing",
     "putting":"puting",
-    # flip, phase in/out
     "won":"wined","winning":"winned",
     "skipped":'"skiped',"skipping":"skiping",
+    # status related
+    #"tapping":"taping","tapped":"taped",
+    #"flipping":"fliping","flipped":"fliped",
+    #"phased":"phaseed",
 }
 word_hack_tkns = '|'.join(word_hacks.keys())
 re_word_hack = re.compile(r"\b({})\b".format(word_hack_tkns))
@@ -317,10 +320,23 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
  the below will tag only tokens that are not already tagged and are followed only
  by allowed suffixes 
   r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])"
-  \b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*) -> preceded by a word boundary and not inside a tag
+  (\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*) -> preceded by a word boundary and not inside a tag
   ({}) -> group to catch specified tokens 
   (?=[r|s|ing|ed|'s|:|.|,|\s]) -> only followed by allowed suffixes
 """
+
+####
+## STATUS
+####
+
+status = [ # status 110.5 (may include hyphens or spaces)
+    'tapped','untapped','flipped','unflipped',
+    'face-up','face-down','phased-in','phased-out'
+]
+status_tkns = '|'.join(status)
+re_stat = re.compile(
+    r"(?<!<|\w)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(status_tkns)
+)
 
 ####
 ## QUANTIFIERS
@@ -402,7 +418,7 @@ re_step2 = re.compile(r"\b({})( step)?".format('|'.join(steps2)))
 
 # generic terms
 generic_turns = ["turn","phase","step"]
-re_generic_turn = re.compile(r"\b({})\b".format('|'.join(generic_turns)))
+re_generic_turn = re.compile(r"\b({})\s".format('|'.join(generic_turns)))
 
 ####
 ## ENGLISH
@@ -422,7 +438,7 @@ prepositions = [
     'on top of','up to','on bottom of','from','to','into','in','on','under','onto',
     'top of','top','bottom of','bottom','without','with','for'
 ]
-re_prep = re.compile(r"\b({})\b(?!>)".format('|'.join(prepositions)))
+re_prep = re.compile(r"\b(?<![<|-])({})\b(?!>)".format('|'.join(prepositions)))
 
 # conditional/requirement related
 conditionals = [
@@ -433,8 +449,8 @@ re_cond = re.compile(r"\b({})\b".format('|'.join(conditionals)))
 
 # sequence/time related  words
 sequences = [
-    'before','next','after','until','begin','beginning',
-    'end','ending','then','during','as long as'
+    'before','next','after','until','begin','beginning','end','ending','then',
+    'during','as long as','simultaneously',
 ]
 re_seq = re.compile(r"\b({})\b".format('|'.join(sequences)))
 
@@ -528,27 +544,17 @@ keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
 kw_tkns = '|'.join(keywords)
 re_kw = re.compile(r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format(kw_tkns))
 
-# TODO: what to do with cycle, copy, phase (in, out), flip
+# TODO: what to do with cycle, copy, flip
 lituus_actions = [ # words not defined in the rules but important any way
     'put','remove','distribute','get','return','draw','move','look','pay','deal',
     'gain','lose','attack','block','add','enter','leave','choose','die','spend',
     'take','reduce','trigger','prevent','declare','have','switch','assign','win',
-    'defend','cost','skip',
+    'defend','cost','skip','phase-in','phase-out',
 ]
 lituus_act_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
     r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(lituus_act_tkns)
 )
-
-####
-## STATUS
-####
-# TODO: not sure whether to keep or drop
-status = [ # status 110.5 (may include hyphens or spaces)
-    'tapped','untapped','flipped','unflipped',
-    'face[ |-]up','face[ |-]down','phased[ |-]in','phased[ |-]out'
-]
-re_stat = re.compile(r"(?<!<|\w)({})(?!\w|>)".format('|'.join(status)))
 
 ####
 ## EFFECTS

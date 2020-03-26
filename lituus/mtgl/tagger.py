@@ -118,6 +118,7 @@ def first_pass(txt):
       below will negatively effect the results
     """
     ntxt = mtgl.re_quantifier.sub(r"xq<\1>",txt) # tag quantifiers
+    ntxt = mtgl.re_stat.sub(r"st<\1>",ntxt)      # then status
     ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)    # then nubmers
     ntxt = tag_entities(ntxt)                    # entities
     ntxt = tag_turn_structure(ntxt)              # phases & steps
