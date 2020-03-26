@@ -20,6 +20,7 @@ __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
 import os
+import regex as re
 from itertools import combinations
 
 # COMMON PATHS (use path magic to a) hide our directory structure and b) enable
@@ -30,23 +31,15 @@ pth_data = os.path.join(os.path.dirname(__file__),'data')
 pth_decks = os.path.join(os.path.dirname(__file__),'decks')
 pth_esolw = os.path.join(os.path.dirname(__file__),'ESoLW/res')
 
-# returns a single global copy of the multiverse
-_mv = None
-def get_multiverse():
-    """ :returns multiverse dict """
-    global _mv
-    try:
-        _ = not _mv
-    except NameError:
-        # import here to avoid ciruclar import references
-        import lituus.multiverse as multiverse
-        _mv = multiverse.multiverse()
-    return _mv
+# Generic Regular Expressions
+re_clr_mana_sym = re.compile(r'\{([WUBRGP\/]*)\}')
+re_mana_sym = re.compile(r'\{([0-9WUBRGSCPX\/]*)\}')
 
 # CONSTANTS
+# TODO: need to update
 last_exp = ['WAR','RNA','GRN','C18','M19']
-types = [
-    'Artifact','Creature','Enchantment','Instant','Land','Planeswalker','Sorcery'
+card_types = [ # 300.1 (exluding non-legals)
+    'Artifact','Creature','Enchantment','Instant','Land','Planeswalker','Sorcery','Tribal'
 ]
 pri_types = [ # ordered by priority i.e. a 'Land Creature' is a Land first
     'Land','Creature','Artifact','Enchantment','Instant','Planeswalker','Sorcery'
