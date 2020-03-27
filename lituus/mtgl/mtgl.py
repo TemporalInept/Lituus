@@ -118,6 +118,7 @@ MIN = '−' # not used yet (found in negative loyalty costs)
 re_rem_txt = re.compile(r"\(.+?\)")                # reminder text
 re_mana_remtxt = re.compile(r"\(({t}: add.+?)\)")  # find add mana inside ()
 re_non = re.compile(r"non(\w)")                    # find 'non' without hyphen
+re_un = re.compile(r"un(\w)")                      # find 'un'
 
 # DELIMITER
 re_tkn_delim = re.compile( # matches mtg punctuation & spaces not inside a tag
@@ -268,7 +269,7 @@ word_hacks = {
     "died":"dieed","dying":"dieing",
     "choosing":"chooseing","chosen":"chooseed",
     "drawn":"drawed",
-    "spent":"spended",
+    "spent":"spended","unspent":"unspended",
     "proliferating":"proliferateing","proliferated":"proliferateed",
     "populating":"populateing","populated":"populateed",
     "voting":"voteing","voted":"voteed",
@@ -281,7 +282,8 @@ word_hacks = {
     "moving":"moveing","moved":"moveed",
     "paid":"payed",
     "taking":"takeing","took":"takeed",
-    "cycled":"cyclinged", # IOT to match it as the past tense of a keyword
+    "cycled":"cycleed",
+    #"cycled":"cyclinged", # IOT to match it as the past tense of a keyword
     "reducing":"reduceing","reduced":"reduceed",
     "declaring":"declareing","declared":"declareed",
     "has":"haves","had":"haveed","having":"haveing",
@@ -289,9 +291,9 @@ word_hacks = {
     "won":"wined","winning":"winned",
     "skipped":'"skiped',"skipping":"skiping",
     # status related
-    #"tapping":"taping","tapped":"taped",
-    #"flipping":"fliping","flipped":"fliped",
-    #"phased":"phaseed",
+    "tapping":"taping","tapped":"taped",
+    "flipping":"fliping","flipped":"fliped",
+    "phased":"phaseed",
 }
 word_hack_tkns = '|'.join(word_hacks.keys())
 re_word_hack = re.compile(r"\b({})\b".format(word_hack_tkns))
@@ -319,10 +321,10 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
   "r", "s", "ing", "ed", "'s" a space or the punctuation ':', ',', '.', 
  the below will tag only tokens that are not already tagged and are followed only
  by allowed suffixes 
-  r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])"
+  r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)"
   (\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*) -> preceded by a word boundary and not inside a tag
   ({}) -> group to catch specified tokens 
-  (?=[r|s|ing|ed|'s|:|.|,|\s]) -> only followed by allowed suffixes
+  (?=r|s|ing|ed|'s|:|\.|,|\s) -> only followed by allowed suffixes
 """
 
 ####
@@ -335,18 +337,17 @@ status = [ # status 110.5 (may include hyphens or spaces)
 ]
 status_tkns = '|'.join(status)
 re_stat = re.compile(
-    r"(?<!<|\w)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(status_tkns)
+    r"(?<!<|\w)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(status_tkns)
 )
 
 ####
 ## QUANTIFIERS
 ####
 
-# Quantifying words i.e. target, each, all, any, every,
-# include word boundaries here so we don't tag every letter 'a'
+# Quantifying words
 lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that',
-    'those','these','their','first','second','third','fourth','fifth',
+    'additional','those','these','their','first','second','third','fourth','fifth',
     'sixth','seventh','eighth','ninth','tenth'
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
@@ -371,7 +372,7 @@ objects = [ # objects 109.1
 ]
 obj_tkns = '|'.join(objects)
 re_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(obj_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(obj_tkns)
 )
 
 # keep suffix but check word boundary in beginning
@@ -381,14 +382,14 @@ lituus_objects = [ # lituus objects
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(lituus_obj_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_obj_tkns)
 )
 
 # lituus players - keep suffix but check word boundary in beginning
 lituus_players = ['you','opponent','teammate','player','owner','controller']
 lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(lituus_ply_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_ply_tkns)
 )
 
 ####
@@ -417,8 +418,8 @@ re_step1 = re.compile(r"\b({}) step".format('|'.join(steps1)))
 re_step2 = re.compile(r"\b({})( step)?".format('|'.join(steps2)))
 
 # generic terms
-generic_turns = ["turn","phase","step"]
-re_generic_turn = re.compile(r"\b({})\s".format('|'.join(generic_turns)))
+#generic_turns = ["turn","phase","step"]
+#re_generic_turn = re.compile(r"\b({})\s".format('|'.join(generic_turns)))
 
 ####
 ## ENGLISH
@@ -505,18 +506,17 @@ ability_words = [ # ability words 207.2c Updated 24-Jan-20 with Theros Beyond De
 aw_tkns = '|'.join(ability_words)
 re_aw = re.compile(r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format(aw_tkns))
 
-# TODO: how to handle untap and unattach?
 keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Jan-20
-    'activate','attach','cast','counter','create','destroy','discard','double',
-    'exchange','exile','fight','play','regenerate','reveal','sacrifice','scry',
-    'search','shuffle','tap','untap','fateseal','clash','abandon','proliferate',
+    'activate','attach','unattach','cast','counter','create','destroy','discard',
+    'double','exchange','exile','fight','play','regenerate','reveal','sacrifice',
+    'scry','search','shuffle','tap','untap','fateseal','clash','abandon','proliferate',
     'transform','detain','populate','monstrosity','vote','bolster','manifest',
     'support','investigate','meld','goad','exert','explore','surveil','adapt',
     'amass',
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(kw_act_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(kw_act_tkns)
 )
 
 keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
@@ -524,6 +524,7 @@ keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
     'flash','flying','haste','hexproof','indestructible','intimidate','landwalk',
     'lifelink','protection','reach','shroud','trample','vigilance','banding',
     'rampage','cumulative upkeep','flanking','phasing','buyback','shadow','cycling',
+    'cycle',
     'echo','horsemanship','fading','kicker','multikicker','flashback','madness',
     'fear','morph','megamorph','amplify','provoke','storm','affinity','entwine',
     'modular','sunburst','bushido','soulshift','splice','offering','ninjutsu',
@@ -544,16 +545,19 @@ keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
 kw_tkns = '|'.join(keywords)
 re_kw = re.compile(r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format(kw_tkns))
 
-# TODO: what to do with cycle, copy, flip
+# TODO: what to do with cycle, phase in, phase out, copy, flip
 lituus_actions = [ # words not defined in the rules but important any way
     'put','remove','distribute','get','return','draw','move','look','pay','deal',
     'gain','lose','attack','block','add','enter','leave','choose','die','spend',
-    'take','reduce','trigger','prevent','declare','have','switch','assign','win',
-    'defend','cost','skip','phase-in','phase-out',
+    'unspend','take','reduce','trigger','prevent','declare','have','switch',
+    'assign','win','defend','cost','skip','flip','cycle','phase',
 ]
-lituus_act_tkns = '|'.join(lituus_actions)
+la_tkns = '|'.join(lituus_actions)
+#re_lituus_act = re.compile(
+#    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(la_tkns)
+#)
 re_lituus_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(lituus_act_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(la_tkns)
 )
 
 ####
@@ -633,14 +637,12 @@ sub_characteristics = [ # Updated 24-Jan-20 with Theros Beyond Death
     "weird","werewolf","whale","wizard","wolf","wolverine","wombat","worm","wraith",
     "wurm","yeti","zombie","zubera",
 ]
-characteristics = meta_characteristics + \
-                  color_characteristics + \
-                  super_characteristics + \
-                  type_characteristics + \
-                  sub_characteristics
-char_tkns = '|'.join(characteristics)
+char_tkns = '|'.join(
+    meta_characteristics + color_characteristics + super_characteristics + \
+    type_characteristics + sub_characteristics
+)
 re_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(char_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(char_tkns)
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
@@ -651,7 +653,7 @@ re_ch_pt = re.compile(r"(\+|-)?nu<(\d+)>/(\+|-)?nu<(\d+)>(?!\scounter)")
 lituus_characteristics = ['life total','control','own','life','hand size','devotion']
 lituus_char_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(lituus_char_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_char_tkns)
 )
 
 ####
@@ -664,5 +666,5 @@ zones = [
 ]
 zn_tkns = '|'.join(zones)
 re_zone = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=[r|s|ing|ed|'s|:|.|,|\s])".format(zn_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(zn_tkns)
 )

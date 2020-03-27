@@ -118,7 +118,7 @@ def first_pass(txt):
       below will negatively effect the results
     """
     ntxt = mtgl.re_quantifier.sub(r"xq<\1>",txt) # tag quantifiers
-    ntxt = mtgl.re_stat.sub(r"st<\1>",ntxt)      # then status
+    #ntxt = mtgl.re_stat.sub(r"st<\1>",ntxt)      # then status
     ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)    # then nubmers
     ntxt = tag_entities(ntxt)                    # entities
     ntxt = tag_turn_structure(ntxt)              # phases & steps
@@ -126,7 +126,6 @@ def first_pass(txt):
     ntxt = mtgl.re_trigger.sub(r"tp<\1>",ntxt)   # trigger preambles
     ntxt = tag_counters(ntxt)                    # markers
     ntxt = tag_awkws(ntxt)                       # ability words, keywords & actions
-    #ntx mtgl.re_stat.sub(r"st<\1>",ntxt)       # TODO: not sure about this
     #ntxt = mtgl.re_effect.sub(r"ef<\1>",ntxt)   # TODO: not usre about this
     ntxt = tag_characteristics(ntxt)             # chars. - done after #s
     ntxt = mtgl.re_zone.sub(r"zn<\1>",ntxt)      # zones
@@ -144,7 +143,7 @@ def tag_turn_structure(txt):
     ntxt = mtgl.re_phase.sub(r"ts<\1>",txt)
     ntxt = mtgl.re_step1.sub(r"ts<\1>",ntxt)
     ntxt = mtgl.re_step2.sub(r"ts<\1>",ntxt)
-    ntxt = mtgl.re_generic_turn.sub(r"ts<\1>",ntxt)
+    #ntxt = mtgl.re_generic_turn.sub(r"ts<\1>",ntxt)
     return ntxt
 
 def tag_english(txt):

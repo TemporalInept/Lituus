@@ -219,11 +219,10 @@ def import_cards(mv,tc,n2r,mverse):
         a,b = split[0],split[1]
         dcard = {
             'rid': "{} // {}".format(temp[a]['rid'],temp[b]['rid']),
-            #'name': "{} // {}".format(temp[a]['name'],temp[b]['name']),
             'name':name,
             'mana-cost':"{} // {}".format(temp[a]['mana-cost'],temp[b]['mana-cost']),
             'oracle':"{} // {}".format(temp[a]['oracle'],temp[b]['oracle']),
-            #'tag':"{} // {}".format(temp[a]['_card['tag']'],temp[b]['_card['tag']']),
+            'tag':"{} // {}".format(temp[a]['tag'],temp[b]['tag']),
             'super-type':list(set(temp[a]['super-type']+temp[b]['super-type'])),
             'type':list(set(temp[a]['type'] + temp[b]['type'])),
             'sub-type':list(set(temp[a]['sub-type'] + temp[b]['sub-type'])),
@@ -298,16 +297,14 @@ def _hack_cards_(jv):
         if 'text' in jv[cname]:
             # older versions of cards may have semi-colon rather than a comma
             # modify modal spells removing newlines betweem modes
-            # Standarize status, adding hyphens between face up/face down &
+            # Standarize status, removing any hyphens between face up/face down &
             #  phased in/phased out
             jv[cname]['text'] = jv[cname]['text'].replace(';',',')
             jv[cname]['text'] = jv[cname]['text'].replace("\n• ",mtgl.BLT)
-            jv[cname]['text'] = jv[cname]['text'].replace("face up","face-up")
-            jv[cname]['text'] = jv[cname]['text'].replace("face down","face-down")
-            jv[cname]['text'] = jv[cname]['text'].replace("phased in","phased-in")
-            jv[cname]['text'] = jv[cname]['text'].replace("phase in", "phase-in")
-            jv[cname]['text'] = jv[cname]['text'].replace("phased out","phased-out")
-            jv[cname]['text'] = jv[cname]['text'].replace("phase out", "phase-out")
+            jv[cname]['text'] = jv[cname]['text'].replace("face-up","face up")
+            jv[cname]['text'] = jv[cname]['text'].replace("face-down","face down")
+            jv[cname]['text'] = jv[cname]['text'].replace("phased-in","phased in")
+            jv[cname]['text'] = jv[cname]['text'].replace("phased-out","phased out")
 
         # hard-code hacks for easier processing
         if cname == "Urborg, Tomb of Yawgmoth":
