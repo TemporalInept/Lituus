@@ -31,13 +31,23 @@ class Pack(object):
         self._qty = {} # dict of cardname -> number of cards in pack
         self._mb = {}  # dict of cardname -> MTGCard object
 
-    @property
-    def is_legal(self): return True
+#### OP OVERLOADING
 
     def __getitem__(self,cname):
         """ overload the subscript '[]' operator """
         if not cname in self._mb: raise PackException("No such card {}".format(cname))
         return self._mb[cname]
+
+    def __iter__(self):
+        """ overload the __iter__ function to make dict looping transparent """
+        yield from self._mb.__iter__()
+
+    def __len__(self):
+        """ overload length to return length of mainboard """
+        return len(self._mb)
+
+    @property
+    def is_legal(self): return True
 
     def add_card(self,card):
         """
@@ -94,7 +104,6 @@ class Pack(object):
                 elif 'Basic' in self._mb[cname].super_type: continue
             cards.append((cname,self._qty[cname]))
         return sorted(cards,key=itemgetter(0))
-
 
 #### METRICS
 
