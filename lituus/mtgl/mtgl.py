@@ -51,7 +51,7 @@ from hashlib import md5
   Turn Structure: Phases & Steps (5) = st<T
   Effects (610.1), only covers damage/combat damage = ef<EFFECT>
   Status (110.6) = st<STATUS>
-  Numbers (107.1, 107.3) (not inside mana symbols) = nu<NUMBER> #TODO add X
+  Numbers (107.1, 107.3) (not inside mana symbols) = nu<NUMBER>
   Trigger Preambles (603.1) tp<TRIGGER>
 
  English
@@ -230,7 +230,7 @@ re_landwalk_pre = re.compile(r"(\w+?)(?<!\sland)walk(?!er)")  # seperate type & 
 ## WORD HACKS
 ## word hacks 1) replace contractions with full words, 2) common mtg phrases with
 ## acronyms 3) idiosyncratic conjugations, contractions
-## TODO: could we just standarize a regular expression to catch anamolies
+##
 ####
 
 word_hacks = {
@@ -291,7 +291,7 @@ word_hacks = {
     "won":"wined","winning":"winned",
     "skipped":'"skiped',"skipping":"skiping",
     # status related
-    "tapping":"taping","tapped":"taped",
+    "tapping":"taping","tapped":"taped","untapping":"untaped","untapped":"untaped",
     "flipping":"fliping","flipped":"fliped",
     "phased":"phaseed",
 }
@@ -326,19 +326,6 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
   ({}) -> group to catch specified tokens 
   (?=r|s|ing|ed|'s|:|\.|,|\s) -> only followed by allowed suffixes
 """
-
-####
-## STATUS
-####
-
-status = [ # status 110.5 (may include hyphens or spaces)
-    'tapped','untapped','flipped','unflipped',
-    'face-up','face-down','phased-in','phased-out'
-]
-status_tkns = '|'.join(status)
-re_stat = re.compile(
-    r"(?<!<|\w)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(status_tkns)
-)
 
 ####
 ## QUANTIFIERS
@@ -436,10 +423,11 @@ re_op = re.compile(r"\b({})\b".format('|'.join(list(OP.keys()))))
 
 # prepositions (check for ending tags)
 prepositions = [
-    'on top of','up to','on bottom of','from','to','into','in','on','under','onto',
-    'top of','top','bottom of','bottom','without','with','for'
+    'on top of','up to','on bottom of','from','to','into','in','on','out','under',
+    'onto','top of','top','bottom of','bottom','without','with','for'
 ]
-re_prep = re.compile(r"\b(?<![<|-])({})\b(?!>)".format('|'.join(prepositions)))
+#re_prep = re.compile(r"\b(?<![<|-])({})\b(?!>)".format('|'.join(prepositions)))
+re_prep = re.compile(r"\b(?<!<)({})\b(?!>)".format('|'.join(prepositions)))
 
 # conditional/requirement related
 conditionals = [
@@ -668,3 +656,22 @@ zn_tkns = '|'.join(zones)
 re_zone = re.compile(
     r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(zn_tkns)
 )
+
+####
+## STATUS DECONFLICTION
+####
+
+# Status 110.5, is relatively hard as they are status words only in past tense except
+# for face up/face down which have hyphens (see Break Open) As status they appear:
+#  'tapped','untapped',
+#  'flipped','unflipped',
+#  'face-up','face-down',
+#  'phased-in','phased-out'
+
+status = ['tap','flip','phase','face']
+re_status = re.compile(r"([kx]a)<(un)?({})>(?=ed)".format('|'.join(status[0:3])))
+
+# Phase can be Status, Action or Turn Structure
+re_status_phase = re.compile(r"(xa<phase>ed-)pr<(in|out)>")
+re_action_phase = re.compile(r"xa<phase>(s|ed)?\spr<(in|out)>")
+re_ts_phase = re.compile(r"xa<phase>(s?)(?=\W)")

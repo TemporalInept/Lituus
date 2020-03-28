@@ -19,6 +19,7 @@ __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
+import regex as re
 import lituus.mtgl.mtgl as mtgl
 
 def tag(name,txt):
@@ -30,7 +31,7 @@ def tag(name,txt):
     """
     ntxt = preprocess(name,txt)
     ntxt = first_pass(ntxt)
-    #ntxt = postprocess(ntxt)
+    ntxt = second_pass(ntxt)
     return ntxt
 
 ####
@@ -104,7 +105,7 @@ def tag_ref(name,txt):
     return ntxt
 
 ####
-# FIRST PASS
+# 1ST PASS
 ####
 
 def first_pass(txt):
@@ -118,7 +119,6 @@ def first_pass(txt):
       below will negatively effect the results
     """
     ntxt = mtgl.re_quantifier.sub(r"xq<\1>",txt) # tag quantifiers
-    #ntxt = mtgl.re_stat.sub(r"st<\1>",ntxt)      # then status
     ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)    # then nubmers
     ntxt = tag_entities(ntxt)                    # entities
     ntxt = tag_turn_structure(ntxt)              # phases & steps
@@ -126,7 +126,6 @@ def first_pass(txt):
     ntxt = mtgl.re_trigger.sub(r"tp<\1>",ntxt)   # trigger preambles
     ntxt = tag_counters(ntxt)                    # markers
     ntxt = tag_awkws(ntxt)                       # ability words, keywords & actions
-    #ntxt = mtgl.re_effect.sub(r"ef<\1>",ntxt)   # TODO: not usre about this
     ntxt = tag_characteristics(ntxt)             # chars. - done after #s
     ntxt = mtgl.re_zone.sub(r"zn<\1>",ntxt)      # zones
     return ntxt
@@ -155,8 +154,8 @@ def tag_english(txt):
 
 def tag_counters(txt):
     """ tags counters (markers) in txt returning tagged txt """
-    ntxt = mtgl.re_pt_ctr.sub(r"xo<ctr type=\1\2/\3\4>",txt)  # tag p/t counters
-    return mtgl.re_named_ctr.sub(r"xo<ctr type=\1>",ntxt)     # & named counters
+    ntxt = mtgl.re_pt_ctr.sub(r"xo<ctr type=\1\2/\3\4>",txt) # tag p/t counters
+    return mtgl.re_named_ctr.sub(r"xo<ctr type=\1>",ntxt)    # & named counters
 
 def tag_awkws(txt):
     """ tags ability words, keywords and action words returning tagged txt """
@@ -175,3 +174,36 @@ def tag_characteristics(txt):
     ntxt = mtgl.re_ch.sub(r"ch<\1>",txt)                    # tag characteristics
     ntxt = mtgl.re_ch_pt.sub(r"ch<p/t val=\1\2/\3\4>",ntxt) # tag p/t
     return mtgl.re_lituus_ch.sub(r"xc<\1>",ntxt)            # tag lituus char. & return
+
+####
+# 2ND PASS
+####
+
+def second_pass(txt):
+    """
+     performs a second pass of the oracle txt, looking at phrases more than
+     individual words and looks more at contextual
+    :param txt: initial tagged oracle txt (lowered case)
+    :return: tagged oracle text
+    """
+    ntxt = deconflict_status(txt)
+    return ntxt
+
+re_emp_postfix = re.compile(r"\ssuffix=(?=)>")
+def deconflict_status(txt):
+    """
+     deconflicts status related tokens between status, actions and turn structure
+     returning tagged txt
+    :param txt: oracle txt after initial first pass
+    :return: tagged oracle text
+    """
+    # phase - can be Status (Time and Tide), Turn Structure (Breath of Fury) or
+    #  action (Ertai's Familiar) only 1 card (Time and Tide) is a Status
+    if 'phase' in txt:
+        txt = mtgl.re_status_phase.sub(r"st<phased amplifier=\2>",txt)
+        txt = mtgl.re_action_phase.sub(r"xa<phase amplifier=\2 suffix=\1>",txt)
+        txt = mtgl.re_ts_phase.sub(r"ts<phase suffix=\1>",txt)
+
+        # actions and turn structure may result in empty suffixes
+        txt = re_emp_postfix.sub('>', txt)
+    return txt

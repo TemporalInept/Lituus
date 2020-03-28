@@ -26,16 +26,16 @@
 
 14: unspent (see Upwelling)
 
-15. See below, add in additional is being tagged
+16. Can we just standarize a regular expression to catch anamolies in function
+ word_hacks?
 
->>> mv['Breath of Fury']._card['tag']
-'kw<enchant> ch<creature> xp<you> xc<control>\ntp<when> kw<enchant>ed ch<creature> 
-xa<deal>s combat damage pr<to> xq<a> xp<player>, ka<sacrifice> xo<it> and ka<attach> 
-ob<card ref=self> pr<to> xq<a> ch<creature> xp<you> xc<control>. cn<if> xp<you> do, 
-ka<untap> xq<all> ch<creature>s xp<you> xc<control> and sq<after> xq<this> xa<phase>, 
-there is xq<a> xa<add>itional ts<combat>.'
+17. See Break Open
+Original
+Turn target face-down creature an opponent controls face up.
 
-also should additional be tagged (possibly as a quantifier)
+Tagged (first pass)
+'turn xq<target> face down ch<creature> xq<a> xp<opponent> xc<control>s face up.'
 
-the problem is in the look ahead, the regex is only looking for the first letter, i.e. 
-the 'i' in 'ing'
+Here we can see that with a hypen, it is a status
+
+See also Time and Tide (which is the same) for phasing
