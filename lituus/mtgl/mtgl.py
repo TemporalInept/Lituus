@@ -19,7 +19,6 @@ __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
-#import re
 import regex as re
 from hashlib import md5
 
@@ -335,8 +334,8 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
 # Quantifying words
 lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that',
-    'additional','those','these','their','first','second','third','fourth','fifth',
-    'sixth','seventh','eighth','ninth','tenth'
+    'additional','those','these','their','extra','first','second','third','fourth',
+    'fifth','sixth','seventh','eighth','ninth','tenth'
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -405,9 +404,9 @@ steps2 = [ # may or may not be followed by 'step'
 re_step1 = re.compile(r"\b({}) step".format('|'.join(steps1)))
 re_step2 = re.compile(r"\b({})( step)?".format('|'.join(steps2)))
 
-# generic terms
-#generic_turns = ["turn","phase","step"]
-#re_generic_turn = re.compile(r"\b({})\s".format('|'.join(generic_turns)))
+# generic terms NOTE: standalone 'phase' is handled later in Status)
+generic_turns = ["turn","step"]
+re_generic_turn = re.compile(r"\b({})".format('|'.join(generic_turns)))
 
 ####
 ## ENGLISH
@@ -486,7 +485,7 @@ re_named_ctr = re.compile(r"\b({}) (counters*)\b".format(named_ctr_tkns))
 
 ability_words = [ # ability words 207.2c Updated 24-Jan-20 with Theros Beyond Death
     "adamant","addendum","battalion","bloodrush","channel","chroma","cohort",
-    "constellation","converge","council’s dilemma","delirium","domain","eminence",
+    "constellation","converge","council's dilemma","delirium","domain","eminence",
     "enrage","fateful hour","ferocious","formidable","grandeur","hellbent","heroic",
     "imprint","inspired","join forces","kinship","landfall","lieutenant","metalcraft",
     "morbid","parley","radiance","raid","rally","revolt","spell mastery","strive",
@@ -498,10 +497,10 @@ re_aw = re.compile(r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format(aw_tk
 keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Jan-20
     'activate','attach','unattach','cast','counter','create','destroy','discard',
     'double','exchange','exile','fight','play','regenerate','reveal','sacrifice',
-    'scry','search','shuffle','tap','untap','fateseal','clash','abandon','proliferate',
-    'transform','detain','populate','monstrosity','vote','bolster','manifest',
-    'support','investigate','meld','goad','exert','explore','surveil','adapt',
-    'amass',
+    'scry','search','shuffle','tap','untap','fateseal','clash','abandon',
+    'proliferate','transform','detain','populate','monstrosity','vote','bolster',
+    'manifest','support','investigate','meld','goad','exert','explore','surveil',
+    'adapt','amass',
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
@@ -513,14 +512,13 @@ keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
     'flash','flying','haste','hexproof','indestructible','intimidate','landwalk',
     'lifelink','protection','reach','shroud','trample','vigilance','banding',
     'rampage','cumulative upkeep','flanking','phasing','buyback','shadow','cycling',
-    'cycle',
-    'echo','horsemanship','fading','kicker','multikicker','flashback','madness',
-    'fear','morph','megamorph','amplify','provoke','storm','affinity','entwine',
-    'modular','sunburst','bushido','soulshift','splice','offering','ninjutsu',
-    'commander ninjutsu','epic','convoke','dredge','transmute','bloodthirst',
-    'haunt','replicate','forecast','graft','recover','ripple','split second',
-    'suspend','vanishing','absorb','aura swap','delve','fortify','frenzy',
-    'gravestorm','poisonous','transfigure','champion','changeling','evoke',
+    'cycle','echo','horsemanship','fading','kicker','multikicker','flashback',
+    'madness','fear','morph','megamorph','amplify','provoke','storm','affinity',
+    'entwine','modular','sunburst','bushido','soulshift','splice','offering',
+    'ninjutsu','commander ninjutsu','epic','convoke','dredge','transmute',
+    'bloodthirst','haunt','replicate','forecast','graft','recover','ripple',
+    'split second','suspend','vanishing','absorb','aura swap','delve','fortify',
+    'frenzy','gravestorm','poisonous','transfigure','champion','changeling','evoke',
     'hideaway','prowl','reinforce','conspire','persist','wither','retrace','devour',
     'exalted','unearth','cascade','annihilator','level up','rebound','totem armor',
     'infect','battle cry','living weapon','undying','miracle','soulbond','overload',
@@ -542,9 +540,6 @@ lituus_actions = [ # words not defined in the rules but important any way
     'assign','win','defend','cost','skip','flip','cycle','phase',
 ]
 la_tkns = '|'.join(lituus_actions)
-#re_lituus_act = re.compile(
-#    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(la_tkns)
-#)
 re_lituus_act = re.compile(
     r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(la_tkns)
 )
@@ -659,6 +654,30 @@ re_zone = re.compile(
 )
 
 ####
+## SPACES/HYPHENS between tokens
+####
+
+# For now, we are using a simple table to do so vice a regex but this will require
+# an updated table for each release
+tkn_delimit = {
+    "city's blessing":"city's_blessing","precombat main":"precombat_main",
+    "postcombat main":"postcombat_main","beginning of combat":"beginning_of_combat",
+    "declare attackers":"declare_attackers","declare blockers":"declare_blockers",
+    "end of combat":"end_of_combat","on top of":"on_top_of","up to":"up_to",
+    "on bottom of":"on_bottom_of","top of":"top_of","bottom of":"bottom_of",
+    "only if":"only_if","as long as":"as_long_as",
+    "council's dilemma":"council's_dilemma","fateful hour":"fateful_hour",
+    "join forces":"join_forces","spell mastery":"spell_master",
+    "tempting offer":"tempting_offer","will of the council":"will_of_the_council",
+    "double strike":"double_strike","first strike":"first_strike",
+    "commander ninjutsu":"commander_ninjutsu","split second":"split_second",
+    "living weapon":"living_weapon","totem armor":"totem_armor",
+    "jump-start":"jump_start","assembly-worker":"assembly_worker",
+}
+tkn_delimit_tkns = '|'.join(tkn_delimit.keys())
+re_tkn_delimit = re.compile(r"(?<=<)({})(?=>)".format(tkn_delimit_tkns))
+
+####
 ## STATUS DECONFLICTION
 ####
 
@@ -683,3 +702,10 @@ re_ts_phase = re.compile(r"xa<phase>(s?)(?=\W)")
 # "...exile the top card of your library face down.", generally 'turn'
 re_status_face = re.compile(r"face-pr<(up|down)>")
 re_mod_face = re.compile(r"face pr<(up|down)>")
+
+####
+## SUFFICES
+####
+
+# move any suffices 'r', 's', 'ing' 'ed' or "'s" to parameters inside tags
+re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")

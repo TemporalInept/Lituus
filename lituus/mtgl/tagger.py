@@ -128,6 +128,7 @@ def first_pass(txt):
     ntxt = tag_awkws(ntxt)                       # ability words, keywords & actions
     ntxt = tag_characteristics(ntxt)             # chars. - done after #s
     ntxt = mtgl.re_zone.sub(r"zn<\1>",ntxt)      # zones
+    ntxt = combine_tokens(ntxt)                  # replace space/hyphen w/ underscore
     return ntxt
 
 def tag_entities(txt):
@@ -142,7 +143,7 @@ def tag_turn_structure(txt):
     ntxt = mtgl.re_phase.sub(r"ts<\1>",txt)
     ntxt = mtgl.re_step1.sub(r"ts<\1>",ntxt)
     ntxt = mtgl.re_step2.sub(r"ts<\1>",ntxt)
-    #ntxt = mtgl.re_generic_turn.sub(r"ts<\1>",ntxt)
+    ntxt = mtgl.re_generic_turn.sub(r"ts<\1>",ntxt)
     return ntxt
 
 def tag_english(txt):
@@ -175,6 +176,10 @@ def tag_characteristics(txt):
     ntxt = mtgl.re_ch_pt.sub(r"ch<p/t val=\1\2/\3\4>",ntxt) # tag p/t
     return mtgl.re_lituus_ch.sub(r"xc<\1>",ntxt)            # tag lituus char. & return
 
+def combine_tokens(txt):
+    """ replaces spaces and hypens between tagged tokens with underscore """
+    return mtgl.re_tkn_delimit.sub(lambda m: mtgl.tkn_delimit[m.group(1)],txt)
+
 ####
 # 2ND PASS
 ####
@@ -187,6 +192,7 @@ def second_pass(txt):
     :return: tagged oracle text
     """
     ntxt = deconflict_status(txt)
+    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)
     return ntxt
 
 re_emp_postfix = re.compile(r"\ssuffix=(?=)>")
@@ -213,4 +219,13 @@ def deconflict_status(txt):
     ntxt = mtgl.re_status_face.sub(r"st<face amplifier=\1>",ntxt)
     ntxt = mtgl.re_mod_face.sub(r"xm<face amplifier=\1>",ntxt)
 
+    return ntxt
+
+def suffices(txt):
+    """
+     moves suffices to inside the tag under param suffix
+    :param txt: tagged oracle txt
+    :return: modified tagged txt
+    """
+    ntxt = txt
     return ntxt
