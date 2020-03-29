@@ -197,13 +197,20 @@ def deconflict_status(txt):
     :param txt: oracle txt after initial first pass
     :return: tagged oracle text
     """
-    # phase - can be Status (Time and Tide), Turn Structure (Breath of Fury) or
-    #  action (Ertai's Familiar) only 1 card (Time and Tide) is a Status
-    if 'phase' in txt:
-        txt = mtgl.re_status_phase.sub(r"st<phased amplifier=\2>",txt)
-        txt = mtgl.re_action_phase.sub(r"xa<phase amplifier=\2 suffix=\1>",txt)
-        txt = mtgl.re_ts_phase.sub(r"ts<phase suffix=\1>",txt)
+    # Tapped, Flipped
+    ntxt = mtgl.re_status2.sub(r"st<\2\3p\4>",txt)
 
-        # actions and turn structure may result in empty suffixes
-        txt = re_emp_postfix.sub('>', txt)
-    return txt
+    # phase - can be Status (Time and Tide), Turn Structure (Breath of Fury) or
+    #  action (Ertai's Familiar)
+    ntxt = mtgl.re_status_phase.sub(r"st<phased amplifier=\2>",ntxt)
+    ntxt = mtgl.re_action_phase.sub(r"xa<phase amplifier=\2 suffix=\1>",ntxt)
+    ntxt = mtgl.re_ts_phase.sub(r"ts<phase suffix=\1>",ntxt)
+
+    # actions and turn structure may result in empty suffixes
+    ntxt = re_emp_postfix.sub('>',ntxt)
+
+    # Face Up/Down
+    ntxt = mtgl.re_status_face.sub(r"st<face amplifier=\1>",ntxt)
+    ntxt = mtgl.re_mod_face.sub(r"xm<face amplifier=\1>",ntxt)
+
+    return ntxt

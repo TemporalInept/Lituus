@@ -66,6 +66,7 @@ from hashlib import md5
   Lituus Chacteristics = xc<LITUUS CHARACTERISTIC>
   Lituus Objects = xo<LITUUS OBJECT>
   Lituus Quantifiers = xq<LITUUS QUANTIFIER>
+  Lituus Modifiers = xm<LITUUS MODIFIER>
 """
 
 ####
@@ -424,7 +425,7 @@ re_op = re.compile(r"\b({})\b".format('|'.join(list(OP.keys()))))
 # prepositions (check for ending tags)
 prepositions = [
     'on top of','up to','on bottom of','from','to','into','in','on','out','under',
-    'onto','top of','top','bottom of','bottom','without','with','for'
+    'onto','top of','top','bottom of','bottom','without','with','for','up','down',
 ]
 #re_prep = re.compile(r"\b(?<![<|-])({})\b(?!>)".format('|'.join(prepositions)))
 re_prep = re.compile(r"\b(?<!<)({})\b(?!>)".format('|'.join(prepositions)))
@@ -667,11 +668,18 @@ re_zone = re.compile(
 #  'flipped','unflipped',
 #  'face-up','face-down',
 #  'phased-in','phased-out'
+# NOTE: excluding reminder text (which we remove) there is only 1 card, Time and
+#  Tide that has a status involving Phasing
 
 status = ['tap','flip','phase','face']
-re_status = re.compile(r"([kx]a)<(un)?({})>(?=ed)".format('|'.join(status[0:3])))
+re_status = re.compile(r"([kx]a)<(un)?({})>(ed)".format('|'.join(status[0:2])))
 
 # Phase can be Status, Action or Turn Structure
-re_status_phase = re.compile(r"(xa<phase>ed-)pr<(in|out)>")
+re_status_phase = re.compile(r"(xa<phase>ed-)pr<(in|out)>") # all status have a hyphen
 re_action_phase = re.compile(r"xa<phase>(s|ed)?\spr<(in|out)>")
 re_ts_phase = re.compile(r"xa<phase>(s?)(?=\W)")
+
+# face can be a Status (has a hyphen) or a modifier to an action i.e. Bomat Courier
+# "...exile the top card of your library face down.", generally 'turn'
+re_status_face = re.compile(r"face-pr<(up|down)>")
+re_mod_face = re.compile(r"face pr<(up|down)>")
