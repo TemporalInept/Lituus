@@ -12,8 +12,8 @@ Defines functions to work with mtgl tags
 
 #__name__ = 'mtgltag'
 __license__ = 'GPLv3'
-__version__ = '0.0.1'
-__date__ = 'September 2019'
+__version__ = '0.1.0'
+__date__ = 'March 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -137,6 +137,34 @@ def untag(tkn):
         return tag,val,props
     except AttributeError:
         raise mtgl.MTGLTagException(tkn)
+
+def merge_props(props,strict=True):
+    """
+     merges the proplists in props. if strict is True confirms all proplists have
+     the same key->value pairs, otherwise adds unique key->value pairs and 'ands'
+     differing values
+    :param props: list of proplists
+    :param strict: oneof {True, False}
+    :return: merged proplist
+    """
+    ps = {}
+    keys = list(set.union(*map(set,[x.keys() for x in props])))
+    for key in keys:
+        vals = set()
+        for prop in props:
+            if strict:
+                try:
+                    vals.add(prop[key])
+                except KeyError:
+                    raise mtgl.MTGLTagException("KeyError {}".format(key))
+            else:
+                pass
+        if strict:
+            if len(vals) == 1: ps[key] = vals.pop()
+            else: raise mtgl.MTGLTagException("Incompatible properties {}".format(key))
+        else:
+            pass
+    return ps
 
 re_hanging = re.compile(r"(\s)>") # find hanging spaces before ending angle brace
 def retag(tag,val,ps):

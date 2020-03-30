@@ -118,17 +118,18 @@ def first_pass(txt):
       to be carried out prior to their execution, rearranging the order of the
       below will negatively effect the results
     """
-    ntxt = mtgl.re_quantifier.sub(r"xq<\1>",txt) # tag quantifiers
-    ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)    # then nubmers
-    ntxt = tag_entities(ntxt)                    # entities
-    ntxt = tag_turn_structure(ntxt)              # phases & steps
-    ntxt = tag_english(ntxt)                     # english words
-    ntxt = mtgl.re_trigger.sub(r"tp<\1>",ntxt)   # trigger preambles
-    ntxt = tag_counters(ntxt)                    # markers
-    ntxt = tag_awkws(ntxt)                       # ability words, keywords & actions
-    ntxt = tag_characteristics(ntxt)             # chars. - done after #s
-    ntxt = mtgl.re_zone.sub(r"zn<\1>",ntxt)      # zones
-    ntxt = combine_tokens(ntxt)                  # replace space/hyphen w/ underscore
+    ntxt = mtgl.re_quantifier.sub(r"xq<\1>",txt)   # tag quantifiers
+    ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)      # then nubmers
+    ntxt = tag_entities(ntxt)                      # entities
+    ntxt = tag_turn_structure(ntxt)                # phases & steps
+    ntxt = tag_english(ntxt)                       # english words
+    ntxt = mtgl.re_trigger.sub(r"tp<\1>",ntxt)     # trigger preambles
+    ntxt = tag_counters(ntxt)                      # markers
+    ntxt = tag_awkws(ntxt)                         # ability words, keywords & actions
+    ntxt = tag_characteristics(ntxt)               # chars. - done after #s
+    ntxt = mtgl.re_zone.sub(r"zn<\1>",ntxt)        # zones
+    ntxt = combine_tokens(ntxt)                    # replace space/hyphen w/ underscore
+    ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt) # relocate negated tags
     return ntxt
 
 def tag_entities(txt):

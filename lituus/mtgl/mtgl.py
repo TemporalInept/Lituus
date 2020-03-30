@@ -405,7 +405,7 @@ re_step1 = re.compile(r"\b({}) step".format('|'.join(steps1)))
 re_step2 = re.compile(r"\b({})( step)?".format('|'.join(steps2)))
 
 # generic terms NOTE: standalone 'phase' is handled later in Status)
-generic_turns = ["turn","step"]
+generic_turns = ["turn","step","eot"]
 re_generic_turn = re.compile(r"\b({})".format('|'.join(generic_turns)))
 
 ####
@@ -654,9 +654,10 @@ re_zone = re.compile(
 )
 
 ####
-## SPACES/HYPHENS between tokens
+## MID-PASS CLEANUP
 ####
 
+# SPACES/HYPHENS between tokens
 # For now, we are using a simple table to do so vice a regex but this will require
 # an updated table for each release
 tkn_delimit = {
@@ -676,6 +677,9 @@ tkn_delimit = {
 }
 tkn_delimit_tkns = '|'.join(tkn_delimit.keys())
 re_tkn_delimit = re.compile(r"(?<=<)({})(?=>)".format(tkn_delimit_tkns))
+
+# Negated tags i.e. non-XX<...>
+re_negate_tag = re.compile(r"non-(\w\w)<(\w+?)>")
 
 ####
 ## STATUS DECONFLICTION

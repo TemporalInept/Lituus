@@ -297,14 +297,8 @@ def _hack_cards_(jv):
         if 'text' in jv[cname]:
             # older versions of cards may have semi-colon rather than a comma
             # modify modal spells removing newlines betweem modes
-            # Standarize status, removing any hyphens between face up/face down &
-            #  phased in/phased out
             jv[cname]['text'] = jv[cname]['text'].replace(';',',')
             jv[cname]['text'] = jv[cname]['text'].replace("\n• ",mtgl.BLT)
-            #jv[cname]['text'] = jv[cname]['text'].replace("face-up","face up")
-            #jv[cname]['text'] = jv[cname]['text'].replace("face-down","face down")
-            #jv[cname]['text'] = jv[cname]['text'].replace("phased-in","phased in")
-            #jv[cname]['text'] = jv[cname]['text'].replace("phased-out","phased out")
 
         # hard-code hacks for easier processing
         if cname == "Urborg, Tomb of Yawgmoth":
