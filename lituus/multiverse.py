@@ -181,7 +181,6 @@ def import_cards(mv,tc,n2r,mverse):
     ttl = len(n2r)
     for cname in n2r: # only enumerate legal names
         # get the parameters and parse the oracle
-        # TODO: once the bugs are worked out, remove reraise of error
         # TODO: once debugging is done, dont store intermidiate parsing artifacts
         try:
             # harvest the json card dict and parse the oracle text
@@ -190,13 +189,13 @@ def import_cards(mv,tc,n2r,mverse):
             dcard['tag'] = tagger.tag(cname,dcard['oracle'])
         except KeyError as e:
             print("Mverse error, lost card {}".format(e))
+        except mtgl.MTGLTagException as e:
+            print("Tagging Error: {}".format(e))
             raise
-        except mtgl.MTGLException:
-            print("Error parsing {}. Skipping...".format(cname))
-            raise
+        except mtgl.MTGLException as e:
+            print("Error parsing {} due to {}. Skipping...".format(cname,e))
         except Exception as e:
             print("Unknown Error of type {} parsing {}. Skipping...".format(type(e),cname))
-            raise
 
         # determine if the card goes in the multiverse dict or transformed
         if jcard['layout'] == 'transform' and jcard['side'] == 'b':

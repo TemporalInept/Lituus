@@ -21,6 +21,7 @@ __status__ = 'Development'
 
 import regex as re
 import lituus.mtgl.mtgl as mtgl
+import lituus.mtgl.mtgltag as mtgltag
 
 def tag(name,txt):
     """
@@ -29,9 +30,15 @@ def tag(name,txt):
     :param txt: the mtgl text
     :return: tagged mtgl text
     """
-    ntxt = preprocess(name,txt)
-    ntxt = first_pass(ntxt)
-    ntxt = second_pass(ntxt)
+    try:
+        ntxt = preprocess(name,txt)
+        ntxt = first_pass(ntxt)
+        ntxt = midprocess(ntxt)
+        ntxt = second_pass(ntxt)
+    except mtgl.MTGLException as e:
+        raise mtgl.MTGLTagException("Tagging {} failed due to {}".format(name,e))
+    except Exception as e:
+        raise mtgl.MTGLTagException("unknpown error tagging {} due to {}".format(name,e))
     return ntxt
 
 ####
@@ -118,18 +125,16 @@ def first_pass(txt):
       to be carried out prior to their execution, rearranging the order of the
       below will negatively effect the results
     """
-    ntxt = mtgl.re_quantifier.sub(r"xq<\1>",txt)   # tag quantifiers
-    ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)      # then nubmers
-    ntxt = tag_entities(ntxt)                      # entities
-    ntxt = tag_turn_structure(ntxt)                # phases & steps
-    ntxt = tag_english(ntxt)                       # english words
-    ntxt = mtgl.re_trigger.sub(r"tp<\1>",ntxt)     # trigger preambles
-    ntxt = tag_counters(ntxt)                      # markers
-    ntxt = tag_awkws(ntxt)                         # ability words, keywords & actions
-    ntxt = tag_characteristics(ntxt)               # chars. - done after #s
-    ntxt = mtgl.re_zone.sub(r"zn<\1>",ntxt)        # zones
-    ntxt = combine_tokens(ntxt)                    # replace space/hyphen w/ underscore
-    ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt) # relocate negated tags
+    ntxt = mtgl.re_quantifier.sub(r"xq<\1>",txt) # tag quantifiers
+    ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)    # then nubmers
+    ntxt = tag_entities(ntxt)                    # entities
+    ntxt = tag_turn_structure(ntxt)              # phases & steps
+    ntxt = tag_english(ntxt)                     # english words
+    ntxt = mtgl.re_trigger.sub(r"tp<\1>",ntxt)   # trigger preambles
+    ntxt = tag_counters(ntxt)                    # markers
+    ntxt = tag_awkws(ntxt)                       # ability words, keywords & actions
+    ntxt = tag_characteristics(ntxt)             # chars. - done after #s
+    ntxt = mtgl.re_zone.sub(r"zn<\1>",ntxt)      # zones
     return ntxt
 
 def tag_entities(txt):
@@ -177,12 +182,33 @@ def tag_characteristics(txt):
     ntxt = mtgl.re_ch_pt.sub(r"ch<p/t val=\1\2/\3\4>",ntxt) # tag p/t
     return mtgl.re_lituus_ch.sub(r"xc<\1>",ntxt)            # tag lituus char. & return
 
+####
+## MID-PROCESSING
+####
+
+def midprocess(txt):
+    """
+     prepares tagged txt for second pass
+       1. replaces spaces/hyphens between tokens with underscore IOT make it a
+        single tag value
+       2. align subsequent supertype, card type i.e. ch<super type> ch<type> are
+        aligned i.e. ch<basic> ch<land> becomes ch<basic→land> this will assist
+        in chaining
+       3. moves 'non-' in front of a tag to the negated symbol '¬' inside the tag
+    :param txt: tagged oracle txt
+    :return: processed oracle txt
+    """
+    ntxt = mtgl.re_tkn_delimit.sub(lambda m: mtgl.tkn_delimit[m.group(1)],txt) # 1
+    ntxt = mtgl.re_align_type.sub(r"ch<\1→\2>",txt)                            # 2
+    ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                             # 3
+    return ntxt
+
 def combine_tokens(txt):
     """ replaces spaces and hypens between tagged tokens with underscore """
     return mtgl.re_tkn_delimit.sub(lambda m: mtgl.tkn_delimit[m.group(1)],txt)
 
 ####
-# 2ND PASS
+## 2ND PASS
 ####
 
 def second_pass(txt):
@@ -192,8 +218,9 @@ def second_pass(txt):
     :param txt: initial tagged oracle txt (lowered case)
     :return: tagged oracle text
     """
-    ntxt = deconflict_status(txt)
-    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)
+    ntxt = deconflict_status(txt)                       # tag status words appropriately
+    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt) # move suffix to tag param
+    ntxt = chain(ntxt)
     return ntxt
 
 re_emp_postfix = re.compile(r"\ssuffix=(?=)>")
@@ -222,11 +249,38 @@ def deconflict_status(txt):
 
     return ntxt
 
-def suffices(txt):
+def chain(txt):
     """
-     moves suffices to inside the tag under param suffix
+     combines sequential charcteristics under a single tag
     :param txt: tagged oracle txt
-    :return: modified tagged txt
+    :return: modified tagged txt with sequential characterisitcs chained
     """
+    # chains of 4
     ntxt = txt
+
+    # chains of 3
+    ntxt = mtgl.re_3chain.sub(lambda m: _chain3_(m),ntxt)
+
     return ntxt
+
+####
+## PRIVATE FUNCTIONS
+####
+
+def _chain3_(m):
+    """
+    chains three sequential characteristics into a single tag
+    :param m: a regex.Match object
+    :return: the chained characteristics
+    """
+    # untag the characteristics
+    _,val1,ps1 = mtgltag.untag(m.group(1))
+    _,val2,ps2 = mtgltag.untag(m.group(4))
+    _,val3,ps3 = mtgltag.untag(m.group(8))
+
+    # get the chain operator, chain the characteristics
+    op = mtgl.AND if m.group(7) == 'and' else mtgl.OR
+    val = val1 + op + val2 + op + val3
+
+    # retag and return the chained characteristics
+    return mtgltag.retag('ch',val,mtgltag.merge_props([ps1,ps2,ps3]))

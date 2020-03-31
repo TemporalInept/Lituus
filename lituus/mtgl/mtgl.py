@@ -97,7 +97,7 @@ GT  = '⋗' # mtgl greater than
 LE  = '≤' # mtgl less than or equal
 GE  = '≥' # mtgl greater than or equal
 EQ  = '≡' # mtgl equal to
-ARW = '→' # property
+ARW = '→' # property/alignment
 # symbols defined in oracle text
 HYP = '—' # mtg long hyphen
 BLT = '•' # mtg bullet
@@ -315,14 +315,14 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
 ####
 
 """
- intag = "\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)" a word bounary and not preceded by an 
+ intag = "\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)" a word bounary and not preceded by an 
   opening tag mark follwoed by 0 or more tag characters or spaces
  allowed suffixes are:
   "r", "s", "ing", "ed", "'s" a space or the punctuation ':', ',', '.', 
  the below will tag only tokens that are not already tagged and are followed only
  by allowed suffixes 
-  r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)"
-  (\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*) -> preceded by a word boundary and not inside a tag
+  r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)"
+  (\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*) -> preceded by a word boundary and not inside a tag
   ({}) -> group to catch specified tokens 
   (?=r|s|ing|ed|'s|:|\.|,|\s) -> only followed by allowed suffixes
 """
@@ -359,7 +359,7 @@ objects = [ # objects 109.1
 ]
 obj_tkns = '|'.join(objects)
 re_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(obj_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(obj_tkns)
 )
 
 # keep suffix but check word boundary in beginning
@@ -369,14 +369,14 @@ lituus_objects = [ # lituus objects
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_obj_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_obj_tkns)
 )
 
 # lituus players - keep suffix but check word boundary in beginning
 lituus_players = ['you','opponent','teammate','player','owner','controller']
 lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_ply_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_ply_tkns)
 )
 
 ####
@@ -492,7 +492,9 @@ ability_words = [ # ability words 207.2c Updated 24-Jan-20 with Theros Beyond De
     "sweep","tempting offer","threshold","undergrowth","will of the council"
 ]
 aw_tkns = '|'.join(ability_words)
-re_aw = re.compile(r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format(aw_tkns))
+re_aw = re.compile(
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(aw_tkns)
+)
 
 keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Jan-20
     'activate','attach','unattach','cast','counter','create','destroy','discard',
@@ -504,7 +506,7 @@ keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Ja
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(kw_act_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(kw_act_tkns)
 )
 
 keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
@@ -530,7 +532,9 @@ keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
     'afterlife','riot','spectacle','escape'
 ]
 kw_tkns = '|'.join(keywords)
-re_kw = re.compile(r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})".format(kw_tkns))
+re_kw = re.compile(
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(kw_tkns)
+)
 
 # TODO: what to do with cycle, phase in, phase out, copy, flip
 lituus_actions = [ # words not defined in the rules but important any way
@@ -541,7 +545,7 @@ lituus_actions = [ # words not defined in the rules but important any way
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(la_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(la_tkns)
 )
 
 ####
@@ -563,10 +567,10 @@ meta_characteristics = [ # 100.3
 color_characteristics = [ # 105.1, 105.2a, 105.2b, 105.2c
     'white','blue','black','green','red','colorless','multicolored','monocolored'
 ]
-super_characteristics = ['legendary','basic','snow','world','tribal'] # 205.4a
-type_characteristics = [  # 301.5, NOTE: we added historic
-    'instant','creature','sorcery','planeswalker',
-    'enchantment','land','artifact','historic'
+super_characteristics = ['legendary','basic','snow','world'] # 205.4a
+type_characteristics = [  # 300.1, NOTE: we added historic
+    'artifact','creature','enchantment','instant','land','planeswalker',
+    'socrcery','tribal'
 ]
 sub_characteristics = [ # Updated 24-Jan-20 with Theros Beyond Death
     # NOTE: sub_characteristics must be updated with the release of new sets to
@@ -626,7 +630,19 @@ char_tkns = '|'.join(
     type_characteristics + sub_characteristics
 )
 re_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(char_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(char_tkns)
+)
+
+# 205.4b ... some supertypes are closely identified with specific card types...
+# when we have a supertype followed immediately by a card type, combine these as
+# the supertype applies to the card type and to the object (implied or explicit)
+# For example Wave of Vitriol, "...all artifacts, enchantments, and nonbasic
+# lands they control... nonbasic applies to lands and not to permanents that
+# must sacrified
+re_align_type = re.compile(
+    r"ch<({})> ch<({})>".format(
+        '|'.join(super_characteristics),'|'.join(type_characteristics)
+    )
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
@@ -637,7 +653,7 @@ re_ch_pt = re.compile(r"(\+|-)?nu<(\d+)>/(\+|-)?nu<(\d+)>(?!\scounter)")
 lituus_characteristics = ['life total','control','own','life','hand size','devotion']
 lituus_char_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_char_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_char_tkns)
 )
 
 ####
@@ -650,7 +666,7 @@ zones = [
 ]
 zn_tkns = '|'.join(zones)
 re_zone = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(zn_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(zn_tkns)
 )
 
 ####
@@ -679,7 +695,7 @@ tkn_delimit_tkns = '|'.join(tkn_delimit.keys())
 re_tkn_delimit = re.compile(r"(?<=<)({})(?=>)".format(tkn_delimit_tkns))
 
 # Negated tags i.e. non-XX<...>
-re_negate_tag = re.compile(r"non-(\w\w)<(\w+?)>")
+re_negate_tag = re.compile(r"non-(\w\w)<(.+?)>")
 
 ####
 ## STATUS DECONFLICTION
@@ -713,3 +729,16 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 
 # move any suffices 'r', 's', 'ing' 'ed' or "'s" to parameters inside tags
 re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")
+
+####
+## CHAINS
+####
+
+# three and-ed/or-ed sequential characteristics
+re_3chain = re.compile(
+    r"(ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)" # 1st characterisitc 
+    r",\s"                                                         # break betw/ 1 & 2
+    r"(ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)" # 2nd characterisitc                          
+    r",\s(and|or)\s"                                               # break betw/ 2 & 3 
+    r"(ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)" # 3rd characterisitc
+)

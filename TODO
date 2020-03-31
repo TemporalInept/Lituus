@@ -34,3 +34,17 @@ ch<dragon> ch<creature> ob<token>
  a. have very distinct chain setup with 7 characteristics,
  b. should types be chained differently from say colors, 
  c. how about meta characteristics like p/t
+
+20. Can we combine chain into a generic function regardless of # of characteristics
+
+22. Wave of Vitriol presents problems for 3 chains
+
+mv['Wave of Vitriol']._card['tag']
+"xq<each> xp<player> ka<sacrifice suffix=s> xq<all> ch<artifact suffix=s>, 
+ch<enchantment suffix=s>, and ch<¬basic> ch<land suffix=s> they xc<control>....
+
+23. (non)basic and land should be combined?
+ any supertype and following type should be combined
+
+24.
+
