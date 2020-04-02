@@ -210,7 +210,7 @@ def import_cards(mv,tc,n2r,mverse):
 
         # update progress
         i += 1
-        #progress_bar(i,ttl)
+        progress_bar(i,ttl)
 
     # combine split cards & add to multiverse deleting the original halves
     for split in splits:

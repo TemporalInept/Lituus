@@ -19,7 +19,7 @@
 16. Can we just standarize a regular expression to catch anamolies in function
  word_hacks?
 
-18. See Aphetto Runecaster, Break open turn should be tagged as an action word
+18. See Aphetto Runecaster, 'turn' should be tagged as an action word
 
 19. Wasitora, Nekoru Queen highlights many problems
 
@@ -37,14 +37,33 @@ ch<dragon> ch<creature> ob<token>
 
 20. Can we combine chain into a generic function regardless of # of characteristics
 
-22. Wave of Vitriol presents problems for 3 chains
+24. Entity chains like Cautery Sliver
 
-mv['Wave of Vitriol']._card['tag']
-"xq<each> xp<player> ka<sacrifice suffix=s> xq<all> ch<artifact suffix=s>, 
-ch<enchantment suffix=s>, and ch<¬basic> ch<land suffix=s> they xc<control>....
+25. Darksteel Mutation
 
-23. (non)basic and land should be combined?
- any supertype and following type should be combined
+26. Nissa's Defeat, Wasitora, Nekoru Queen and Chrome Mox highlight chaining problems/difficulties
 
-24.
+>>> mv["Nissa's Defeat"]._card['tag']
+'ka<destroy> xq<target> ch<forest>, ch<green> ch<enchantment>, or ch<green> ch<planeswalker>. cn<if> xq<that> ob<permanent> was xq<a> ch<nissa> ch<planeswalker>, xa<draw> xq<a> ob<card>.'
+
+>>> mv["Wasitora, Nekoru Queen"]._card['tag']
+'kw<flying>, kw<trample>\ntp<whenever> ob<card ref=self> xa<deal suffix=s> combat damage pr<to> xq<a> xp<player>, xq<that> xp<player> ka<sacrifice suffix=s> xq<a> ch<creature>. cn<if> the xp<player> cn<cannot>, xp<you> ka<create> xq<a> ch<p/t val=3/3> ch<black∧red∧green> ch<cat> ch<dragon> ch<creature> ob<token> pr<with> kw<flying>.'
+
+>>> mv["Chrome Mox"]._card['tag']
+"aw<imprint> — tp<when> ob<card ref=self> xa<enter suffix=s> the zn<battlefield>, xp<you> cn<may> ka<exile> xq<a> ch<¬artifact>, ch<¬land> ob<card> pr<from> xp<you suffix=r> zn<hand>.\n{t}: xa<add> nu<1> xo<mana> of xq<any> of the ka<exile suffix=ed> ob<card suffix='s> ch<color suffix=s>."
+
+a. Nissa has 3 distinct permanents a forest, a green enchantment and a green planeswalker where the quantifier target applies to each but these cannot be
+chained into a forest|green->enchantment|green->planeswalker (or could they)
+NOTE: there are no commas between green and enchantment
+
+b. In Chrome Mox we see two characteristics that can be chained into a card object but there is a comma seperating them
+
+c. Wasitora has multiple characterstics with no commas and one meta (p/t)
+
+27. redo 'the' as a quanitifier?
+
+28. Hazezon Tamar presents a problem with chaining
+
+
+
 

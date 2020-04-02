@@ -39,7 +39,7 @@ class MTGCard(object):
         self._card = card         # the card dict
         self._kws = []            # list of keywords
         self._aws = []            # list of ability words
-        self._kas = []            # list of keyword actions
+        #self._kas = []            # list of keyword actions
         #self._tree = card['mtgt'] # initialize the parse tree
 
         # pull out the keywords

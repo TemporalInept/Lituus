@@ -639,8 +639,8 @@ re_ch = re.compile(
 # For example Wave of Vitriol, "...all artifacts, enchantments, and nonbasic
 # lands they control... nonbasic applies to lands and not to permanents that
 # must sacrified
-re_align_type = re.compile(
-    r"ch<({})> ch<({})>".format(
+re_align_type = re.compile( # have to take into account negated characteristics
+    r"ch<(¬?)({})> ch<(¬?)({})>".format(
         '|'.join(super_characteristics),'|'.join(type_characteristics)
     )
 )
@@ -651,9 +651,9 @@ re_ch_pt = re.compile(r"(\+|-)?nu<(\d+)>/(\+|-)?nu<(\d+)>(?!\scounter)")
 # lituus characteristics
 # TODO: keep control, own?
 lituus_characteristics = ['life total','control','own','life','hand size','devotion']
-lituus_char_tkns = '|'.join(lituus_characteristics)
+lituus_ch_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_char_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_ch_tkns)
 )
 
 ####
@@ -732,13 +732,66 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")
 
 ####
 ## CHAINS
-####
+# Sequential characteristics
+###
+
+# five and-ed/or-ed sequential characteristics (2 cards Spoils of Victory, Vessel of Nascency)
+re_5chain = re.compile(
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)" 
+    r",\s"                                                         
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"                          
+    r",\s"                                                         
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r",\s"                                                         
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r",\s(and|or)\s"                                                
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+)
+
+# four and-ed/or-ed sequential characteristics
+re_4chain = re.compile(
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"  
+    r",\s"                                                         
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"                           
+    r",\s"                                                         
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)" 
+    r",\s(and|or)\s"                                                
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+)
 
 # three and-ed/or-ed sequential characteristics
 re_3chain = re.compile(
-    r"(ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)" # 1st characterisitc 
-    r",\s"                                                         # break betw/ 1 & 2
-    r"(ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)" # 2nd characterisitc                          
-    r",\s(and|or)\s"                                               # break betw/ 2 & 3 
-    r"(ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)" # 3rd characterisitc
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"  
+    r",\s"                                                         
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"                            
+    r",\s(and|or)\s"                                                
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+)
+
+#Two characteristics separated by comma i.e Chrome Mox treat this as an 'and'
+re_2chain_comma = re.compile(
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r",\s"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(?=\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+)
+
+#Two characteristics separated by and/or i.e Saprazzan Bailiff & Ceta Sanctuary
+re_2chain_and_or = re.compile(
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"\s(and|or)\s"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(?=\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+)
+
+#Two characteristics separated by a space
+# TODO: this will match cards with more than two space delimited characteristics
+re_2chain_space = re.compile(
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"\s"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(?=\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )

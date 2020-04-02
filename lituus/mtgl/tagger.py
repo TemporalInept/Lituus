@@ -199,8 +199,8 @@ def midprocess(txt):
     :return: processed oracle txt
     """
     ntxt = mtgl.re_tkn_delimit.sub(lambda m: mtgl.tkn_delimit[m.group(1)],txt) # 1
-    ntxt = mtgl.re_align_type.sub(r"ch<\1→\2>",txt)                            # 2
     ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                             # 3
+    ntxt = mtgl.re_align_type.sub(r"ch<\1\2→\3\4>",ntxt)                       # 2
     return ntxt
 
 def combine_tokens(txt):
@@ -255,11 +255,12 @@ def chain(txt):
     :param txt: tagged oracle txt
     :return: modified tagged txt with sequential characterisitcs chained
     """
-    # chains of 4
-    ntxt = txt
+    # multi chains >= 3)
+    ntxt = mtgl.re_5chain.sub(lambda m: _multichain_(m),txt)
+    ntxt = mtgl.re_4chain.sub(lambda m: _multichain_(m),ntxt)
+    ntxt = mtgl.re_3chain.sub(lambda m: _multichain_(m),ntxt)
 
-    # chains of 3
-    ntxt = mtgl.re_3chain.sub(lambda m: _chain3_(m),ntxt)
+    # double chains
 
     return ntxt
 
@@ -267,20 +268,63 @@ def chain(txt):
 ## PRIVATE FUNCTIONS
 ####
 
-def _chain3_(m):
+def _multichain_(m):
     """
-    chains three sequential characteristics into a single tag
+    chains n sequential characteristics into a single tag where n > 2
     :param m: a regex.Match object
     :return: the chained characteristics
     """
-    # untag the characteristics
-    _,val1,ps1 = mtgltag.untag(m.group(1))
-    _,val2,ps2 = mtgltag.untag(m.group(4))
-    _,val3,ps3 = mtgltag.untag(m.group(8))
+    # set up our lists for values and prop-lists
+    vals = []        # list of characteristics to chain
+    ps = []          # list of the proplists from the characteristics tags
+    tkn = None       # current token in chain
+    i = v = p = None # the chained obj to create
 
-    # get the chain operator, chain the characteristics
-    op = mtgl.AND if m.group(7) == 'and' else mtgl.OR
-    val = val1 + op + val2 + op + val3
+    # untag the characteristics saving the tag value and prop-list
+    for tkn in m.groups():
+        try:
+            i,v,p = mtgltag.untag(tkn.strip())
+            if i == 'ob': break
+            vals.append(v)
+            ps.append(p)
+        except AttributeError:
+            # no object exists: reset i,v and p
+            i = v = p = None
+        except mtgl.MTGLTagException:
+            # we've hit the operator, save it
+            op = mtgl.AND if tkn == 'and' else mtgl.OR
 
-    # retag and return the chained characteristics
-    return mtgltag.retag('ch',val,mtgltag.merge_props([ps1,ps2,ps3]))
+    # have to chain the characteristics
+    chs = op.join(vals)
+    pls = mtgltag.merge_props(ps)
+
+    # Create implied object if necessary.
+    if not i:
+        i = 'ob'
+        v = _implied_obj_(vals)
+        p = {}
+
+    # have to check characterics suffix
+    if 'suffix' in pls:
+        p['suffix'] = pls['suffix']
+        del pls['suffix']
+    assert(pls == {}) # TODO: remove after debugging
+
+    # add the chained characteristics to the objects prop list
+    p['characteristics'] = chs
+
+    # retag the chained characteristics and return
+    return mtgltag.retag(i,v,p)
+
+def _implied_obj_(cs):
+    """
+    determines from list of characteristics what value an object should have
+    109.2 if there is a reference to a type or subtype but not card,spell or source,
+    it means a permanent of that type or subtype
+    :param cs: list of characteristics
+    :return: 'card' or 'permanent' based on rule 109.2
+    """
+    for c in cs:
+        x = c.replace(mtgl.NOT,'') # remove any negations
+        if x in mtgl.type_characteristics+mtgl.sub_characteristics: return 'permanent'
+    return 'card'
