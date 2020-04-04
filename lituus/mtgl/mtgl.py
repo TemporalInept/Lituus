@@ -12,8 +12,8 @@ Defines regexes,strings and helper functions used in the mtgl format
 
 #__name__ = 'mtgl'
 __license__ = 'GPLv3'
-__version__ = '0.1.0'
-__date__ = 'March 2020'
+__version__ = '0.1.1'
+__date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -139,8 +139,8 @@ def re_self_ref(name):
     :return: the self ref regex pattern
     """
     return re.compile(
-        r"\b(this spell|this permanent|this card|her|his|{}|{})\b".format(
-            name,name.split(',')[0]
+        r"\b(this spell|this permanent|this card|her|his|{}|{}|{})\b".format(
+            name,name.split(',')[0],name.split(' ')[0]
         )
     )
 
@@ -248,7 +248,7 @@ word_hacks = {
     "aurochses":"aurochss","cyclopes":"cyclops","fishes":"fishs","fungi":"fungess",
     "homunculuses":"homunculuss","jellyfishes":"jellyfishs","leeches":"leechs",
     "mercenaries":"mercenarys","mongeese":"mongooss","mice":"mouses","foxes":"foxs",
-    "nautiluses":"nautiluss","octopi":"octopuss","sphinxes":"sphinxs",
+    "nautiluses":"nautiluss","octopuses":"octopuss","sphinxes":"sphinxs",
     "thalakoses":"thalokoss",
     # acronyms
     "end of turn":"eot","converted mana cost":"cmc",
@@ -564,14 +564,22 @@ meta_characteristics = [ # 100.3
     'p/t','everything','text','name','mana cost','cmc','power','toughness',
     'color identity','color','type'
 ]
+re_meta_char = re.compile(r"({})".format('|'.join(meta_characteristics)))
+
 color_characteristics = [ # 105.1, 105.2a, 105.2b, 105.2c
     'white','blue','black','green','red','colorless','multicolored','monocolored'
 ]
+re_clr_char = re.compile(r"{}".format('|'.join(color_characteristics)))
+
 super_characteristics = ['legendary','basic','snow','world'] # 205.4a
+re_super_char = re.compile(r"({})".format('|'.join(super_characteristics)))
+
 type_characteristics = [  # 300.1, NOTE: we added historic
     'artifact','creature','enchantment','instant','land','planeswalker',
     'socrcery','tribal'
 ]
+re_type_char = re.compile(r"({})".format('|'.join(type_characteristics)))
+
 sub_characteristics = [ # Updated 24-Jan-20 with Theros Beyond Death
     # NOTE: sub_characteristics must be updated with the release of new sets to
     #  include adding any token specific types
@@ -625,6 +633,9 @@ sub_characteristics = [ # Updated 24-Jan-20 with Theros Beyond Death
     "weird","werewolf","whale","wizard","wolf","wolverine","wombat","worm","wraith",
     "wurm","yeti","zombie","zubera",
 ]
+re_sub_char = re.compile(r"({})".format('|'.join(sub_characteristics)))
+
+# all characteristics
 char_tkns = '|'.join(
     meta_characteristics + color_characteristics + super_characteristics + \
     type_characteristics + sub_characteristics
@@ -771,20 +782,36 @@ re_3chain = re.compile(
     r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
 )
 
-#Two characteristics separated by comma i.e Chrome Mox treat this as an 'and'
+re_nchain = re.compile(
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>,\s){2,}" 
+    r"(and|or)\s"                                                
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+)
+
+#Two characteristics separated by and/or i.e Saprazzan Bailiff & Ceta Sanctuary
+re_2chain = re.compile(
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"                            
+    r"\s(and|or)\s"                                                
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+)
+
+##Two characteristics separated by and/or i.e Saprazzan Bailiff & Ceta Sanctuary
+#re_2chain = re.compile(
+#    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+#    r"\s(and|or)\s"
+#    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+#    r"(?=\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+#)
+
+# Two characteristics separated by comma i.e Chrome Mox treat this as an 'and'
+# must be followed by an object
 re_2chain_comma = re.compile(
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
     r",\s"
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"(?=\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-)
-
-#Two characteristics separated by and/or i.e Saprazzan Bailiff & Ceta Sanctuary
-re_2chain_and_or = re.compile(
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"\s(and|or)\s"
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"(?=\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
 
 #Two characteristics separated by a space

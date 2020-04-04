@@ -138,32 +138,36 @@ def untag(tkn):
     except AttributeError:
         raise mtgl.MTGLTagException(tkn)
 
-def merge_props(props,strict=True):
+def merge_props(props,strict=1):
     """
-     merges the proplists in props. if strict is True confirms all proplists have
+     merges the proplists in props based on specified strictness level.
+     if strict is True confirms all proplists have
      the same key->value pairs, otherwise adds unique key->value pairs and 'ands'
      differing values
     :param props: list of proplists
-    :param strict: oneof {True, False}
+    :param strict: oneof:
+      0 = Low no checking on sameness across parameters/parameter values
+      1 = Medium parameter values across common parameters must be the same but
+       parameters are not required to be shared across all proplists
+      2 = High parameters and parameter values must be the same in each prop list
     :return: merged proplist
     """
     ps = {}
     keys = list(set.union(*map(set,[x.keys() for x in props])))
     for key in keys:
         vals = set()
+
+        # check each paraemter for existence if high strictness
         for prop in props:
-            if strict:
-                try:
-                    vals.add(prop[key])
-                except KeyError:
-                    raise mtgl.MTGLTagException("KeyError {}".format(key))
-            else:
-                pass
-        if strict:
-            if len(vals) == 1: ps[key] = vals.pop()
-            else: raise mtgl.MTGLTagException("Incompatible properties {}".format(key))
-        else:
-            pass
+            if not key in prop:
+                if strict == 2:
+                    raise mtgl.MTGLTagException("Incompatible param {}".format(key))
+            else: vals.add(prop[key])
+
+        # check for same parameter values if strictness is not low
+        if strict > 0 and len(vals) > 1:
+            raise mtgl.MTGLTagException("Incompatible param value for {}".format(key))
+        ps[key] = mtgl.AND.join([val for val in vals])
     return ps
 
 re_hanging = re.compile(r"(\s)>") # find hanging spaces before ending angle brace

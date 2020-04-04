@@ -21,6 +21,7 @@ __status__ = 'Development'
 
 import regex as re
 import lituus.mtgl.mtgl as mtgl
+import lituus.mtgl.lexer as lexer
 import lituus.mtgl.mtgltag as mtgltag
 
 def tag(name,txt):
@@ -232,7 +233,7 @@ def deconflict_status(txt):
     :return: tagged oracle text
     """
     # Tapped, Flipped
-    ntxt = mtgl.re_status2.sub(r"st<\2\3p\4>",txt)
+    ntxt = mtgl.re_status.sub(r"st<\2\3p\4>",txt)
 
     # phase - can be Status (Time and Tide), Turn Structure (Breath of Fury) or
     #  action (Ertai's Familiar)
@@ -251,14 +252,16 @@ def deconflict_status(txt):
 
 def chain(txt):
     """
-     combines sequential charcteristics under a single tag
+     Sequential comma separated charcteristics can be combined into the
+     characteristics parameter of a single object (that may be implied)
     :param txt: tagged oracle txt
     :return: modified tagged txt with sequential characterisitcs chained
     """
     # multi chains >= 3)
-    ntxt = mtgl.re_5chain.sub(lambda m: _multichain_(m),txt)
-    ntxt = mtgl.re_4chain.sub(lambda m: _multichain_(m),ntxt)
-    ntxt = mtgl.re_3chain.sub(lambda m: _multichain_(m),ntxt)
+    ntxt = mtgl.re_nchain.sub(lambda m: _multichain_(m),txt)
+    #ntxt = mtgl.re_5chain.sub(lambda m: _multichain_(m),txt)
+    #ntxt = mtgl.re_4chain.sub(lambda m: _multichain_(m),ntxt)
+    #ntxt = mtgl.re_3chain.sub(lambda m: _multichain_(m),ntxt)
 
     # double chains
 
@@ -269,11 +272,6 @@ def chain(txt):
 ####
 
 def _multichain_(m):
-    """
-    chains n sequential characteristics into a single tag where n > 2
-    :param m: a regex.Match object
-    :return: the chained characteristics
-    """
     # set up our lists for values and prop-lists
     vals = []        # list of characteristics to chain
     ps = []          # list of the proplists from the characteristics tags
@@ -281,14 +279,14 @@ def _multichain_(m):
     i = v = p = None # the chained obj to create
 
     # untag the characteristics saving the tag value and prop-list
-    for tkn in m.groups():
+    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
         try:
             i,v,p = mtgltag.untag(tkn.strip())
             if i == 'ob': break
             vals.append(v)
             ps.append(p)
         except AttributeError:
-            # no object exists: reset i,v and p
+            # caused by strip on None, no object exists: reset i,v and p
             i = v = p = None
         except mtgl.MTGLTagException:
             # we've hit the operator, save it
@@ -299,7 +297,7 @@ def _multichain_(m):
     pls = mtgltag.merge_props(ps)
 
     # Create implied object if necessary.
-    if not i:
+    if i != 'ob':
         i = 'ob'
         v = _implied_obj_(vals)
         p = {}

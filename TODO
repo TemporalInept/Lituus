@@ -2,40 +2,30 @@
 
 3. Do we need to remove zone from command zone (in tagger)
 
-4. Do we need to switch shuffle your library clause - will now read ", then shuffle your
-          library" rather as a seperate sentence (tagger)
+4. Do we need to switch shuffle your library clause - will now read ", then shuffle your library" rather as a seperate sentence (tagger)
 
 5. Keep replacement of "your opponent(s)" with "opponents" (tagger)?
 
 6. Group all exceptions under a single one?
 
-8. Look for cards like Tolaria, ..."bands with other"... which may/will cause problems
- with double quoted words
+8. Look for cards like Tolaria, ..."bands with other"... which may/will cause problems with double quoted words
 
 11. Keep cost as a lituus action or redo as a lituus characterisitic?
 
 12. What words/phrases are we missing for sequences?
 
-16. Can we just standarize a regular expression to catch anamolies in function
- word_hacks?
+16. Can we just standarize a regular expression to catch anamolies in function word_hacks?
 
 18. See Aphetto Runecaster, 'turn' should be tagged as an action word
 
 19. Wasitora, Nekoru Queen highlights many problems
 
-'kw<flying>, kw<trample>\ntp<whenever> ob<card ref=self> xa<deal suffix=s> 
-combat damage pr<to> xq<a> xp<player>, xq<that> xp<player> ka<sacrifice suffix=s> 
-xq<a> ch<creature>. cn<if> the xp<player> cn<cannot>, xp<you> ka<create> xq<a> 
-ch<p/t val=3/3> ch<black>, ch<red>, and ch<green> ch<cat> ch<dragon> ch<creature> 
-ob<token> pr<with> kw<flying>.'
+'kw<flying>, kw<trample>\ntp<whenever> ob<card ref=self> xa<deal suffix=s> combat damage pr<to> xq<a> xp<player>, xq<that> xp<player> ka<sacrifice suffix=s> xq<a> ch<creature>. cn<if> the xp<player> cn<cannot>, xp<you> ka<create> xq<a> ch<p/t val=3/3> ch<black>, ch<red>, and ch<green> ch<cat> ch<dragon> ch<creature> ob<token> pr<with> kw<flying>.'
 
-...ka<create> xq<a> ch<p/t val=3/3> ch<black>, ch<red>, and ch<green> ch<cat> 
-ch<dragon> ch<creature> ob<token>
+...ka<create> xq<a> ch<p/t val=3/3> ch<black>, ch<red>, and ch<green> ch<cat> ch<dragon> ch<creature> ob<token>
  a. have very distinct chain setup with 7 characteristics,
  b. should types be chained differently from say colors, 
  c. how about meta characteristics like p/t
-
-20. Can we combine chain into a generic function regardless of # of characteristics
 
 24. Entity chains like Cautery Sliver
 
@@ -52,9 +42,7 @@ ch<dragon> ch<creature> ob<token>
 >>> mv["Chrome Mox"]._card['tag']
 "aw<imprint> — tp<when> ob<card ref=self> xa<enter suffix=s> the zn<battlefield>, xp<you> cn<may> ka<exile> xq<a> ch<¬artifact>, ch<¬land> ob<card> pr<from> xp<you suffix=r> zn<hand>.\n{t}: xa<add> nu<1> xo<mana> of xq<any> of the ka<exile suffix=ed> ob<card suffix='s> ch<color suffix=s>."
 
-a. Nissa has 3 distinct permanents a forest, a green enchantment and a green planeswalker where the quantifier target applies to each but these cannot be
-chained into a forest|green->enchantment|green->planeswalker (or could they)
-NOTE: there are no commas between green and enchantment
+a. Nissa has 3 distinct permanents a forest, a green enchantment and a green planeswalker where the quantifier target applies to each but these cannot be chained into a forest|green->enchantment|green->planeswalker (or could they) NOTE: there are no commas between green and enchantment
 
 b. In Chrome Mox we see two characteristics that can be chained into a card object but there is a comma seperating them
 
@@ -62,8 +50,7 @@ c. Wasitora has multiple characterstics with no commas and one meta (p/t)
 
 27. redo 'the' as a quanitifier?
 
-28. Hazezon Tamar presents a problem with chaining
+28. Hazezon Tamar presents a problem with chaining and a self ref is not being tagged where only Hazezon is mentioned
 
-
-
-
+30. Royal Decree will be tagged incorrectly by 2chains_comma
+ Whenever a Swamp, Mountain, black permanent, or red permanent
