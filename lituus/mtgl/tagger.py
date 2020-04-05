@@ -273,27 +273,22 @@ def chain(txt):
 
 def _multichain_(m):
     # set up our lists for values and prop-lists
-    vals = []        # list of characteristics to chain
-    ps = []          # list of the proplists from the characteristics tags
+    vals = []        # list of characteristic values to chain
+    ps = []          # list of characteristic's proplists
+    op = mtgl.AND    # default is 'and'ed characteristics
     tkn = None       # current token in chain
     i = v = p = None # the chained obj to create
 
-    # untag the characteristics saving the tag value and prop-list
+    # untag each characteristic, save tag value & prop-list & merge the prop-lists
     for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
+        # if we get an object, we're done, if we cannot untag it's the operator
         try:
             i,v,p = mtgltag.untag(tkn.strip())
             if i == 'ob': break
             vals.append(v)
             ps.append(p)
-        except AttributeError:
-            # caused by strip on None, no object exists: reset i,v and p
-            i = v = p = None
         except mtgl.MTGLTagException:
-            # we've hit the operator, save it
             op = mtgl.AND if tkn == 'and' else mtgl.OR
-
-    # have to chain the characteristics
-    chs = op.join(vals)
     pls = mtgltag.merge_props(ps)
 
     # Create implied object if necessary.
@@ -302,14 +297,30 @@ def _multichain_(m):
         v = _implied_obj_(vals)
         p = {}
 
-    # have to check characterics suffix
+    # have to check characterics for suffix & move to object if present
     if 'suffix' in pls:
         p['suffix'] = pls['suffix']
         del pls['suffix']
-    assert(pls == {}) # TODO: remove after debugging
 
-    # add the chained characteristics to the objects prop list
-    p['characteristics'] = chs
+    # add chained characteristics to the objects prop list. Wont have metas
+    # here (assert checks that) but for expandability
+    for j,k in enumerate(vals):
+        # k is parameter value, determine the parameter name
+        if k in mtgl.meta_characteristics:
+            try:
+                attr = k
+                k = ps[j]['val']
+            except KeyError as e:
+                return m.group()
+        elif k in mtgl.color_characteristics: attr = 'color'
+        elif k in mtgl.super_characteristics: attr = 'super-type'
+        elif k in mtgl.type_characteristics: attr = 'type'
+        elif k in mtgl.sub_characteristics: attr = 'sub-type'
+        else: attr = 'wtf'
+
+        # add to prop-list
+        if not attr in p: p[attr] = k
+        else: p[attr] += op + k
 
     # retag the chained characteristics and return
     return mtgltag.retag(i,v,p)

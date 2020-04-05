@@ -139,8 +139,8 @@ def re_self_ref(name):
     :return: the self ref regex pattern
     """
     return re.compile(
-        r"\b(this spell|this permanent|this card|her|his|{}|{}|{})\b".format(
-            name,name.split(',')[0],name.split(' ')[0]
+        r"\b(this spell|this permanent|this card|her|his|{}|{})\b".format(
+            name,name.split(',')[0]
         )
     )
 
