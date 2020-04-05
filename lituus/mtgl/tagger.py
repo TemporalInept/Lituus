@@ -192,16 +192,22 @@ def midprocess(txt):
      prepares tagged txt for second pass
        1. replaces spaces/hyphens between tokens with underscore IOT make it a
         single tag value
-       2. align subsequent supertype, card type i.e. ch<super type> ch<type> are
+       2. moves 'non-' in front of a tag to the negated symbol '¬' inside the tag
+       3. align subsequent super-type, card type, ch<super-type> ch<type> are
         aligned i.e. ch<basic> ch<land> becomes ch<basic→land> this will assist
         in chaining
-       3. moves 'non-' in front of a tag to the negated symbol '¬' inside the tag
+       4. align subsequent type sub-type, ch<sub-type> ch<type> are aligned i.e.
+       ch<¬aura> ch<enchantment> becomes ch<enchantment→¬aura
+     NOTE:
+      for 3 and 4 the highest hierarchical item will come first, that is in order
+       of super-type, type, sub-type, so for #4 we have to switch the order
     :param txt: tagged oracle txt
     :return: processed oracle txt
     """
     ntxt = mtgl.re_tkn_delimit.sub(lambda m: mtgl.tkn_delimit[m.group(1)],txt) # 1
-    ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                             # 3
-    ntxt = mtgl.re_align_type.sub(r"ch<\1\2→\3\4>",ntxt)                       # 2
+    ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                             # 2
+    ntxt = mtgl.re_align_type.sub(r"ch<\1\2→\3\4>",ntxt)                       # 3
+    ntxt = mtgl.re_align_type2.sub(r"ch<\3\4→\1\2>",ntxt)                      # 4
     return ntxt
 
 def combine_tokens(txt):
@@ -273,13 +279,13 @@ def chain(txt):
 
 def _multichain_(m):
     # set up our lists for values and prop-lists
-    vals = []        # list of characteristic values to chain
-    ps = []          # list of characteristic's proplists
-    op = mtgl.AND    # default is 'and'ed characteristics
+    vals = []        # list of characteristics to chain
+    ps = []          # list of the proplists from the characteristics tags
+    op = mtgl.AND    # default is'and'ed characteristics
     tkn = None       # current token in chain
     i = v = p = None # the chained obj to create
 
-    # untag each characteristic, save tag value & prop-list & merge the prop-lists
+    # untag the characteristics saving the tag value and prop-list
     for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
         # if we get an object, we're done, if we cannot untag it's the operator
         try:
@@ -289,38 +295,18 @@ def _multichain_(m):
             ps.append(p)
         except mtgl.MTGLTagException:
             op = mtgl.AND if tkn == 'and' else mtgl.OR
-    pls = mtgltag.merge_props(ps)
 
-    # Create implied object if necessary.
+    # chain the characteristics, merge the proplists & move suffix if present
+    chs = op.join(vals)
+    pls = mtgltag.merge_props(ps)
+    if 'suffix' in pls: p['suffix'] = pls['suffix']
+
+    # Create implied object if necessary. Then add chained characteristics
     if i != 'ob':
         i = 'ob'
         v = _implied_obj_(vals)
         p = {}
-
-    # have to check characterics for suffix & move to object if present
-    if 'suffix' in pls:
-        p['suffix'] = pls['suffix']
-        del pls['suffix']
-
-    # add chained characteristics to the objects prop list. Wont have metas
-    # here (assert checks that) but for expandability
-    for j,k in enumerate(vals):
-        # k is parameter value, determine the parameter name
-        if k in mtgl.meta_characteristics:
-            try:
-                attr = k
-                k = ps[j]['val']
-            except KeyError as e:
-                return m.group()
-        elif k in mtgl.color_characteristics: attr = 'color'
-        elif k in mtgl.super_characteristics: attr = 'super-type'
-        elif k in mtgl.type_characteristics: attr = 'type'
-        elif k in mtgl.sub_characteristics: attr = 'sub-type'
-        else: attr = 'wtf'
-
-        # add to prop-list
-        if not attr in p: p[attr] = k
-        else: p[attr] += op + k
+    p['characteristics'] = chs
 
     # retag the chained characteristics and return
     return mtgltag.retag(i,v,p)

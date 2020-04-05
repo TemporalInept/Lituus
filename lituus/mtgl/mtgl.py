@@ -576,7 +576,7 @@ re_super_char = re.compile(r"({})".format('|'.join(super_characteristics)))
 
 type_characteristics = [  # 300.1, NOTE: we added historic
     'artifact','creature','enchantment','instant','land','planeswalker',
-    'socrcery','tribal'
+    'sorcery','tribal'
 ]
 re_type_char = re.compile(r"({})".format('|'.join(type_characteristics)))
 
@@ -653,6 +653,16 @@ re_ch = re.compile(
 re_align_type = re.compile( # have to take into account negated characteristics
     r"ch<(¬?)({})> ch<(¬?)({})>".format(
         '|'.join(super_characteristics),'|'.join(type_characteristics)
+    )
+)
+
+# TODO: should we limit this to only sub-types that are sub-types of the type
+#  i.e. aura and enchantment but not aura and creature
+# We don't want to tag cards like Quest for Ula's Temple '... or Serpent creature
+# card ..."
+re_align_type2 = re.compile(
+    r"ch<(¬?)({})> ch<(¬?)({})>(?!\sob<)".format(
+        '|'.join(sub_characteristics),'|'.join(type_characteristics)
     )
 )
 
