@@ -326,6 +326,12 @@ def _hack_cards_(jv):
                 "lands tapped for mana produce",
                 "if a land is tapped for mana, it produces"
             )
+        elif cname == 'Hazezon Tamar':
+            # Has first name which won't be self reffed
+            jv[cname]['text'] = jv[cname]['text'].replace(
+                "When Hazezon leaves",
+                "When Hazezon Tamar leaves"
+            )
 
         """
          bugs in mtgjson for Start // Finish related to side A, Start

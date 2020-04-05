@@ -426,7 +426,6 @@ prepositions = [
     'on top of','up to','on bottom of','from','to','into','in','on','out','under',
     'onto','top of','top','bottom of','bottom','without','with','for','up','down',
 ]
-#re_prep = re.compile(r"\b(?<![<|-])({})\b(?!>)".format('|'.join(prepositions)))
 re_prep = re.compile(r"\b(?<!<)({})\b(?!>)".format('|'.join(prepositions)))
 
 # conditional/requirement related
@@ -439,9 +438,12 @@ re_cond = re.compile(r"\b({})\b".format('|'.join(conditionals)))
 # sequence/time related  words
 sequences = [
     'before','next','after','until','begin','beginning','end','ending','then',
-    'during','as long as','simultaneously',
+    'during','as long as','simultaneously','time'
 ]
-re_seq = re.compile(r"\b({})\b".format('|'.join(sequences)))
+seq_tkns = '|'.join(sequences)
+re_seq = re.compile(
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(seq_tkns)
+)
 
 ####
 ## TRIGGER PREAMBLES
@@ -783,9 +785,17 @@ re_2chain_comma = re.compile(
 
 #Two characteristics separated by a space
 # TODO: this will match cards with more than two space delimited characteristics
-re_2chain_space = re.compile(
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"\s"
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"(?=\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+#re_2chain_space = re.compile(
+#    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+#    r"\s"
+#    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+#    r"(?=\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+#)
+
+# twp or more space delimted characteristics followed by an object
+#  Example see Spawning Pit
+#   ch<p/t val=2/2> ch<colorless> ch<spawn> ch<artifact> ch<creature>
+re_nchain_space = re.compile(
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s){2,}"
+    r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )

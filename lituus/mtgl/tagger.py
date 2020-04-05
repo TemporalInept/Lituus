@@ -263,11 +263,11 @@ def chain(txt):
     :param txt: tagged oracle txt
     :return: modified tagged txt with sequential characterisitcs chained
     """
-    # multi chains >= 3)
+    # multi chains >= 3: comma separated 'and'/'or' ed chains
     ntxt = mtgl.re_nchain.sub(lambda m: _multichain_(m),txt)
-    #ntxt = mtgl.re_5chain.sub(lambda m: _multichain_(m),txt)
-    #ntxt = mtgl.re_4chain.sub(lambda m: _multichain_(m),ntxt)
-    #ntxt = mtgl.re_3chain.sub(lambda m: _multichain_(m),ntxt)
+
+    # multi chains >= 2: space separated followed by object
+    ntxt = mtgl.re_nchain_space.sub(lambda m: _multichain_space_(m),ntxt)
 
     # double chains
 
@@ -310,6 +310,26 @@ def _multichain_(m):
 
     # retag the chained characteristics and return
     return mtgltag.retag(i,v,p)
+
+def _multichain_space_(m):
+    tkns = lexer.tokenize(m.group())[0] # create the tokens
+    _,v,p = mtgltag.untag(tkns[-1])     # last token is the object
+
+    # iterate the tokens and 'and' them
+    for tkn in tkns[:-1]:
+        _,tv,tp = mtgltag.untag(tkn)
+        if tv in mtgl.meta_characteristics:
+            assert(len(tp) == 1)
+            meta = tv + mtgl.EQ + tp['val']
+            if 'meta' in p: p['meta'] += mtgl.AND + meta  # should only be 1
+            else: p['meta'] = meta
+        else:
+            # 'and' characteristics
+            assert (tp == {})
+            if 'characteristics' in p: p['characteristics'] += mtgl.AND + tv
+            else: p['characteristics'] = tv
+
+    return mtgltag.retag('ob', v, p)
 
 def _implied_obj_(cs):
     """
