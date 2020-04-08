@@ -263,13 +263,22 @@ def chain(txt):
     :param txt: tagged oracle txt
     :return: modified tagged txt with sequential characterisitcs chained
     """
+    #### do multi chains first
     # multi chains >= 3: comma separated 'and'/'or' ed chains
     ntxt = mtgl.re_nchain.sub(lambda m: _multichain_(m),txt)
 
     # multi chains >= 2: space separated followed by object
     ntxt = mtgl.re_nchain_space.sub(lambda m: _multichain_space_(m),ntxt)
 
-    # double chains
+    # before moving on, chain color characteristics
+    ntxt = mtgl.re_2chain_clr.sub(lambda m: _clr_combination_(m),ntxt)
+
+    # special case of has base power and toughness, convert to has p/t X/Y
+    ntxt = mtgl.re_have_pt.sub(r"\1 \2",ntxt)
+
+    #### double chains 2 characteristics chained into one object
+    # 2 comma-delimited char followed by an object (char, char, obj)
+    ntxt = mtgl.re_2chain_comma.sub(lambda m: _2chain_comma_(m),ntxt)
 
     return ntxt
 
@@ -278,6 +287,12 @@ def chain(txt):
 ####
 
 def _multichain_(m):
+    """
+    chains comma separated characteristics with an 'and'/'or' into a single
+    object (implied or explicit)
+    :param m: are regex.Match object
+    :return: the chained object
+    """
     # set up our lists for values and prop-lists
     vals = []        # list of characteristics to chain
     ps = []          # list of the proplists from the characteristics tags
@@ -287,7 +302,7 @@ def _multichain_(m):
 
     # untag the characteristics saving the tag value and prop-list
     for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
-        # if we get an object, we're done, if we cannot untag it's the operator
+        # if we get an object, we're done, if we cannot untag →it's the operator
         try:
             i,v,p = mtgltag.untag(tkn.strip())
             if i == 'ob': break
@@ -312,10 +327,15 @@ def _multichain_(m):
     return mtgltag.retag(i,v,p)
 
 def _multichain_space_(m):
+    """
+    chains space separated characteristics that are followed by an object
+    :param m: are regex.Match object
+    :return: the chained object
+    """
     tkns = lexer.tokenize(m.group())[0] # create the tokens
-    _,v,p = mtgltag.untag(tkns[-1])     # last token is the object
+    i,v,p = mtgltag.untag(tkns[-1])     # last token is the object
 
-    # iterate the tokens and 'and' them
+    # iterate the tokens and 'and' them. If theyre meta do separately
     for tkn in tkns[:-1]:
         _,tv,tp = mtgltag.untag(tkn)
         if tv in mtgl.meta_characteristics:
@@ -324,12 +344,40 @@ def _multichain_space_(m):
             if 'meta' in p: p['meta'] += mtgl.AND + meta  # should only be 1
             else: p['meta'] = meta
         else:
-            # 'and' characteristics
             assert (tp == {})
             if 'characteristics' in p: p['characteristics'] += mtgl.AND + tv
             else: p['characteristics'] = tv
 
-    return mtgltag.retag('ob', v, p)
+    return mtgltag.retag(i,v,p)
+
+def _2chain_comma_(m):
+    """
+    chains 2 comma-delimited characteristics followed by an object i.e. Chrome Mox
+    :param m: are regex.Match object
+    :return: the chained object
+    """
+    # untag the object (it will have a preceding space) & the characteristics
+    i,v,p = mtgltag.untag(m.group(3).strip())
+    _,cv1,cp1 = mtgltag.untag(m.group(1))
+    _,cv2,cp2 = mtgltag.untag(m.group(2))
+    assert(cp1 == {} and cp2 == {})
+    assert('characteristics' not in p)
+    p['characteristics'] = cv1 + mtgl.AND + cv2
+
+    return mtgltag.retag(i,v,p)
+
+def _clr_combination_(m):
+    """
+    chains two color characteristics together they can be seperated by an 'and',
+    'or' or comma
+    :param m: a regex.Match object
+    :return: the chained colors
+    """
+    # 3  groups color1, operator, color2 (assumes no prop-list for colors)
+    clr1 = mtgltag.untag(m.group(1))[1]
+    op = mtgl.OR if m.group(2) == 'or' else mtgl.AND
+    clr2 = mtgltag.untag(m.group(3))[1]
+    return mtgltag.retag('ch',clr1+op+clr2,{})
 
 def _implied_obj_(cs):
     """

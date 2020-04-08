@@ -66,6 +66,7 @@ from hashlib import md5
   Lituus Objects = xo<LITUUS OBJECT>
   Lituus Quantifiers = xq<LITUUS QUANTIFIER>
   Lituus Modifiers = xm<LITUUS MODIFIER>
+  Lituus Thing = xt<LITUUS THING>
 """
 
 ####
@@ -669,7 +670,7 @@ re_align_type2 = re.compile(
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
-re_ch_pt = re.compile(r"(\+|-)?nu<(\d+)>/(\+|-)?nu<(\d+)>(?!\scounter)")
+re_ch_pt = re.compile(r"(\+|-)?nu<(\d+|x)>/(\+|-)?nu<(\d+|x)>(?!\scounter)")
 
 # lituus characteristics
 # TODO: keep control, own?
@@ -758,12 +759,20 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")
 # Sequential characteristics
 ###
 
-# three or more and-ed/or-ed sequential characteristics
+# three or more and-ed/or-ed sequential characteristics possibly followed by object
 re_nchain = re.compile(
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>,\s){2,}" 
     r"(and|or)\s"                                                
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
     r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+)
+
+# twp or more space delimted characteristics followed by an object
+#  Example see Spawning Pit
+#   ch<p/t val=2/2> ch<colorless> ch<spawn> ch<artifact> ch<creature>
+re_nchain_space = re.compile(
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s){2,}"
+    r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
 
 #Two characteristics separated by and/or i.e Saprazzan Bailiff & Ceta Sanctuary
@@ -783,19 +792,16 @@ re_2chain_comma = re.compile(
     r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
 
-#Two characteristics separated by a space
-# TODO: this will match cards with more than two space delimited characteristics
-#re_2chain_space = re.compile(
-#    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-#    r"\s"
-#    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-#    r"(?=\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-#)
+# Two color characteristics separated by 'and' or 'or'
+re_2chain_clr = re.compile(
+    r"(ch<¬?(?:" + re_clr_char.pattern + r")>)"
+    r"\s?(,|and|or)\s"
+    r"(ch<¬?(?:" + re_clr_char.pattern + r")>)"
+)
 
-# twp or more space delimted characteristics followed by an object
-#  Example see Spawning Pit
-#   ch<p/t val=2/2> ch<colorless> ch<spawn> ch<artifact> ch<creature>
-re_nchain_space = re.compile(
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s){2,}"
-    r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+# ... has base power and toughness X/Y
+re_have_pt = re.compile(
+    r"(xa<(?:have)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"\sbase\sch<power>\sand\sch<toughness>\s"
+    r"(ch<p/t(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
