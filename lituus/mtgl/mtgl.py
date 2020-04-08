@@ -67,6 +67,11 @@ from hashlib import md5
   Lituus Quantifiers = xq<LITUUS QUANTIFIER>
   Lituus Modifiers = xm<LITUUS MODIFIER>
   Lituus Thing = xt<LITUUS THING>
+  
+Ultimately, the intent is to break oracle text into three main components:
+ Things - tanglible entities that can be interacted with
+ Attributes - properties of Things
+ Actions - events, effects that manipulate Things and the game
 """
 
 ####

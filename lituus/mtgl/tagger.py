@@ -198,6 +198,8 @@ def midprocess(txt):
         in chaining
        4. align subsequent type sub-type, ch<sub-type> ch<type> are aligned i.e.
        ch<¬aura> ch<enchantment> becomes ch<enchantment→¬aura
+       5. deconflict incorrectly tagged tokens
+       6. move suffixes to inside the tag's prop-list
      NOTE:
       for 3 and 4 the highest hierarchical item will come first, that is in order
        of super-type, type, sub-type, so for #4 we have to switch the order
@@ -208,31 +210,12 @@ def midprocess(txt):
     ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                             # 2
     ntxt = mtgl.re_align_type.sub(r"ch<\1\2→\3\4>",ntxt)                       # 3
     ntxt = mtgl.re_align_type2.sub(r"ch<\3\4→\1\2>",ntxt)                      # 4
-    return ntxt
-
-def combine_tokens(txt):
-    """ replaces spaces and hypens between tagged tokens with underscore """
-    return mtgl.re_tkn_delimit.sub(lambda m: mtgl.tkn_delimit[m.group(1)],txt)
-
-####
-## 2ND PASS
-####
-
-def second_pass(txt):
-    """
-     performs a second pass of the oracle txt, looking at phrases more than
-     individual words and looks more at contextual
-    :param txt: initial tagged oracle txt (lowered case)
-    :return: tagged oracle text
-    """
-    # TODO: these should be moved to midprocessing
-    ntxt = deconflict_status(txt)                       # tag status words appropriately
-    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt) # move suffix to tag param
-    ntxt = chain(ntxt)
+    ntxt = deconflict_tags(txt)                                                # 5
+    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>", ntxt)                       # 6
     return ntxt
 
 re_emp_postfix = re.compile(r"\ssuffix=(?=)>")
-def deconflict_status(txt):
+def deconflict_tags(txt):
     """
      deconflicts status related tokens between status, actions and turn structure
      returning tagged txt
@@ -255,6 +238,19 @@ def deconflict_status(txt):
     ntxt = mtgl.re_status_face.sub(r"st<face amplifier=\1>",ntxt)
     ntxt = mtgl.re_mod_face.sub(r"xm<face amplifier=\1>",ntxt)
 
+    return ntxt
+
+####
+## 2ND PASS
+####
+
+def second_pass(txt):
+    """
+     performs a second pass of the oracle txt, working on Things and Attributes,
+    :param txt: initial tagged oracle txt (lowered case)
+    :return: tagged oracle text
+    """
+    ntxt = chain(txt)
     return ntxt
 
 def chain(txt):
