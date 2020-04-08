@@ -69,11 +69,11 @@ re_loy_cost = re.compile(r"[\+−]?nu<[\d|x]+>")
 # extract components of a tag (excluding all prop-values)
 # TODO: scrub these i.e. will the EQ sign be found in a tag vaule?
 re_tag = re.compile(
-    r"(\w\w)"                      # 2 char tag-id       
-    r"<"                           # opening bracket
-    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)"   # tag value (w/ optional starting not)
+    r"(\w\w)"                       # 2 char tag-id       
+    r"<"                            # opening bracket
+    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)"  # tag value (w/ optional starting not)
     r"(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*" # 0 or more prop lists delimited by space
-    r">"                           # closing bracket
+    r">"                            # closing bracket
 )
 
 # extract the property and the property values

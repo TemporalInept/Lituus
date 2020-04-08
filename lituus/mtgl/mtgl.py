@@ -335,8 +335,8 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
 # Quantifying words
 lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that',
-    'additional','those','these','their','extra','first','second','third','fourth',
-    'fifth','sixth','seventh','eighth','ninth','tenth'
+    'additional','those','these','their','the','extra','first','second','third',
+    'fourth','fifth','sixth','seventh','eighth','ninth','tenth'
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -759,38 +759,41 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")
 # Sequential characteristics
 ###
 
-# three or more and-ed/or-ed sequential characteristics possibly followed by object
+# three or more comma delimited characteristics with an explicit conjunction
+# possibly followed by an object i.e. Quest for Ula's Temple
 re_nchain = re.compile(
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>,\s){2,}" 
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>,\s){2,}" 
     r"(and|or)\s"                                                
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
 )
 
-# twp or more space delimted characteristics followed by an object
-#  Example see Spawning Pit
-#   ch<p/t val=2/2> ch<colorless> ch<spawn> ch<artifact> ch<creature>
+# three or more space delimted characteristics followed by an object i.e.
+# Spawning Pit ch<p/t val=2/2> ch<colorless> ch<spawn> ch<artifact> ch<creature>
 re_nchain_space = re.compile(
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s){2,}"
-    r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s){2,}"
+    r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
 
-#Two characteristics separated by and/or i.e Saprazzan Bailiff & Ceta Sanctuary
+# Two characteristics separated by and/or i.e Saprazzan Bailiff & Ceta Sanctuary
 re_2chain = re.compile(
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"                            
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"                            
     r"\s(and|or)\s"                                                
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
 
 # Two characteristics separated by comma i.e Chrome Mox treat this as an 'and'
-# must be followed by an object
+# must be followed by an object and preceded by a quantifier
 re_2chain_comma = re.compile(
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(?<=xq<\w+>\s)"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
     r",\s"
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"\s"
+    r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
+
 
 # Two color characteristics separated by 'and' or 'or'
 re_2chain_clr = re.compile(

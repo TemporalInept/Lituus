@@ -225,6 +225,7 @@ def second_pass(txt):
     :param txt: initial tagged oracle txt (lowered case)
     :return: tagged oracle text
     """
+    # TODO: these should be moved to midprocessing
     ntxt = deconflict_status(txt)                       # tag status words appropriately
     ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt) # move suffix to tag param
     ntxt = chain(ntxt)
@@ -262,22 +263,25 @@ def chain(txt):
      characteristics parameter of a single object (that may be implied)
     :param txt: tagged oracle txt
     :return: modified tagged txt with sequential characterisitcs chained
+    NOTE: these must be followed in order
     """
-    #### do multi chains first
-    # multi chains >= 3: comma separated 'and'/'or' ed chains
+    # multi chains first:
+    #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'or'
+    #    or 'and' which may or may not be followed by an object
+    #  b) 3 or more space separated characteristics w/o a conjuction and followed
+    #   by a an object Spawning Pit
     ntxt = mtgl.re_nchain.sub(lambda m: _multichain_(m),txt)
-
-    # multi chains >= 2: space separated followed by object
     ntxt = mtgl.re_nchain_space.sub(lambda m: _multichain_space_(m),ntxt)
 
-    # before moving on, chain color characteristics
+    # before moving to dual chains first:
+    #  a) chain color characteristics
+    #  b) handle special case of 'has base power and toughness'
     ntxt = mtgl.re_2chain_clr.sub(lambda m: _clr_combination_(m),ntxt)
-
-    # special case of has base power and toughness, convert to has p/t X/Y
     ntxt = mtgl.re_have_pt.sub(r"\1 \2",ntxt)
 
-    #### double chains 2 characteristics chained into one object
-    # 2 comma-delimited char followed by an object (char, char, obj)
+    # Dual chains:
+    #  a) 2 comma-delimited char followed by an object and preceded by a quantifier
+    #   (quantifier char, char, obj)
     ntxt = mtgl.re_2chain_comma.sub(lambda m: _2chain_comma_(m),ntxt)
 
     return ntxt
@@ -304,7 +308,8 @@ def _multichain_(m):
     for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
         # if we get an object, we're done, if we cannot untag →it's the operator
         try:
-            i,v,p = mtgltag.untag(tkn.strip())
+            #i,v,p = mtgltag.untag(tkn.strip())
+            i,v,p = mtgltag.untag(tkn)
             if i == 'ob': break
             vals.append(v)
             ps.append(p)
@@ -356,8 +361,8 @@ def _2chain_comma_(m):
     :param m: are regex.Match object
     :return: the chained object
     """
-    # untag the object (it will have a preceding space) & the characteristics
-    i,v,p = mtgltag.untag(m.group(3).strip())
+    # untag the object & the characteristics
+    i,v,p = mtgltag.untag(m.group(3))
     _,cv1,cp1 = mtgltag.untag(m.group(1))
     _,cv2,cp2 = mtgltag.untag(m.group(2))
     assert(cp1 == {} and cp2 == {})

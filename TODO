@@ -52,9 +52,6 @@ c. Wasitora has multiple characterstics with no commas and one meta (p/t)
 
 28. Hazezon Tamar presents a problem with chaining 
 
-30. Royal Decree will be tagged incorrectly by 2chains_comma
- Whenever a Swamp, Mountain, black permanent, or red permanent
-
 31. How to self ref "Hazezon" in Hazezon Tamar without self reffing "Dragon" in Dragon Egg (for now, am hacking it in multiverse.py
 
 32. Have to figure where/when/how to combine type + card as in Aberrant Researcher
@@ -63,3 +60,10 @@ c. Wasitora has multiple characterstics with no commas and one meta (p/t)
 36. See Guided Passage for 'Thing' chaining
 
 37. Modal spells/abilities, level ups and planeswalkers see Charming Prince
+
+38. Quest for Ula's Temple creates an implied object 'permanent' when there is
+ a specified object 'card'
+ a. this is because we have a chain of creature types followed by ch<creature> ob<card>
+
+39. Royal Decree and Teferi's Realm
+ b.Teferi's Realm is not being chained
