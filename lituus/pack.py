@@ -10,7 +10,7 @@ version.
 Defines a set of cards
 """
 
-#__name__ = 'multiverse'
+#__name__ = 'pack'
 __license__ = 'GPLv3'
 __version__ = '0.0.2'
 __date__ = 'March 2020'
@@ -19,6 +19,7 @@ __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
+from operator import itemgetter
 import lituus.mtg as mtg
 import lituus.mtgcard as mtgcard
 
@@ -28,8 +29,8 @@ class PackException(Exception):
 class Pack(object):
     """ manages a set of cards """
     def __init__(self):
-        self._qty = {} # dict of cardname -> number of cards in pack
-        self._mb = {}  # dict of cardname -> MTGCard object
+        self._mb = {}  # mainboard (mb): dict of cardname -> MTGCard object
+        self._qty = {} # mb quanitties: dict of cardname -> # of cards in pack
 
 #### OP OVERLOADING
 
@@ -49,15 +50,14 @@ class Pack(object):
     @property
     def is_legal(self): return True
 
-    def add_card(self,card):
+    def add_card(self,card,qty=1):
         """
          adds the card to the pack
-        :param card: MTGCard
+        :param card: MTGCard object
+        :param qty: # of cards to add
         """
-        if card.name in self._qty: self._qty[card.name] += 1
-        else:
-            self._qty[card.name] = 1
-            self._mb[card.name] = card
+        self._qty[card.name] = qty
+        self._mb[card.name] = card
 
     def del_card(self,cname):
         """

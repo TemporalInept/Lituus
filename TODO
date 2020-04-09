@@ -65,5 +65,10 @@ c. Wasitora has multiple characterstics with no commas and one meta (p/t)
  a specified object 'card'
  a. this is because we have a chain of creature types followed by ch<creature> ob<card>
 
-39. Royal Decree and Teferi's Realm
- b.Teferi's Realm is not being chained
+40. Need to write save deck functionality and do better exception handling
+
+41. Have to see how Companion will be treated i.e. as one of the 100 or an extra
+
+42. Getting error in EDHDeck if arguments arent supplied to super but should be in python 3.5
+
+43.

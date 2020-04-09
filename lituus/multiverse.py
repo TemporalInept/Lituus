@@ -64,10 +64,11 @@ def multiverse(update=0):
             fin.close()
             return mv
         except FileNotFoundError:
-            print("Saved multiverse does not exist")
-            return {}
+            raise mtgl.MTGLException("Saved multiverse does not exist")
         except pickle.PickleError as e:
-            print("Error loading multiverse: {}. Recreating...".format(e))
+            raise mtgl.MTGLException(
+                "Error loading multiverse: {}. Recreating...".format(e)
+            )
         finally:
             if fin: fin.close()
 

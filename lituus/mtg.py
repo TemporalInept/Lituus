@@ -21,6 +21,7 @@ __status__ = 'Development'
 
 import os
 import regex as re
+from math import inf as INF
 from itertools import combinations
 
 # COMMON PATHS (use path magic to a) hide our directory structure and b) enable
@@ -53,10 +54,14 @@ lands = {
     'Plains':'W',
     'Forest':'G',
     'Wastes': 'C'}
-legal_multicnt = [
-    "Rat Colony","Relentless Rats","Shadowborn Apostle","Persistent Petitioners",
-    "Seven Dwarves"
-]
+# TODO: have to redo this as 'Seven Dwarves can only have 7
+legal_multicnt = {
+    "Rat Colony":INF,
+    "Relentless Rats":INF,
+    "Shadowborn Apostle":INF,
+    "Persistent Petitioners":INF,
+    "Seven Dwarves":7,
+}
 mana_combinations = mana_colors + ["".join(x) for x in
                                    combinations(mana_colors, 2)] + \
                     ["".join(x) for x in combinations(mana_colors, 3)] + \
