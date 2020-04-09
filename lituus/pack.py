@@ -32,7 +32,9 @@ class Pack(object):
         self._mb = {}  # mainboard (mb): dict of cardname -> MTGCard object
         self._qty = {} # mb quanitties: dict of cardname -> # of cards in pack
 
-#### OP OVERLOADING
+    ####
+    # OP OVERLOADING
+    ####
 
     def __getitem__(self,cname):
         """ overload the subscript '[]' operator """
@@ -70,6 +72,8 @@ class Pack(object):
         except KeyError:
             raise PackException("No such card {}".format(cname))
 
+    def has_card(self,cname): return cname in self._mb
+
     def has_cards(self,cards,op='and'):
         """
           returns True if cards with boolean operator op applied is in the deck's
@@ -105,9 +109,11 @@ class Pack(object):
             cards.append((cname,self._qty[cname]))
         return sorted(cards,key=itemgetter(0))
 
-#### METRICS
+    ####
+    # METRICS
+    ####
 
-    def qty(self,unique=True):
+    def qty(self,unique=False):
         """
          returns the # of cards in the pack.
         :param unique: True = return only unique cnt
@@ -116,7 +122,67 @@ class Pack(object):
         if unique: return len(self._qty)
         else: return sum([self._qty[k] for k in self._qty])
 
-#### HISTOGRAMS
+    def avg_cmc(self):
+        """ returns the average cmc of the pack. TTL CMC / # Non-land cards """
+        ttl = 0
+        n = 0.0
+
+        # add each non-land card
+        for cname in self._mb:
+            if self._mb[cname].is_land(): continue
+            ttl += self._qty[cname] * self._mb[cname].cmc
+            n += 1
+        return ttl / n
+
+    def nonland(self):
+        """ returns number of non-land cards in pack """
+        return self.qty() - self.type_hist(False)['Land']
+
+    def mana_base(self):
+        """
+        Returns the mana symbols that can be produced by mana-producers in the deck
+        as a list of tuples t = (ManaSymbol,Count) sorted by mtg color preference
+        """
+        raise NotImplementedError
+
+    def double_mana(self):
+        """
+        returns list of cards in pack with double (or more) of the same mana symbol
+        in the casting cost
+        """
+        dbl = []
+        for cname in self._mb:
+            # get the card object and skip if a land
+            card = self._mb[cname]
+            if card.is_land(): continue
+
+            # find mana symbols in the casting cost
+            try:
+                mcs = mtg.re_mana_sym.findall(card.mana_cost)
+            except TypeError:
+                # cards with no casting cost i.e. suspend will end up here
+                if mv[card].cmc == 0: continue
+                else: raise
+
+            # for ease, recreate manacost list removing extra symbols could be snow,
+            # phyrexian or hybrid and numeral symbols
+            mcs2 = []
+            for mc in mcs:
+                if '/' in mc:
+                    for s in mc.split('/'):
+                        if s in mtg.mana_colors: mcs2.append(s)
+                elif mc in mtg.mana_colors: mcs2.append(mc)
+
+            # iterate the modified list of mana symbols
+            for mc in mcs2:
+                if mcs2.count(mc) > 1:
+                    dbl.append(cname)
+                    break
+        return dbl
+
+    ####
+    # HISTOGRAMS
+    ####
 
     def mana_sym_hist(self,aslist=True):
         """
@@ -175,7 +241,83 @@ class Pack(object):
         if aslist: return [(x,ch[x]) for x in sorted(ch.keys())]
         else: return ch
 
-#### PRIVATE FCT
+    def cumulative_cmc_hist(self):
+        """
+        returns a histogram of the count of cards with casting costs upto and
+        including the "current" cmc as a list of numerically ordered tuples
+        """
+        ch = self.cmc_hist()
+        cch = []
+
+        # sum the counts
+        for i,t in enumerate(ch):
+            cch.append((t[0],t[1]))
+            if i > 0: cch[i] = (cch[i][0],cch[i-1][1] + cch[i][1])
+        return cch
+
+    def mana_producer_hist(self):
+        """ return a hist of mana producers one of {land,rock,dork,ritual} """
+        raise NotImplementedError
+
+    def mana_plurality_hist(self):
+        """ returns a hist of mana producer's plurality """
+        raise NotImplementedError
+
+    def land_cat_hist(self):
+        """ returns a list of land categories for lands in this deck """
+        raise NotImplementedError
+
+    def basic_hist(self):
+        """ returns histogram of packs's lands: basic vs non-basics """
+        lands = {'Basic':0,'Non-Basic':0}
+        for cname in self._mb:
+            card = self._mb[cname]
+            if card.is_land():
+                if 'Basic' in card.super_type: lands['Basic'] += self._qty[cname]
+                else: lands['Non-Basic'] += self._qty[cname]
+        return [(x,lands[x]) for x in sorted(lands.keys())]
+
+    def gold_hist(self):
+        """
+         returns a histogram of the count of multicolored cards. This will be of
+         the form i->n where i is the number of colors and n is the number of cards
+         in the deck having i colors
+        """
+        # set histogram to 0 for 2..n where n is the maximum number of colors
+        # i.e. 2 = 2 different colors, 3 = 3 different colors etc
+        mch = {x:0 for x in range(2,len(mtg.mana_colors)+1)}
+
+        for cname in self._mb:
+            # get card object, skip if land
+            card = self._mb[cname]
+            if card.is_land(): continue
+
+            # get the mana symbols in the cards cost
+            try:
+                mcs = mtg.re_mana_sym.findall(card.mana_cost)
+            except TypeError:
+                # cards with no casting cost i.e. suspend will end up here
+                if mv[card].cmc == 0: continue
+                else: raise
+            mcs2 = []
+
+            # for ease, recreate manacost list removing could be snow, phyrexian
+            # or hybrid and numeral symbols
+            for mc in mcs:
+                if '/' in mc:
+                    for s in mc.split('/'):
+                        if s in mtg.mana_colors: mcs2.append(s)
+                elif mc in mtg.mana_colors: mcs2.append(mc)
+
+            try:
+                mch[len(set(mcs2))] += 1
+            except KeyError:
+                pass
+        return mch
+
+    #####
+    # PRIVATE FCT
+    ####
 
     def _card_mana_(self,cname,chist):
         """

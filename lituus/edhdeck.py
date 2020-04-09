@@ -46,6 +46,20 @@ class EDHDeck(mtgdeck.MTGDeck):
     @property
     def commander(self): return self._cmdr
 
+    def color_ident(self,aslist=True):
+        """
+        Returns the color identity of the deck. Default is as a list otherwise
+        will return as a string. Uses the color-identity of the commanders and
+        assumes the deck is legal
+        :param aslist: True returns as list of mana colors, otherwise as string
+        :return: color identity of the deck
+        """
+        ci = set([])
+        for cmdr in self._cmdr: ci = ci.union(self._mb[cmdr].color_ident)
+        ci = list(ci)
+        ci.sort(key=mtg.mana_colors.index)
+        return "".join(ci) if aslist else ci
+
     def is_legal(self):
         """
         Checks for legality of deck
@@ -62,31 +76,127 @@ class EDHDeck(mtgdeck.MTGDeck):
             card = self._mb[cname]
             n = self._qty[cname]
             if n > 1:
-                # first check for a basic land
-                if card.is_land() and not 'Basic' in card.super_type:
-                    return False,"Non-basic lands must be unique {}x {}".format(n,cname)
-                # then check for legal multicnt
-                try:
-                    if n > mtg.legal_multicnt: return False,"Found {}x {}".format(n,cname)
-                except KeyError:
-                    return False,"Found {}x {}".format(n,cname)
+                # first check for a basic land then legal multi-count
+                if card.is_land():
+                    if not 'Basic' in card.super_type:
+                        return False,"Non-basic land: found {}x {}".format(n,cname)
+                else:
+                    try:
+                        if n > mtg.legal_multicnt[cname]:
+                            return False,"Found {}x {}".format(n,cname)
+                    except KeyError:
+                        return False,"Found {}x {}".format(n,cname)
             ttl += n
         if ttl != 100: return False,'Mainboard contain {} cards,'.format(ttl)
         return True,'Deck is EDH legal'
 
-    def color_ident(self,aslist=True):
+    def report(self):
+        """ prints basic information to console """
+        rpt = "Deck {} with Commander(s) '{}'\n".format(
+            self.name,self.commander
+        )
+        rpt += "\tAvg CMC {:.2f}\n".format(self.avg_cmc())
+        rpt += "\tMana Color {}\n".format(self.color_hist())
+        rpt += "\tTypes {}\n".format(self.type_hist())
+        rpt += "\tCMC {}\n".format(self.cmc_hist())
+        rpt += "Cumulative CMC "
+        rpt += " ".join(
+            ["{} {:.2f}%".format(c, float(n) / self.nonland()) for c, n in self.cumulative_cmc_hist()]
+        )
+        rpt += "\n"
+        return rpt
+
+    def is_playable(self,card):
+        """ determines if MTGCard card is playable in this deck """
+        return set(card.color_ident).issubset(self.color_ident())
+
+    ####
+    # HISTOGRAMS
+    ####
+
+    def color_id_cmc_hist(self):
+        """ returns histogram of cmcs in the deck, by color identity """
+        cmcs = {}
+        for cname in self._mb:
+            # get the card object and the cmc (unless its a land)
+            card = self._mb[cname]
+            if card.is_land(): continue
+            cmc = card.cmc
+
+            # get the color identity
+            ci = None
+            if card.is_gold(True): ci = "O"
+            else:
+                clr = card.color_ident
+                if not clr: ci = "C"
+                else: ci = clr[0]
+
+            # add to the cmc index
+            if cmc in cmcs: cmcs[cmc][ci] += 1
+            else:
+                cmcs[cmc] = {c:0 for c in self.color_ident(False) + ["C","O"]}
+                cmcs[cmc][ci] = 1
+
+        # now, we want to return a list of ascended order cmcs
+        # [(0,color-dict),...(n,color-dict)], it should already be sorted by
+        # cmc in the dict but just in case
+        pref = mtg.mana_colors + ["C","O"]
+        return sorted(
+            [(cmc,sorted([(clr,cmcs[cmc][clr]) for clr in cmcs[cmc]],
+              reverse=True,key=lambda x: pref.index(x[0]))) for cmc in cmcs],
+            key=lambda x:x[0]
+        )
+
+    def decklist(self):
+        """ overrides mtgdeck.decklist separating Commander(s) into own category """
+        # get the decklist, add a Commander category and move commander(s)
+        dl = super().decklist()
+        dl['Commander'] = []
+        for cmdr in self.commander:
+            dl['Commander'].append((1,cmdr))   # add cmdr to commander category
+            i = dl['Creature'].index((1,cmdr)) # get index of commander
+            del dl['Creature'][i]              # & remove from creature category
+        return dl
+
+    def competition_hash(self):
         """
-        Returns the color identity of the deck. Default is as a list otherwise
-        will return as a string. Uses the color-identity of the commanders and
-        assumes the deck is legal
-        :param aslist: True returns as list of mana colors, otherwise as string
-        :return: color identity of the deck
+        calculates the cockatrice hash for an online cEDH Competition deck
+        (Commander(s) and only commander(s) in sidedeck)
+        NOTE: we ignore the sideboard parameter
         """
-        ci = set([])
-        for cmdr in self._cmdr: ci = ci.union(self._mb[cmdr].color_ident)
-        ci = list(ci)
-        ci.sort(key=mtg.mana_colors.index)
-        return "".join(ci) if aslist else ci
+        # we have to temporalily remove any cards in the sideboard
+        t_sb = self._sb.copy()
+        t_sqty = self._sqty.copy()
+        t_mb = self._mb.copy()
+        t_qty = self._qty.copy()
+        dhash = None
+
+        try:
+            # empty the sideboard
+            self.del_sideboard()
+
+            # move commanders from mainboard to sideboard before hashing
+            for cmdr in self.commander:
+                card = self._mb[cmdr]
+                self.del_card(cmdr)
+                self.add_sb_card(card,1)
+
+            # calculate the hash
+            dhash = self.hash(True)
+
+            # & restore the deck
+            for cname in self._sb: self.add_card(self._sb[cname],1)
+            self.del_sideboard()
+            for cname in t_sb: self.add_sb_card(t_sb[cname],t_sqty[cname])
+        except Exception as e:
+            # recover
+            self._mb = t_mb
+            self._qty = t_qty
+            self._sb = t_sb
+            self._sqty = t_sqty
+            raise
+
+        return dhash
 
     ####
     # PRIVATE FUNCTIONS
@@ -107,26 +217,28 @@ class EDHDeck(mtgdeck.MTGDeck):
             if fext == '.cod': ds = self._read_cod_(f)
             elif fext == '.dec': ds = self._read_dec_(f)
             else:
-                raise RuntimeError("Unable to process files of type '{}'".format(fext))
-            if not ds: raise RuntimeError("No such deck {}".format(f))
+                raise RuntimeError("Unable to process '{}' files".format(fext))
+            if not ds: raise RuntimeError("Error reading {}".format(f))
         except mtgl.MTGLException: raise
         except RuntimeError: raise
         except Exception as e:
             raise RuntimeError("Error reading deck {}\n{}".format(f,e))
 
-        # ds has keys name, mainboard, sideboard. for each card make sure names
-        # like lim-duls vault are encoded properly & split cards are handled
-        # read in the mainboard
+        # start with the mainboard (make sure split cards are handled properly)
         for qty,cname in ds['mainboard']:
             if '/' in cname and not '//' in cname:
                 cname = " // ".join([cname.strip() for cname in cname.split('/')])
             self.add_card(mv[cname],qty)
 
-        # read in the mainboard
+        # then the sideboard
         for qty,cname in ds['sideboard']:
             if '/' in cname and not '//' in cname:
                 cname = " // ".join([cname.strip() for cname in cname.split('/')])
-            self.add_sb_card(mv[cname],qty)
+            try:
+                self.add_sb_card(mv[cname],qty)
+            except mtgl.MTGLException:
+                # we'll ignore sideboard errors
+                pass
 
         # since some decks have commander(s) in sideboard, some in mainboard & some
         # in both, make uniform and place in mainboard
@@ -134,8 +246,10 @@ class EDHDeck(mtgdeck.MTGDeck):
             if cmdr in self._sb:
                 if not cmdr in self._mb: self.add_card(mv[cmdr],1)
                 self.del_sb_card(cmdr)
-        # set the name and return
-        self._dname = ds['name']
+
+        # set the deck name and path
+        self._dname = ds['name'] # set the name
+        self._path = f
 
     def _read_cod_(self,f):
         """ reads a cockatrice deck file """
@@ -158,29 +272,64 @@ class EDHDeck(mtgdeck.MTGDeck):
             try:
                 zones = deck.find_all('zone')
                 for zone in zones:
-                    if 'name' in zone.attrs:
-                        if zone.attrs['name'] == 'main':
-                            for card in zone.find_all('card'):
-                                ds['mainboard'].append(
-                                    (int(card.attrs['number']),    # qty
-                                    card.attrs['name'].__str__()) # card name
-                                )
+                    if not 'name' in zone.attrs: continue
+                    if zone.attrs['name'] == 'main':
+                        for card in zone.find_all('card'):
+                            ds['mainboard'].append(
+                                (int(card.attrs['number']),   # qty
+                                card.attrs['name'].__str__()) # card name
+                            )
                     elif zone.attrs['name']  == 'side':
                         for card in zone.find_all('card'):
                             ds['sideboard'].append(
-                                (int(card.attrs['number']),  # qty
-                                 card.attrs['name'].__str__())  # card name
+                                (int(card.attrs['number']),    # qty
+                                 card.attrs['name'].__str__()) # card name
                             )
             except IndexError:
-                pass # TODO: why am I doing this
+                raise
+                #pass # TODO: why am I doing this
 
         except IOError as e:
-            if e.errno != 2: raise # TODO: why am I doing this
+            raise
+            #if e.errno != 2: raise # TODO: why am I doing this
         finally:
             if fin: fin.close()
 
         # set the path if we get here
-        self._path = f
         return ds
 
-    def _read_dec_(self,f): return None
+    def _read_dec_(self,f):
+        """ reads a .dec deck file """
+        ds = {}
+
+        fin = None
+        try:
+            fin = open(f)
+            ls = fin.readlines()
+            fin.close()
+
+            # get cards from mainboard and sideboard
+            # 3 cases mainboard, sideboard and token (we ignore tokens for now)
+            ds = {'name': "", 'mainboard': [], 'sideboard': []}
+            sb = False
+            for l in ls:
+                l = l.strip()  # remove trailing newlines
+                if not l: continue  # skip empty lines
+                if l.startswith('SB:'): sb = True  # tokens start after SB and are not prepended with "SB: "
+                if sb and not l.startswith('SB:'): break
+                else:
+                    if sb: ds['sideboard'].append(EDHDeck._dec_card_(l[3:].strip()))
+                    else: ds['mainboard'].append(EDHDeck._dec_card_(l))
+        except IOError as e:
+            raise
+            #if e.errno != 2: raise
+        finally:
+            if fin: fin.close()
+        return ds
+
+    @staticmethod
+    def _dec_card_(l):
+        """ returns a tuple t = (cnt,name) from the line l """
+        l = l.split(' ')
+        return (int(l[0]),' '.join(l[1:]))
+

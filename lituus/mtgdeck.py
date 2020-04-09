@@ -23,8 +23,10 @@ __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
 from hashlib import sha1
+from operator import itemgetter
 import lituus.pack as pack
 import lituus.mtgcard as mtgcard
+from lituus.mtg import pri_types
 
 sbl = '0123456789abcdefghijklmnopqrstuvwxyz' # for deck hashing
 
@@ -85,7 +87,7 @@ class MTGDeck(pack.Pack):
     def deck_file(self): return self._path
 
     @property
-    def auther(self): return self._author
+    def author(self): return self._author
 
     @property
     def author_url(self): return self._aurl
@@ -99,11 +101,11 @@ class MTGDeck(pack.Pack):
     @property
     def sideboard(self): return sorted([(k,self._sqty[k],self._sb[k]) for k in self._sb])
 
-    def is_legal(self): raise NotImplementedError
+    def is_legal(self): return True
 
     def add_sb_card(self,card,qty=1):
         """
-         adds the card to the sideboard
+        adds the card to the sideboard
         :param card: MTGCard object
         :param qty: # of cards to add
         """
@@ -112,7 +114,7 @@ class MTGDeck(pack.Pack):
 
     def del_sb_card(self,cname):
         """
-         deletes the sideboard card identified by cname
+        deletes the sideboard card identified by cname
         :param cname: card name
         """
         try:
@@ -121,10 +123,15 @@ class MTGDeck(pack.Pack):
         except KeyError:
             raise PackException("No such card {}".format(cname))
 
+    def del_sideboard(self):
+        """ deletes the sideboard """
+        self._sb = {}
+        self._sqty = {}
+
     def hash(self,sideboard=False):
         """
         Calculates the cockatrice deck hash of this deck - see cockatrice
-        decklist.cpp  function updateDeckHash
+        decklist.cpp.updateDeckHash() (line 782)
         :param sideboard: calculate sideboard into hash if set
         """
         ms = []
@@ -138,16 +145,16 @@ class MTGDeck(pack.Pack):
         if sideboard:
             for cname in self._sb:
                 for i in range(self._sqty[cname]):
-                    ss.append("SB: {}".format(cname.lower()))
+                    ss.append("SB:{}".format(cname.lower()))
 
         # sort the combined lists and hash
         dhash = sha1(";".join(sorted(ms+ss)).encode("utf-8")).digest()
         dhash = (
-            (ord(dhash[0]) << 32) +
-            (ord(dhash[1]) << 24) +
-            (ord(dhash[2]) << 16) +
-            (ord(dhash[3]) << 8) +
-            (ord(dhash[4]))
+            (dhash[0] << 32) +
+            (dhash[1] << 24) +
+            (dhash[2] << 16) +
+            (dhash[3] << 8) +
+            (dhash[4])
         )
 
         # convert the hash to string
@@ -164,6 +171,37 @@ class MTGDeck(pack.Pack):
         val = ('-' if neg else '') + sbl[rem] + val
 
         return (8 - len(val)) * "0" + val
+
+    def similar(self,d,lands="all",qty=True):
+        """
+        returns the # of cards that this deck and d have in common based on
+        specified lands and qty
+        :param d: the deck to compare to
+        :param lands: oneof
+         'all': compare all lands,
+         'non-basic': compare only non-basic lands
+         'none': don't compare lands
+        :param qty: if True compares the quanities of common cards as well,
+         False only compares on a card by card basis
+        """
+        # create a dict of name -> qty for each deck based on specified lands.
+        # Then a list of the intersection of cards and find the # in common
+        s = 0
+        cs1 = {n:q if qty else 1 for (n,q) in self.cards(lands)}
+        cs2 = {n:q if qty else 1 for (n,q) in d.cards(lands)}
+        for n in list(set(cs1.keys()) & set(cs2.keys())): s += min(cs1[n],cs2[n])
+        return s
+
+    def decklist(self):
+        """ returns a the mainboard as a decklist (sorted by type) as a dict """
+        # construct the type dict and fill with lists of types (quantity, card)
+        # sort each type alphabetically by card name then return
+        dl = {p:[] for p in pri_types}
+        for cname in self._mb:
+            card = self._mb[cname]
+            dl[card.primary_type].append((self._qty[cname],cname))
+        for p in dl: dl[p].sort(key=itemgetter(1))
+        return dl
 
     ####
     # PRIVATE FCTS
