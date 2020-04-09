@@ -7,7 +7,7 @@ the terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version.
 
-Defines a set of cards
+Defines a set of cards. Can be used for a multiverse or a deck.
 """
 
 #__name__ = 'pack'

@@ -7,7 +7,7 @@ the terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version.
 
-Parser and MTGCard generator for all cEDH legal cards in the multiverse
+MTGCard generator for all cEDH legal cards in the multiverse
 """
 
 #__name__ = 'multiverse'

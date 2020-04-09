@@ -7,8 +7,9 @@ the terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version.
 
-Defines a MTG Deck as a subset of a pack. This is basically in the event that
-someone wants to branch out into other decks but I plan only to subclass an
+Defines a MTG Deck as a subset of a pack from which Commander, or Legal decks can
+be derived. This is basically in the event that someone wants to branch out into
+other decks but I plan only to subclass an
 EDHDeck
 """
 

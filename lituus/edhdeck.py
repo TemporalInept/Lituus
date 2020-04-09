@@ -12,7 +12,7 @@ Defines a EDH Deck as a subset of a MTGDeck.
 
 #__name__ = 'edhdeck'
 __license__ = 'GPLv3'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 __date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
