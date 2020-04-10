@@ -12,7 +12,7 @@ Tags MTG oracle text in the mtgl format
 
 #__name__ = 'tagger'
 __license__ = 'GPLv3'
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 __date__ = 'March 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -20,6 +20,7 @@ __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
 import regex as re
+import lituus as lts
 import lituus.mtgl.mtgl as mtgl
 import lituus.mtgl.lexer as lexer
 import lituus.mtgl.mtgltag as mtgltag
@@ -36,10 +37,14 @@ def tag(name,txt):
         ntxt = first_pass(ntxt)
         ntxt = midprocess(ntxt)
         ntxt = second_pass(ntxt)
-    except mtgl.MTGLException as e:
-        raise mtgl.MTGLTagException("Tagging {} failed due to {}".format(name,e))
+    except lts.LituusException as e:
+        raise lts.LituusException(
+            lts.ETAGGING,"Tagging {} failed due to {}".format(name,e)
+        )
     except Exception as e:
-        raise mtgl.MTGLTagException("unknpown error tagging {} due to {}".format(name,e))
+        raise lts.LituusException(
+            lts.UNDEF,"Unexpected error tagging {} due to {}".format(name,e)
+        )
     return ntxt
 
 ####
@@ -304,12 +309,11 @@ def _multichain_(m):
     for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
         # if we get an object, we're done, if we cannot untag →it's the operator
         try:
-            #i,v,p = mtgltag.untag(tkn.strip())
             i,v,p = mtgltag.untag(tkn)
             if i == 'ob': break
             vals.append(v)
             ps.append(p)
-        except mtgl.MTGLTagException:
+        except lts.LituusException:
             op = mtgl.AND if tkn == 'and' else mtgl.OR
 
     # chain the characteristics, merge the proplists & move suffix if present

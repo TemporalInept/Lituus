@@ -12,14 +12,15 @@ Defines functions to work with mtgl tags
 
 #__name__ = 'mtgltag'
 __license__ = 'GPLv3'
-__version__ = '0.1.0'
-__date__ = 'March 2020'
+__version__ = '0.1.1'
+__date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
-import re
+import regex as re
+import lituus as lts
 import lituus.mtgl.mtgl as mtgl
 
 """
@@ -67,19 +68,19 @@ re_loy_cost = re.compile(r"[\+−]?nu<[\d|x]+>")
 #### TAGS
 
 # extract components of a tag (excluding all prop-values)
-# TODO: scrub these i.e. will the EQ sign be found in a tag vaule?
+# TODO: scrub this
 re_tag = re.compile(
-    r"(\w\w)"                       # 2 char tag-id       
-    r"<"                            # opening bracket
-    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)"  # tag value (w/ optional starting not)
-    r"(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*" # 0 or more prop lists delimited by space
-    r">"                            # closing bracket
+    r"(\w\w)"                        # 2 char tag-id       
+    r"<"                             # opening bracket
+    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬→']+?)"  # tag value (w/ optional starting not)
+    r"(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*"  # 0 or more prop lists delimited by space
+    r">"                             # closing bracket
 )
 
 # extract the property and the property values
 re_tag_props = re.compile(
     r"(\w+="                  # alphanumeric property and =
-    r"[\w\+/\-¬∧∨⊕⋖⋗≤≥≡→]+)" # prop-value
+    r"[\w\+/\-¬∧∨⊕⋖⋗≤≥≡→']+)" # prop-value
     r"[\s>]"                  # followed by space or closing bracket
 )
 
@@ -110,14 +111,14 @@ def is_mana(tkn):
     try:
         t,v,_ = untag(tkn)
         return t == 'xo' and v == 'mana'
-    except mtgl.MTGLTagException:
+    except lts.LituusException:
         return False
 
 def is_tag(tkn):
     try:
         _ = untag(tkn)
         return True
-    except mtgl.MTGLTagException:
+    except lts.LituusException:
         return False
 
 def untag(tkn):
@@ -136,7 +137,7 @@ def untag(tkn):
             }
         return tag,val,props
     except AttributeError:
-        raise mtgl.MTGLTagException(tkn)
+        raise lts.LituusException(lts.ETAG,"Invalid tag {}".format(tkn))
 
 def merge_props(props,strict=1):
     """
@@ -161,12 +162,16 @@ def merge_props(props,strict=1):
         for prop in props:
             if not key in prop:
                 if strict == 2:
-                    raise mtgl.MTGLTagException("Incompatible param {}".format(key))
+                    raise lts.LituusException(
+                        lts.ETAG,"Incompatible param {}".format(key)
+                    )
             else: vals.add(prop[key])
 
         # check for same parameter values if strictness is not low
         if strict > 0 and len(vals) > 1:
-            raise mtgl.MTGLTagException("Incompatible param value for {}".format(key))
+            raise lts.LituusException(
+                lts.ETAG, "Incompatible param {}".format(key)
+            )
         ps[key] = mtgl.AND.join([val for val in vals])
     return ps
 
@@ -194,7 +199,7 @@ def same_tag(tkns):
 def is_tgr_word(tkn):
     try:
         return untag(tkn)[0] == 'mt'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_quality(tkn):
@@ -202,75 +207,75 @@ def is_quality(tkn):
         if is_mtg_char(tkn): return True
         elif is_mtg_obj(tkn) and 'characteristics' in untag(tkn)[2]: return True
         else: return False
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 # things are mtg objects, lituus objects, players, effects/events and zones
 def is_thing(tkn):
     try:
         return untag(tkn)[0] in ['ef','ob','xp','xo','zn']
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_mtg_obj(tkn):
     try:
         return untag(tkn)[0] == 'ob'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_lituus_obj(tkn):
     try:
         return untag(tkn)[0] == 'xo'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 # an object is a mtg object or a lituus object
 def is_object(tkn):
     try:
         return untag(tkn)[0] in ['ob','xo']
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_player(tkn):
     try:
         return untag(tkn)[0] == 'xp'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_zone(tkn):
     try:
         return untag(tkn)[0] == 'zn'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_phase(tkn):
     try:
         return untag(tkn)[0] == 'ph'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_event(tkn):
     try:
         return untag(tkn)[0] == 'ef'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_property(tkn):
     try:
         return untag(tkn)[0] in ['ch','xc']
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_mtg_char(tkn):
     try:
         return untag(tkn)[0] == 'ch'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_meta_char(tkn):
     try:
         val = untag(tkn)[1]
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
     if mtgl.OR in val: val = val.split(mtgl.OR)
@@ -283,99 +288,99 @@ def is_meta_char(tkn):
 def is_lituus_char(tkn):
     try:
         return untag(tkn)[0] == 'xc'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_action(tkn):
     try:
         return untag(tkn)[0] in ['ka','xa']
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_mtg_act(tkn):
     try:
         return untag(tkn)[0] == 'ka'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_lituus_act(tkn):
     try:
         return untag(tkn)[0] == 'xa'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_state(tkn):
     try:
         return untag(tkn)[0] in ['st','xs']
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_quantifier(tkn):
     try:
         return untag(tkn)[0] == 'xq'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_sequence(tkn):
     try:
         return untag(tkn)[0] == 'sq'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_preposition(tkn):
     try:
         return untag(tkn)[0] == 'pr'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_conditional(tkn):
     try:
         return untag(tkn)[0] == 'cn'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_number(tkn):
     try:
         return untag(tkn)[0] == 'nu'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_variable(tkn):
     try:
         t,v,_ = untag(tkn)
         return t == 'nu' and v in ['x','y','z']
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_expression(tkn):
     try:
         t,v,_ = untag(tkn)
         return t == 'nu' and v in [mtgl.LT,mtgl.GT,mtgl.LE,mtgl.GE,mtgl.EQ]
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_operator(tkn):
     try:
         return untag(tkn)[0] == 'op'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_keyword(tkn):
     try:
         return untag(tkn)[0] == 'kw'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_keyword_action(tkn):
     try:
         return untag(tkn)[0] == 'ka'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_ability_word(tkn):
     try:
         return untag(tkn)[0] == 'aw'
-    except mtgl.MTGLTagException:
+    except lts.LitussException:
         return False
 
 def is_loyalty_cost(tkn):

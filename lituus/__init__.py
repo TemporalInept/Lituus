@@ -59,6 +59,8 @@ EATTR    =  7 # Attribute Error
 EIMPL    =  8 # ImplementationError
 # MTGL RELATED
 EMTGL    = 10 # Generic MTGL Error
+ETAG     = 11 # MTGL Tag Error
+ETAGGING = 12 # Error while tagging oracle
 
 # for setup.py us
 version = __version__
