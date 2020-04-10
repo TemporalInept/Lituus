@@ -20,6 +20,7 @@ __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
 from operator import itemgetter
+import lituus as lts
 import lituus.mtg as mtg
 import lituus.mtgcard as mtgcard
 
@@ -36,7 +37,7 @@ class Pack(object):
     def __getitem__(self,cname):
         """ overload the subscript '[]' operator """
         if not cname in self._mb:
-            raise lituus.PackException("No such card {}".format(cname))
+            raise lts.LituusException(lts.EDATA,"No such card {}".format(cname))
         return self._mb[cname]
 
     def __iter__(self):
@@ -68,7 +69,7 @@ class Pack(object):
             del self._qty[cname]
             del self._mb[cname]
         except KeyError:
-            raise lituus.PackException("No such card {}".format(cname))
+            raise lts.LituusException(lts.EDATA,"No such card {}".format(cname))
 
     def has_card(self,cname): return cname in self._mb
 
@@ -152,10 +153,10 @@ class Pack(object):
             # find mana symbols in the casting cost
             try:
                 mcs = mtg.re_mana_sym.findall(card.mana_cost)
-            except TypeError:
+            except TypeError as e:
                 # cards with no casting cost i.e. suspend will end up here
                 if mv[card].cmc == 0: continue
-                else: raise
+                else: raise lts.LituusException(lts.UNDEF,"Unexpected {}".format(e))
 
             # for ease, recreate manacost list removing extra symbols could be snow,
             # phyrexian or hybrid and numeral symbols
@@ -285,7 +286,7 @@ class Pack(object):
             except TypeError:
                 # cards with no casting cost i.e. suspend will end up here
                 if mv[card].cmc == 0: continue
-                else: raise
+                else: raise lts.LituusException(lts.UNDEF,"Unexpected {}".format(e))
             mcs2 = []
 
             # for ease, recreate manacost list removing could be snow, phyrexian
