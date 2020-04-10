@@ -37,7 +37,7 @@ class Pack(object):
     def __getitem__(self,cname):
         """ overload the subscript '[]' operator """
         if not cname in self._mb:
-            raise lts.LituusException(lts.EDATA,"No such card {}".format(cname))
+            raise lts.LituusException(lts.EPARAM,"No such card {}".format(cname))
         return self._mb[cname]
 
     def __iter__(self):
@@ -69,7 +69,7 @@ class Pack(object):
             del self._qty[cname]
             del self._mb[cname]
         except KeyError:
-            raise lts.LituusException(lts.EDATA,"No such card {}".format(cname))
+            raise lts.LituusException(lts.EPARAM,"No such card {}".format(cname))
 
     def has_card(self,cname): return cname in self._mb
 
