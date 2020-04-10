@@ -22,8 +22,10 @@ __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
 __status__ = 'Development'
 
+import os
 from hashlib import sha1
 from operator import itemgetter
+import lituus as lts
 import lituus.pack as pack
 import lituus.mtgcard as mtgcard
 from lituus.mtg import pri_types
@@ -65,6 +67,9 @@ class MTGDeck(pack.Pack):
         """
         # TODO: add better exception handling and raising i.e. check for existence
         #  of file first
+        if not os.path.exists(f):
+            raise lts.LituusException(lts.EIOIN,"File {} does not exist".format(f))
+
         try:
             self._read_deck_(f)
             self._dname = dname if dname else self._path.split('/')[-1]
@@ -72,10 +77,12 @@ class MTGDeck(pack.Pack):
             self._author = aname if aname else "Unknown"
             self._aurl = aurl if aurl else ""
             self._diurl = diurl if diurl else ""
+        except IOError as e:
+            raise lts.LituusExeption(lts.EIOIN,e)
         except Exception as e:
-            raise pack.PackException(e)
+            raise lts.LituusException(lts.EUNDEF,e)
 
-    def save_deck(self,f): raise NotImplementedError
+    def save_deck(self,f): raise lts.LituusException(lts.EIMPL,"Pending")
 
     @property
     def name(self): return self._dname
@@ -96,10 +103,12 @@ class MTGDeck(pack.Pack):
     def discord_url(self): return self._diurl
 
     @property
-    def mainboard(self): return sorted([(k,self._qty[k],self._mb[k]) for k in self._mb])
+    def mainboard(self):
+        return sorted([(k,self._qty[k],self._mb[k]) for k in self._mb])
 
     @property
-    def sideboard(self): return sorted([(k,self._sqty[k],self._sb[k]) for k in self._sb])
+    def sideboard(self):
+        return sorted([(k,self._sqty[k],self._sb[k]) for k in self._sb])
 
     def is_legal(self): return True
 
@@ -121,7 +130,7 @@ class MTGDeck(pack.Pack):
             del self._sqty[cname]
             del self._sb[cname]
         except KeyError:
-            raise PackException("No such card {}".format(cname))
+            raise lts.LituusException(lts.EDATA,"{} does not exist".format(cname))
 
     def del_sideboard(self):
         """ deletes the sideboard """

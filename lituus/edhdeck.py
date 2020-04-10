@@ -12,7 +12,7 @@ Defines a EDH Deck as a subset of a MTGDeck.
 
 #__name__ = 'edhdeck'
 __license__ = 'GPLv3'
-__version__ = '0.0.2'
+__version__ = '0.1.1'
 __date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -21,6 +21,7 @@ __status__ = 'Development'
 
 import os
 from bs4 import BeautifulSoup as soup
+import lituus as lts
 import lituus.mtg as mtg
 import lituus.mtgl.mtgl as mtgl
 import lituus.multiverse as multiverse
@@ -28,7 +29,8 @@ import lituus.mtgdeck as mtgdeck
 
 class EDHDeck(mtgdeck.MTGDeck):
     """ Defines an EDH Deck """
-    def __init__(self,cs=None,f=None,dname=None,durl=None,aname=None,aurl=None,diurl=None):
+    def __init__(self,cs=None,f=None,dname=None,durl=None,
+                      aname=None,aurl=None,diurl=None):
         """
         Initializes an EDH  deck from file f with commander(s) cs if present or
         an empty deck if not
@@ -158,11 +160,10 @@ class EDHDeck(mtgdeck.MTGDeck):
             del dl['Creature'][i]              # & remove from creature category
         return dl
 
-    def competition_hash(self):
+    def cedh_hash(self):
         """
         calculates the cockatrice hash for an online cEDH Competition deck
         (Commander(s) and only commander(s) in sidedeck)
-        NOTE: we ignore the sideboard parameter
         """
         # we have to temporalily remove any cards in the sideboard
         t_sb = self._sb.copy()
@@ -194,7 +195,7 @@ class EDHDeck(mtgdeck.MTGDeck):
             self._qty = t_qty
             self._sb = t_sb
             self._sqty = t_sqty
-            raise
+            raise lts.LituusException(lts.EUNDEF,"Error hashing {}".format(e))
 
         return dhash
 
@@ -214,15 +215,17 @@ class EDHDeck(mtgdeck.MTGDeck):
 
             # check file extension and read in if possible
             _,fext = os.path.splitext(f)
-            if fext == '.cod': ds = self._read_cod_(f)
-            elif fext == '.dec': ds = self._read_dec_(f)
+            if fext == '.cod': ds = EDHDeck._read_cod_(f)
+            elif fext == '.dec': ds = EDHDeck._read_dec_(f)
             else:
-                raise RuntimeError("Unable to process '{}' files".format(fext))
-            if not ds: raise RuntimeError("Error reading {}".format(f))
-        except mtgl.MTGLException: raise
-        except RuntimeError: raise
+                raise lts.LituusException(
+                    lts.EPARAM,"Unable to process '{}' files".format(fext)
+                )
+        except lts.LituusException: raise
         except Exception as e:
-            raise RuntimeError("Error reading deck {}\n{}".format(f,e))
+            raise lts.LituusException(
+                lts.EUNDEF,"Error reading deck {}\n{}".format(f,e)
+            )
 
         # start with the mainboard (make sure split cards are handled properly)
         for qty,cname in ds['mainboard']:
@@ -251,7 +254,8 @@ class EDHDeck(mtgdeck.MTGDeck):
         self._dname = ds['name'] # set the name
         self._path = f
 
-    def _read_cod_(self,f):
+    @staticmethod
+    def _read_cod_(f):
         """ reads a cockatrice deck file """
         ds = {'name':"",'mainboard':[],'sideboard':[]}
         fin = None
@@ -285,20 +289,18 @@ class EDHDeck(mtgdeck.MTGDeck):
                                 (int(card.attrs['number']),    # qty
                                  card.attrs['name'].__str__()) # card name
                             )
-            except IndexError:
-                raise
-                #pass # TODO: why am I doing this
-
+            except IndexError as e:
+                raise lts.LituusException(lts.EDATA,"Unexpected {}".format(e))
         except IOError as e:
-            raise
-            #if e.errno != 2: raise # TODO: why am I doing this
+            raise lts.LituusException(lts.EOIOIN,"Failed reading file {}".format(e))
         finally:
             if fin: fin.close()
 
         # set the path if we get here
         return ds
 
-    def _read_dec_(self,f):
+    @staticmethod
+    def _read_dec_(f):
         """ reads a .dec deck file """
         ds = {}
 
@@ -321,8 +323,7 @@ class EDHDeck(mtgdeck.MTGDeck):
                     if sb: ds['sideboard'].append(EDHDeck._dec_card_(l[3:].strip()))
                     else: ds['mainboard'].append(EDHDeck._dec_card_(l))
         except IOError as e:
-            raise
-            #if e.errno != 2: raise
+            raise lts.LituusException(lts.EOIOIN,"Failed reading file {}".format(e))
         finally:
             if fin: fin.close()
         return ds
@@ -332,4 +333,3 @@ class EDHDeck(mtgdeck.MTGDeck):
         """ returns a tuple t = (cnt,name) from the line l """
         l = l.split(' ')
         return (int(l[0]),' '.join(l[1:]))
-

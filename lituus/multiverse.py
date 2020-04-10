@@ -25,6 +25,7 @@ import pickle
 import json
 import requests
 from hashlib import md5
+import lituus as lts
 import lituus.mtg as mtg
 import lituus.pack as pack
 import lituus.mtgl.mtgl as mtgl
@@ -64,11 +65,9 @@ def multiverse(update=0):
             fin.close()
             return mv
         except FileNotFoundError:
-            raise mtgl.MTGLException("Saved multiverse does not exist")
-        except pickle.PickleError as e:
-            raise mtgl.MTGLException(
-                "Error loading multiverse: {}. Recreating...".format(e)
-            )
+            raise lts.LituusException(lts.EIOIN,"Multiverse file does not exist")
+        except pickle.PickleError:
+            raise lts.LituusException(lts.EIOIN,"Error loading multiverse")
         finally:
             if fin: fin.close()
 
@@ -85,9 +84,9 @@ def multiverse(update=0):
             fout.close()
             print("AllCards.json updated")
         except RuntimeError:
-            print("Failed to download AllCards.json")
-        except OSError as e:
-            print("Failed to save AllCards.json: {}".format(e))
+            raise lts.LituusException(lts.ENET,"Failed to download AllCards.json")
+        except OSError:
+            raise lts.LituusException(lts.EIOOUT,"Failed to save AllCards.json")
         finally:
             if fout: fout.close()
 
@@ -98,9 +97,8 @@ def multiverse(update=0):
         fin = open(jpath,'r')
         mverse = _hack_cards_(json.load(fin)) # fix errors in cards
         fin.close()
-    except IOError as e:
-        print("Error reading the cards file {}".format(e))
-        return None
+    except IOError:
+        raise lts.LituusException(lts.ERRIOIN,"Error reading AllCards.json")
     finally:
         if fin: fin.close()
 
@@ -116,12 +114,10 @@ def multiverse(update=0):
         fout = open(mvpath,'wb')
         pickle.dump(mv,fout)
         fout.close()
-    except pickle.PickleError as e:
-        print("Failed to pickle multiverse: {}".format(e))
-        raise
+    except pickle.PickleError:
+        raise lts.LituusException(lts.EIOOUT,"Failed pickling multiverse")
     except IOError as e:
-        print("Failed to save multiverse: {}".format(e))
-        raise
+        raise lts.LituusException(lts.EIOOUT,"Failed saving multiverse")
     finally:
         if fout: fout.close()
 
@@ -133,11 +129,9 @@ def multiverse(update=0):
         pickle.dump(tc, fout)
         fout.close()
     except pickle.PickleError as e:
-        print("Failed to pickle transformed: {}".format(e))
-        raise
+        raise lts.LituusException(lts.EIOOUT,"Failed pickling transformed")
     except IOError as e:
-        print("Failed to save transformed: {}".format(e))
-        raise
+        raise lts.LituusException(lts.EIOOUT,"Failed saving transformed")
     finally:
         if fout: fout.close()
 
@@ -149,11 +143,9 @@ def multiverse(update=0):
         pickle.dump(n2r,fout)
         fout.close()
     except pickle.PickleError as e:
-        print("Failed to pickle name reference: {}".format(e))
-        raise
+        raise lts.LituusException(lts.EIOOUT,"Failed pickling name reference")
     except IOError as e:
-        print("Failed to name reference: {}".format(e))
-        raise
+        raise lts.LituusException(lts.EIOOUT,"Failed saving name reference")
     finally:
         if fout: fout.close()
 
@@ -183,20 +175,15 @@ def import_cards(mv,tc,n2r,mverse):
     for cname in n2r: # only enumerate legal names
         # get the parameters and parse the oracle
         # TODO: once debugging is done, dont store intermidiate parsing artifacts
+        jcard = dcard = None
         try:
             # harvest the json card dict and parse the oracle text
             jcard = mverse[cname]
             dcard = harvest(cname,jcard)
             dcard['tag'] = tagger.tag(cname,dcard['oracle'])
         except KeyError as e:
-            print("Mverse error, lost card {}".format(e))
-        except mtgl.MTGLTagException as e:
-            print("Tagging Error: {}".format(e))
-            raise
-        except mtgl.MTGLException as e:
-            print("Error parsing {} due to {}. Skipping...".format(cname,e))
-        except Exception as e:
-            print("Unknown Error of type {} parsing {}. Skipping...".format(type(e),cname))
+            # shouldn't get this
+            print("Multiververse error, lost card {}".format(e))
 
         # determine if the card goes in the multiverse dict or transformed
         if jcard['layout'] == 'transform' and jcard['side'] == 'b':
@@ -273,15 +260,15 @@ def harvest(name,jcard):
             'sets': jcard['printings'],
         }
     except KeyError as e:
-        print("{}->{}".format(name,e))
-        raise
+        raise lts.LituusException(lts.EDATA,"{}->{}".format(name,e))
 
     # check for existence before setting the following
     if 'Planeswalker' in jcard['types'] and 'loyalty' in jcard:
         dcard['loyalty'] = jcard['loyalty']
     elif 'Creature' in jcard['types']:
         dcard['P/T'] = "{}/{}".format(jcard['power'],jcard['toughness'])
-    if 'faceConvertedManacost' in jcard: dcard['face-cmc'] = jcard['faceConvertedManacost']
+    if 'faceConvertedManacost' in jcard:
+        dcard['face-cmc'] = jcard['faceConvertedManacost']
     else: dcard['face-cmc'] = dcard['cmc']
 
     return dcard

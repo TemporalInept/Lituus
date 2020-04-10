@@ -23,9 +23,6 @@ from operator import itemgetter
 import lituus.mtg as mtg
 import lituus.mtgcard as mtgcard
 
-class PackException(Exception):
-    def __init__(self,message): Exception.__init__(self,message)
-
 class Pack(object):
     """ manages a set of cards """
     def __init__(self):
@@ -38,7 +35,8 @@ class Pack(object):
 
     def __getitem__(self,cname):
         """ overload the subscript '[]' operator """
-        if not cname in self._mb: raise PackException("No such card {}".format(cname))
+        if not cname in self._mb:
+            raise lituus.PackException("No such card {}".format(cname))
         return self._mb[cname]
 
     def __iter__(self):
@@ -70,7 +68,7 @@ class Pack(object):
             del self._qty[cname]
             del self._mb[cname]
         except KeyError:
-            raise PackException("No such card {}".format(cname))
+            raise lituus.PackException("No such card {}".format(cname))
 
     def has_card(self,cname): return cname in self._mb
 
@@ -138,12 +136,7 @@ class Pack(object):
         """ returns number of non-land cards in pack """
         return self.qty() - self.type_hist(False)['Land']
 
-    def mana_base(self):
-        """
-        Returns the mana symbols that can be produced by mana-producers in the deck
-        as a list of tuples t = (ManaSymbol,Count) sorted by mtg color preference
-        """
-        raise NotImplementedError
+    def mana_base(self): raise lts.LituusException(lts.EIMPL,"Pending")
 
     def double_mana(self):
         """
@@ -255,17 +248,11 @@ class Pack(object):
             if i > 0: cch[i] = (cch[i][0],cch[i-1][1] + cch[i][1])
         return cch
 
-    def mana_producer_hist(self):
-        """ return a hist of mana producers one of {land,rock,dork,ritual} """
-        raise NotImplementedError
+    def mana_producer_hist(self): raise lts.LituusException(lts.EIMPL,"Pending")
 
-    def mana_plurality_hist(self):
-        """ returns a hist of mana producer's plurality """
-        raise NotImplementedError
+    def mana_plurality_hist(self): raise lts.LituusException(lts.EIMPL,"Pending")
 
-    def land_cat_hist(self):
-        """ returns a list of land categories for lands in this deck """
-        raise NotImplementedError
+    def land_cat_hist(self): raise lts.LituusException(lts.EIMPL,"Pending")
 
     def basic_hist(self):
         """ returns histogram of packs's lands: basic vs non-basics """

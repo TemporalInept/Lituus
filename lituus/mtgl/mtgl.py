@@ -75,19 +75,6 @@ Ultimately, the intent is to break oracle text into three main components:
 """
 
 ####
-# EXCEPTIONS
-####
-
-class MTGLException(Exception):
-    def __init__(self,message): Exception.__init__(self,message)
-class MTGLParseException(MTGLException):
-    def __init__(self,message): MTGLException.__init__(self,message)
-class MTGLTagException(MTGLParseException):
-    def __init__(self,message): MTGLParseException.__init__(self,message)
-class MTGLGraphException(MTGLException):
-    def __init__(self,message): MTGLException.__init__(self,message)
-
-####
 # TAGS AND SUMBOLS
 ####
 

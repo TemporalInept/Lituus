@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-""" Lituus A Python 3.x Magic the Gathering Oracle Parsing and Collation Tool
- for Competitive EDH (cEDH)
+""" Lituus v 0.1.0 Lituus A Python 3.x Magic the Gathering Card Parsing and
+Collation Tool  for Competitive EDH (cEDH)
 Copyright (C) 2019  Temporal Inept (temporalinept@mail.com)
 
 This program is free software: you can redistribute it and/or modify it under
@@ -8,7 +8,7 @@ the terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version.
 
-Root distribution directory Lituus
+Root distribution directory for Lituus (Do not import from this directory)
 Contains:
  /lituus - program files
  LICENSE - license for use of Lituus
@@ -31,7 +31,7 @@ check documentation for your Operating System, Distro (where applicable) and Pyt
 #__name__ = 'Lituus'
 __license__ = 'GPLv3'
 __version__ = '0.1.0'
-__date__ = 'May 2019'
+__date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
