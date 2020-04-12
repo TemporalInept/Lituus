@@ -27,12 +27,16 @@ import lituus.mtgl.mtgl as mtgl
  Mana symbols (energy, tap and untap) are already enclosed by braces '{' and '}', 
  continue this concept using '<' and '>' to tag important words. All text is 
  lowered  cased. Then special words as defined in the Magic: The Gathering 
- Comprehensive Rules (3-May 2019) are tagged in addition to words that are common 
- throughout mtg card oracles. 
+ Comprehensive Rules are tagged in addition to words that are common throughout 
+ mtg card oracles. 
  
- Each tag is a two letter identifier followed by a '<', the word and a '>' 
- Identifiers beggining with 'x', specifies words that lituus treats as special or 
- common enough to warrant being tagged
+ Each tag can is defined as (see re_tag below): 
+  tag-id<tag-value[ tag-attributes]>
+ where 
+  tag-id is a two letter identifier (see mtgl) that defines the type of tag
+   i.e. kw defines a keyword
+  tag-value is the 'word' or token being tagged i.e. 'flying'
+  tag-attributes is a list of space delimited attribute pairs attr=val 
 """
 
 #### MTG SYMBOLS
@@ -73,7 +77,7 @@ re_tag = re.compile(
     r"(\w\w)"                        # 2 char tag-id       
     r"<"                             # opening bracket
     r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬→']+?)"  # tag value (w/ optional starting not)
-    r"(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*"  # 0 or more prop lists delimited by space
+    r"(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*"  # 0 or more attributes delimited by space
     r">"                             # closing bracket
 )
 

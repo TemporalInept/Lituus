@@ -320,6 +320,13 @@ def _hack_cards_(jv):
                 "When Hazezon leaves",
                 "When Hazezon Tamar leaves"
             )
+        elif cname == "Frankenstein's Monster":
+            # add counter behind he first two so they are not incorrectly
+            # tagged as characteristics
+            jv[cname]['text'] = jv[cname]['text'].replace(
+                "with a +2/+0, +1/+1, or +0/+2 counter",
+                "with a +2/+0 counter, +1/+1 counter, or +0/+2 counter",
+            )
 
         """
          bugs in mtgjson for Start // Finish related to side A, Start

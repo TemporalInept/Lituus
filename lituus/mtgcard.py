@@ -89,11 +89,15 @@ class MTGCard(object):
     @property
     def oracle(self): return self._card['oracle']
 
+    # TODO: for debugging only
+    @property
+    def tag(self): return self._card['tag']
+
     @property # NOTE: this may include duplicates
-    def keywords(self): return self._kws
+    def keywords(self): raise lts.LituusException(lts.EIMPL,"Pending")
 
     @property
-    def ability_words(self): return self._aws
+    def ability_words(self): raise lts.LituusException(lts.EIMPL,"Pending")
 
     @property
     def activated_ability(self): raise lts.LituusException(lts.EIMPL,"Pending")

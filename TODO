@@ -6,8 +6,6 @@
 
 5. Keep replacement of "your opponent(s)" with "opponents" (tagger)?
 
-6. Group all exceptions under a single one?
-
 8. Look for cards like Tolaria, ..."bands with other"... which may/will cause problems with double quoted words
 
 11. Keep cost as a lituus action or redo as a lituus characterisitic?
@@ -65,10 +63,25 @@ c. Wasitora has multiple characterstics with no commas and one meta (p/t)
  a specified object 'card'
  a. this is because we have a chain of creature types followed by ch<creature> ob<card>
 
-40. Need to write save deck functionality and do better exception handling
+40. Need to write save deck functionality
 
 41. Have to see how Companion will be treated i.e. as one of the 100 or an extra
 
-42. Getting error in EDHDeck if arguments arent supplied to super but should be in python 3.5
+43. Stangg Twin in card Stangg is being tagged as <obj ref=self> twin - have to fix this
 
-43.
+44. After moving color chaining and 'have p/t' to front need to verify
+
+45. Is rounded (up or down) prevalent enough to tag it?
+
+46. Have to tag damage/combat damage
+
+47. How to handle two consecutive objects like Trail of Crumbs "permanent card"
+
+49. Duplicant - how to handle meta-characteristics that do not have a value attribute
+
+50. Will have to deconflict IKO keyword counters that are incorrectly tagged as 
+keywords
+
+51. Lost Legacy ...xa<choose> xq<a> ch<¬artifact>, ch<¬land> ob<card> ch<name>... after chaining will have a hanging characteristic (a meta)
+
+52. How to handle cards like Transmutation "switch target creature's power and toughness"

@@ -37,13 +37,13 @@ def tag(name,txt):
         ntxt = first_pass(ntxt)
         ntxt = midprocess(ntxt)
         ntxt = second_pass(ntxt)
-    except lts.LituusException as e:
+    except (lts.LituusException,re.error) as e:
         raise lts.LituusException(
             lts.ETAGGING,"Tagging {} failed due to {}".format(name,e)
         )
     except Exception as e:
         raise lts.LituusException(
-            lts.UNDEF,"Unexpected error tagging {} due to {}".format(name,e)
+            lts.EUNDEF,"Unexpected error tagging {} due to {}".format(name,e)
         )
     return ntxt
 
@@ -60,7 +60,7 @@ def preprocess(name,txt):
        4. hack words with anamolies contractions, etc
        5. english number words 0 - 10 are replacing with corresponding ints,
        6. Some reminder text is removed, some paraenthesis is removed
-       7. replace any 'non' w.out hypen to 'non-' w/ hyphen
+       7. replace any 'non' w/out hypen to 'non-' w/ hyphen
     :param name: name of this card
     :param txt: the mtgl text
     :return: preprocessed oracle text
@@ -139,6 +139,7 @@ def first_pass(txt):
     ntxt = mtgl.re_trigger.sub(r"tp<\1>",ntxt)   # trigger preambles
     ntxt = tag_counters(ntxt)                    # markers
     ntxt = tag_awkws(ntxt)                       # ability words, keywords & actions
+    ntxt = mtgl.re_effect.sub(r"ef<\1>",ntxt)    # effects
     ntxt = tag_characteristics(ntxt)             # chars. - done after #s
     ntxt = mtgl.re_zone.sub(r"zn<\1>",ntxt)      # zones
     return ntxt
@@ -195,7 +196,7 @@ def tag_characteristics(txt):
 def midprocess(txt):
     """
      prepares tagged txt for second pass
-       1. replaces spaces/hyphens between tokens with underscore IOT make it a
+       1. replaces spaces/hyphens inside tags with underscore IOT make it a
         single tag value
        2. moves 'non-' in front of a tag to the negated symbol '¬' inside the tag
        3. align subsequent super-type, card type, ch<super-type> ch<type> are
@@ -215,18 +216,19 @@ def midprocess(txt):
     ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                             # 2
     ntxt = mtgl.re_align_type.sub(r"ch<\1\2→\3\4>",ntxt)                       # 3
     ntxt = mtgl.re_align_type2.sub(r"ch<\3\4→\1\2>",ntxt)                      # 4
-    ntxt = deconflict_tags(txt)                                                # 5
+    ntxt = deconflict_tags(ntxt)                                               # 5
     ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>", ntxt)                       # 6
     return ntxt
 
 re_emp_postfix = re.compile(r"\ssuffix=(?=)>")
 def deconflict_tags(txt):
     """
-     deconflicts status related tokens between status, actions and turn structure
-     returning tagged txt
+     deconflicts incorrectly tagged tokens
     :param txt: oracle txt after initial first pass
     :return: tagged oracle text
     """
+    # Status related
+
     # Tapped, Flipped
     ntxt = mtgl.re_status.sub(r"st<\2\3p\4>",txt)
 
@@ -266,96 +268,108 @@ def chain(txt):
     :return: modified tagged txt with sequential characterisitcs chained
     NOTE: these must be followed in order
     """
-    # multi chains first:
+    # First, IOT faciliate chaining:
+    #  a) chain dual conjoined color characteristics - this facilitates
+    #   future chaining of characteristics like Stangg
+    #  b) handle special case of 'base power and toughness' replace phrase
+    #   base ch<power> and ch<toughness> ch<p/t val=X/Y> with ch<p/t val=X/Y>
+    ntxt = mtgl.re_2chain_clr.sub(lambda m: _clr_combination_(m),txt)
+    ntxt = powt(ntxt)
+
+    # Now do multi chains:
     #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'or'
-    #    or 'and' which may or may not be followed by an object
+    #    or 'and' which may or may not be followed by more characteristics and
+    #    or an object
     #  b) 3 or more space separated characteristics w/o a conjuction and followed
     #   by a an object Spawning Pit
-    ntxt = mtgl.re_nchain.sub(lambda m: _multichain_(m),txt)
-    ntxt = mtgl.re_nchain_space.sub(lambda m: _multichain_space_(m),ntxt)
+    ntxt = mtgl.re_nchain_comma.sub(lambda m: _nchain_(m),ntxt)
+    ntxt = mtgl.re_nchain_space.sub(lambda m: _nchain_(m),ntxt)
 
-    # before moving to dual chains first:
-    #  a) chain color characteristics
-    #  b) handle special case of 'has base power and toughness'
-    ntxt = mtgl.re_2chain_clr.sub(lambda m: _clr_combination_(m),ntxt)
-    ntxt = mtgl.re_have_pt.sub(r"\1 \2",ntxt)
-
-    # Dual chains:
+    # Dual chains make up the prevalent characteristic chain but care must be
+    # taken to not inadvertently chain characteristics inadverntly:
     #  a) 2 comma-delimited char followed by an object and preceded by a quantifier
-    #   (quantifier char, char, obj)
-    ntxt = mtgl.re_2chain_comma.sub(lambda m: _2chain_comma_(m),ntxt)
+    #   (quantifier char, char, obj) i.e. Chrome Mox (As of TBD, only 19 cards)
+    #ntxt = mtgl.re_2chain_quant_obj.sub(lambda m: _2chain_qo_(m),ntxt)
 
     return ntxt
+
+def powt(txt):
+    """
+    chains phrase power and toughness accordingly
+    :param txt: tagged oracle txt
+    :return: modified tagged txt with power and toughness tagged
+    """
+    ntxt = mtgl.re_base_pt.sub(r"\1",txt) # base power and toughness
+    ntxt = mtgl.re_single_pt.sub(r"ch<p/t>",ntxt)
+    return ntxt
+
 
 ####
 ## PRIVATE FUNCTIONS
 ####
 
-def _multichain_(m):
+def _nchain_(m):
     """
-    chains comma separated characteristics with an 'and'/'or' into a single
-    object (implied or explicit)
-    :param m: are regex.Match object
+    chains comma or space separated characteristics possibly cantaining an 'and'/'or'
+    into a single object (implied or explicit)
+    :param m: a regex.Match object
     :return: the chained object
     """
-    # set up our lists for values and prop-lists
-    vals = []        # list of characteristics to chain
-    ps = []          # list of the proplists from the characteristics tags
-    op = mtgl.AND    # default is'and'ed characteristics
-    tkn = None       # current token in chain
-    i = v = p = None # the chained obj to create
+    # set up our lists for values and attributes
+    vals = []                                   # characteristics to chain
+    tas = []                                    # & their attributes
+    meta = []                                   # meta characteristics
+    op = mtgl.AND                               # default 'and'ed characteristics
+    tkn = None                                  # current token in chain
+    tid = val = attrs = None                    # obj to create
+    space = ' ' if m.group()[-1] == ' ' else '' # hanging space
 
-    # untag the characteristics saving the tag value and prop-list
+    # untag the characteristics saving the tag value and attributes
     for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
-        # if we get an object, we're done, if we cannot untag →it's the operator
         try:
-            i,v,p = mtgltag.untag(tkn)
-            if i == 'ob': break
-            vals.append(v)
-            ps.append(p)
+            # untag
+            ti,tv,ta = mtgltag.untag(tkn)
+
+            # if its an object, we're done. Save the tag
+            if ti == 'ob':
+                tid,val,attr = ti,tv,ta
+                break
+
+            # check for a meta characterisics
+            if tv in mtgl.meta_characteristics:
+                # if 'val is in the attributes, append as a meta otherwise return
+                # We should always only have one meta characteristic in a chain
+                # they should always be anded but just in case
+                if 'val' in ta:
+                    assert(len(ta) == 1)
+                    meta.append((tv,ta['val']))
+                else: return m.group()
+            else:
+                # append the value and the proplist to running lists
+                vals.append(tv)
+                tas.append(ta)
         except lts.LituusException:
+            # cannot untag - this is the operator
+            assert(tkn == 'and' or tkn == 'or')
             op = mtgl.AND if tkn == 'and' else mtgl.OR
 
     # chain the characteristics, merge the proplists & move suffix if present
+    attrs = {}
     chs = op.join(vals)
-    pls = mtgltag.merge_props(ps)
-    if 'suffix' in pls: p['suffix'] = pls['suffix']
+    merged = mtgltag.merge_props(tas)
+    if 'suffix' in merged: attrs['suffix'] = merged['suffix']
+    if meta: attrs['meta'] = op.join(mt[0]+mtgl.EQ+mt[1] for mt in meta)
 
     # Create implied object if necessary. Then add chained characteristics
-    if i != 'ob':
-        i = 'ob'
-        v = _implied_obj_(vals)
-        p = {}
-    p['characteristics'] = chs
+    if not tid:
+        tid = 'ob'
+        val = _implied_obj_(vals)
+    attrs['characteristics'] = chs
 
     # retag the chained characteristics and return
-    return mtgltag.retag(i,v,p)
+    return mtgltag.retag(tid,val,attrs) + space
 
-def _multichain_space_(m):
-    """
-    chains space separated characteristics that are followed by an object
-    :param m: are regex.Match object
-    :return: the chained object
-    """
-    tkns = lexer.tokenize(m.group())[0] # create the tokens
-    i,v,p = mtgltag.untag(tkns[-1])     # last token is the object
-
-    # iterate the tokens and 'and' them. If theyre meta do separately
-    for tkn in tkns[:-1]:
-        _,tv,tp = mtgltag.untag(tkn)
-        if tv in mtgl.meta_characteristics:
-            assert(len(tp) == 1)
-            meta = tv + mtgl.EQ + tp['val']
-            if 'meta' in p: p['meta'] += mtgl.AND + meta  # should only be 1
-            else: p['meta'] = meta
-        else:
-            assert (tp == {})
-            if 'characteristics' in p: p['characteristics'] += mtgl.AND + tv
-            else: p['characteristics'] = tv
-
-    return mtgltag.retag(i,v,p)
-
-def _2chain_comma_(m):
+def _2chain_qo_(m):
     """
     chains 2 comma-delimited characteristics followed by an object i.e. Chrome Mox
     :param m: are regex.Match object
@@ -378,7 +392,7 @@ def _clr_combination_(m):
     :param m: a regex.Match object
     :return: the chained colors
     """
-    # 3  groups color1, operator, color2 (assumes no prop-list for colors)
+    # 3  groups color1, operator, color2 (assumes no attributes for colors)
     clr1 = mtgltag.untag(m.group(1))[1]
     op = mtgl.OR if m.group(2) == 'or' else mtgl.AND
     clr2 = mtgltag.untag(m.group(3))[1]

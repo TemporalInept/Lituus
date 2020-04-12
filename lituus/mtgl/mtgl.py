@@ -246,7 +246,7 @@ word_hacks = {
     # acronyms
     "end of turn":"eot","converted mana cost":"cmc",
     # suffixes/tense/possessive (ing,ed,s,'s)
-    "activating":"activateing","activated":"activated",
+    "activating":"activateing","activated":"activateed",
     "creating":"createing","created":"createed",
     "doubling":"doubleing","doubled":"doubled",
     "exchanging":"exchangeing","exchanged":"exchangeed",
@@ -536,7 +536,7 @@ lituus_actions = [ # words not defined in the rules but important any way
     'put','remove','distribute','get','return','draw','move','look','pay','deal',
     'gain','lose','attack','block','add','enter','leave','choose','die','spend',
     'unspend','take','reduce','trigger','prevent','declare','have','switch',
-    'assign','win','defend','cost','skip','flip','cycle','phase',
+    'assign','win','defend','cost','skip','flip','cycle','phase','become','share',
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
@@ -547,9 +547,13 @@ re_lituus_act = re.compile(
 ## EFFECTS
 ####
 
-# effects ensure the effects are not already tagged
-# TODO: not sure if this necessary
-re_effect = re.compile(r"(?<!combat\s)(damage|effect)(?!\w|>)")
+# (609) we only tag the word effect, combat damage and effect
+# NOTE: These should not have already been tagged, but just in case
+effects = ["combat damage","damage","effect"]
+eff_tkns = '|'.join(effects)
+re_effect = re.compile(
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(eff_tkns)
+)
 
 ####
 ## CHARACTERISTICS
@@ -571,7 +575,7 @@ re_super_char = re.compile(r"({})".format('|'.join(super_characteristics)))
 
 type_characteristics = [  # 300.1, NOTE: we added historic
     'artifact','creature','enchantment','instant','land','planeswalker',
-    'sorcery','tribal'
+    'sorcery','tribal','historic',
 ]
 re_type_char = re.compile(r"({})".format('|'.join(type_characteristics)))
 
@@ -696,16 +700,17 @@ tkn_delimit = {
     "city's blessing":"city's_blessing","precombat main":"precombat_main",
     "postcombat main":"postcombat_main","beginning of combat":"beginning_of_combat",
     "declare attackers":"declare_attackers","declare blockers":"declare_blockers",
-    "end of combat":"end_of_combat","on top of":"on_top_of","up to":"up_to",
-    "on bottom of":"on_bottom_of","top of":"top_of","bottom of":"bottom_of",
-    "only if":"only_if","as long as":"as_long_as",
-    "council's dilemma":"council's_dilemma","fateful hour":"fateful_hour",
-    "join forces":"join_forces","spell mastery":"spell_master",
-    "tempting offer":"tempting_offer","will of the council":"will_of_the_council",
-    "double strike":"double_strike","first strike":"first_strike",
-    "commander ninjutsu":"commander_ninjutsu","split second":"split_second",
-    "living weapon":"living_weapon","totem armor":"totem_armor",
-    "jump-start":"jump_start","assembly-worker":"assembly_worker",
+    "end of combat":"end_of_combat","combat damage":"combat_damage",
+    "on top of":"on_top_of","up to":"up_to","on bottom of":"on_bottom_of",
+    "top of":"top_of","bottom of":"bottom_of","only if":"only_if",
+    "as long as":"as_long_as","council's dilemma":"council's_dilemma",
+    "fateful hour":"fateful_hour","join forces":"join_forces",
+    "spell mastery":"spell_master","tempting offer":"tempting_offer",
+    "will of the council":"will_of_the_council","double strike":"double_strike",
+    "first strike":"first_strike","commander ninjutsu":"commander_ninjutsu",
+    "split second":"split_second","living weapon":"living_weapon",
+    "totem armor":"totem_armor","jump-start":"jump_start",
+    "assembly-worker":"assembly_worker",
 }
 tkn_delimit_tkns = '|'.join(tkn_delimit.keys())
 re_tkn_delimit = re.compile(r"(?<=<)({})(?=>)".format(tkn_delimit_tkns))
@@ -740,6 +745,20 @@ re_status_face = re.compile(r"face-pr<(up|down)>")
 re_mod_face = re.compile(r"face pr<(up|down)>")
 
 ####
+## X/Y COUNTER DECONFLICTION
+####
+
+# NOTE: Frankenstein's Monster is the only one that exhibits this anamoly so for
+#  now the change is hardcoded in multiverse
+# chained counters mistagged as characteristics i.e. Frankenstein's Monster
+# xq<a> ch<p/t val=+2/+0>, ch<p/t val=+1/+1>, or xo<ctr type=+0/+2>
+#re_ctr_chain = re.compile(
+#    r"(ch<p/t(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>,\s){2}"
+#    r"or\s"
+#    r"(xo<ctr(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)>)"
+#)
+
+####
 ## SUFFICES
 ####
 
@@ -751,19 +770,56 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")
 # Sequential characteristics
 ###
 
-# three or more comma delimited characteristics with an explicit conjunction
-# possibly followed by an object i.e. Quest for Ula's Temple
-re_nchain = re.compile(
+# Two color characteristics separated by 'and' or 'or' (no commas) i.e. Cavern Harpy
+re_2chain_clr = re.compile(
+    r"(ch<¬?(?:" + re_clr_char.pattern + r")>)"
+    r"\s?(and|or)\s"
+    r"(ch<¬?(?:" + re_clr_char.pattern + r")>)"
+)
+
+# ... base power and toughness X/Y i.e. Godhead of Awe then power and toughness
+# i.e Transmutation
+re_base_pt = re.compile(
+    r"base\sch<power>\sand\sch<toughness>\s"
+    r"(ch<p/t(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+)
+re_single_pt = re.compile(r"ch<power>\sand\sch<toughness>")
+
+# and/or comma-delimited conjoined multi chain
+# three or more comma-delimited characteristics with conjunction ('and'/'or')
+# three variants
+#  a) Followed by one or more characteristics and an object i.e. Quest for Quest
+#   for Ula's Temple xq<a> ch<kraken>, ch<leviathan>, ch<octopus>, or ch<serpent>
+#   ch<creature> ob<card> '
+#  b) Followed by an object i.e. God-Pharaoh's Faithful ch<blue>, ch<black>, or
+#   ch<red> ob<spell>
+#  c) Not followed by anything i.e. Frozen Aether ch<artifact suffix=s>,
+#   ch<creature suffix=s>, and ch<land suffix=s>
+re_nchain_comma = re.compile(
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>,\s){2,}" 
     r"(and|or)\s"                                                
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s?)+"
+    r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
 )
 
 # three or more space delimted characteristics followed by an object i.e.
 # Spawning Pit ch<p/t val=2/2> ch<colorless> ch<spawn> ch<artifact> ch<creature>
 re_nchain_space = re.compile(
+    # have a last characteristic IOT not capture the last space if there is no object
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s){2,}"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+)
+
+# Two characteristics separated by comma i.e Chrome Mox treat this as an 'and'
+# must be followed by an object and preceded by a quantifier or we could
+# incorrectly tag cards like Royal Decree
+re_2chain_quant_obj = re.compile(
+    r"(?<=xq<\w+>\s)"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r",\s"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"\s"
     r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
 
@@ -773,30 +829,4 @@ re_2chain = re.compile(
     r"\s(and|or)\s"                                                
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
     r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-)
-
-# Two characteristics separated by comma i.e Chrome Mox treat this as an 'and'
-# must be followed by an object and preceded by a quantifier
-re_2chain_comma = re.compile(
-    r"(?<=xq<\w+>\s)"
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r",\s"
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"\s"
-    r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-)
-
-
-# Two color characteristics separated by 'and' or 'or'
-re_2chain_clr = re.compile(
-    r"(ch<¬?(?:" + re_clr_char.pattern + r")>)"
-    r"\s?(,|and|or)\s"
-    r"(ch<¬?(?:" + re_clr_char.pattern + r")>)"
-)
-
-# ... has base power and toughness X/Y
-re_have_pt = re.compile(
-    r"(xa<(?:have)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"\sbase\sch<power>\sand\sch<toughness>\s"
-    r"(ch<p/t(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
