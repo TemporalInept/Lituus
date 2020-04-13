@@ -46,8 +46,6 @@ b. In Chrome Mox we see two characteristics that can be chained into a card obje
 
 c. Wasitora has multiple characterstics with no commas and one meta (p/t)
 
-27. redo 'the' as a quanitifier?
-
 28. Hazezon Tamar presents a problem with chaining 
 
 31. How to self ref "Hazezon" in Hazezon Tamar without self reffing "Dragon" in Dragon Egg (for now, am hacking it in multiverse.py
@@ -69,8 +67,6 @@ c. Wasitora has multiple characterstics with no commas and one meta (p/t)
 
 43. Stangg Twin in card Stangg is being tagged as <obj ref=self> twin - have to fix this
 
-44. After moving color chaining and 'have p/t' to front need to verify
-
 45. Is rounded (up or down) prevalent enough to tag it?
 
 46. Have to tag damage/combat damage
@@ -85,3 +81,12 @@ keywords
 51. Lost Legacy ...xa<choose> xq<a> ch<¬artifact>, ch<¬land> ob<card> ch<name>... after chaining will have a hanging characteristic (a meta)
 
 52. How to handle cards like Transmutation "switch target creature's power and toughness"
+
+53. Can use the possessive suffix "'s" for some meta characteristics see Sewer Nemesis
+
+54. Sarpadian Empires, Vol. VII is a good example of 'grouping' vs 'chaining' and needs to be handled prior to 3chain
+
+55. Have to tag choice (as a lituus object?), produce (lituus action?), named (lituus action)
+
+56. See Mana Web, ... is st<tapped> is not deconflicted right, should be 
+ka<tap suffix=ed>

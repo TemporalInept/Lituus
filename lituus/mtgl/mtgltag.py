@@ -12,7 +12,7 @@ Defines functions to work with mtgl tags
 
 #__name__ = 'mtgltag'
 __license__ = 'GPLv3'
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 __date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -82,7 +82,7 @@ re_tag = re.compile(
 )
 
 # extract the property and the property values
-re_tag_props = re.compile(
+re_tag_attrs = re.compile(
     r"(\w+="                  # alphanumeric property and =
     r"[\w\+/\-¬∧∨⊕⋖⋗≤≥≡→']+)" # prop-value
     r"[\s>]"                  # followed by space or closing bracket
@@ -131,25 +131,25 @@ def untag(tkn):
     :param tkn: the token to untag
     :return: the tag, tag-value and property dict
     """
-    props = {}
+    attrs = {}
     try:
         # get the tag, the value and any properties
-        tag,val,ps = re_tag.match(tkn).groups()
-        if ps:
-            props = {
-                p[0]:p[1] for p in [p.split('=') for p in re_tag_props.findall(tkn)]
+        tag,val,attr = re_tag.match(tkn).groups()
+        if attr:
+            attrs = {
+                p[0]:p[1] for p in [p.split('=') for p in re_tag_attrs.findall(tkn)]
             }
-        return tag,val,props
+        return tag,val,attrs
     except AttributeError:
         raise lts.LituusException(lts.ETAG,"Invalid tag {}".format(tkn))
 
-def merge_props(props,strict=1):
+def merge_attrs(attrs,strict=1):
     """
-     merges the proplists in props based on specified strictness level.
+     merges the attributes lists in attrs based on specified strictness level.
      if strict is True confirms all proplists have
      the same key->value pairs, otherwise adds unique key->value pairs and 'ands'
      differing values
-    :param props: list of proplists
+    :param attrs: list of attribute lists
     :param strict: oneof:
       0 = Low no checking on sameness across parameters/parameter values
       1 = Medium parameter values across common parameters must be the same but
@@ -157,39 +157,41 @@ def merge_props(props,strict=1):
       2 = High parameters and parameter values must be the same in each prop list
     :return: merged proplist
     """
-    ps = {}
-    keys = list(set.union(*map(set,[x.keys() for x in props])))
+    mattrs = {}
+    keys = list(set.union(*map(set,[x.keys() for x in attrs])))
     for key in keys:
         vals = set()
 
         # check each paraemter for existence if high strictness
-        for prop in props:
-            if not key in prop:
+        for attr in attrs:
+            if not key in attr:
                 if strict == 2:
                     raise lts.LituusException(
-                        lts.ETAG,"Incompatible param {}".format(key)
+                        lts.ETAG,"Incompatible attribute {}".format(key)
                     )
             else: vals.add(prop[key])
 
-        # check for same parameter values if strictness is not low
+        # check for same attribute values if strictness is not low
         if strict > 0 and len(vals) > 1:
             raise lts.LituusException(
-                lts.ETAG, "Incompatible param {}".format(key)
+                lts.ETAG, "Incompatible attribute values {}".format(key)
             )
-        ps[key] = mtgl.AND.join([val for val in vals])
-    return ps
+        mattrs[key] = mtgl.AND.join([val for val in vals])
+    return mattrs
 
 re_hanging = re.compile(r"(\s)>") # find hanging spaces before ending angle brace
-def retag(tag,val,ps):
+def retag(tag,val,attrs):
     """
-     builds a tag from tag name, tag-value and property dict
+     builds a tag from tag name, tag-value and attribute list
     :param tag: two character tag name
     :param val: the tag value
-    :param ps: dict of key=property,value=prop-value
+    :param attrs: dict of key=property,value=prop-value
     :return: the built tag
     """
     return re_hanging.sub(
-        '>',"{}<{} {}>".format(tag,val," ".join(["=".join([p,ps[p]]) for p in ps]))
+        '>',"{}<{} {}>".format(
+            tag,val," ".join(["=".join([a,attrs[a]]) for a in attrs])
+        )
     )
 
 def same_tag(tkns):

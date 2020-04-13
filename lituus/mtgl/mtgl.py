@@ -328,7 +328,7 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
 lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that',
     'additional','those','these','their','the','extra','first','second','third',
-    'fourth','fifth','sixth','seventh','eighth','ninth','tenth'
+    'fourth','fifth','sixth','seventh','eighth','ninth','tenth',
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -410,7 +410,7 @@ re_generic_turn = re.compile(r"\b({})".format('|'.join(generic_turns)))
 OP = {
     "less than or equal to":LE,"greater than or equal to":GE,
     "less than":LT,"greater than":GT,"equal to":EQ,"equal":EQ,
-    "plus":'+',"minus":'-',"and/or":AOR,
+    "plus":'+',"minus":'-',
 }
 re_op = re.compile(r"\b({})\b".format('|'.join(list(OP.keys()))))
 
@@ -657,13 +657,16 @@ re_align_type = re.compile( # have to take into account negated characteristics
 
 # TODO: should we limit this to only sub-types that are sub-types of the type
 #  i.e. aura and enchantment but not aura and creature
-# We don't want to tag cards like Quest for Ula's Temple '... or Serpent creature
+# We don't want to tag cards like Quest for Ula's Temple "... or Serpent creature
 # card ..."
 re_align_type2 = re.compile(
     r"ch<(¬?)({})> ch<(¬?)({})>(?!\sob<)".format(
         '|'.join(sub_characteristics),'|'.join(type_characteristics)
     )
 )
+
+# Find standalone attributes - meta-characterstics without a value.
+re_ch_attr = re.compile(r"ch<(" +  re_meta_char.pattern + ")>")
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
 re_ch_pt = re.compile(r"(\+|-)?nu<(\d+|x)>/(\+|-)?nu<(\d+|x)>(?!\scounter)")
@@ -770,11 +773,17 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")
 # Sequential characteristics
 ###
 
-# Two color characteristics separated by 'and' or 'or' (no commas) i.e. Cavern Harpy
+# Two color characteristics separated by 'and', 'or' or 'and/or' (no commas) i.e.
+# Cavern Harpy
+#re_2chain_clr = re.compile(
+#    r"(ch<¬?(?:" + re_clr_char.pattern + r")>)"
+#    r"\s?(and|or|and/or)\s"
+#    r"(ch<¬?(?:" + re_clr_char.pattern + r")>)"
+#)
 re_2chain_clr = re.compile(
-    r"(ch<¬?(?:" + re_clr_char.pattern + r")>)"
-    r"\s?(and|or)\s"
-    r"(ch<¬?(?:" + re_clr_char.pattern + r")>)"
+    r"ch<(¬?" + re_clr_char.pattern + r")>"
+    r"\s?(and|or|and/or)\s"
+    r"ch<(¬?" + re_clr_char.pattern + r")>"
 )
 
 # ... base power and toughness X/Y i.e. Godhead of Awe then power and toughness
@@ -784,6 +793,25 @@ re_base_pt = re.compile(
     r"(ch<p/t(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
 re_single_pt = re.compile(r"ch<power>\sand\sch<toughness>")
+
+# ... p/t X/Y or p/t A/B ...
+re_pt_chain = re.compile(
+    r"(ch<p/t(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"\sor\s"
+    r"(ch<p/t(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+)
+
+# special case of char, char char To my knowledge there are only 11 and they
+# are predominately the form: ch<¬artifact>, ch<¬black> ch<creature> with the
+# exception of Seize the Soul but we'll generalize to handle any future cases.
+# NOTE: we only want to capture the tag value see Terror
+re_3chain = re.compile(
+    r"ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)>"                            
+    r",\s"                                                
+    r"ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)>" 
+    r"\s"
+    r"ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)>"
+)
 
 # and/or comma-delimited conjoined multi chain
 # three or more comma-delimited characteristics with conjunction ('and'/'or')
@@ -811,6 +839,15 @@ re_nchain_space = re.compile(
     r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
 )
 
+# Two characteristics separated by and/or may be followed by an object i.e
+# Sphinx of the Final Word or no i.e. Natural End
+re_2chain_conjunction = re.compile(
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"                            
+    r"\s(and|or)\s"                                                
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+)
+
 # Two characteristics separated by comma i.e Chrome Mox treat this as an 'and'
 # must be followed by an object and preceded by a quantifier or we could
 # incorrectly tag cards like Royal Decree
@@ -821,12 +858,4 @@ re_2chain_quant_obj = re.compile(
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
     r"\s"
     r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-)
-
-# Two characteristics separated by and/or i.e Saprazzan Bailiff & Ceta Sanctuary
-re_2chain = re.compile(
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"                            
-    r"\s(and|or)\s"                                                
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
