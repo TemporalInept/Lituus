@@ -775,11 +775,6 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")
 
 # Two color characteristics separated by 'and', 'or' or 'and/or' (no commas) i.e.
 # Cavern Harpy
-#re_2chain_clr = re.compile(
-#    r"(ch<¬?(?:" + re_clr_char.pattern + r")>)"
-#    r"\s?(and|or|and/or)\s"
-#    r"(ch<¬?(?:" + re_clr_char.pattern + r")>)"
-#)
 re_2chain_clr = re.compile(
     r"ch<(¬?" + re_clr_char.pattern + r")>"
     r"\s?(and|or|and/or)\s"
@@ -825,7 +820,7 @@ re_3chain = re.compile(
 #   ch<creature suffix=s>, and ch<land suffix=s>
 re_nchain_comma = re.compile(
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>,\s){2,}" 
-    r"(and|or)\s"                                                
+    r"(and|or|and/or)\s"                                                
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s?)+"
     r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
 )
@@ -843,7 +838,7 @@ re_nchain_space = re.compile(
 # Sphinx of the Final Word or no i.e. Natural End
 re_2chain_conjunction = re.compile(
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"                            
-    r"\s(and|or)\s"                                                
+    r"\s(and|or|and/or)s"                                                
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
     r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
 )

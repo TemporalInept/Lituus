@@ -379,8 +379,10 @@ def _nchain_(m):
                 tas.append(ta)
         except lts.LituusException:
             # cannot untag - this is the operator
-            assert(tkn == 'and' or tkn == 'or')
-            op = mtgl.AND if tkn == 'and' else mtgl.OR
+            if tkn == 'and': op = mtgl.AND
+            elif tkn == 'or': op = mtgl.OR
+            elif tkn == 'and/or': op = mtgl.AOR
+            else: lts.LituusException(lts.ETAGGING,"Illegal op {}".format(op))
 
     # chain the characteristics, merge the proplists & move suffix if present
     attrs = {}
