@@ -563,7 +563,7 @@ meta_characteristics = [ # 100.3
     'p/t','everything','text','name','mana cost','cmc','power','toughness',
     'color identity','color','type'
 ]
-re_meta_char = re.compile(r"({})".format('|'.join(meta_characteristics)))
+re_meta_char = re.compile(r"{}".format('|'.join(meta_characteristics)))
 
 color_characteristics = [ # 105.1, 105.2a, 105.2b, 105.2c
     'white','blue','black','green','red','colorless','multicolored','monocolored'
@@ -571,13 +571,13 @@ color_characteristics = [ # 105.1, 105.2a, 105.2b, 105.2c
 re_clr_char = re.compile(r"{}".format('|'.join(color_characteristics)))
 
 super_characteristics = ['legendary','basic','snow','world'] # 205.4a
-re_super_char = re.compile(r"({})".format('|'.join(super_characteristics)))
+re_super_char = re.compile(r"{}".format('|'.join(super_characteristics)))
 
 type_characteristics = [  # 300.1, NOTE: we added historic
     'artifact','creature','enchantment','instant','land','planeswalker',
     'sorcery','tribal','historic',
 ]
-re_type_char = re.compile(r"({})".format('|'.join(type_characteristics)))
+re_type_char = re.compile(r"{}".format('|'.join(type_characteristics)))
 
 sub_characteristics = [ # Updated 24-Jan-20 with Theros Beyond Death
     # NOTE: sub_characteristics must be updated with the release of new sets to
@@ -632,7 +632,7 @@ sub_characteristics = [ # Updated 24-Jan-20 with Theros Beyond Death
     "weird","werewolf","whale","wizard","wolf","wolverine","wombat","worm","wraith",
     "wurm","yeti","zombie","zubera",
 ]
-re_sub_char = re.compile(r"({})".format('|'.join(sub_characteristics)))
+re_sub_char = re.compile(r"{}".format('|'.join(sub_characteristics)))
 
 # all characteristics
 char_tkns = '|'.join(
@@ -641,28 +641,6 @@ char_tkns = '|'.join(
 )
 re_ch = re.compile(
     r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(char_tkns)
-)
-
-# 205.4b ... some supertypes are closely identified with specific card types...
-# when we have a supertype followed immediately by a card type, combine these as
-# the supertype applies to the card type and to the object (implied or explicit)
-# For example Wave of Vitriol, "...all artifacts, enchantments, and nonbasic
-# lands they control... nonbasic applies to lands and not to permanents that
-# must sacrified
-re_align_type = re.compile( # have to take into account negated characteristics
-    r"ch<(¬?)({})> ch<(¬?)({})>".format(
-        '|'.join(super_characteristics),'|'.join(type_characteristics)
-    )
-)
-
-# TODO: should we limit this to only sub-types that are sub-types of the type
-#  i.e. aura and enchantment but not aura and creature
-# We don't want to tag cards like Quest for Ula's Temple "... or Serpent creature
-# card ..."
-re_align_type2 = re.compile(
-    r"ch<(¬?)({})> ch<(¬?)({})>(?!\sob<)".format(
-        '|'.join(sub_characteristics),'|'.join(type_characteristics)
-    )
 )
 
 # Find standalone attributes - meta-characterstics without a value.
@@ -677,6 +655,44 @@ lituus_characteristics = ['life total','control','own','life','hand size','devot
 lituus_ch_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
     r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_ch_tkns)
+)
+
+####
+## ALIGNMENTS
+####
+
+# There are two types of alignments (1) type and super-type alignment and (2)
+# type with other criteria. We'll use the unicode arrow ('→') to denote alignment.
+# Alignment will always take the form TYPE→CRITERIA. The arrow can be read as
+# 'that is'. For example:
+#  Terror ... creature→¬artifact∧¬black ... reads creature that is not artifact
+#  and not black
+#  Wave of Vitriol ... land→¬basic ... reads land that is not basic
+# Alignment assists in chaining characteristics and puts the focus on the target
+# of an effect.
+
+# 205.4b ... some supertypes are closely identified with specific card types...
+# when we have a supertype followed immediately by a card type, combine these as
+# the supertype applies to the card type and to the object (implied or explicit)
+# For example Wave of Vitriol, "...all artifacts, enchantments, and nonbasic
+# lands they control... nonbasic applies to lands and not to permanents that
+# must sacrified
+# TODO: need to make below capture the negate symbol (if present) with the
+#  characteristics
+re_align_type = re.compile( # have to take into account negated characteristics
+    r"ch<(¬?)({})> ch<(¬?)({})>".format(
+        '|'.join(super_characteristics),'|'.join(type_characteristics)
+    )
+)
+
+# TODO: should we limit this to only sub-types that are sub-types of the type
+#  i.e. aura and enchantment but not aura and creature
+# We don't want to tag cards like Quest for Ula's Temple "... or Serpent creature
+# card ..."
+re_align_type2 = re.compile(
+    r"ch<(¬?)({})> ch<(¬?)({})>(?!\sob<)".format(
+        '|'.join(sub_characteristics),'|'.join(type_characteristics)
+    )
 )
 
 ####
@@ -796,16 +812,21 @@ re_pt_chain = re.compile(
     r"(ch<p/t(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
 
-# special case of char, char char To my knowledge there are only 11 and they
-# are predominately the form: ch<¬artifact>, ch<¬black> ch<creature> with the
-# exception of Seize the Soul but we'll generalize to handle any future cases.
-# NOTE: we only want to capture the tag value see Terror
-re_3chain = re.compile(
-    r"ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)>"                            
-    r",\s"                                                
-    r"ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)>" 
-    r"\s"
-    r"ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)>"
+# phrases of the form CHAR, CHAR OBJ|CHAR where:
+#  the phrase is preceded by a quantifier
+#  the phrase is not followed by an object or characteristic
+#  the first characteristic is either a color, type or super-type
+#  the first two characteristics do not have attributes
+# this will match cards like Terror (ch<¬artifact>, ch<¬black> ch<creature>)
+# but not Royal Decree (ch<mountain>, ch<black> ob<permanent>)
+re_2chain_exception = re.compile(
+    r"(?<=xq<\w+>\s)"
+    r"(?:ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored|"
+      r"artifact|creature|enchantment|instant|land|planeswalker|sorcery|tribal|"
+      r"historic|legendary|basic|snow|world))>)"
+    r",\s(?:ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)>)\s"
+    r"((?:ch|ob)<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(?!\s,?(?:ch|ob)<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
 
 # and/or comma-delimited conjoined multi chain
@@ -841,16 +862,4 @@ re_2chain_conjunction = re.compile(
     r"\s(and|or|and/or)s"                                                
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
     r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
-)
-
-# Two characteristics separated by comma i.e Chrome Mox treat this as an 'and'
-# must be followed by an object and preceded by a quantifier or we could
-# incorrectly tag cards like Royal Decree
-re_2chain_quant_obj = re.compile(
-    r"(?<=xq<\w+>\s)"
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r",\s"
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"\s"
-    r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )

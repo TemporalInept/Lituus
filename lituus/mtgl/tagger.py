@@ -200,8 +200,8 @@ def midprocess(txt):
         single tag value
        2. moves 'non-' in front of a tag to the negated symbol '¬' inside the tag
        3. align subsequent super-type, card type, ch<super-type> ch<type> are
-        aligned i.e. ch<basic> ch<land> becomes ch<basic→land> this will assist
-        in chaining
+        aligned i.e. ch<basic> ch<land> becomes ch<land→basic> this will assist
+        in chaining (we have to rearrange to but type first
        4. align subsequent type sub-type, ch<sub-type> ch<type> are aligned i.e.
        ch<¬aura> ch<enchantment> becomes ch<enchantment→¬aura
        5. deconflict incorrectly tagged tokens
@@ -214,7 +214,7 @@ def midprocess(txt):
     """
     ntxt = mtgl.re_tkn_delimit.sub(lambda m: mtgl.tkn_delimit[m.group(1)],txt) # 1
     ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                             # 2
-    ntxt = mtgl.re_align_type.sub(r"ch<\1\2→\3\4>",ntxt)                       # 3
+    ntxt = mtgl.re_align_type.sub(r"ch<\3\4→\1\2>", ntxt)                      # 3
     ntxt = mtgl.re_align_type2.sub(r"ch<\3\4→\1\2>",ntxt)                      # 4
     ntxt = deconflict_tags(ntxt)                                               # 5
     ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>", ntxt)                       # 6
@@ -275,20 +275,18 @@ def chain(txt):
     :return: modified tagged txt with sequential characterisitcs chained
     NOTE: these must be followed in order
     """
-    # First, IOT faciliate chaining:
+    # First, IOT faciliate future chaining tag some anomalies :
     #  a) chain dual conjoined color characteristics - this facilitates
     #   future chaining of characteristics like Stangg
     #  b) handle special case of 'base power and toughness' replace phrase
     #   base ch<power> and ch<toughness> ch<p/t val=X/Y> with ch<p/t val=X/Y>
     #  c) temporarily tag attributes (stand alone meta-characteristics)
-    #  d) char, char char (Terror) so far always of the form:
-    #    ch<¬artifact>, ch<¬black> ch<creature>
-    #   change this to ob<permanent charactertics=char3∧char1∧char2>
-    #  TODO: we might want to generalize this in case it changes in future sets
-    ntxt = mtgl.re_2chain_clr.sub(lambda m: _clr_combination_(m),txt) # a
-    ntxt = powt(ntxt)                                                 # b
-    ntxt = mtgl.re_ch_attr.sub(r"xo<attr val=\1>",ntxt)               # c
-    #ntxt = mtgl.re_3chain.sub(r"ob<permanent characteristics=\3∧\1∧\2>",ntxt)
+    #  d) 'and' comma-delimited char pair in char, char char as in Terror but
+    #   not Royal Decree
+    ntxt = mtgl.re_2chain_clr.sub(lambda m: _clr_combination_(m),txt)  # a
+    ntxt = powt(ntxt)                                                  # b
+    ntxt = mtgl.re_ch_attr.sub(r"xo<attr val=\1>",ntxt)                # c
+    ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # d
 
     # Now do multi chains:
     #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'or'
@@ -400,22 +398,6 @@ def _nchain_(m):
     # retag the chained characteristics and return
     return mtgltag.retag(tid,val,attrs) + space
 
-def _2chain_qo_(m):
-    """
-    chains 2 comma-delimited characteristics followed by an object i.e. Chrome Mox
-    :param m: are regex.Match object
-    :return: the chained object
-    """
-    # untag the object & the characteristics
-    i,v,p = mtgltag.untag(m.group(3))
-    _,cv1,cp1 = mtgltag.untag(m.group(1))
-    _,cv2,cp2 = mtgltag.untag(m.group(2))
-    assert(cp1 == {} and cp2 == {})
-    assert('characteristics' not in p)
-    p['characteristics'] = cv1 + mtgl.AND + cv2
-
-    return mtgltag.retag(i,v,p)
-
 def _clr_combination_(m):
     """
     chains two color characteristics together they can be seperated by an 'and',
@@ -432,6 +414,27 @@ def _clr_combination_(m):
     elif op == 'and/or': op = mtgl.AOR
     else: raise lts.LituusException(lts.ETAGGING,"Illegal op {}".format(op))
     return mtgltag.retag('ch',m.group(1) + op + m.group(3),{})
+
+def _2chain_ex_(m):
+    """
+    chains the 2chain exception CHAR, CHAR OBJ|CHAR
+    :param m: are regex.Match object
+    :return: the chained object
+    """
+    # first two are charactersitics (only), 'and' them
+    ch = mtgl.AND.join(m.groups()[:2])
+
+    # is the last an object or characteristic
+    tid,val,attr = mtgltag.untag(m.group(3))
+    assert('characteristics' not in attr) # verify
+    if tid == 'ob': attr['characterstics'] = ch
+    else:
+        # third characteristics will always be a 'type' and we have to align
+        assert(val in mtgl.type_characteristics+mtgl.sub_characteristics)
+        tid = 'ob'
+        attr['characteristics'] = val + mtgl.ARW + ch
+        val = 'permanent'
+    return mtgltag.retag(tid,val,attr)
 
 def _implied_obj_(cs):
     """
