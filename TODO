@@ -26,6 +26,10 @@
 24. Entity chains like Cautery Sliver
 
 25. Darksteel Mutation
+ Don't like "... xq<a> ch<artifact→insect> ch<creature> ..." if we keep doing
+ alignment this should end up as ob<permanent characterisitcs=creature→artifact&insert> 
+but, this is one of those where the alignment of type, sub-type should be confined
+ to valid sub-types i.e. insect is a creature subtype and not a artifact subtype
 
 26. Nissa's Defeat, Wasitora, Nekoru Queen and Chrome Mox highlight chaining problems/difficulties
 
@@ -104,4 +108,8 @@ a lot becuase the first object is a token
     implied object (as is there is in Terror) and creature is the target of the
     effect
 
-59. will of the council being incorrectly tagged
+60. Quest fo Ula's temple is jacked up
+ob<card characteristics=kraken∨leviathan∨octopus∨serpent∨creature>
+should be aligned somehow
+
+61. Add rarity to card data?

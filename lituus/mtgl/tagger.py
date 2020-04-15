@@ -12,7 +12,7 @@ Tags MTG oracle text in the mtgl format
 
 #__name__ = 'tagger'
 __license__ = 'GPLv3'
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 __date__ = 'March 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -219,7 +219,7 @@ def midprocess(txt):
     )
     ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                             # 2
     ntxt = mtgl.re_align_type.sub(r"ch<\3\4→\1\2>",ntxt)                       # 3
-    ntxt = mtgl.re_align_type2.sub(r"ch<\3\4→\1\2>",ntxt)                      # 4
+    #ntxt = mtgl.re_align_type2.sub(r"ch<\3\4→\1\2>",ntxt)                      # 4
     ntxt = deconflict_tags(ntxt)                                               # 5
     ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)                        # 6
     return ntxt
@@ -278,13 +278,14 @@ def chain(txt):
     #  like Stangg because color chains may be subchains inside the main chain
     #  b) handle special case of 'base power and toughness' replace phrase
     #   base ch<power> and ch<toughness> ch<p/t val=X/Y> with ch<p/t val=X/Y>
-    #  c) temporarily tag attributes (stand alone meta-characteristics)
+    #  c) temporarily tag attributes (stand alone meta-characteristics) as xr
     #  d) 'and' comma-delimited char pair in char, char char as in Terror but
     #   not Royal Decree
     ntxt = color_chain(txt)                                            # a
     ntxt = powt(ntxt)                                                  # b
-    ntxt = mtgl.re_ch_attr.sub(r"xo<attr val=\1>",ntxt)                # c
-    ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # d
+    ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)         # c
+    #ntxt = mtgl.re_ch_attr.sub(r"xo<attr val=\1>",ntxt)                # c
+    #ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # d
 
     # Now do multi chains:
     #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'and',
@@ -292,8 +293,8 @@ def chain(txt):
     #    and/or an object
     #  b) 3 or more space separated characteristics w/o a conjuction and followed
     #   by a an object Spawning Pit
-    ntxt = mtgl.re_nchain_comma.sub(lambda m: _nchain_(m),ntxt)
-    ntxt = mtgl.re_nchain_space.sub(lambda m: _nchain_(m),ntxt)
+    #ntxt = mtgl.re_nchain_comma.sub(lambda m: _nchain_(m),ntxt)
+    #ntxt = mtgl.re_nchain_space.sub(lambda m: _nchain_(m),ntxt)
 
     # Dual chains make up the prevalent characteristic chain but care must be
     # taken to not inadvertently chain characteristics inadverntly:
@@ -332,6 +333,17 @@ def powt(txt):
 ####
 ## PRIVATE FUNCTIONS
 ####
+
+def _metachar_(m):
+    """
+    rewrites a standalone meta characteristics as an attribute. Attributes will
+    have not have a value
+    :param m: a regex.Match object
+    :return: rewritten attribute if required otherwise the orginal tag
+    """
+    tid,val,attr = mtgltag.untag(m.group(1))
+    if not 'val' in attr: tid = 'xr'
+    return mtgltag.retag(tid,val,attr)
 
 def _ptchain_(m):
     """
@@ -458,7 +470,7 @@ def _2chain_ex_(m):
     assert('characteristics' not in attr) # verify
     if tid == 'ob': attr['characterstics'] = ch
     else:
-        # third characteristics will always be a 'type' and we have to align
+        # if not an object, 3rd char will be a 'type' and we will align
         assert(val in mtgl.type_characteristics+mtgl.sub_characteristics)
         tid = 'ob'
         attr['characteristics'] = val + mtgl.ARW + ch

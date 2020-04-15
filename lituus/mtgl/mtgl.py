@@ -67,6 +67,7 @@ from hashlib import md5
   Lituus Quantifiers = xq<LITUUS QUANTIFIER>
   Lituus Modifiers = xm<LITUUS MODIFIER>
   Lituus Thing = xt<LITUUS THING>
+  Lituus Attribute = xr<META-CHARACTERISTIC>
   
 Ultimately, the intent is to break oracle text into three main components:
  Things - tanglible entities that can be interacted with
@@ -338,9 +339,8 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 ####
 
 # numbers are 1 or more digits or the variable X and are not preceded by a brace,
-# '{', which indicates a mana symbol
-#re_number = re.compile(r"(?<!{|\w|=)(\d+|x)(?!\w|>)")
-re_number = re.compile(r"(?<!{)(\d+|x)\b")
+# '{', which indicates a mana symbol or another
+re_number = re.compile(r"(?<![a-z{])(\d+|x)\b")
 
 ####
 ## ENTITIES
@@ -565,6 +565,10 @@ meta_characteristics = [ # 100.3
     'color identity','color','type'
 ]
 re_meta_char = re.compile(r"{}".format('|'.join(meta_characteristics)))
+re_meta_attr = re.compile( # for meta characteristics
+    r"(ch<(?:p/t|everything|text|name|mana cost|cmc|power|toughness|"
+      r"color_identity|color|type)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+)
 
 color_characteristics = [ # 105.1, 105.2a, 105.2b, 105.2c
     'white','blue','black','green','red','colorless','multicolored','monocolored'
@@ -644,9 +648,6 @@ re_ch = re.compile(
     r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(char_tkns)
 )
 
-# Find standalone attributes - meta-characterstics without a value.
-re_ch_attr = re.compile(r"ch<(" +  re_meta_char.pattern + ")>")
-
 # seperate procedure for tagging p/t has to be done after numbers are tagged
 re_ch_pt = re.compile(r"(\+|-)?nu<(\d+|x)>/(\+|-)?nu<(\d+|x)>(?!\scounter)")
 
@@ -697,6 +698,11 @@ re_align_type2 = re.compile(
         '|'.join(sub_characteristics),'|'.join(type_characteristics)
     )
 )
+#re_align_type2 = re.compile(
+#    r"ch<(¬?)({})> ch<(¬?)({})>".format(
+#        '|'.join(sub_characteristics),'|'.join(type_characteristics)
+#    )
+#)
 
 ####
 ## ZONES
@@ -738,6 +744,7 @@ tkn_delimit = {
     "commander ninjutsu":"commander_ninjutsu","split second":"split_second",
     "living weapon":"living_weapon","totem armor":"totem_armor",
     "jump-start":"jump_start","assembly-worker":"assembly_worker",
+    "color identity":"color_identity",
 }
 tkn_delimit_tkns = '|'.join(tkn_delimit.keys())
 re_tkn_delimit = re.compile(r"(?<=<)({})(?=>)".format(tkn_delimit_tkns))
@@ -878,11 +885,17 @@ re_nchain_comma = re.compile(
 
 # three or more space delimted characteristics followed by an object i.e.
 # Spawning Pit ch<p/t val=2/2> ch<colorless> ch<spawn> ch<artifact> ch<creature>
+#re_nchain_space = re.compile(
+#    # have a last characteristic IOT not capture the last space if there is no object
+#    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s){2,}"
+#    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+#    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+#)
 re_nchain_space = re.compile(
     # have a last characteristic IOT not capture the last space if there is no object
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s){2,}"
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+    #r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
 )
 
 # Two characteristics separated by and/or may be followed by an object i.e
