@@ -14,8 +14,6 @@
 
 16. Can we just standarize a regular expression to catch anamolies in function word_hacks?
 
-18. See Aphetto Runecaster, 'turn' should be tagged as an action word
-
 19. Wasitora, Nekoru Queen highlights many problems
 
 'kw<flying>, kw<trample>\ntp<whenever> ob<card ref=self> xa<deal suffix=s> combat damage pr<to> xq<a> xp<player>, xq<that> xp<player> ka<sacrifice suffix=s> xq<a> ch<creature>. cn<if> the xp<player> cn<cannot>, xp<you> ka<create> xq<a> ch<p/t val=3/3> ch<black>, ch<red>, and ch<green> ch<cat> ch<dragon> ch<creature> ob<token> pr<with> kw<flying>.'
@@ -97,3 +95,13 @@ a lot becuase the first object is a token
 58. Need to define tags and tag symbols like align
 
 59. Jumped the gun on aligning cards like Chrome Mox. Is it necessary or does will it add complexity further down the road?
+  - looking at Dreams of the Dead, via alignment we should get creature->white&black
+  - but how would that apply to Stangg which is ch<legendary> ch<p/t val=3/4> ch<red> and ch<green> ch<human> ch<warrior> ch<creature> ob<token>.
+  - however, in the case of Cavern Harpy, do we want 
+    "blue|black&creature" which if precedence is left to right works but
+    "creature->blue|black" is easier
+  - brings an interesting observation in the case of Cavern Harpy, there is an
+    implied object (as is there is in Terror) and creature is the target of the
+    effect
+
+59. will of the council being incorrectly tagged

@@ -537,6 +537,7 @@ lituus_actions = [ # words not defined in the rules but important any way
     'gain','lose','attack','block','add','enter','leave','choose','die','spend',
     'unspend','take','reduce','trigger','prevent','declare','have','switch',
     'assign','win','defend','cost','skip','flip','cycle','phase','become','share',
+    'turn',
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
@@ -670,6 +671,8 @@ re_lituus_ch = re.compile(
 #  Wave of Vitriol ... land→¬basic ... reads land that is not basic
 # Alignment assists in chaining characteristics and puts the focus on the target
 # of an effect.
+# TODO: may remove the alignment from Terror as it introduces an inability to
+#  translate across like cards i.e. Stangg
 
 # 205.4b ... some supertypes are closely identified with specific card types...
 # when we have a supertype followed immediately by a card type, combine these as
@@ -715,6 +718,11 @@ re_zone = re.compile(
 # SPACES/HYPHENS between tokens
 # For now, we are using a simple table to do so vice a regex but this will require
 # an updated table for each release
+# NOTE: the tagger is looking for these phrases inside tags so it will not catch
+# Will of the Council which will be tagged
+# we do this mid-pass because the tagger is looking untagged words. As such,
+#  we have to look for the tagged phrase for will of the Council which will be
+#  tagged ch<will> of xq<the> council have to handjam this for now
 tkn_delimit = {
     "city's blessing":"city's_blessing","precombat main":"precombat_main",
     "postcombat main":"postcombat_main","beginning of combat":"beginning_of_combat",
@@ -725,11 +733,11 @@ tkn_delimit = {
     "as long as":"as_long_as","council's dilemma":"council's_dilemma",
     "fateful hour":"fateful_hour","join forces":"join_forces",
     "spell mastery":"spell_master","tempting offer":"tempting_offer",
-    "will of the council":"will_of_the_council","double strike":"double_strike",
-    "first strike":"first_strike","commander ninjutsu":"commander_ninjutsu",
-    "split second":"split_second","living weapon":"living_weapon",
-    "totem armor":"totem_armor","jump-start":"jump_start",
-    "assembly-worker":"assembly_worker",
+    "will of the council":"will_of_the_council",
+    "double strike":"double_strike","first strike":"first_strike",
+    "commander ninjutsu":"commander_ninjutsu","split second":"split_second",
+    "living weapon":"living_weapon","totem armor":"totem_armor",
+    "jump-start":"jump_start","assembly-worker":"assembly_worker",
 }
 tkn_delimit_tkns = '|'.join(tkn_delimit.keys())
 re_tkn_delimit = re.compile(r"(?<=<)({})(?=>)".format(tkn_delimit_tkns))
@@ -778,6 +786,20 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 #)
 
 ####
+## TURN (ACTION) DECONFLICTION
+####
+
+# turn is an action if it is followed by a 'xm' (modifier) or 'xq' (quantifier)
+# NOTE:
+#  1) suffices are not tagged yet, have to account for them in positive lookahead
+#  2) only capture the 'ts' tag id IOT replace it with 'xa' lituus action
+re_turn_action = re.compile(
+    r"(ts)"
+    r"(?=<turn(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>(?:r|s|ing|ed|'s)?\s"
+    r"x[m|q]<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+)
+
+####
 ## SUFFICES
 ####
 
@@ -789,12 +811,20 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")
 # Sequential characteristics
 ###
 
-# Two color characteristics separated by 'and', 'or' or 'and/or' (no commas) i.e.
-# Cavern Harpy
+
+# Three or more comma-delimited charateristics with conjunction i.e. Hazezon Tamar
+# As of IKO there are only 6
+re_nchain_clr = re.compile(
+    r"(ch<¬?(white|blue|black|green|red|colorless|multicolored|monocolored)>,\s){2,}"
+    r"(and|or|and/or)\s"
+    r"ch<¬?(white|blue|black|green|red|colorless|multicolored|monocolored)>"
+)
+
+# Two color characteristics separated by conjunction i.e. Cavern Harpy
 re_2chain_clr = re.compile(
-    r"ch<(¬?" + re_clr_char.pattern + r")>"
+    r"ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored))>"
     r"\s?(and|or|and/or)\s"
-    r"ch<(¬?" + re_clr_char.pattern + r")>"
+    r"ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored))>"
 )
 
 # ... base power and toughness X/Y i.e. Godhead of Awe then power and toughness
@@ -832,8 +862,8 @@ re_2chain_exception = re.compile(
 # and/or comma-delimited conjoined multi chain
 # three or more comma-delimited characteristics with conjunction ('and'/'or')
 # three variants
-#  a) Followed by one or more characteristics and an object i.e. Quest for Quest
-#   for Ula's Temple xq<a> ch<kraken>, ch<leviathan>, ch<octopus>, or ch<serpent>
+#  a) Followed by one or more characteristics and an object i.e. Quest for Ula's
+#  Temple xq<a> ch<kraken>, ch<leviathan>, ch<octopus>, or ch<serpent>
 #   ch<creature> ob<card> '
 #  b) Followed by an object i.e. God-Pharaoh's Faithful ch<blue>, ch<black>, or
 #   ch<red> ob<spell>

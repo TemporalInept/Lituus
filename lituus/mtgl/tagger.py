@@ -198,6 +198,7 @@ def midprocess(txt):
      prepares tagged txt for second pass
        1. replaces spaces/hyphens inside tags with underscore IOT make it a
         single tag value
+         TODO: Currently hand-jamming "Will of the Councile"
        2. moves 'non-' in front of a tag to the negated symbol '¬' inside the tag
        3. align subsequent super-type, card type, ch<super-type> ch<type> are
         aligned i.e. ch<basic> ch<land> becomes ch<land→basic> this will assist
@@ -213,11 +214,14 @@ def midprocess(txt):
     :return: processed oracle txt
     """
     ntxt = mtgl.re_tkn_delimit.sub(lambda m: mtgl.tkn_delimit[m.group(1)],txt) # 1
+    ntxt = ntxt.replace(                                                       # 1
+        "ch<will> of xq<the> council","aw<will_of_the_council>"
+    )
     ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                             # 2
-    ntxt = mtgl.re_align_type.sub(r"ch<\3\4→\1\2>", ntxt)                      # 3
+    ntxt = mtgl.re_align_type.sub(r"ch<\3\4→\1\2>",ntxt)                       # 3
     ntxt = mtgl.re_align_type2.sub(r"ch<\3\4→\1\2>",ntxt)                      # 4
     ntxt = deconflict_tags(ntxt)                                               # 5
-    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>", ntxt)                       # 6
+    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)                        # 6
     return ntxt
 
 re_emp_postfix = re.compile(r"\ssuffix=(?=)>")
@@ -226,15 +230,6 @@ def deconflict_tags(txt):
      deconflicts incorrectly tagged tokens
     :param txt: oracle txt after initial first pass
     :return: tagged oracle text
-    """
-    ntxt = deconf_status(txt)
-    return ntxt
-
-def deconf_status(txt):
-    """
-    Deconflict status words with turn structure and actions
-    :param txt: the tagged text
-    :return: status deconflicted tagged text
     """
     # Tapped, Flipped
     ntxt = mtgl.re_status.sub(r"st<\2\3p\4>",txt)
@@ -251,6 +246,9 @@ def deconf_status(txt):
     # Face Up/Down
     ntxt = mtgl.re_status_face.sub(r"st<face amplifier=\1>",ntxt)
     ntxt = mtgl.re_mod_face.sub(r"xm<face amplifier=\1>",ntxt)
+
+    # turn could be a lituus action
+    ntxt = mtgl.re_turn_action.sub("xa",ntxt)
 
     return ntxt
 
@@ -276,26 +274,26 @@ def chain(txt):
     NOTE: these must be followed in order
     """
     # First, IOT faciliate future chaining tag some anomalies :
-    #  a) chain dual conjoined color characteristics - this facilitates
-    #   future chaining of characteristics like Stangg
+    #  a) chain color chains - this facilitates future chaining of characteristics
+    #  like Stangg because color chains may be subchains inside the main chain
     #  b) handle special case of 'base power and toughness' replace phrase
     #   base ch<power> and ch<toughness> ch<p/t val=X/Y> with ch<p/t val=X/Y>
     #  c) temporarily tag attributes (stand alone meta-characteristics)
     #  d) 'and' comma-delimited char pair in char, char char as in Terror but
     #   not Royal Decree
-    ntxt = mtgl.re_2chain_clr.sub(lambda m: _clr_combination_(m),txt)  # a
+    ntxt = color_chain(txt)                                            # a
     ntxt = powt(ntxt)                                                  # b
     ntxt = mtgl.re_ch_attr.sub(r"xo<attr val=\1>",ntxt)                # c
     ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # d
 
     # Now do multi chains:
-    #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'or'
-    #    or 'and' which may or may not be followed by more characteristics and
-    #    or an object
+    #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'and',
+    #   'or' or 'and/or' which may or may not be followed by more characteristics
+    #    and/or an object
     #  b) 3 or more space separated characteristics w/o a conjuction and followed
     #   by a an object Spawning Pit
-    #ntxt = mtgl.re_nchain_comma.sub(lambda m: _nchain_(m),ntxt)
-    #ntxt = mtgl.re_nchain_space.sub(lambda m: _nchain_(m),ntxt)
+    ntxt = mtgl.re_nchain_comma.sub(lambda m: _nchain_(m),ntxt)
+    ntxt = mtgl.re_nchain_space.sub(lambda m: _nchain_(m),ntxt)
 
     # Dual chains make up the prevalent characteristic chain but care must be
     # taken to not inadvertently chain characteristics inadverntly:
@@ -306,6 +304,18 @@ def chain(txt):
     #ntxt = mtgl.re_2chain_conjunction.sub(lambda m: _nchain_(m),ntxt)
     #ntxt = mtgl.re_2chain_quant_obj.sub(lambda m: _2chain_qo_(m),ntxt)
 
+    return ntxt
+
+def color_chain(txt):
+    """
+    chains color chains both dual and nchains. Color chains will either be
+    conjuctive clr1 and clr2 or comma-delimited clr1, clr2, or clr3
+    :param txt: current text
+    :return: txt with color chains
+    """
+    # do nchains then dual chains
+    ntxt = mtgl.re_nchain_clr.sub(lambda m: _ncolor_(m),txt)
+    ntxt = mtgl.re_2chain_clr.sub(lambda m: _2color_(m),ntxt)
     return ntxt
 
 def powt(txt):
@@ -398,16 +408,35 @@ def _nchain_(m):
     # retag the chained characteristics and return
     return mtgltag.retag(tid,val,attrs) + space
 
-def _clr_combination_(m):
+def _ncolor_(m):
     """
-    chains two color characteristics together they can be seperated by an 'and',
-    'or' or comma
+    chains n color characteristics together. They will be comma-delimited and have
+    a conjuction
+    :param m: a regex.Match object
+    :return: the chained colors
+    """
+    clrs = []
+    op = None
+    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
+        try:
+            # unpack the color
+            clrs.append(mtgltag.untag(tkn)[1])
+        except lts.LituusException:
+            # found the operator (should only have 'and' or 'or but check for 'and/or'
+            if tkn == 'and': op = mtgl.AND
+            elif tkn == 'or': op = mtgl.OR
+            elif tkn == 'and/or': op = mtgl.AOR
+            else: lts.LituusException(lts.ETAGGING, "Illegal op {}".format(op))
+    return mtgltag.retag('ch',op.join(clrs),{})
+
+def _2color_(m):
+    """
+    chains two color characteristics together. They can be seperated by a conjuction
+    or a comma
     :param m: a regex.Match object
     :return: the chained colors
     """
     # 3  groups color1, operator, color2 (assumes no attributes for colors)
-    #clr1 = mtgltag.untag(m.group(1))[1] # get clr 1
-    #clr2 = mtgltag.untag(m.group(3))[1] # and clr 2
     op = m.group(2)                     # determine the operator
     if op == 'or': op = mtgl.OR
     elif op == 'and': op = mtgl.AND
