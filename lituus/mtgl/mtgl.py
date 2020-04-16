@@ -797,14 +797,26 @@ re_align_super = re.compile(
       r"planeswalker|sorcery|tribal|historic)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
 
-# TODO: should we limit this to only sub-types that are sub-types of the type
-#  i.e. aura and enchantment but not aura and creature
-# We don't want to tag cards like Quest for Ula's Temple "... or Serpent creature
-# card ..."
-re_align_type2 = re.compile(
-    r"ch<(¬?)({})> ch<(¬?)({})>(?!\sob<)".format(
-        '|'.join(sub_characteristics),'|'.join(type_characteristics)
-    )
+# space delimited subtypes followed by a type will be aligned
+# NOTE: as above we assume sub-type alignments are all space-delimited
+# NOTE: see "Quest for Ula's Temple" after alignment we have:
+# ... xa<put> xq<a> ch<kraken>, ch<leviathan>, ch<octopus>, or ch<creature→serpent>
+# ob<card>. Only serpent has been aligned to creature. During chaining, the
+# remaining subtypes will be chained
+re_align_sub = re.compile(
+    r"(ch<¬?(?:" + re_sub_char.pattern + ")>\s)+"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|"
+      r"planeswalker|sorcery|tribal|historic)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+)
+
+# special case of subtype alignmnet where we have subtype characteristic type
+re_align_sub_sc = re.compile(
+    r"(ch<¬?(?:" + re_sub_char.pattern + ")>)"
+    r"\s"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)>)"
+    r"\s"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|"
+      r"planeswalker|sorcery|tribal|historic)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
 
 ####

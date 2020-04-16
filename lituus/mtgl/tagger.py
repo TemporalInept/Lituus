@@ -198,7 +198,6 @@ def midprocess(txt):
      prepares tagged txt for second pass
        1. replaces spaces/hyphens inside tags with underscore IOT make it a
         single tag value
-         TODO: Currently hand-jamming "Will of the Councile"
        2. moves 'non-' in front of a tag to the negated symbol '¬' inside the tag
        3. align subsequent super-type, card type, ch<super-type> ch<type> are
         aligned i.e. ch<basic> ch<land> becomes ch<land→basic> this will assist
@@ -214,9 +213,6 @@ def midprocess(txt):
     :return: processed oracle txt
     """
     ntxt = mtgl.re_tkn_delimit.sub(lambda m: mtgl.tkn_delimit[m.group(1)],txt) # 1
-    ntxt = ntxt.replace(                                                       # 1
-        "ch<will> of xq<the> council","aw<will_of_the_council>"
-    )
     ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                             # 2
     ntxt = deconflict_tags(ntxt)                                               # 5
     ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)                        # 6
@@ -248,6 +244,11 @@ def deconflict_tags(txt):
     # turn could be a lituus action
     ntxt = mtgl.re_turn_action.sub("xa",ntxt)
 
+    # TODO: Currently hand-jamming "Will of the Council" and "First Strike"
+    #  because tkn_delimit in mtgl won't check anything inside '<' braces
+    ntxt = ntxt.replace("ch<will> of xq<the> council","aw<will_of_the_council>")
+    ntxt = ntxt.replace("xq<first> strike","kw<first_strike>")
+
     return ntxt
 
 ####
@@ -265,17 +266,50 @@ def second_pass(txt):
     #  like Stangg because color chains may be subchains inside the main chain
     #  b) handle special case of 'base power and toughness' replace phrase
     #   base ch<power> and ch<toughness> ch<p/t val=X/Y> with ch<p/t val=X/Y>
-    #  c) align supertypes and subtypes
-    #  d) temporarily tag attributes (stand alone meta-characteristics) as xr
+    #  c) temporarily tag attributes (stand alone meta-characteristics) as xr
+    #  d) align supertypes and subtypes
     #  e) 'and' comma-delimited char pair in char, char char as in Terror but
     #   not Royal Decree
     ntxt = color_chain(txt)                                            # a
     ntxt = powt(ntxt)                                                  # b
     ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)         # c
-    ntxt = align_types(ntxt)
-    #ntxt = mtgl.re_ch_attr.sub(r"xo<attr val=\1>",ntxt)                # c
-    #ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # d
+    #ntxt = align_types(ntxt)                                           # d
+    #ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # e
     ntxt = chain(txt)
+    return ntxt
+
+def color_chain(txt):
+    """
+    chains color chains both dual and nchains. Color chains will either be
+    conjuctive i.e clr1 and clr2 or comma-delimited i.e. clr1, clr2, or clr3
+    :param txt: current text
+    :return: txt with color chains
+    """
+    # do nchains then dual chains
+    ntxt = mtgl.re_nchain_clr.sub(lambda m: _ncolor_(m),txt)
+    ntxt = mtgl.re_2chain_clr.sub(lambda m: _2color_(m),ntxt)
+    return ntxt
+
+def powt(txt):
+    """
+    chains phrase power and toughness accordingly as well as p/t chains
+    :param txt: tagged oracle txt
+    :return: modified tagged txt with power and toughness and p/t chains tagged
+    """
+    ntxt = mtgl.re_base_pt.sub(r"\1",txt)                    # base power and toughness
+    ntxt = mtgl.re_single_pt.sub(r"ch<p/t>",ntxt)            # solitary power & toughness
+    ntxt = mtgl.re_pt_chain.sub(lambda m: _ptchain_(m),ntxt) # p/t or p/t chain
+    return ntxt
+
+def align_types(txt):
+    """
+    aligns super to type and sub to type for easier chaining
+    :param txt: tagged oracle txt
+    :return: modified tagged txt with power and toughness and p/t chains tagged
+    """
+    ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),txt)
+    ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)
+    ntxt = mtgl.re_align_sub.sub_sc(lambda m: _align_type_(m),ntxt)
     return ntxt
 
 def chain(txt):
@@ -303,40 +337,9 @@ def chain(txt):
     #   (quantifier char, char, obj) i.e. Chrome Mox (As of TBD, only 19 cards)
     #ntxt = mtgl.re_2chain_conjunction.sub(lambda m: _nchain_(m),ntxt)
     #ntxt = mtgl.re_2chain_quant_obj.sub(lambda m: _2chain_qo_(m),ntxt)
-
+    ntxt = txt
     return ntxt
 
-def color_chain(txt):
-    """
-    chains color chains both dual and nchains. Color chains will either be
-    conjuctive clr1 and clr2 or comma-delimited clr1, clr2, or clr3
-    :param txt: current text
-    :return: txt with color chains
-    """
-    # do nchains then dual chains
-    ntxt = mtgl.re_nchain_clr.sub(lambda m: _ncolor_(m),txt)
-    ntxt = mtgl.re_2chain_clr.sub(lambda m: _2color_(m),ntxt)
-    return ntxt
-
-def powt(txt):
-    """
-    chains phrase power and toughness accordingly as well as p/t chains
-    :param txt: tagged oracle txt
-    :return: modified tagged txt with power and toughness and p/t chains tagged
-    """
-    ntxt = mtgl.re_base_pt.sub(r"\1",txt)                    # base power and toughness
-    ntxt = mtgl.re_single_pt.sub(r"ch<p/t>",ntxt)            # solitary power & toughness
-    ntxt = mtgl.re_pt_chain.sub(lambda m: _ptchain_(m),ntxt) # p/t or p/t chain
-    return ntxt
-
-def align_types(txt):
-    """
-    aligns super to type and sub to type for easier chaining
-    :param txt: tagged oracle txt
-    :return: modified tagged txt with power and toughness and p/t chains tagged
-    """
-    ntxt = mtgl.re_align_super.sub(lambda m: _align_super_(m),txt)
-    return ntxt
 
 ####
 ## PRIVATE FUNCTIONS
@@ -365,7 +368,7 @@ def _ptchain_(m):
     pt2 = mtgltag.untag(ch2)[2]['val']
     return mtgltag.retag('ch','p/t',{'val':pt1 + mtgl.OR + pt2})
 
-def _align_super_(m):
+def _align_type_(m):
     """
     aligns super-type to type
     :param m: a regex.Match object
