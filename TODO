@@ -113,3 +113,7 @@ ob<card characteristics=kraken∨leviathan∨octopus∨serpent∨creature>
 should be aligned somehow
 
 61. Add rarity to card data?
+
+62. Look at Arcum's Weathervane for aligning - we should really align both nonsnow and basic and not just basic
+
+63. for p/t=X/Y can we just chain this as X/Y instead of putting it in meta

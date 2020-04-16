@@ -218,8 +218,6 @@ def midprocess(txt):
         "ch<will> of xq<the> council","aw<will_of_the_council>"
     )
     ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                             # 2
-    ntxt = mtgl.re_align_type.sub(r"ch<\3\4→\1\2>",ntxt)                       # 3
-    #ntxt = mtgl.re_align_type2.sub(r"ch<\3\4→\1\2>",ntxt)                      # 4
     ntxt = deconflict_tags(ntxt)                                               # 5
     ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)                        # 6
     return ntxt
@@ -278,12 +276,14 @@ def chain(txt):
     #  like Stangg because color chains may be subchains inside the main chain
     #  b) handle special case of 'base power and toughness' replace phrase
     #   base ch<power> and ch<toughness> ch<p/t val=X/Y> with ch<p/t val=X/Y>
-    #  c) temporarily tag attributes (stand alone meta-characteristics) as xr
-    #  d) 'and' comma-delimited char pair in char, char char as in Terror but
+    #  c) align supertypes and subtypes
+    #  d) temporarily tag attributes (stand alone meta-characteristics) as xr
+    #  e) 'and' comma-delimited char pair in char, char char as in Terror but
     #   not Royal Decree
     ntxt = color_chain(txt)                                            # a
     ntxt = powt(ntxt)                                                  # b
     ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)         # c
+    ntxt = align_types(ntxt)
     #ntxt = mtgl.re_ch_attr.sub(r"xo<attr val=\1>",ntxt)                # c
     #ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # d
 
@@ -330,6 +330,15 @@ def powt(txt):
     ntxt = mtgl.re_pt_chain.sub(lambda m: _ptchain_(m),ntxt) # p/t or p/t chain
     return ntxt
 
+def align_types(txt):
+    """
+    aligns super to type and sub to type for easier chaining
+    :param txt: tagged oracle txt
+    :return: modified tagged txt with power and toughness and p/t chains tagged
+    """
+    ntxt = mtgl.re_align_super.sub(lambda m: _align_super_(m),txt)
+    return ntxt
+
 ####
 ## PRIVATE FUNCTIONS
 ####
@@ -356,6 +365,18 @@ def _ptchain_(m):
     pt1 = mtgltag.untag(ch1)[2]['val']
     pt2 = mtgltag.untag(ch2)[2]['val']
     return mtgltag.retag('ch','p/t',{'val':pt1 + mtgl.OR + pt2})
+
+def _align_super_(m):
+    """
+    aligns super-type to type
+    :param m: a regex.Match object
+    :return: the aligned types
+    """
+    # the last tkn will be the type, the first n-1 are the super-type(s)
+    tkns = [x for x in lexer.tokenize(m.group())[0] if x != ',']
+    tid,val,attr = mtgltag.untag(tkns[-1])
+    val += mtgl.ARW + mtgl.AND.join([mtgltag.untag(tkn)[1] for tkn in tkns[:-1]])
+    return mtgltag.retag(tid,val,attr)
 
 def _nchain_(m):
     """

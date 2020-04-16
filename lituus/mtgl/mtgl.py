@@ -660,51 +660,6 @@ re_lituus_ch = re.compile(
 )
 
 ####
-## ALIGNMENTS
-####
-
-# There are two types of alignments (1) type and super-type alignment and (2)
-# type with other criteria. We'll use the unicode arrow ('→') to denote alignment.
-# Alignment will always take the form TYPE→CRITERIA. The arrow can be read as
-# 'that is'. For example:
-#  Terror ... creature→¬artifact∧¬black ... reads creature that is not artifact
-#  and not black
-#  Wave of Vitriol ... land→¬basic ... reads land that is not basic
-# Alignment assists in chaining characteristics and puts the focus on the target
-# of an effect.
-# TODO: may remove the alignment from Terror as it introduces an inability to
-#  translate across like cards i.e. Stangg
-
-# 205.4b ... some supertypes are closely identified with specific card types...
-# when we have a supertype followed immediately by a card type, combine these as
-# the supertype applies to the card type and to the object (implied or explicit)
-# For example Wave of Vitriol, "...all artifacts, enchantments, and nonbasic
-# lands they control... nonbasic applies to lands and not to permanents that
-# must sacrified
-# TODO: need to make below capture the negate symbol (if present) with the
-#  characteristics
-re_align_type = re.compile( # have to take into account negated characteristics
-    r"ch<(¬?)({})> ch<(¬?)({})>".format(
-        '|'.join(super_characteristics),'|'.join(type_characteristics)
-    )
-)
-
-# TODO: should we limit this to only sub-types that are sub-types of the type
-#  i.e. aura and enchantment but not aura and creature
-# We don't want to tag cards like Quest for Ula's Temple "... or Serpent creature
-# card ..."
-re_align_type2 = re.compile(
-    r"ch<(¬?)({})> ch<(¬?)({})>(?!\sob<)".format(
-        '|'.join(sub_characteristics),'|'.join(type_characteristics)
-    )
-)
-#re_align_type2 = re.compile(
-#    r"ch<(¬?)({})> ch<(¬?)({})>".format(
-#        '|'.join(sub_characteristics),'|'.join(type_characteristics)
-#    )
-#)
-
-####
 ## ZONES
 ####
 
@@ -814,10 +769,48 @@ re_turn_action = re.compile(
 re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")
 
 ####
+## ALIGNMENTS
+####
+
+# There are two types of alignments (1) type and super-type alignment and (2)
+# type with other criteria. We'll use the unicode arrow ('→') to denote alignment.
+# Alignment will always take the form TYPE→CRITERIA. The arrow can be read as
+# 'that is'. For example:
+#  Terror ... creature→¬artifact∧¬black ... reads creature that is not artifact
+#  and not black
+#  Wave of Vitriol ... land→¬basic ... reads land that is not basic
+# Alignment assists in chaining characteristics and puts the focus on the target
+# of an effect.
+# TODO: may remove the alignment from Terror as it introduces an inability to
+#  translate across like cards i.e. Stangg
+
+# 205.4b ... some supertypes are closely identified with specific card types...
+# when we have a supertype followed immediately by a card type, combine these as
+# the supertype applies to the card type and to the object (implied or explicit)
+# For example Wave of Vitriol, "...all artifacts, enchantments, and nonbasic
+# lands they control... nonbasic applies to lands and not to permanents that
+# must sacrified
+# NOTE: We are assuming that super-type alignments are all space-delimited
+re_align_super = re.compile(
+    r"(ch<¬?(?:legendary|basic|snow|world)>\s)+"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|"
+      r"planeswalker|sorcery|tribal|historic)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+)
+
+# TODO: should we limit this to only sub-types that are sub-types of the type
+#  i.e. aura and enchantment but not aura and creature
+# We don't want to tag cards like Quest for Ula's Temple "... or Serpent creature
+# card ..."
+re_align_type2 = re.compile(
+    r"ch<(¬?)({})> ch<(¬?)({})>(?!\sob<)".format(
+        '|'.join(sub_characteristics),'|'.join(type_characteristics)
+    )
+)
+
+####
 ## CHAINS
 # Sequential characteristics
-###
-
+####
 
 # Three or more comma-delimited charateristics with conjunction i.e. Hazezon Tamar
 # As of IKO there are only 6
