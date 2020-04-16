@@ -781,8 +781,6 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")
 #  Wave of Vitriol ... land→¬basic ... reads land that is not basic
 # Alignment assists in chaining characteristics and puts the focus on the target
 # of an effect.
-# TODO: may remove the alignment from Terror as it introduces an inability to
-#  translate across like cards i.e. Stangg
 
 # 205.4b ... some supertypes are closely identified with specific card types...
 # when we have a supertype followed immediately by a card type, combine these as
@@ -859,8 +857,13 @@ re_pt_chain = re.compile(
 #  the phrase is not followed by an object or characteristic
 #  the first characteristic is either a color, type or super-type
 #  the first two characteristics do not have attributes
-# this will match cards like Terror (ch<¬artifact>, ch<¬black> ch<creature>)
-# but not Royal Decree (ch<mountain>, ch<black> ob<permanent>)
+# these take two forms:
+#  1) See Terror, 3 characteristics (ch<¬artifact>, ch<¬black> ch<creature>) will
+#  will be aligned under creature
+#  2) see Druidic Satchel, last token is an object (ch<¬creature>, ch<¬land> ob<card>)
+#  the two characteristics will be chained
+# It will not match cards like Royal Decree (ch<mountain>, ch<black> ob<permanent>)
+# in which mountain is disjoint from black permanent
 re_2chain_exception = re.compile(
     r"(?<=xq<\w+>\s)"
     r"(?:ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored|"

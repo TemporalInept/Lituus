@@ -218,7 +218,7 @@ def midprocess(txt):
     ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)                        # 6
     return ntxt
 
-re_emp_postfix = re.compile(r"\ssuffix=(?=)>")
+re_empty_postfix = re.compile(r"\ssuffix=(?=)>")
 def deconflict_tags(txt):
     """
      deconflicts incorrectly tagged tokens
@@ -235,7 +235,7 @@ def deconflict_tags(txt):
     ntxt = mtgl.re_ts_phase.sub(r"ts<phase suffix=\1>",ntxt)
 
     # actions and turn structure may result in empty suffixes
-    ntxt = re_emp_postfix.sub('>',ntxt)
+    ntxt = re_empty_postfix.sub('>',ntxt)
 
     # Face Up/Down
     ntxt = mtgl.re_status_face.sub(r"st<face amplifier=\1>",ntxt)
@@ -273,9 +273,9 @@ def second_pass(txt):
     ntxt = color_chain(txt)                                            # a
     ntxt = powt(ntxt)                                                  # b
     ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)         # c
-    #ntxt = align_types(ntxt)                                           # d
-    #ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # e
-    ntxt = chain(txt)
+    ntxt = align_types(ntxt)                                           # d
+    ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # e
+    ntxt = chain(ntxt)
     return ntxt
 
 def color_chain(txt):
@@ -308,8 +308,8 @@ def align_types(txt):
     :return: modified tagged txt with power and toughness and p/t chains tagged
     """
     ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),txt)
+    ntxt = mtgl.re_align_sub_sc.sub(lambda m: _align_type_(m), ntxt)
     ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)
-    ntxt = mtgl.re_align_sub.sub_sc(lambda m: _align_type_(m),ntxt)
     return ntxt
 
 def chain(txt):
@@ -483,22 +483,24 @@ def _2chain_ex_(m):
     """
     chains the 2chain exception CHAR, CHAR OBJ|CHAR
     :param m: are regex.Match object
-    :return: the chained object
+    :return: the chained or aligned characteristic
     """
-    # first two are charactersitics (only), 'and' them
-    ch = mtgl.AND.join(m.groups()[:2])
+    # first two are charactersitics (only), they will always be 'and'ed
+    tkns = m.groups()
+    ch = mtgl.AND.join(tkns[:2])
 
-    # is the last an object or characteristic
-    tid,val,attr = mtgltag.untag(m.group(3))
-    assert('characteristics' not in attr) # verify
-    if tid == 'ob': attr['characterstics'] = ch
+    # get the last token
+    tid,val,attr = mtgltag.untag(tkns[-1])
+    assert('characteristics' not in attr) # verify there are no characteristics
+
+    # the last token will determine whether we align or chain
+    # if its an object return the chained characteristics & the original obj
+    if tid == 'ob': return "{} {}".format(mtgltag.retag('ch',ch,{}),tkns[-1])
     else:
-        # if not an object, 3rd char will be a 'type' and we will align
-        assert(val in mtgl.type_characteristics+mtgl.sub_characteristics)
-        tid = 'ob'
-        attr['characteristics'] = val + mtgl.ARW + ch
-        val = 'permanent'
-    return mtgltag.retag(tid,val,attr)
+        # if its a type characteristic, we align
+        assert(val in mtgl.type_characteristics)
+        val += mtgl.ARW + ch
+        return mtgltag.retag(tid,val,attr)
 
 def _implied_obj_(cs):
     """
