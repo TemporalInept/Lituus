@@ -721,7 +721,13 @@ re_negate_tag = re.compile(r"non-(\w\w)<(.+?)>")
 #  Tide that has a status involving Phasing
 
 status = ['tap','flip','phase','face']
-re_status = re.compile(r"([kx]a)<(un)?({})>(ed)".format('|'.join(status[0:2])))
+
+# only looking at tap and flip - it will be a status only if there is a suffix
+# of 'ed' and it is not preceded by 'is'
+re_status = re.compile(
+    r"(?<!is\s)"
+    r"([kx]a)<(un)?({})>(ed)".format('|'.join(status[0:2]))
+)
 
 # Phase can be Status, Action or Turn Structure
 re_status_phase = re.compile(r"(xa<phase>ed-)pr<(in|out)>") # all status have a hyphen

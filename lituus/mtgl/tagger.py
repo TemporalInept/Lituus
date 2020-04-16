@@ -226,6 +226,7 @@ def deconflict_tags(txt):
     :return: tagged oracle text
     """
     # Tapped, Flipped
+    #ntxt = mtgl.re_status.sub(r"st<\2\3p\4>",txt)
     ntxt = mtgl.re_status.sub(r"st<\2\3p\4>",txt)
 
     # phase - can be Status (Time and Tide), Turn Structure (Breath of Fury) or
@@ -244,10 +245,12 @@ def deconflict_tags(txt):
     # turn could be a lituus action
     ntxt = mtgl.re_turn_action.sub("xa",ntxt)
 
-    # TODO: Currently hand-jamming "Will of the Council" and "First Strike"
-    #  because tkn_delimit in mtgl won't check anything inside '<' braces
+    # TODO: Currently hand-jamming "Will of the Council", "First Strike" and
+    #  "Cumulative Upkeep"  because tkn_delimit in mtgl won't check anything
+    #  inside '<' '>' braces
     ntxt = ntxt.replace("ch<will> of xq<the> council","aw<will_of_the_council>")
     ntxt = ntxt.replace("xq<first> strike","kw<first_strike>")
+    ntxt = ntxt.replace("cumulative ts<upkeep>","kw<cumlative_upkeep>")
 
     return ntxt
 
@@ -491,16 +494,12 @@ def _2chain_ex_(m):
 
     # get the last token
     tid,val,attr = mtgltag.untag(tkns[-1])
-    assert('characteristics' not in attr) # verify there are no characteristics
 
     # the last token will determine whether we align or chain
     # if its an object return the chained characteristics & the original obj
+    # if its a type characteristic, we align
     if tid == 'ob': return "{} {}".format(mtgltag.retag('ch',ch,{}),tkns[-1])
-    else:
-        # if its a type characteristic, we align
-        assert(val in mtgl.type_characteristics)
-        val += mtgl.ARW + ch
-        return mtgltag.retag(tid,val,attr)
+    else: return mtgltag.retag(tid,val + mtgl.ARW + ch,attr)
 
 def _implied_obj_(cs):
     """

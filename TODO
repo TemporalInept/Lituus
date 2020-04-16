@@ -14,41 +14,7 @@
 
 16. Can we just standarize a regular expression to catch anamolies in function word_hacks?
 
-19. Wasitora, Nekoru Queen highlights many problems
-
-'kw<flying>, kw<trample>\ntp<whenever> ob<card ref=self> xa<deal suffix=s> combat damage pr<to> xq<a> xp<player>, xq<that> xp<player> ka<sacrifice suffix=s> xq<a> ch<creature>. cn<if> the xp<player> cn<cannot>, xp<you> ka<create> xq<a> ch<p/t val=3/3> ch<black>, ch<red>, and ch<green> ch<cat> ch<dragon> ch<creature> ob<token> pr<with> kw<flying>.'
-
-...ka<create> xq<a> ch<p/t val=3/3> ch<black>, ch<red>, and ch<green> ch<cat> ch<dragon> ch<creature> ob<token>
- a. have very distinct chain setup with 7 characteristics,
- b. should types be chained differently from say colors, 
- c. how about meta characteristics like p/t
-
 24. Entity chains like Cautery Sliver
-
-25. Darksteel Mutation
- Don't like "... xq<a> ch<artifact→insect> ch<creature> ..." if we keep doing
- alignment this should end up as ob<permanent characterisitcs=creature→artifact&insert> 
-but, this is one of those where the alignment of type, sub-type should be confined
- to valid sub-types i.e. insect is a creature subtype and not a artifact subtype
-
-26. Nissa's Defeat, Wasitora, Nekoru Queen and Chrome Mox highlight chaining problems/difficulties
-
->>> mv["Nissa's Defeat"]._card['tag']
-'ka<destroy> xq<target> ch<forest>, ch<green> ch<enchantment>, or ch<green> ch<planeswalker>. cn<if> xq<that> ob<permanent> was xq<a> ch<nissa> ch<planeswalker>, xa<draw> xq<a> ob<card>.'
-
->>> mv["Wasitora, Nekoru Queen"]._card['tag']
-'kw<flying>, kw<trample>\ntp<whenever> ob<card ref=self> xa<deal suffix=s> combat damage pr<to> xq<a> xp<player>, xq<that> xp<player> ka<sacrifice suffix=s> xq<a> ch<creature>. cn<if> the xp<player> cn<cannot>, xp<you> ka<create> xq<a> ch<p/t val=3/3> ch<black∧red∧green> ch<cat> ch<dragon> ch<creature> ob<token> pr<with> kw<flying>.'
-
->>> mv["Chrome Mox"]._card['tag']
-"aw<imprint> — tp<when> ob<card ref=self> xa<enter suffix=s> the zn<battlefield>, xp<you> cn<may> ka<exile> xq<a> ch<¬artifact>, ch<¬land> ob<card> pr<from> xp<you suffix=r> zn<hand>.\n{t}: xa<add> nu<1> xo<mana> of xq<any> of the ka<exile suffix=ed> ob<card suffix='s> ch<color suffix=s>."
-
-a. Nissa has 3 distinct permanents a forest, a green enchantment and a green planeswalker where the quantifier target applies to each but these cannot be chained into a forest|green->enchantment|green->planeswalker (or could they) NOTE: there are no commas between green and enchantment
-
-b. In Chrome Mox we see two characteristics that can be chained into a card object but there is a comma seperating them
-
-c. Wasitora has multiple characterstics with no commas and one meta (p/t)
-
-28. Hazezon Tamar presents a problem with chaining 
 
 31. How to self ref "Hazezon" in Hazezon Tamar without self reffing "Dragon" in Dragon Egg (for now, am hacking it in multiverse.py
 
@@ -59,10 +25,6 @@ c. Wasitora has multiple characterstics with no commas and one meta (p/t)
 
 37. Modal spells/abilities, level ups and planeswalkers see Charming Prince
 
-38. Quest for Ula's Temple creates an implied object 'permanent' when there is
- a specified object 'card'
- a. this is because we have a chain of creature types followed by ch<creature> ob<card>
-
 40. Need to write save deck functionality
 
 41. Have to see how Companion will be treated i.e. as one of the 100 or an extra
@@ -71,16 +33,10 @@ c. Wasitora has multiple characterstics with no commas and one meta (p/t)
 
 45. Is rounded (up or down) prevalent enough to tag it?
 
-46. Have to tag damage/combat damage
-
 47. How to handle two consecutive objects like Trail of Crumbs "permanent card"
-
-49. Duplicant - how to handle meta-characteristics that do not have a value attribute
 
 50. Will have to deconflict IKO keyword counters that are incorrectly tagged as 
 keywords
-
-51. Lost Legacy ...xa<choose> xq<a> ch<¬artifact>, ch<¬land> ob<card> ch<name>... after chaining will have a hanging characteristic (a meta)
 
 52. How to handle cards like Transmutation "switch target creature's power and toughness"
 
@@ -88,12 +44,12 @@ keywords
 
 54. Sarpadian Empires, Vol. VII is a good example of 'grouping' vs 'chaining' and needs to be handled prior to 3chain
 
-55. Have to tag choice (as a lituus object?), produce (lituus action?), named (lituus action)
+55. Have to tag choice, produce and named
+ o for named, it is generally followed by a name should we tag it as an action?
+ o choice tag as a lituus object? 
+ o produce tag as lituus action?
 
-56. See Mana Web, ... is st<tapped> is not deconflicted right, should be 
-ka<tap suffix=ed>
-
-57. Ivory Guardian has object characteristic object phrase will probably see
+57. Ivory Guardians has object characteristic object phrase will probably see
 a lot becuase the first object is a token
 
 58. Need to define tags and tag symbols like align
@@ -110,4 +66,8 @@ a lot becuase the first object is a token
 
 63. for p/t=X/Y can we just chain this as X/Y instead of putting it in meta
 
-65.
+65. Nissa's Triumph and Bant Panorama bring up an issue with super-types. Especially the Panorams where the basic super-type applies to all the land sub-types. is this just unique to lands i.e. snow, basic or all super-types
+
+66. When we get to singleton characteristics have to take into account landwalk, possibly cycling see Ayumi, the Last Visitor
+
+69. Cloudseeder, the last 'cloud sprite' is not being tagged as an object. Is it because of the double quote?
