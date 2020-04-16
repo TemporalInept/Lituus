@@ -260,18 +260,7 @@ def second_pass(txt):
     :param txt: initial tagged oracle txt (lowered case)
     :return: tagged oracle text
     """
-    ntxt = chain(txt)
-    return ntxt
-
-def chain(txt):
-    """
-     Sequential comma separated charcteristics can be combined into the
-     characteristics parameter of a single object (that may be implied)
-    :param txt: tagged oracle txt
-    :return: modified tagged txt with sequential characterisitcs chained
-    NOTE: these must be followed in order
-    """
-    # First, IOT faciliate future chaining tag some anomalies :
+    # First, IOT faciliate chaining tag some anomalies:
     #  a) chain color chains - this facilitates future chaining of characteristics
     #  like Stangg because color chains may be subchains inside the main chain
     #  b) handle special case of 'base power and toughness' replace phrase
@@ -286,8 +275,18 @@ def chain(txt):
     ntxt = align_types(ntxt)
     #ntxt = mtgl.re_ch_attr.sub(r"xo<attr val=\1>",ntxt)                # c
     #ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # d
+    ntxt = chain(txt)
+    return ntxt
 
-    # Now do multi chains:
+def chain(txt):
+    """
+     Sequential comma separated charcteristics can be combined into the
+     characteristics parameter of a single object (that may be implied)
+    :param txt: tagged oracle txt
+    :return: modified tagged txt with sequential characterisitcs chained
+    NOTE: these must be followed in order
+    """
+    # Multi chains:
     #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'and',
     #   'or' or 'and/or' which may or may not be followed by more characteristics
     #    and/or an object
