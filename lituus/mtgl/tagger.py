@@ -199,23 +199,18 @@ def midprocess(txt):
        1. replaces spaces/hyphens inside tags with underscore IOT make it a
         single tag value
        2. moves 'non-' in front of a tag to the negated symbol '¬' inside the tag
-       3. align subsequent super-type, card type, ch<super-type> ch<type> are
-        aligned i.e. ch<basic> ch<land> becomes ch<land→basic> this will assist
-        in chaining (we have to rearrange to but type first
-       4. align subsequent type sub-type, ch<sub-type> ch<type> are aligned i.e.
-       ch<¬aura> ch<enchantment> becomes ch<enchantment→¬aura
-       5. deconflict incorrectly tagged tokens
-       6. move suffixes to inside the tag's prop-list
-     NOTE:
-      for 3 and 4 the highest hierarchical item will come first, that is in order
-       of super-type, type, sub-type, so for #4 we have to switch the order
+       3. deconflict incorrectly tagged tokens
+       4. move suffixes to inside the tag's prop-list
+       5. set up hanging basic and snow supertypes
     :param txt: tagged oracle txt
     :return: processed oracle txt
     """
     ntxt = mtgl.re_tkn_delimit.sub(lambda m: mtgl.tkn_delimit[m.group(1)],txt) # 1
     ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                             # 2
-    ntxt = deconflict_tags(ntxt)                                               # 5
-    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)                        # 6
+    ntxt = deconflict_tags(ntxt)                                               # 3
+    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)                        # 4
+    ntxt = mtgl.re_hanging_basic.sub(r"\1 ch<land>",ntxt)                      # 5
+    ntxt = mtgl.re_hanging_snow.sub(r"\1 ch<land>",ntxt)                       # 5
     return ntxt
 
 re_empty_postfix = re.compile(r"\ssuffix=(?=)>")
@@ -260,7 +255,7 @@ def deconflict_tags(txt):
 
 def second_pass(txt):
     """
-     performs a second pass of the oracle txt, working on Things and Attributes,
+    performs a second pass of the oracle txt, working on Things and Attributes,
     :param txt: initial tagged oracle txt (lowered case)
     :return: tagged oracle text
     """

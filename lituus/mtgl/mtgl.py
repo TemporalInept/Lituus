@@ -284,6 +284,7 @@ word_hacks = {
     "putting":"puting",
     "won":"wined","winning":"winned",
     "skipped":'"skiped',"skipping":"skiping",
+    "produced":"produceed","producing":"produceing",
     # status related
     "tapping":"taping","tapped":"taped","untapping":"untaped","untapped":"untaped",
     "flipping":"fliping","flipped":"fliped",
@@ -537,7 +538,8 @@ lituus_actions = [ # words not defined in the rules but important any way
     'gain','lose','attack','block','add','enter','leave','choose','die','spend',
     'unspend','take','reduce','trigger','prevent','declare','have','switch',
     'assign','win','defend','cost','skip','flip','cycle','phase','become','share',
-    'turn',
+    'turn','produce',
+    #named NOT SURE ABOUT THIS
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
@@ -706,6 +708,19 @@ re_tkn_delimit = re.compile(r"(?<=<)({})(?=>)".format(tkn_delimit_tkns))
 
 # Negated tags i.e. non-XX<...>
 re_negate_tag = re.compile(r"non-(\w\w)<(.+?)>")
+
+# Hanging Basic finds the supertype not followed by an explicit type i.e. land
+re_hanging_basic = re.compile(
+    r"(ch<¬?basic>)(?!\sch<¬?land(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+)
+
+# Hanging Snow finds the supertype that is followed by a land subtype (with no
+# explicit 'land' inbetween NOTE: we are only checking the FIVE basic subtypes
+re_hanging_snow = re.compile(
+    r"(ch<¬?snow>)"
+    r"(?=\sch<¬?(?:forest|island|mountain|plains|swamp)"
+      r"(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+)
 
 ####
 ## STATUS DECONFLICTION
