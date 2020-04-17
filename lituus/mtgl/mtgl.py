@@ -359,7 +359,7 @@ re_obj = re.compile(
 # keep suffix but check word boundary in beginning
 lituus_objects = [ # lituus objects
     "city's blessing",'game','mana pool','commander','mana','attacker','blocker',
-    'it','them','coin'
+    'it','them','coin','choice',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
@@ -539,7 +539,7 @@ lituus_actions = [ # words not defined in the rules but important any way
     'unspend','take','reduce','trigger','prevent','declare','have','switch',
     'assign','win','defend','cost','skip','flip','cycle','phase','become','share',
     'turn','produce',
-    #named NOT SURE ABOUT THIS
+    'named', # Special case we only want this specific conjugation
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(

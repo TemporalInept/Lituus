@@ -44,10 +44,6 @@ keywords
 
 54. Sarpadian Empires, Vol. VII is a good example of 'grouping' vs 'chaining' and needs to be handled prior to 3chain
 
-55. Have to tag choice and named
- o for named, it is generally followed by a card name should we tag it as an action?
- o choice tag as a lituus object? 
-
 57. Ivory Guardians has object characteristic object phrase will probably see
 a lot becuase the first object is a token
 
@@ -61,14 +57,13 @@ a lot becuase the first object is a token
     implied object (as is there is in Terror) and creature is the target of the
     effect
 
-61. Add rarity to card data?
+61. Add rarity to card data? not present inallcards.json
 
 63. for p/t=X/Y can we just chain this as X/Y instead of putting it in meta
-
-65. Nissa's Triumph and Bant Panorama bring up an issue with super-types. Especially the Panorams where the basic super-type applies to all the land sub-types. is this just unique to lands i.e. snow, basic or all super-types
 
 66. When we get to singleton characteristics have to take into account landwalk, possibly cycling see Ayumi, the Last Visitor
 
 69. Cloudseeder, the last 'cloud sprite' is not being tagged as an object. Is it because of the double quote?
 
-70. Consider adding 'land' whereever there is a standalone 'snow' or 'basic'
+71. Add a english i.e. ASCII field for names like Lim-dul's vault
+

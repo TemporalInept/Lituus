@@ -247,6 +247,11 @@ def deconflict_tags(txt):
     ntxt = ntxt.replace("xq<first> strike","kw<first_strike>")
     ntxt = ntxt.replace("cumulative ts<upkeep>","kw<cumlative_upkeep>")
 
+    # Not a deconfliction perse but to avoid conflicts 'named' is listed as
+    # an action, rewrite it here so it shows up xa<name suffix=ed> rather than
+    # xa<named>
+    ntxt = ntxt.replace("xa<named>","xa<name suffix=ed>")
+
     return ntxt
 
 ####
