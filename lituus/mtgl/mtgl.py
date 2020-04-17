@@ -895,6 +895,13 @@ re_2chain_exception = re.compile(
     r"(?!\s,?(?:ch|ob)<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
 )
 
+# Two characteristics separated by a conjunction ie. Sphinx of the Final Word
+re_2chain_conj = re.compile(
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"                            
+    r"\s(and|or|and/or)\s"
+    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+)
+
 # and/or comma-delimited conjoined multi chain
 # three or more comma-delimited characteristics with conjunction ('and'/'or')
 # three variants
@@ -914,24 +921,9 @@ re_nchain_comma = re.compile(
 
 # three or more space delimted characteristics followed by an object i.e.
 # Spawning Pit ch<p/t val=2/2> ch<colorless> ch<spawn> ch<artifact> ch<creature>
-#re_nchain_space = re.compile(
-#    # have a last characteristic IOT not capture the last space if there is no object
-#    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s){2,}"
-#    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-#    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
-#)
 re_nchain_space = re.compile(
     # have a last characteristic IOT not capture the last space if there is no object
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s){2,}"
     r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
     #r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
-)
-
-# Two characteristics separated by and/or may be followed by an object i.e
-# Sphinx of the Final Word or no i.e. Natural End
-re_2chain_conjunction = re.compile(
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"                            
-    r"\s(and|or|and/or)s"                                                
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
 )

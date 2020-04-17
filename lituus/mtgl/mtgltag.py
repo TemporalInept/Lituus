@@ -153,9 +153,9 @@ def merge_attrs(attrs,strict=1):
     :param strict: oneof:
       0 = Low no checking on sameness across parameters/parameter values
       1 = Medium parameter values across common parameters must be the same but
-       parameters are not required to be shared across all proplists
+       parameters are not required to be shared across all attribute dicts
       2 = High parameters and parameter values must be the same in each prop list
-    :return: merged proplist
+    :return: merged attribute dicts
     """
     mattrs = {}
     keys = list(set.union(*map(set,[x.keys() for x in attrs])))
@@ -169,7 +169,7 @@ def merge_attrs(attrs,strict=1):
                     raise lts.LituusException(
                         lts.ETAG,"Incompatible attribute {}".format(key)
                     )
-            else: vals.add(prop[key])
+            else: vals.add(attr[key])
 
         # check for same attribute values if strictness is not low
         if strict > 0 and len(vals) > 1:

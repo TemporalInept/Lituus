@@ -323,6 +323,11 @@ def chain(txt):
     :return: modified tagged txt with sequential characterisitcs chained
     NOTE: these must be followed in order
     """
+    # chain two characteristics delimited by a conjuction CHAR CONJ CHAR
+    # do these first as they may be inside a larger conjunction
+    ntxt = mtgl.re_2chain_conj.sub(lambda m: _2chain_conj_(m),txt)
+
+
     # Multi chains:
     #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'and',
     #   'or' or 'and/or' which may or may not be followed by more characteristics
@@ -340,7 +345,7 @@ def chain(txt):
     #   (quantifier char, char, obj) i.e. Chrome Mox (As of TBD, only 19 cards)
     #ntxt = mtgl.re_2chain_conjunction.sub(lambda m: _nchain_(m),ntxt)
     #ntxt = mtgl.re_2chain_quant_obj.sub(lambda m: _2chain_qo_(m),ntxt)
-    ntxt = txt
+
     return ntxt
 
 
@@ -433,7 +438,7 @@ def _nchain_(m):
     # chain the characteristics, merge the proplists & move suffix if present
     attrs = {}
     chs = op.join(vals)
-    merged = mtgltag.merge_props(tas)
+    merged = mtgltag.merge_attrs(tas)
     if 'suffix' in merged: attrs['suffix'] = merged['suffix']
     if meta: attrs['meta'] = op.join(mt[0]+mtgl.EQ+mt[1] for mt in meta)
 
@@ -500,6 +505,28 @@ def _2chain_ex_(m):
     # if its a type characteristic, we align
     if tid == 'ob': return "{} {}".format(mtgltag.retag('ch',ch,{}),tkns[-1])
     else: return mtgltag.retag(tid,val + mtgl.ARW + ch,attr)
+
+def _2chain_conj_(m):
+    """
+    chains two characteristics delimited by a conjunction
+    :param m: the regex.Match object
+    :return: the chained characteristics
+    """
+    # pull out the characteristics and operator
+    ch1,op,ch2 = m.groups()
+
+    # unpack the characteristics
+    _,val1,attr1 = mtgltag.untag(ch1)
+    _,val2,attr2 = mtgltag.untag(ch2)
+
+    # convert operator to symbol
+    if op == 'and': op = mtgl.AND
+    elif op == 'or': op = mtgl.OR
+    elif op == 'and/or': op = mtgl.AOR
+    else: lts.LituusException(lts.ETAGGING, "Illegal op {}".format(op))
+
+    # return the conjoined characteristic
+    return mtgltag.retag('ch',val1+op+val2,mtgltag.merge_attrs([attr1,attr2]))
 
 def _implied_obj_(cs):
     """
