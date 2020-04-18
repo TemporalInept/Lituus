@@ -587,17 +587,37 @@ type_characteristics = [  # 300.1, NOTE: we added historic
 ]
 re_type_char = re.compile(r"{}".format('|'.join(type_characteristics)))
 
-sub_characteristics = [ # Updated 24-Jan-20 with Theros Beyond Death
-    # NOTE: sub_characteristics must be updated with the release of new sets to
-    #  include adding any token specific types
-    # 205.3g artifact subtypes
+# sub characteristics (updated 24-Jan-20 with TBD). Must be updated with relaase
+# of new sets to include adding any token specific types i.e. does not appear on
+# any card
+
+# 205.3g artifact subtypes
+subtype_artifact_characteristics = [
     "clue","equipment","food","fortification","gold","treasure","vehicle",
-    # 205.3h enchantment subtypes
+]
+re_subtype_artifact_char = re.compile(
+    r"{}".format('|'.join(subtype_artifact_characteristics))
+)
+
+# 205.3h enchantment subtypes
+subtype_enchantment_characteristics = [
     "aura","cartouche","curse","saga","shrine",
-    # 205.3i land subtypes
-    "desert","forest","gate","island","lair","locus","mine","mountain","plains",
-    "power-plant","swamp","tower","urza’s",
-    # 205.3j planeswalker types
+]
+re_subtype_enchantment_char = re.compile(
+    r"{}".format('|'.join(subtype_enchantment_characteristics))
+)
+
+# 205.3i land subtypes
+subtype_land_characteristics = [
+    "desert", "forest", "gate", "island", "lair", "locus", "mine", "mountain",
+    "plains","power-plant", "swamp", "tower", "urza’s",
+]
+re_subtype_land_char = re.compile(
+    r"{}".format('|'.join(subtype_land_characteristics))
+)
+
+# 205.3j planeswalker types
+subtype_planeswalker_characteristics = [
     "ajani","aminatou","angrath","arlinn","ashiok","bolas","calix,chandra","dack",
     "daretti","davriel","domri","dovin","elspeth","estrid","freyalise","garruk",
     "gideon,huatli","jace","jaya","karn","kasmina","kaya","kiora","koth","liliana",
@@ -605,9 +625,19 @@ sub_characteristics = [ # Updated 24-Jan-20 with Theros Beyond Death
     "sarkhan","serra","sorin","tamiyo","teferi","teyo","tezzeret,tibalt","ugin",
     "venser","vivien","vraska","will","windgrace","wrenn","xenagos","yanggu",
     "yanling",
-    # 205.3k instant/sorcery subtypes
-    "adventure","arcane","trap",
-    # 205.3m creature subtypes
+]
+re_subtype_planeswalker_char = re.compile(
+    r"{}".format('|'.join(subtype_planeswalker_characteristics))
+)
+
+# 205.3k instant/sorcery subtypes
+subtype_instant_sorcery_characteristics = ["adventure","arcane","trap",]
+re_subtype_instant_sorcery_char = re.compile(
+    r"{}".format('|'.join(subtype_instant_sorcery_characteristics))
+)
+
+# 205.3m creature subtypes
+subtype_creature_characteristics = [
     "advisor","aetherborn","ally","angel","antelope","ape","archer","archon",
     "army","artificer","assassin","assembly-worker","atog","aurochs","avatar",
     "azra","badger","barbarian","basilisk","bat","bear","beast","beeble",
@@ -618,28 +648,40 @@ sub_characteristics = [ # Updated 24-Jan-20 with Theros Beyond Death
     "dreadnought","drone","druid","dryad","dwarf","efreet","egg","elder","eldrazi",
     "elemental","elephant","elf","elk","eye","faerie","ferret","fish","flagbearer",
     "fox","frog","fungus","gargoyle","germ","giant","gnome","goat","goblin","god",
-    "golem","gorgon","graveborn","gremlin","griffin","hag","harpy","hellion","hippo",
-    "hippogriff","homarid","homunculus","horror","horse","hound","human","hydra",
-    "hyena","illusion","imp","incarnation","insect","jackal","jellyfish","juggernaut",
-    "kavu","kirin","kithkin","knight","kobold","kor","kraken","lamia","lammasu",
-    "leech","leviathan","lhurgoyf","licid","lizard","manticore","masticore",
-    "mercenary","merfolk","metathran","minion","minotaur","mole","monger","mongoose",
-    "monk","monkey","moonfolk","mouse","mutant","myr","mystic","naga","nautilus",
-    "nephilim","nightmare","nightstalker","ninja","noble","noggle","nomad","nymph",
-    "octopus","ogre","ooze","orb","orc","orgg","ouphe","ox","oyster","pangolin",
-    "peasant","pegasus","pentavite","pest","phelddagrif","phoenix","pilot","pincher",
-    "pirate","plant","praetor","prism","processor","rabbit","rat","rebel",
-    "reflection","rhino","rigger","rogue","sable","salamander","samurai","sand",
-    "saproling","satyr","scarecrow","scion","scorpion","scout","sculpture","serf",
-    "serpent","servo","shade","shaman","shapeshifter","sheep","siren","skeleton",
-    "slith","sliver","slug","snake","soldier","soltari","spawn","specter",
-    "spellshaper","sphinx","spider","spike","spirit","splinter","sponge","squid",
-    "squirrel","starfish","surrakar","survivor","tentacle","tetravite","thalakos",
-    "thopter","thrull","treefolk","trilobite","triskelavite","troll","turtle",
-    "unicorn","vampire","vedalken","viashino","volver","wall","warlock","warrior",
-    "weird","werewolf","whale","wizard","wolf","wolverine","wombat","worm","wraith",
-    "wurm","yeti","zombie","zubera",
+    "golem","gorgon","graveborn","gremlin","griffin","hag","harpy","hellion",
+    "hippo","hippogriff","homarid","homunculus","horror","horse","hound","human",
+    "hydra","hyena","illusion","imp","incarnation","insect","jackal","jellyfish",
+    "juggernaut","kavu","kirin","kithkin","knight","kobold","kor","kraken","lamia",
+    "lammasu","leech","leviathan","lhurgoyf","licid","lizard","manticore",
+    "masticore","mercenary","merfolk","metathran","minion","minotaur","mole",
+    "monger","mongoose","monk","monkey","moonfolk","mouse","mutant","myr","mystic",
+    "naga","nautilus","nephilim","nightmare","nightstalker","ninja","noble",
+    "noggle","nomad","nymph","octopus","ogre","ooze","orb","orc","orgg","ouphe",
+    "ox","oyster","pangolin","peasant","pegasus","pentavite","pest","phelddagrif",
+    "phoenix","pilot","pincher","pirate","plant","praetor","prism","processor",
+    "rabbit","rat","rebel","reflection","rhino","rigger","rogue","sable",
+    "salamander","samurai","sand","saproling","satyr","scarecrow","scion",
+    "scorpion","scout","sculpture","serf","serpent","servo","shade","shaman",
+    "shapeshifter","sheep","siren","skeleton","slith","sliver","slug","snake",
+    "soldier","soltari","spawn","specter","spellshaper","sphinx","spider","spike",
+    "spirit","splinter","sponge","squid","squirrel","starfish","surrakar",
+    "survivor","tentacle","tetravite","thalakos","thopter","thrull","treefolk",
+    "trilobite","triskelavite","troll","turtle","unicorn","vampire","vedalken",
+    "viashino","volver","wall","warlock","warrior","weird","werewolf","whale",
+    "wizard","wolf","wolverine","wombat","worm","wraith","wurm","yeti","zombie",
+    "zubera",
 ]
+re_subtype_creature_char = re.compile(
+    r"{}".format('|'.join(subtype_creature_characteristics))
+)
+
+# combined
+sub_characteristics = subtype_artifact_characteristics + \
+                      subtype_enchantment_characteristics + \
+                      subtype_land_characteristics + \
+                      re_subtype_planeswalker_char + \
+                      subtype_instant_sorcery_characteristics + \
+                      subtype_creature_characteristics
 re_sub_char = re.compile(r"{}".format('|'.join(sub_characteristics)))
 
 # all characteristics
