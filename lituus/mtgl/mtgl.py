@@ -21,6 +21,7 @@ __status__ = 'Development'
 
 import regex as re
 from hashlib import md5
+import lituus as lts
 
 """
  Defines a series of regular of expressions and string replacements for tagging
@@ -679,15 +680,40 @@ re_subtype_creature_char = re.compile(
 sub_characteristics = subtype_artifact_characteristics + \
                       subtype_enchantment_characteristics + \
                       subtype_land_characteristics + \
-                      re_subtype_planeswalker_char + \
+                      subtype_planeswalker_characteristics + \
                       subtype_instant_sorcery_characteristics + \
                       subtype_creature_characteristics
 re_sub_char = re.compile(r"{}".format('|'.join(sub_characteristics)))
 
+# subtype of
+TYPE_ARTIFACT        = 0
+TYPE_ENCHANTMENT     = 1
+TYPE_LAND            = 2
+TYPE_PLANESWALKER    = 3
+TYPE_INSTANT_SORCERY = 4
+TYPE_CREATURE        = 5
+def subtype_of(st):
+    """
+    given a subtype st returns the type
+    :param st: string subtype
+    :return: TYPE code
+    """
+    if st in subtype_artifact_characteristics: return TYPE_ARTIFACT
+    elif st in subtype_enchantment_characteristics: return TYPE_ENCHANTMENT
+    elif st in subtype_land_characteristics: return TYPE_LAND
+    elif st in subtype_planeswalker_characteristics: return TYPE_PLANESWALKER
+    elif st in subtype_instant_sorcery_characteristics: return TYPE_INSTANT_SORCERY
+    elif st in subtype_creature_characteristics: return TYPE_CREATURE
+    else:
+        raise lts.LituusException(lts.EMTGL,"{} is not a subtype".format(st))
+
 # all characteristics
 char_tkns = '|'.join(
-    meta_characteristics + color_characteristics + super_characteristics + \
-    type_characteristics + sub_characteristics
+    meta_characteristics +
+    color_characteristics +
+    super_characteristics +
+    type_characteristics +
+    sub_characteristics
 )
 re_ch = re.compile(
     r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(char_tkns)
