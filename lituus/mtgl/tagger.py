@@ -12,8 +12,8 @@ Tags MTG oracle text in the mtgl format
 
 #__name__ = 'tagger'
 __license__ = 'GPLv3'
-__version__ = '0.1.2'
-__date__ = 'March 2020'
+__version__ = '0.1.3'
+__date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -221,7 +221,6 @@ def deconflict_tags(txt):
     :return: tagged oracle text
     """
     # Tapped, Flipped
-    #ntxt = mtgl.re_status.sub(r"st<\2\3p\4>",txt)
     ntxt = mtgl.re_status.sub(r"st<\2\3p\4>",txt)
 
     # phase - can be Status (Time and Tide), Turn Structure (Breath of Fury) or

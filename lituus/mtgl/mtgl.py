@@ -12,7 +12,7 @@ Defines regexes,strings and helper functions used in the mtgl format
 
 #__name__ = 'mtgl'
 __license__ = 'GPLv3'
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 __date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -91,7 +91,8 @@ GT  = '⋗' # mtgl greater than
 LE  = '≤' # mtgl less than or equal
 GE  = '≥' # mtgl greater than or equal
 EQ  = '≡' # mtgl equal to
-ARW = '→' # property/alignment
+ARW = '→' # alignment
+SUB = '⭰' # subclass/inheritance
 # symbols defined in oracle text
 HYP = '—' # mtg long hyphen
 BLT = '•' # mtg bullet
@@ -117,7 +118,7 @@ re_un = re.compile(r"un(\w)")                      # find 'un'
 # DELIMITER
 re_tkn_delim = re.compile( # matches mtg punctuation & spaces not inside a tag
     r"([:,\.\"\'•—\s])"
-    r"(?![\w\s\+\/\-=¬∧∨⊕⋖⋗≤≥≡→]+>)"
+    r"(?![\w\s\+\/\-=¬∧∨⊕⋖⋗≤≥≡→⭰]+>)"
 )
 
 ####
@@ -569,7 +570,7 @@ meta_characteristics = [ # 100.3
 re_meta_char = re.compile(r"{}".format('|'.join(meta_characteristics)))
 re_meta_attr = re.compile( # for meta characteristics
     r"(ch<(?:p/t|everything|text|name|mana cost|cmc|power|toughness|"
-      r"color_identity|color|type)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+      r"color_identity|color|type)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 color_characteristics = [ # 105.1, 105.2a, 105.2b, 105.2c
@@ -711,7 +712,7 @@ re_negate_tag = re.compile(r"non-(\w\w)<(.+?)>")
 
 # Hanging Basic finds the supertype not followed by an explicit type i.e. land
 re_hanging_basic = re.compile(
-    r"(ch<¬?basic>)(?!\sch<¬?land(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(ch<¬?basic>)(?!\sch<¬?land(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 # Hanging Snow finds the supertype that is followed by a land subtype (with no
@@ -719,7 +720,7 @@ re_hanging_basic = re.compile(
 re_hanging_snow = re.compile(
     r"(ch<¬?snow>)"
     r"(?=\sch<¬?(?:forest|island|mountain|plains|swamp)"
-      r"(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+      r"(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 ####
@@ -763,9 +764,9 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 # chained counters mistagged as characteristics i.e. Frankenstein's Monster
 # xq<a> ch<p/t val=+2/+0>, ch<p/t val=+1/+1>, or xo<ctr type=+0/+2>
 #re_ctr_chain = re.compile(
-#    r"(ch<p/t(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>,\s){2}"
+#    r"(ch<p/t(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>,\s){2}"
 #    r"or\s"
-#    r"(xo<ctr(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)>)"
+#    r"(xo<ctr(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)>)"
 #)
 
 ####
@@ -778,8 +779,8 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 #  2) only capture the 'ts' tag id IOT replace it with 'xa' lituus action
 re_turn_action = re.compile(
     r"(ts)"
-    r"(?=<turn(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>(?:r|s|ing|ed|'s)?\s"
-    r"x[m|q]<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(?=<turn(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>(?:r|s|ing|ed|'s)?\s"
+    r"x[m|q]<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 ####
@@ -813,7 +814,7 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")
 re_align_super = re.compile(
     r"(ch<¬?(?:legendary|basic|snow|world)>\s)+"
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|"
-      r"planeswalker|sorcery|tribal|historic)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+      r"planeswalker|sorcery|tribal|historic)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 # space delimited subtypes followed by a type will be aligned
@@ -825,17 +826,17 @@ re_align_super = re.compile(
 re_align_sub = re.compile(
     r"(ch<¬?(?:" + re_sub_char.pattern + ")>\s)+"
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|"
-      r"planeswalker|sorcery|tribal|historic)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+      r"planeswalker|sorcery|tribal|historic)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 # special case of subtype alignmnet where we have subtype characteristic type
 re_align_sub_sc = re.compile(
     r"(ch<¬?(?:" + re_sub_char.pattern + ")>)"
     r"\s"
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)>)"
+    r"(ch<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)>)"
     r"\s"
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|"
-      r"planeswalker|sorcery|tribal|historic)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+      r"planeswalker|sorcery|tribal|historic)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 ####
@@ -862,15 +863,15 @@ re_2chain_clr = re.compile(
 # i.e Transmutation
 re_base_pt = re.compile(
     r"base\sch<power>\sand\sch<toughness>\s"
-    r"(ch<p/t(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(ch<p/t(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 re_single_pt = re.compile(r"ch<power>\sand\sch<toughness>")
 
 # ... p/t X/Y or p/t A/B ...
 re_pt_chain = re.compile(
-    r"(ch<p/t(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(ch<p/t(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
     r"\sor\s"
-    r"(ch<p/t(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(ch<p/t(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 # phrases of the form CHAR, CHAR OBJ|CHAR where:
@@ -890,20 +891,20 @@ re_2chain_exception = re.compile(
     r"(?:ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored|"
       r"artifact|creature|enchantment|instant|land|planeswalker|sorcery|tribal|"
       r"historic|legendary|basic|snow|world))>)"
-    r",\s(?:ch<(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)>)\s"
-    r"((?:ch|ob)<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    r"(?!\s,?(?:ch|ob)<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r",\s(?:ch<(¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)>)\s"
+    r"((?:ch|ob)<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+    r"(?!\s,?(?:ch|ob)<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 # Two characteristics separated by a conjunction ie. Sphinx of the Final Word
 re_2chain_conj = re.compile(
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"                            
+    r"(ch<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"                            
     r"\s(and|or|and/or)\s"
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
+    r"(ch<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
-# and/or comma-delimited conjoined multi chain
-# three or more comma-delimited characteristics with conjunction ('and'/'or')
+# comma-delimited conjoined multi chain with a conjunction
+# two or more comma-delimited characteristics with a conjunction
 # three variants
 #  a) Followed by one or more characteristics and an object i.e. Quest for Ula's
 #  Temple xq<a> ch<kraken>, ch<leviathan>, ch<octopus>, or ch<serpent>
@@ -912,18 +913,18 @@ re_2chain_conj = re.compile(
 #   ch<red> ob<spell>
 #  c) Not followed by anything i.e. Frozen Aether ch<artifact suffix=s>,
 #   ch<creature suffix=s>, and ch<land suffix=s>
-re_nchain_comma = re.compile(
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>,\s){2,}" 
+re_nchain_conj = re.compile(
+    r"(ch<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>,\s){1,}" 
     r"(and|or|and/or)\s"                                                
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s?)+"
-    r"(ob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+    r"(ch<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>\s?)+"
+    #r"(ob<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)?"
 )
-
+#'⭰'
 # three or more space delimted characteristics followed by an object i.e.
 # Spawning Pit ch<p/t val=2/2> ch<colorless> ch<spawn> ch<artifact> ch<creature>
 re_nchain_space = re.compile(
     # have a last characteristic IOT not capture the last space if there is no object
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>\s){2,}"
-    r"(ch<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)"
-    #r"(\sob<(?:¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)(?:\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→]+?)*>)?"
+    r"(ch<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>\s){2,}"
+    r"(ch<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+    #r"(\sob<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)?"
 )
