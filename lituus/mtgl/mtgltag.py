@@ -140,7 +140,7 @@ def untag(tkn):
                 p[0]:p[1] for p in [p.split('=') for p in re_tag_attrs.findall(tkn)]
             }
         return tag,val,attrs
-    except AttributeError:
+    except (AttributeError,TypeError):
         raise lts.LituusException(lts.ETAG,"Invalid tag {}".format(tkn))
 
 def operand(tkn,op=False):
