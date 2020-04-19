@@ -128,6 +128,9 @@ re_tkn_delim = re.compile(
 re_param_delim_nop = re.compile(r"[∧∨⊕⋖⋗≤≥≡→⭰]")    # w\o operators
 re_param_delim_wop = re.compile(r"([∧∨⊕⋖⋗≤≥≡→⭰])")  # w\ operators
 
+# matches prefix operators
+re_param_prefix = re.compile(r"[\+\-¬]")
+
 ####
 ## CARD REFERENCES
 ## Named cards will have the form ob<card ref=#> where x can be self or a md5

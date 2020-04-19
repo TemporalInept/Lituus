@@ -153,6 +153,15 @@ def operand(tkn,op=False):
     if op: return mtgl.re_param_delim_wop.split(tkn)
     else: return mtgl.re_param_delim_nop.split(tkn)
 
+def strip(tkn):
+    """
+    removes prefix operators from tkn i.e. negate, plus, minus
+    :param tkn: the token
+    :return: the unadorned token
+    """
+    # TODO why does re_param_prefix return ''
+    return [x for x in mtgl.re_param_prefix.split(tkn) if x != ''][0]
+
 def merge_attrs(attrs,strict=1):
     """
      merges the attributes lists in attrs based on specified strictness level.
