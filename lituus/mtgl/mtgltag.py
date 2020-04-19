@@ -12,7 +12,7 @@ Defines functions to work with mtgl tags
 
 #__name__ = 'mtgltag'
 __license__ = 'GPLv3'
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 __date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -127,7 +127,7 @@ def is_tag(tkn):
 
 def untag(tkn):
     """
-     returns the tag and value of tkn if it is a tagged item
+     returns the tag-id, tag value and attribute dict of tkn if it is a tagged item
     :param tkn: the token to untag
     :return: the tag, tag-value and property dict
     """
@@ -142,6 +142,16 @@ def untag(tkn):
         return tag,val,attrs
     except AttributeError:
         raise lts.LituusException(lts.ETAG,"Invalid tag {}".format(tkn))
+
+def operand(tkn,op=False):
+    """
+    splits the parameter tkn in operands and operators
+    :param tkn: the paramater value
+    :param op: if true returns operators as well
+    :return: list of parameter operands (operators if specified)
+    """
+    if op: return mtgl.re_param_delim_wop.split(tkn)
+    else: return mtgl.re_param_delim_nop.split(tkn)
 
 def merge_attrs(attrs,strict=1):
     """

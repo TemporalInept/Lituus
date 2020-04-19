@@ -116,11 +116,17 @@ re_mana_remtxt = re.compile(r"\(({t}: add.+?)\)")  # find add mana inside ()
 re_non = re.compile(r"non(\w)")                    # find 'non' without hyphen
 re_un = re.compile(r"un(\w)")                      # find 'un'
 
-# DELIMITER
-re_tkn_delim = re.compile( # matches mtg punctuation & spaces not inside a tag
+# DELIMITERS
+
+# matches mtgl punctuation & spaces not inside a tag
+re_tkn_delim = re.compile(
     r"([:,\.\"\'•—\s])"
     r"(?![\w\s\+\/\-=¬∧∨⊕⋖⋗≤≥≡→⭰]+>)"
 )
+
+# matches mtgl conjoining operators in a mtgl tag parameter
+re_param_delim_nop = re.compile(r"[∧∨⊕⋖⋗≤≥≡→⭰]")    # w\o operators
+re_param_delim_wop = re.compile(r"([∧∨⊕⋖⋗≤≥≡→⭰])")  # w\ operators
 
 ####
 ## CARD REFERENCES
@@ -692,7 +698,7 @@ TYPE_LAND            = 2
 TYPE_PLANESWALKER    = 3
 TYPE_INSTANT_SORCERY = 4
 TYPE_CREATURE        = 5
-def subtype_of(st):
+def subtype(st):
     """
     given a subtype st returns the type
     :param st: string subtype
@@ -706,6 +712,23 @@ def subtype_of(st):
     elif st in subtype_creature_characteristics: return TYPE_CREATURE
     else:
         raise lts.LituusException(lts.EMTGL,"{} is not a subtype".format(st))
+
+def subtype_of(st,mt):
+    """
+    determines if subtype st is a subtype of type mt
+    :param st: the subtyype i.e 'dragon'
+    :param mt: the type i.e. 'creature'
+    :return: True if st is a subtype of mt, False otherwise
+    """
+    tc = subtype(st)
+    if tc == TYPE_ARTIFACT and mt == 'artifact': return True
+    elif tc == TYPE_ENCHANTMENT and mt =='enchantment': return True
+    elif tc == TYPE_LAND and mt == 'land': return True
+    elif tc == TYPE_PLANESWALKER and mt == 'planeswalker': return True
+    elif tc == TYPE_INSTANT_SORCERY and mt == 'instant': return True
+    elif tc == TYPE_INSTANT_SORCERY and mt == 'sorcery': return True
+    elif tc == TYPE_CREATURE and mt == 'creature': return True
+    return False
 
 # all characteristics
 char_tkns = '|'.join(
@@ -755,7 +778,7 @@ re_zone = re.compile(
 # we do this mid-pass because the tagger is looking untagged words. As such,
 #  we have to look for the tagged phrase for will of the Council which will be
 #  tagged ch<will> of xq<the> council have to handjam this for now
-tkn_delimit = {
+tkn_underscore = {
     "city's blessing":"city's_blessing","precombat main":"precombat_main",
     "postcombat main":"postcombat_main","beginning of combat":"beginning_of_combat",
     "declare attackers":"declare_attackers","declare blockers":"declare_blockers",
@@ -772,8 +795,8 @@ tkn_delimit = {
     "jump-start":"jump_start","assembly-worker":"assembly_worker",
     "color identity":"color_identity",
 }
-tkn_delimit_tkns = '|'.join(tkn_delimit.keys())
-re_tkn_delimit = re.compile(r"(?<=<)({})(?=>)".format(tkn_delimit_tkns))
+tkn_underscore_tkns = '|'.join(tkn_underscore.keys())
+re_tkn_underscore = re.compile(r"(?<=<)({})(?=>)".format(tkn_underscore_tkns))
 
 # Negated tags i.e. non-XX<...>
 re_negate_tag = re.compile(r"non-(\w\w)<(.+?)>")
