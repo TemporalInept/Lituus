@@ -205,12 +205,14 @@ def midprocess(txt):
     :param txt: tagged oracle txt
     :return: processed oracle txt
     """
-    ntxt = mtgl.re_tkn_underscore.sub(lambda m: mtgl.tkn_delimit[m.group(1)],txt) # 1
-    ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                                # 2
-    ntxt = deconflict_tags(ntxt)                                                  # 3
-    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)                           # 4
-    ntxt = mtgl.re_hanging_basic.sub(r"\1 ch<land>",ntxt)                         # 5
-    ntxt = mtgl.re_hanging_snow.sub(r"\1 ch<land>",ntxt)                          # 5
+    ntxt = mtgl.re_tkn_underscore.sub(                    # 1
+        lambda m: mtgl.tkn_underscore[m.group(1)],txt
+    )
+    ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)        # 2
+    ntxt = deconflict_tags(ntxt)                          # 3
+    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)   # 4
+    ntxt = mtgl.re_hanging_basic.sub(r"\1 ch<land>",ntxt) # 5
+    ntxt = mtgl.re_hanging_snow.sub(r"\1 ch<land>",ntxt)  # 5
     return ntxt
 
 re_empty_postfix = re.compile(r"\ssuffix=(?=)>")

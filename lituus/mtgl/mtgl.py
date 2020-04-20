@@ -804,9 +804,9 @@ re_tkn_underscore = re.compile(r"(?<=<)({})(?=>)".format(tkn_underscore_tkns))
 # Negated tags i.e. non-XX<...>
 re_negate_tag = re.compile(r"non-(\w\w)<(.+?)>")
 
-# Hanging Basic finds the supertype not followed by an explicit type i.e. land
+# Hanging Basic finds the supertype not followed by an explicit land
 re_hanging_basic = re.compile(
-    r"(ch<¬?basic>)(?!\sch<¬?land(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+    r"(ch<¬?basic>)(?!\sch<land)"
 )
 
 # Hanging Snow finds the supertype that is followed by a land subtype (with no
@@ -1010,7 +1010,7 @@ re_2chain_conj = re.compile(
 re_nchain_conj = re.compile(
     r"(ch<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>,\s){1,}" 
     r"(and|or|and/or)\s"                                                
-    r"(ch<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>\s?)+"
+    r"(ch<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
     #r"(ob<(?:¬?[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)?"
 )
 #'⭰'
