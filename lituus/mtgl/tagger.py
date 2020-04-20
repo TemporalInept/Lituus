@@ -161,7 +161,9 @@ def tag_turn_structure(txt):
 
 def tag_english(txt):
     """ tags important english words """
-    ntxt = mtgl.re_op.sub(lambda m: "op<{}>".format(mtgl.OP[m.group(1)]),txt) # operators
+    ntxt = mtgl.re_op.sub(                  # operators
+        lambda m: "op<{}>".format(mtgl.op[m.group(1)]),txt
+    )
     ntxt = mtgl.re_prep.sub(r"pr<\1>",ntxt) # tag prepositions
     ntxt = mtgl.re_cond.sub(r"cn<\1>",ntxt) # & conditional/rqmt
     return mtgl.re_seq.sub(r"sq<\1>",ntxt)  # & sequence words
@@ -309,7 +311,7 @@ def align_types(txt):
     """
     aligns super to type and sub to type for easier chaining
     :param txt: tagged oracle txt
-    :return: modified tagged txt with power and toughness and p/t chains tagged
+    :return: aligned txt
     """
     ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),txt)
     ntxt = mtgl.re_align_sub_sc.sub(lambda m: _align_type_(m), ntxt)
@@ -335,7 +337,7 @@ def chain(txt):
     #    and/or an object
     #  b) 3 or more space separated characteristics w/o a conjuction and followed
     #   by a an object Spawning Pit
-    #ntxt = mtgl.re_nchain_comma.sub(lambda m: _nchain_(m),ntxt)
+    ntxt = mtgl.re_nchain_conj.sub(lambda m: _nchain_(m),ntxt)
     #ntxt = mtgl.re_nchain_space.sub(lambda m: _nchain_(m),ntxt)
 
     # Dual chains make up the prevalent characteristic chain but care must be
@@ -396,61 +398,94 @@ def _nchain_(m):
     :param m: a regex.Match object
     :return: the chained object
     """
+    # TODO: should be able to drop the meta related bookkeeping etc
     # set up our lists for values and attributes
     vals = []                                   # characteristics to chain
-    tas = []                                    # & their attributes
+    attrs = []                                  # & their attributes
     meta = []                                   # meta characteristics
     op = mtgl.AND                               # default 'and'ed characteristics
     tkn = None                                  # current token in chain
-    tid = val = attrs = None                    # obj to create
-    space = ' ' if m.group()[-1] == ' ' else '' # hanging space
 
-    # untag the characteristics saving the tag value and attributes
+    # untag each characteristic, save the op when we hit it
     for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
         try:
-            # untag
+            # untag the token
             ti,tv,ta = mtgltag.untag(tkn)
 
-            # if its an object, we're done. Save the tag
-            if ti == 'ob':
-                tid,val,attr = ti,tv,ta
-                break
-
-            # check for a meta characterisics
+            # check if it is a meta-characteristic and if it is p/t
             if tv in mtgl.meta_characteristics:
-                # if 'val is in the attributes, append as a meta otherwise return
-                # We should always only have one meta characteristic in a chain
-                # they should always be anded but just in case
-                if 'val' in ta:
-                    assert(len(ta) == 1)
+                assert('val' in ta)  # any metas should have a 'val'
+                assert(len(ta) == 1) # and only a 'val'
+
+                # should only get p/t = 'x/y' here
+                if tv == 'p/t':
+                    vals.append(ta['val']) # append the x/y
+                    del ta['val']          # this should be empty after this
+                    attrs.append(ta)
+                else:
+                    # cannot see anything being here but just in case
                     meta.append((tv,ta['val']))
-                else: return m.group()
             else:
-                # append the value and the proplist to running lists
                 vals.append(tv)
-                tas.append(ta)
+                attrs.append(ta)
         except lts.LituusException:
-            # cannot untag - this is the operator
+            # we've hit the operator, save it
             if tkn == 'and': op = mtgl.AND
             elif tkn == 'or': op = mtgl.OR
-            elif tkn == 'and/or': op = mtgl.AOR
-            else: lts.LituusException(lts.ETAGGING,"Illegal op {}".format(op))
+            elif tkn == 'and': op = mtgl.AOR
+            else: lts.LituusException(lts.ETAGGING, "Illegal op {}".format(op))
+        except Exception as e:
+            raise lts.LituusException(
+                lts.EUNDEF,"Unknown error {} in _nchain_".format(e)
+            )
 
-    # chain the characteristics, merge the proplists & move suffix if present
-    attrs = {}
-    chs = op.join(vals)
-    merged = mtgltag.merge_attrs(tas)
-    if 'suffix' in merged: attrs['suffix'] = merged['suffix']
-    if meta: attrs['meta'] = op.join(mt[0]+mtgl.EQ+mt[1] for mt in meta)
+    # check alignments, merge the attributes & returned chained characteristics
+    return mtgltag.retag('ch',op.join(_aligned_(vals)),mtgltag.merge_attrs(attrs))
 
-    # Create implied object if necessary. Then add chained characteristics
-    if not tid:
-        tid = 'ob'
-        val = _implied_obj_(vals)
-    attrs['characteristics'] = chs
+def _aligned_(vals):
+    """
+    determines in a list of characteristic tag-values, if an align is present wether
+    the alignment remains as is or should be a subclass of operator. Arranges the
+    list of values such that an alignment will be in the first value
+    :param tkns: list of characteristics which may or may not contain an alignment
+    :return: the new list of tkns
+    """
+    # first determine if there is an alignment operator
+    i = main = sub = None
+    for i,val in enumerate(vals):
+        if mtgl.ARW in val:
+            main,sub = val.split(mtgl.ARW)
+            break
+    if not main: return vals
+    else: vals = vals.copy()
 
-    # retag the chained characteristics and return
-    return mtgltag.retag(tid,val,attrs) + space
+    # determine if each other value is a subtype of the aligned type
+    align = True
+    for j,val in enumerate(vals):
+        # ignore the aligned token
+        if j == i: continue
+        if mtgl.ARW in val: val = val.split(mtgl.ARW)[1]
+
+        # check each operand if there conjunctions
+        for par in mtgltag.operand(val):
+            try:
+                if not mtgl.subtype_of(mtgltag.strip(par),main):
+                    align = False
+                    break
+            except lts.LituusException:
+                align = False
+                break
+
+    # if align is True, put the main type and alignment op at the first value
+    # otherwise replace the align operator with a subclass operator
+    if align:
+        vals[0] = main + mtgl.ARW + vals[0]
+        vals[i] = sub
+    else:
+        vals[i] = vals[i].replace(mtgl.ARW,mtgl.SUB)
+
+    # have to check whether
+    return vals
 
 def _ncolor_(m):
     """
@@ -529,15 +564,15 @@ def _2chain_conj_(m):
     # return the conjoined characteristic
     return mtgltag.retag('ch',val1+op+val2,mtgltag.merge_attrs([attr1,attr2]))
 
-def _implied_obj_(cs):
-    """
-    determines from list of characteristics what value an object should have
-    109.2 if there is a reference to a type or subtype but not card,spell or source,
-    it means a permanent of that type or subtype
-    :param cs: list of characteristics
-    :return: 'card' or 'permanent' based on rule 109.2
-    """
-    for c in cs:
-        x = c.replace(mtgl.NOT,'') # remove any negations
-        if x in mtgl.type_characteristics+mtgl.sub_characteristics: return 'permanent'
-    return 'card'
+#def _implied_obj_(cs):
+#    """
+#    determines from list of characteristics what value an object should have
+#    109.2 if there is a reference to a type or subtype but not card,spell or source,
+#    it means a permanent of that type or subtype
+#    :param cs: list of characteristics
+#    :return: 'card' or 'permanent' based on rule 109.2
+#    """
+#    for c in cs:
+#        x = c.replace(mtgl.NOT,'') # remove any negations
+#        if x in mtgl.type_characteristics+mtgl.sub_characteristics: return 'permanent'
+#    return 'card'

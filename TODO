@@ -67,3 +67,8 @@ a lot becuase the first object is a token
 
 71. Add a english i.e. ASCII field for names like Lim-dul's vault
 
+72. Have to make sure the subclass operator fits 
+ a. Wave of Vitriol goes type<-super
+ b. Cautery Sliver goes type<-sub
+
+74. 
