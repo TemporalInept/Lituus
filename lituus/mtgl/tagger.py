@@ -230,7 +230,7 @@ def midprocess(txt):
     ntxt = mtgl.re_hanging_snow.sub(r"\1 ch<land>",ntxt)                 # 5.b
     ntxt = mtgl.re_equal_y.sub(r"nu<y>, where nu<y> is \1",ntxt)         # 6.a
     ntxt = mtgl.re_equal_z.sub(r"nu<z>",ntxt)                            # 6.b
-    #ntxt = mtgl.re_are_each.sub(r"",ntxt)                                # 6.c
+    ntxt = mtgl.re_are_each.sub(r"",ntxt)                                # 6.c
     return ntxt
 
 re_empty_postfix = re.compile(r"\ssuffix=(?=)>")
