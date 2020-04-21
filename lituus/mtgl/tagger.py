@@ -135,7 +135,7 @@ def first_pass(txt):
     ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)    # then nubmers
     ntxt = tag_entities(ntxt)                    # entities
     ntxt = tag_turn_structure(ntxt)              # phases & steps
-    ntxt = tag_operators(ntxt)  # operators
+    ntxt = tag_operators(ntxt)                   # operators
     ntxt = tag_english(ntxt)                     # english words
     ntxt = mtgl.re_trigger.sub(r"tp<\1>",ntxt)   # trigger preambles
     ntxt = tag_counters(ntxt)                    # markers
@@ -213,17 +213,22 @@ def midprocess(txt):
        3. deconflict incorrectly tagged tokens
        4. move suffixes to inside the tag's prop-list
        5. set up hanging basic and snow supertypes
+       6. arrange phrases with 'number'
+        a. arrange phrases of the form op<OP> xq<the> number of ... to read
+         op<OP> nu<y>, where nu<y> is the number of ... so that they read the
+         same as cards like "As Foretold"
+        b. replace "any number of" with nu<z>
     :param txt: tagged oracle txt
     :return: processed oracle txt
     """
-    ntxt = mtgl.re_tkn_underscore.sub(                    # 1
-        lambda m: mtgl.tkn_underscore[m.group(1)],txt
-    )
-    ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)        # 2
-    ntxt = deconflict_tags(ntxt)                          # 3
-    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)   # 4
-    ntxt = mtgl.re_hanging_basic.sub(r"\1 ch<land>",ntxt) # 5
-    ntxt = mtgl.re_hanging_snow.sub(r"\1 ch<land>",ntxt)  # 5
+    ntxt = mtgl.re_val_join.sub(lambda m: mtgl.val_join[m.group(1)],txt) # 1
+    ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                       # 2
+    ntxt = deconflict_tags(ntxt)                                         # 3
+    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)                  # 4
+    ntxt = mtgl.re_hanging_basic.sub(r"\1 ch<land>",ntxt)                # 5
+    ntxt = mtgl.re_hanging_snow.sub(r"\1 ch<land>",ntxt)                 # 5
+    ntxt = mtgl.re_equal_y.sub(r"nu<y>, where nu<y> is \1",ntxt)         # 6.a
+    ntxt = mtgl.re_equal_z.sub(r"nu<z>",ntxt)                            # 6.b
     return ntxt
 
 re_empty_postfix = re.compile(r"\ssuffix=(?=)>")

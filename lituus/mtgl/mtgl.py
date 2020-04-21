@@ -12,7 +12,7 @@ Defines regexes,strings and helper functions used in the mtgl format
 
 #__name__ = 'mtgl'
 __license__ = 'GPLv3'
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 __date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -351,9 +351,9 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 ## NUMBERS
 ####
 
-# numbers are 1 or more digits or the variable X and are not preceded by a brace,
+# numbers are 1 or more digits or a variable X, Y, Z and are not preceded by a brace,
 # '{', which indicates a mana symbol or another
-re_number = re.compile(r"(?<![a-z{])(\d+|x)\b")
+re_number = re.compile(r"(?<![a-z{])(\d+|x|y|z)\b")
 
 ####
 ## ENTITIES
@@ -439,7 +439,7 @@ op_keys = [
 re_op = re.compile(r"\b({})\b".format('|'.join(list(op_keys))))
 
 # finds number or greater and number or less
-re_num_op = re.compile(r"(nu<(?:\d+|x)>)\sor\s(greater|less)")
+re_num_op = re.compile(r"(nu<(?:\d+|x|y|z)>)\sor\s(greater|less)")
 
 # prepositions (check for ending tags)
 prepositions = [
@@ -761,7 +761,7 @@ re_ch = re.compile(
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
-re_ch_pt = re.compile(r"(\+|-)?nu<(\d+|x)>/(\+|-)?nu<(\d+|x)>(?!\scounter)")
+re_ch_pt = re.compile(r"(\+|-)?nu<(\d+|x|y|z)>/(\+|-)?nu<(\d+|x|y|z)>(?!\scounter)")
 
 # lituus characteristics
 # TODO: keep control, own?
@@ -796,7 +796,7 @@ re_zone = re.compile(
 # we do this mid-pass because the tagger is looking untagged words. As such,
 #  we have to look for the tagged phrase for will of the Council which will be
 #  tagged ch<will> of xq<the> council have to handjam this for now
-tkn_underscore = {
+val_join = {
     "city's blessing":"city's_blessing","precombat main":"precombat_main",
     "postcombat main":"postcombat_main","beginning of combat":"beginning_of_combat",
     "declare attackers":"declare_attackers","declare blockers":"declare_blockers",
@@ -813,8 +813,8 @@ tkn_underscore = {
     "jump-start":"jump_start","assembly-worker":"assembly_worker",
     "color identity":"color_identity",
 }
-tkn_underscore_tkns = '|'.join(tkn_underscore.keys())
-re_tkn_underscore = re.compile(r"(?<=<)({})(?=>)".format(tkn_underscore_tkns))
+val_join_tkns = '|'.join(val_join.keys())
+re_val_join = re.compile(r"(?<=<)({})(?=>)".format(val_join_tkns))
 
 # Negated tags i.e. non-XX<...>
 re_negate_tag = re.compile(r"non-(\w\w)<(.+?)>")
@@ -831,6 +831,13 @@ re_hanging_snow = re.compile(
     r"(?=\sch<¬?(?:forest|island|mountain|plains|swamp)"
       r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
+
+# phrases related to number of something
+#  1. use nu<y> to denote "the number of" i.e. Beseech the Queen "less than or
+#   equal to the number of lands"
+#  2. use nu<z> to denote "any number of" i.e. Ad Nauseum "any number of times"
+re_equal_y = re.compile(r"(?<=op<[⊕⋖⋗≤≥≡]>\s)(xq<the>\snumber\sof)")
+re_equal_z = re.compile(r"xq<any> number of")
 
 ####
 ## STATUS DECONFLICTION
