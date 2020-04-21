@@ -136,6 +136,7 @@ def first_pass(txt):
     ntxt = tag_entities(ntxt)                    # entities
     ntxt = tag_turn_structure(ntxt)              # phases & steps
     ntxt = tag_english(ntxt)                     # english words
+    ntxt = tag_operators(ntxt)                   # operators
     ntxt = mtgl.re_trigger.sub(r"tp<\1>",ntxt)   # trigger preambles
     ntxt = tag_counters(ntxt)                    # markers
     ntxt = tag_awkws(ntxt)                       # ability words, keywords & actions
@@ -161,17 +162,25 @@ def tag_turn_structure(txt):
 
 def tag_english(txt):
     """ tags important english words """
-    ntxt = mtgl.re_op.sub(                  # operators
-        lambda m: "op<{}>".format(mtgl.op[m.group(1)]),txt
-    )
-    ntxt = mtgl.re_prep.sub(r"pr<\1>",ntxt) # tag prepositions
+    ntxt = mtgl.re_prep.sub(r"pr<\1>",txt) # tag prepositions
     ntxt = mtgl.re_cond.sub(r"cn<\1>",ntxt) # & conditional/rqmt
-    return mtgl.re_seq.sub(r"sq<\1>",ntxt)  # & sequence words
+    ntxt = mtgl.re_seq.sub(r"sq<\1>",ntxt)  # & sequence words
+    return ntxt
+
+def tag_operators(txt):
+    """ tags math/comparison operators """
+    # have to execute two substitutions for operators
+    #  1. simple replacment of english with operator symbol
+    #  2. transpose english words first then replace
+    ntxt = mtgl.re_op.sub(lambda m: "op<{}>".format(mtgl.op[m.group(1)]),txt)
+    ntxt = mtgl.re_num_op.sub(lambda m: _transpose_num_op_(m),ntxt)
+    return ntxt
 
 def tag_counters(txt):
     """ tags counters (markers) in txt returning tagged txt """
     ntxt = mtgl.re_pt_ctr.sub(r"xo<ctr type=\1\2/\3\4>",txt) # tag p/t counters
-    return mtgl.re_named_ctr.sub(r"xo<ctr type=\1>",ntxt)    # & named counters
+    ntxt = mtgl.re_named_ctr.sub(r"xo<ctr type=\1>",ntxt)    # & named counters
+    return ntxt
 
 def tag_awkws(txt):
     """ tags ability words, keywords and action words returning tagged txt """
@@ -267,7 +276,7 @@ def second_pass(txt):
     :param txt: initial tagged oracle txt (lowered case)
     :return: tagged oracle text
     """
-    # First, IOT faciliate chaining tag some anomalies:
+    # First, IOT faciliate chaining tag the following:
     #  a) chain color chains - this facilitates future chaining of characteristics
     #  like Stangg because color chains may be subchains inside the main chain
     #  b) handle special case of 'base power and toughness' replace phrase
@@ -281,7 +290,9 @@ def second_pass(txt):
     ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)         # c
     ntxt = align_types(ntxt)                                           # d
     ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # e
-    ntxt = chain(ntxt)
+
+    # then execute the primary chaining
+    #ntxt = chain(ntxt)
     return ntxt
 
 def color_chain(txt):
@@ -330,7 +341,6 @@ def chain(txt):
     # do these first as they may be inside a larger conjunction
     ntxt = mtgl.re_2chain_conj.sub(lambda m: _2chain_conj_(m),txt)
 
-
     # Multi chains:
     #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'and',
     #   'or' or 'and/or' which may or may not be followed by more characteristics
@@ -355,6 +365,21 @@ def chain(txt):
 ####
 ## PRIVATE FUNCTIONS
 ####
+
+def _transpose_num_op_(m):
+    """
+    transpose number or greater|less and replace english w/ symbol. For example,
+    nu<1> or greater becomes >= nu<1>
+    :param m:
+    :return:
+    """
+    # replace enlgish with operator symbol, then transpose with preceding number
+    op = m.group(2)
+    if op == 'greater': op = "op<" + mtgl.GE + ">"
+    elif op == 'less': op = "op<" + mtgl.LE + ">"
+    else:
+        raise lts.LituusException(lts.EDATA,"invalid operator ({})".format(op))
+    return "{} {}".format(op,m.group(1))
 
 def _metachar_(m):
     """

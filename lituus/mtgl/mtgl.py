@@ -419,6 +419,8 @@ re_generic_turn = re.compile(r"\b({})".format('|'.join(generic_turns)))
 ## tag important reoccuring english words, preoposition, & sequence/time
 ####
 
+## OPERATORS
+
 # TODO: need to tag less, more?
 #  TODO:
 #   In cases where the order of dicts should be preserved or as in the case of
@@ -435,6 +437,9 @@ op_keys = [
     "greater than","equal to","equal","plus","minus",
 ]
 re_op = re.compile(r"\b({})\b".format('|'.join(list(op_keys))))
+
+# finds number or greater and number or less
+re_num_op = re.compile(r"(nu<(?:\d+|x)>)\sor\s(greater|less)")
 
 # prepositions (check for ending tags)
 prepositions = [
@@ -1001,13 +1006,22 @@ re_2chain_exception = re.compile(
 )
 
 # Two characteristics separated by a conjunction ie. Sphinx of the Final Word
+# but cannot be preceded and/or followed by a characteristic i.e. Purge
+# TODO: does this stop legitimate conjunctions?
 re_2chain_conj = re.compile(
     r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"                            
     r"\s(and|or|and/or)\s"
     r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
-# comma-delimited conjoined multi chain with a conjunction
+re_2chain_conj2 = re.compile(
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>\s){0,1}"
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"                            
+    r"\s(and|or|and/or)\s"
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+    r"(\sch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>){0,1}"
+)
+
 # two or more comma-delimited characteristics with a conjunction
 # three variants
 #  a) Followed by one or more characteristics and an object i.e. Quest for Ula's
@@ -1021,14 +1035,13 @@ re_nchain_conj = re.compile(
     r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>,\s){1,}" 
     r"(and|or|and/or)\s"                                                
     r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
-    #r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)?"
 )
-#'⭰'
+
 # three or more space delimted characteristics followed by an object i.e.
 # Spawning Pit ch<p/t val=2/2> ch<colorless> ch<spawn> ch<artifact> ch<creature>
 re_nchain_space = re.compile(
     # have a last characteristic IOT not capture the last space if there is no object
-    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>\s){2,}"
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>\s){1,}"
     r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
     #r"(\sob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)?"
 )
