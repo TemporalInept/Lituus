@@ -836,8 +836,10 @@ re_hanging_snow = re.compile(
 #  1. use nu<y> to denote "the number of" i.e. Beseech the Queen "less than or
 #   equal to the number of lands"
 #  2. use nu<z> to denote "any number of" i.e. Ad Nauseum "any number of times"
+#  3. remove "are each" if followed by an operator
 re_equal_y = re.compile(r"(?<=op<[⊕⋖⋗≤≥≡]>\s)(xq<the>\snumber\sof)")
 re_equal_z = re.compile(r"xq<any> number of")
+re_are_each = re.compile(r"are\sxq<each>\s(?=op<[⊕⋖⋗≤≥≡]>)")
 
 ####
 ## STATUS DECONFLICTION

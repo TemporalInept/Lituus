@@ -212,12 +212,13 @@ def midprocess(txt):
        2. moves 'non-' in front of a tag to the negated symbol '¬' inside the tag
        3. deconflict incorrectly tagged tokens
        4. move suffixes to inside the tag's prop-list
-       5. set up hanging basic and snow supertypes
+       5. set up hanging (a) basic and (b) snow supertypes
        6. arrange phrases with 'number'
         a. arrange phrases of the form op<OP> xq<the> number of ... to read
          op<OP> nu<y>, where nu<y> is the number of ... so that they read the
          same as cards like "As Foretold"
         b. replace "any number of" with nu<z>
+        c. remove "are each" if followed by an operator
     :param txt: tagged oracle txt
     :return: processed oracle txt
     """
@@ -225,10 +226,11 @@ def midprocess(txt):
     ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                       # 2
     ntxt = deconflict_tags(ntxt)                                         # 3
     ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)                  # 4
-    ntxt = mtgl.re_hanging_basic.sub(r"\1 ch<land>",ntxt)                # 5
-    ntxt = mtgl.re_hanging_snow.sub(r"\1 ch<land>",ntxt)                 # 5
+    ntxt = mtgl.re_hanging_basic.sub(r"\1 ch<land>",ntxt)                # 5.a
+    ntxt = mtgl.re_hanging_snow.sub(r"\1 ch<land>",ntxt)                 # 5.b
     ntxt = mtgl.re_equal_y.sub(r"nu<y>, where nu<y> is \1",ntxt)         # 6.a
     ntxt = mtgl.re_equal_z.sub(r"nu<z>",ntxt)                            # 6.b
+    #ntxt = mtgl.re_are_each.sub(r"",ntxt)                                # 6.c
     return ntxt
 
 re_empty_postfix = re.compile(r"\ssuffix=(?=)>")
