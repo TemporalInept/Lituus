@@ -135,8 +135,8 @@ def first_pass(txt):
     ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)    # then nubmers
     ntxt = tag_entities(ntxt)                    # entities
     ntxt = tag_turn_structure(ntxt)              # phases & steps
+    ntxt = tag_operators(ntxt)  # operators
     ntxt = tag_english(ntxt)                     # english words
-    ntxt = tag_operators(ntxt)                   # operators
     ntxt = mtgl.re_trigger.sub(r"tp<\1>",ntxt)   # trigger preambles
     ntxt = tag_counters(ntxt)                    # markers
     ntxt = tag_awkws(ntxt)                       # ability words, keywords & actions
@@ -360,7 +360,6 @@ def chain(txt):
     #ntxt = mtgl.re_2chain_quant_obj.sub(lambda m: _2chain_qo_(m),ntxt)
 
     return ntxt
-
 
 ####
 ## PRIVATE FUNCTIONS
