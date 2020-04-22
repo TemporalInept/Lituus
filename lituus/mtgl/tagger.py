@@ -289,19 +289,20 @@ def second_pass(txt):
     #  b) handle special case of 'base power and toughness' replace phrase
     #   base ch<power> and ch<toughness> ch<p/t val=X/Y> with ch<p/t val=X/Y>
     #  c) temporarily tag attributes (stand alone meta-characteristics) as xr
-    #  d) assign values where possible to temp. attributes
+    #  d) assign values where possible to temporary attributes
     #  e) align supertypes and subtypes
     #  f) 'and' comma-delimited char pair in char, char char as in Terror but
     #   not Royal Decree
     ntxt = color_chain(txt)                                            # a
     ntxt = powt(ntxt)                                                  # b
     ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)         # c
-    ntxt = mtgl.re_attr_val.sub(r"xr<\1 val\2\3>",ntxt)                # d
+    ntxt = mtgl.re_attr_val.sub(r"xr<\1 val=\2\3>",ntxt)               # d
+    ntxt = mtgl.re_attr_val_nop.sub(r"xr<\1 val=≡\2>",ntxt)            # d
     ntxt = align_types(ntxt)                                           # e
     ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # f
 
     # then execute the primary chaining
-    ntxt = chain(ntxt)
+    #ntxt = chain(ntxt)
     return ntxt
 
 def color_chain(txt):
@@ -600,8 +601,8 @@ def _2chain_conj_(m):
 #def _implied_obj_(cs):
 #    """
 #    determines from list of characteristics what value an object should have
-#    109.2 if there is a reference to a type or subtype but not card,spell or source,
-#    it means a permanent of that type or subtype
+#    109.2 if there is a reference to a type or subtype but not card, spell or
+#    source, it means a permanent of that type or subtype
 #    :param cs: list of characteristics
 #    :return: 'card' or 'permanent' based on rule 109.2
 #    """

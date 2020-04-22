@@ -773,6 +773,9 @@ re_attr_val = re.compile(
     r"nu<(\d+|x|y|z)>"
 )
 
+# meta 'attribute' value see Repeal where no operator is present
+re_attr_val_nop = re.compile(r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)>\snu<(\d+|x|y|z)>")
+
 # lituus characteristics
 # TODO: keep control, own?
 lituus_characteristics = ['life total','control','own','life','hand size','devotion']

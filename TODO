@@ -73,10 +73,13 @@ a lot becuase the first object is a token
 
 74. See Purge ch<artifact> ch<creature∨black> ch<creature> it should be 
 creature&artifact or black&creature
-
-75. See Elven Riders - the "with flying" only applies to the creatures and not the walls
+ o See Elven Riders - the "with flying" only applies to the creatures and not the walls
+ Both of these occur in  mtgl.re_2chain_conj
 
 76. Add support for flip lands from Ixalan, and other new land types from last 3 sets
 
-78.
+78. In regex patterns for tag-value, remove the "'" single quote as it is only present in attributes
+
+79.
+
 

@@ -76,8 +76,8 @@ re_loy_cost = re.compile(r"[\+−]?nu<[\d|x]+>")
 re_tag = re.compile(
     r"(\w\w)"                         # 2 char tag-id       
     r"<"                              # opening bracket
-    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬→⭰']+?)"  # tag value (w/ optional starting not)
-    r"(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→⭰]+?)*"  # 0 or more attributes delimited by space
+    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬→⭰]+?)"   # tag value (w/ optional starting not)
+    r"(\s[\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*" # 0 or more attributes delimited by space
     r">"                              # closing bracket
 )
 
@@ -140,7 +140,7 @@ def untag(tkn):
                 p[0]:p[1] for p in [p.split('=') for p in re_tag_attrs.findall(tkn)]
             }
         return tag,val,attrs
-    except (AttributeError,TypeError):
+    except AttributeError: # signifies a None returned from re_tag
         raise lts.LituusException(lts.ETAG,"Invalid tag {}".format(tkn))
 
 def operand(tkn,op=False):
@@ -170,10 +170,10 @@ def merge_attrs(attrs,strict=1):
      differing values
     :param attrs: list of attribute lists
     :param strict: oneof:
-      0 = Low no checking on sameness across parameters/parameter values
-      1 = Medium parameter values across common parameters must be the same but
+      0 = LOW no checking on sameness across parameters/parameter values
+      1 = MEDIUM parameter values across common parameters must be the same but
        parameters are not required to be shared across all attribute dicts
-      2 = High parameters and parameter values must be the same in each prop list
+      2 = HIGH parameters and parameter values must be the same in each prop list
     :return: merged attribute dicts
     """
     mattrs = {}
