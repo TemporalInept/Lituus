@@ -289,17 +289,19 @@ def second_pass(txt):
     #  b) handle special case of 'base power and toughness' replace phrase
     #   base ch<power> and ch<toughness> ch<p/t val=X/Y> with ch<p/t val=X/Y>
     #  c) temporarily tag attributes (stand alone meta-characteristics) as xr
-    #  d) align supertypes and subtypes
-    #  e) 'and' comma-delimited char pair in char, char char as in Terror but
+    #  d) assign values where possible to temp. attributes
+    #  e) align supertypes and subtypes
+    #  f) 'and' comma-delimited char pair in char, char char as in Terror but
     #   not Royal Decree
     ntxt = color_chain(txt)                                            # a
     ntxt = powt(ntxt)                                                  # b
     ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)         # c
-    ntxt = align_types(ntxt)                                           # d
-    ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # e
+    ntxt = mtgl.re_attr_val.sub(r"xr<\1 val\2\3>",ntxt)                # d
+    ntxt = align_types(ntxt)                                           # e
+    ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # f
 
     # then execute the primary chaining
-    #ntxt = chain(ntxt)
+    ntxt = chain(ntxt)
     return ntxt
 
 def color_chain(txt):
@@ -354,7 +356,7 @@ def chain(txt):
     #    and/or an object
     #  b) 3 or more space separated characteristics w/o a conjuction and followed
     #   by a an object Spawning Pit
-    ntxt = mtgl.re_nchain_conj.sub(lambda m: _nchain_(m),ntxt)
+    #ntxt = mtgl.re_nchain_conj.sub(lambda m: _nchain_(m),ntxt)
     #ntxt = mtgl.re_nchain_space.sub(lambda m: _nchain_(m),ntxt)
 
     # Dual chains make up the prevalent characteristic chain but care must be

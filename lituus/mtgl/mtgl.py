@@ -763,6 +763,16 @@ re_ch = re.compile(
 # seperate procedure for tagging p/t has to be done after numbers are tagged
 re_ch_pt = re.compile(r"(\+|-)?nu<(\d+|x|y|z)>/(\+|-)?nu<(\d+|x|y|z)>(?!\scounter)")
 
+# meta 'attribute' values see Rathi Intimidator picks out three values 1) the
+# attribute, 2) the operator and 3) the value of the attribute
+re_attr_val = re.compile(
+    r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)>"
+    r"\s"
+    r"op<([⊕⋖⋗≤≥≡])>"
+    r"\s"
+    r"nu<(\d+|x|y|z)>"
+)
+
 # lituus characteristics
 # TODO: keep control, own?
 lituus_characteristics = ['life total','control','own','life','hand size','devotion']
