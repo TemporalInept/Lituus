@@ -286,11 +286,8 @@ def second_pass(txt):
     # pre_chain for easier chaining
     ntxt = pre_chain(txt)
 
-    # objectify singleton characteristics
-    ntxt = reify(ntxt)
-
     # then execute the primary chaining
-    #ntxt = chain(ntxt)
+    ntxt = chain(ntxt)
     return ntxt
 
 def pre_chain(txt):
@@ -299,34 +296,18 @@ def pre_chain(txt):
     :param txt: txt to prechain
     :return: prechainned text
     """
-    #  a) chain color chains - this facilitates future chaining of characteristics
-    #  like Stangg because color chains may be subchains inside the main chain
-    #  b) handle special case of 'base power and toughness' replace phrase
+    #  1) handle special case of 'base power and toughness' replace phrase
     #   base ch<power> and ch<toughness> ch<p/t val=X/Y> with ch<p/t val=X/Y>
-    #  c) temporarily tag attributes (stand alone meta-characteristics) as xr
-    #  d) assign values where possible to temporary attributes
-    #  e) align supertypes and subtypes
-    #  f) 'and' comma-delimited char pair in char, char char as in Terror but
-    #   not Royal Decree
-    ntxt = color_chain(txt)                                            # a
-    ntxt = powt(ntxt)                                                  # b
-    ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)         # c
-    ntxt = mtgl.re_attr_val.sub(r"xr<\1 val=\2\3>",ntxt)               # d
-    ntxt = mtgl.re_attr_val_nop.sub(r"xr<\1 val=≡\2>",ntxt)            # d
-    ntxt = align_types(ntxt)                                           # e
-    ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # f
-    return ntxt
-
-def color_chain(txt):
-    """
-    chains color chains both dual and nchains. Color chains will either be
-    conjuctive i.e clr1 and clr2 or comma-delimited i.e. clr1, clr2, or clr3
-    :param txt: current text
-    :return: txt with color chains
-    """
-    # do nchains then dual chains
-    ntxt = mtgl.re_nchain_clr.sub(lambda m: _ncolor_(m),txt)
-    ntxt = mtgl.re_2chain_clr.sub(lambda m: _2color_(m),ntxt)
+    #  2) attributes - (stand alone meta-characteristics)
+    #   a. temporarily tag attributes as xr
+    #   b. assign values where possible to temporary attributes including c.
+    #    those without an operator
+    #  3) align supertypes and subtypes
+    ntxt = powt(txt)                                                   # 1
+    ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)         # 2.a
+    ntxt = mtgl.re_attr_val.sub(r"xr<\1 val=\2\3>",ntxt)               # 2.b
+    ntxt = mtgl.re_attr_val_nop.sub(r"xr<\1 val=≡\2>",ntxt)            # 2.c
+    ntxt = align_types(ntxt)                                           # 3
     return ntxt
 
 def powt(txt):
@@ -335,7 +316,7 @@ def powt(txt):
     :param txt: tagged oracle txt
     :return: modified tagged txt with power and toughness and p/t chains tagged
     """
-    ntxt = mtgl.re_base_pt.sub(r"\1",txt)                    # base power and toughness
+    ntxt = mtgl.re_base_pt.sub(r"\1",txt)                    # base power & toughness
     ntxt = mtgl.re_single_pt.sub(r"ch<p/t>",ntxt)            # solitary power & toughness
     ntxt = mtgl.re_pt_chain.sub(lambda m: _ptchain_(m),ntxt) # p/t or p/t chain
     return ntxt
@@ -351,16 +332,6 @@ def align_types(txt):
     ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)
     return ntxt
 
-def reify(txt):
-    """
-    objectifies singleton types. Finds type characteristics that are not part of
-    a chain and creates an object
-    :param txt: original text
-    :return: objectified text
-    """
-    ntxt = mtgl.re_singleton_type.sub(lambda m: _reify_st_(m),txt)
-    return ntxt
-
 def chain(txt):
     """
      Sequential comma separated charcteristics can be combined into the
@@ -369,9 +340,17 @@ def chain(txt):
     :return: modified tagged txt with sequential characterisitcs chained
     NOTE: these must be followed in order
     """
+    # IOT assist in chaining characteristics chain colors, types and exceptions
+    # then reify singleton characteristics
+    ntxt = color_chain(txt)
+    ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt)
+    ntxt = type_chain(ntxt)
+    #ntxt = reify(ntxt)
+
+    #### HAVE TO WORK ON THESE ####
     # chain two characteristics delimited by a conjuction CHAR CONJ CHAR
     # do these first as they may be inside a larger conjunction
-    ntxt = mtgl.re_2chain_conj.sub(lambda m: _2chain_conj_(m),txt)
+    #ntxt = mtgl.re_2chain_conj.sub(lambda m: _2chain_conj_(m),txt)
 
     # Multi chains:
     #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'and',
@@ -391,6 +370,44 @@ def chain(txt):
     #ntxt = mtgl.re_2chain_conjunction.sub(lambda m: _nchain_(m),ntxt)
     #ntxt = mtgl.re_2chain_quant_obj.sub(lambda m: _2chain_qo_(m),ntxt)
 
+    return ntxt
+
+def color_chain(txt):
+    """
+    chains color chains both dual and nchains. Color chains will either be
+    conjuctive i.e clr1 and clr2 or comma-delimited i.e. clr1, clr2, or clr3
+    :param txt: current text
+    :return: txt with color chains
+    """
+    # do nchains then dual chains
+    ntxt = mtgl.re_nchain_clr.sub(lambda m: _ncolor_(m),txt)
+    ntxt = mtgl.re_2chain_clr.sub(
+        lambda m: r"ch<{}{}{}>".format(
+            m.group(1),mtgl.conj_op[m.group(2)],m.group(3)
+        ),ntxt
+    )
+    return ntxt
+
+def type_chain(txt):
+    """
+    chains type chains both dual and nchains. Type chains will either be
+    conjuctive i.e type1 and type2 or comma-delimited i.e. type1, type2, or type3
+    :param txt: current text
+    :return: txt with type chains
+    """
+    # do nchains then dual chains
+    ntxt = mtgl.re_nchain_type.sub(lambda m: _ntype_(m),txt)
+    ntxt = mtgl.re_2chain_type.sub(lambda m: _2type_(m),ntxt)
+    return ntxt
+
+def reify(txt):
+    """
+    objectifies singleton types. Finds type characteristics that are not part of
+    a chain and creates an object
+    :param txt: original text
+    :return: objectified text
+    """
+    ntxt = mtgl.re_singleton_type.sub(lambda m: _reify_st_(m),txt)
     return ntxt
 
 ####
@@ -463,6 +480,62 @@ def _reify_st_(m):
     attr['characteristics'] = val                # add type(s) to attribute dict
     return mtgltag.retag('ob',oval,attr)         # & return the new object
 
+def _ncolor_(m):
+    """
+    chains n color characteristics together. They will be comma-delimited and have
+    a conjuction
+    :param m: a regex.Match object
+    :return: the chained colors
+    """
+    clrs = []
+    op = None
+    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
+        try:
+            # unpack the color
+            clrs.append(mtgltag.untag(tkn)[1])
+        except lts.LituusException:
+            try:
+                op = mtgl.conj_op[tkn]
+            except KeyError:
+                raise lts.LituusException(lts.ETAGGING, "Illegal op {}".format(tkn))
+    return mtgltag.retag('ch',op.join(clrs),{})
+
+def _ntype_(m):
+    """
+    chains n type characteristics (comma-delimited with conjuction)
+    :param m: a regex.Match object
+    :return: the chained types
+    """
+    vals = []
+    attrs = []
+    op = None
+    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
+        try:
+            # unpack the type and keep the attributes (may have suffixes)
+            _,val,attr = mtgltag.untag(tkn)
+            vals.append(val)
+            attrs.append(attr)
+        except lts.LituusException:
+            try:
+                op = mtgl.conj_op[tkn]
+            except KeyError:
+                raise lts.LituusException(lts.ETAGGING, "Illegal op {}".format(tkn))
+    return mtgltag.retag('ch',op.join(vals),mtgltag.merge_attrs(attrs))
+
+def _2type_(m):
+    """
+    chains 2 type characteristics separated by a conjunction
+    :param m: a regex.Match object
+    :return: the chained types
+    """
+    _,val1,attr1 = mtgltag.untag(m.group(1))
+    _,val2,attr2 = mtgltag.untag(m.group(3))
+    try:
+        op = mtgl.conj_op[m.group(2)]
+    except KeyError:
+        raise lts.LituusException(lts.ETAGGING,"Illegal op {}".format(m.group(2)))
+    return mtgltag.retag('ch',val1+op+val2,mtgltag.merge_attrs([attr1,attr2]))
+
 def _nchain_(m):
     """
     chains comma or space separated characteristics possibly cantaining an 'and'/'or'
@@ -502,10 +575,10 @@ def _nchain_(m):
                 attrs.append(ta)
         except lts.LituusException:
             # we've hit the operator, save it
-            if tkn == 'and': op = mtgl.AND
-            elif tkn == 'or': op = mtgl.OR
-            elif tkn == 'and': op = mtgl.AOR
-            else: lts.LituusException(lts.ETAGGING, "Illegal op {}".format(op))
+            try:
+                op = mtgl.conj_op[tkn]
+            except KeyError:
+                raise lts.LituusException(lts.ETAGGING, "Illegal op {}".format(tkn))
         except Exception as e:
             raise lts.LituusException(
                 lts.EUNDEF,"Unknown error {} in _nchain_".format(e)
@@ -559,42 +632,6 @@ def _aligned_(vals):
     # have to check whether
     return vals
 
-def _ncolor_(m):
-    """
-    chains n color characteristics together. They will be comma-delimited and have
-    a conjuction
-    :param m: a regex.Match object
-    :return: the chained colors
-    """
-    clrs = []
-    op = None
-    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
-        try:
-            # unpack the color
-            clrs.append(mtgltag.untag(tkn)[1])
-        except lts.LituusException:
-            # found the operator (should only have 'and' or 'or but check for 'and/or'
-            if tkn == 'and': op = mtgl.AND
-            elif tkn == 'or': op = mtgl.OR
-            elif tkn == 'and/or': op = mtgl.AOR
-            else: lts.LituusException(lts.ETAGGING, "Illegal op {}".format(op))
-    return mtgltag.retag('ch',op.join(clrs),{})
-
-def _2color_(m):
-    """
-    chains two color characteristics together. They can be seperated by a conjuction
-    or a comma
-    :param m: a regex.Match object
-    :return: the chained colors
-    """
-    # 3  groups color1, operator, color2 (assumes no attributes for colors)
-    op = m.group(2)                     # determine the operator
-    if op == 'or': op = mtgl.OR
-    elif op == 'and': op = mtgl.AND
-    elif op == 'and/or': op = mtgl.AOR
-    else: raise lts.LituusException(lts.ETAGGING,"Illegal op {}".format(op))
-    return mtgltag.retag('ch',m.group(1) + op + m.group(3),{})
-
 def _2chain_ex_(m):
     """
     chains the 2chain exception CHAR, CHAR OBJ|CHAR
@@ -628,10 +665,10 @@ def _2chain_conj_(m):
     _,val2,attr2 = mtgltag.untag(ch2)
 
     # convert operator to symbol
-    if op == 'and': op = mtgl.AND
-    elif op == 'or': op = mtgl.OR
-    elif op == 'and/or': op = mtgl.AOR
-    else: lts.LituusException(lts.ETAGGING, "Illegal op {}".format(op))
+    try:
+        op = mtgl.conj_op[op]
+    except KeyError:
+        raise lts.LituusException(lts.ETAGGING, "Illegal op {}".format(op))
 
     # return the conjoined characteristic
     return mtgltag.retag('ch',val1+op+val2,mtgltag.merge_attrs([attr1,attr2]))

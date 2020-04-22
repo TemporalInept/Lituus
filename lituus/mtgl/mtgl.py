@@ -112,7 +112,7 @@ MIN = '−' # not used yet (found in negative loyalty costs)
 
 # CATCHALLS
 # re_dbl_qte = r'".*?"'                            # double quoted string
-re_rem_txt = re.compile(r"\(.+?\)")                # reminder text
+re_rem_txt = re.compile(r"\(.+?\)\n?")             # reminder text
 re_mana_remtxt = re.compile(r"\(({t}: add.+?)\)")  # find add mana inside ()
 re_non = re.compile(r"non(\w)")                    # find 'non' without hyphen
 re_un = re.compile(r"un(\w)")                      # find 'un'
@@ -131,6 +131,11 @@ re_param_delim_wop = re.compile(r"([∧∨⊕⋖⋗≤≥≡→⭰])")  # w\ ope
 
 # matches prefix operators
 re_param_prefix = re.compile(r"[\+\-¬]")
+
+# conjunction operators
+conj_op = {'and':AND,'or':OR,'and/or':AOR}
+conj_op_tkns = '|'.join(conj_op)
+re_conj_op = re.compile(r"\b({})\b".format(conj_op_tkns))
 
 ####
 ## CARD REFERENCES
@@ -776,6 +781,14 @@ re_attr_val = re.compile(
 # meta 'attribute' value see Repeal where no operator is present
 re_attr_val_nop = re.compile(r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)>\snu<(\d+|x|y|z)>")
 
+# ... base power and toughness X/Y i.e. Godhead of Awe then power and toughness
+# i.e Transmutation
+re_base_pt = re.compile(
+    r"base\sch<power>\sand\sch<toughness>\s"
+    r"(ch<p/t(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+)
+re_single_pt = re.compile(r"ch<power>\sand\sch<toughness>")
+
 # lituus characteristics
 # TODO: keep control, own?
 lituus_characteristics = ['life total','control','own','life','hand size','devotion']
@@ -976,16 +989,17 @@ re_align_sub_sc = re.compile(
 
 # find singleton types, characteristics that have
 #  one or more logical operator joined types
-#  are not preceded by a characteristic (and a space or comma space)
+#  are not preceded by a characteristic (and a comma or conjuction)
 #  may be followed by an object
 #  are not followed by a characteristic
 re_singleton_type = re.compile(
-    r"(?<!ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>,?\s)"
+    r"(?<!ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>"
+     r",?(?:\s(?:and|or|and/or))?\s)"
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
      r"(?:¬?[∧∨⊕](?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
     r"(?:\s(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>))?"
-    r"(?!\sch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+    r"(?!,?\sch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 ####
@@ -993,12 +1007,19 @@ re_singleton_type = re.compile(
 # Sequential characteristics
 ####
 
-# Three or more comma-delimited charateristics with conjunction i.e. Hazezon Tamar
-# As of IKO there are only 6
+# ... p/t X/Y or p/t A/B ...
+re_pt_chain = re.compile(
+    r"(ch<p/t(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+    r"\sor\s"
+    r"(ch<p/t(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+)
+
+# Three or more comma-delimited color characteristics with conjunction i.e. Hazezon
+# Tamar As of IKO there are only 6
 re_nchain_clr = re.compile(
     r"(ch<¬?(white|blue|black|green|red|colorless|multicolored|monocolored)>,\s){2,}"
     r"(and|or|and/or)\s"
-    r"ch<¬?(white|blue|black|green|red|colorless|multicolored|monocolored)>"
+    r"(ch<¬?(white|blue|black|green|red|colorless|multicolored|monocolored)>)"
 )
 
 # Two color characteristics separated by conjunction i.e. Cavern Harpy
@@ -1008,19 +1029,23 @@ re_2chain_clr = re.compile(
     r"ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored))>"
 )
 
-# ... base power and toughness X/Y i.e. Godhead of Awe then power and toughness
-# i.e Transmutation
-re_base_pt = re.compile(
-    r"base\sch<power>\sand\sch<toughness>\s"
-    r"(ch<p/t(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+# Three or more comma-delimited type characteristics w/ conjunction i.e. Swan Song
+# NOTE: We do not check for tribal or historic
+re_nchain_type = re.compile(
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>,\s){2,}"
+    r"(and|or|and/or)\s"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
-re_single_pt = re.compile(r"ch<power>\sand\sch<toughness>")
 
-# ... p/t X/Y or p/t A/B ...
-re_pt_chain = re.compile(
-    r"(ch<p/t(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
-    r"\sor\s"
-    r"(ch<p/t(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+# Two type characteristics separated by conjunction i.e. Aura of Silence
+re_2chain_type = re.compile(
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+    r"\s?(and|or|and/or)\s"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 # phrases of the form CHAR, CHAR OBJ|CHAR where:
@@ -1044,6 +1069,8 @@ re_2chain_exception = re.compile(
     r"((?:ch|ob)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
     r"(?!\s,?(?:ch|ob)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
+
+#**** TODO UNDER RCONSTRUCTION ****#
 
 # Two characteristics separated by a conjunction ie. Sphinx of the Final Word
 # but cannot be preceded and/or followed by a characteristic i.e. Purge

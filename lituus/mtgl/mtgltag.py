@@ -176,6 +176,7 @@ def merge_attrs(attrs,strict=1):
       2 = HIGH parameters and parameter values must be the same in each prop list
     :return: merged attribute dicts
     """
+    if not attrs: return {} # don't bother if the list is empty
     mattrs = {}
     keys = list(set.union(*map(set,[x.keys() for x in attrs])))
     for key in keys:

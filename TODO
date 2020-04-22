@@ -80,6 +80,7 @@ creature&artifact or black&creature
 
 78. In regex patterns for tag-value, remove the "'" single quote as it is only present in attributes
 
-79.
+79. reification of singleton types catches stuff like Swan Song ..sorcery spell
+ 
 
 
