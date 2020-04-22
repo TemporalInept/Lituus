@@ -971,6 +971,24 @@ re_align_sub_sc = re.compile(
 )
 
 ####
+## REIFICATION
+####
+
+# find singleton types, characteristics that have
+#  one or more logical operator joined types
+#  are not preceded by a characteristic (and a space or comma space)
+#  may be followed by an object
+#  are not followed by a characteristic
+re_singleton_type = re.compile(
+    r"(?<!ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>,?\s)"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+     r"(?:¬?[∧∨⊕](?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
+     r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+    r"(?:\s(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>))?"
+    r"(?!\sch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+)
+
+####
 ## CHAINS
 # Sequential characteristics
 ####

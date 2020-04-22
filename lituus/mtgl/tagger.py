@@ -283,7 +283,22 @@ def second_pass(txt):
     :param txt: initial tagged oracle txt (lowered case)
     :return: tagged oracle text
     """
-    # First, IOT faciliate chaining tag the following:
+    # pre_chain for easier chaining
+    ntxt = pre_chain(txt)
+
+    # objectify singleton characteristics
+    ntxt = reify(ntxt)
+
+    # then execute the primary chaining
+    #ntxt = chain(ntxt)
+    return ntxt
+
+def pre_chain(txt):
+    """
+    Facilitates chaining
+    :param txt: txt to prechain
+    :return: prechainned text
+    """
     #  a) chain color chains - this facilitates future chaining of characteristics
     #  like Stangg because color chains may be subchains inside the main chain
     #  b) handle special case of 'base power and toughness' replace phrase
@@ -300,9 +315,6 @@ def second_pass(txt):
     ntxt = mtgl.re_attr_val_nop.sub(r"xr<\1 val=≡\2>",ntxt)            # d
     ntxt = align_types(ntxt)                                           # e
     ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt) # f
-
-    # then execute the primary chaining
-    #ntxt = chain(ntxt)
     return ntxt
 
 def color_chain(txt):
@@ -337,6 +349,16 @@ def align_types(txt):
     ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),txt)
     ntxt = mtgl.re_align_sub_sc.sub(lambda m: _align_type_(m), ntxt)
     ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)
+    return ntxt
+
+def reify(txt):
+    """
+    objectifies singleton types. Finds type characteristics that are not part of
+    a chain and creates an object
+    :param txt: original text
+    :return: objectified text
+    """
+    ntxt = mtgl.re_singleton_type.sub(lambda m: _reify_st_(m),txt)
     return ntxt
 
 def chain(txt):
@@ -424,6 +446,22 @@ def _align_type_(m):
     tid,val,attr = mtgltag.untag(tkns[-1])
     val += mtgl.ARW + mtgl.AND.join([mtgltag.untag(tkn)[1] for tkn in tkns[:-1]])
     return mtgltag.retag(tid,val,attr)
+
+def _reify_st_(m):
+    """
+    creates an object from singleton types
+    :param m: a regex.Match object
+    :return: txt with singleton types reified
+    """
+    # 109.2 if there is a reference to a type or subtype but not card, spell or
+    # source, it means a permanent of that type or subtype
+    oval = 'permanent'                           # implied obj is a permanent
+    _,val,attr = mtgltag.untag(m.group(1))       # untag the type characteristic
+    if m.group(2):                               # if we have an object
+        _,oval,oattr = mtgltag.untag(m.group(2)) # untag it
+        attr = mtgltag.merge_attrs([oattr,attr]) # and merge the attribure dicts
+    attr['characteristics'] = val                # add type(s) to attribute dict
+    return mtgltag.retag('ob',oval,attr)         # & return the new object
 
 def _nchain_(m):
     """
