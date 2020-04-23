@@ -973,7 +973,7 @@ re_align_sub = re.compile(
       r"planeswalker|sorcery|tribal|historic)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
-# special case of subtype alignmnet where we have subtype characteristic type
+# special case of subtype alignment where we have subtype characteristic type
 re_align_sub_sc = re.compile(
     r"(ch<¬?(?:" + re_sub_char.pattern + ")>)"
     r"\s"
@@ -1039,13 +1039,15 @@ re_nchain_type = re.compile(
       r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
-# Two type characteristics separated by conjunction i.e. Aura of Silence
+# Two type characteristics separated by conjunction i.e. Aura of Silence but not
+# followed by a characteristic i.e. Temple Thief
 re_2chain_type = re.compile(
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
       r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
     r"\s?(and|or|and/or)\s"
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
       r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+    r"(?!\sch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 # phrases of the form CHAR, CHAR OBJ|CHAR where:
@@ -1060,7 +1062,7 @@ re_2chain_type = re.compile(
 #  the two characteristics will be chained
 # It will not match cards like Royal Decree (ch<mountain>, ch<black> ob<permanent>)
 # in which mountain is disjoint from black permanent
-re_2chain_exception = re.compile(
+re_2chain_special = re.compile(
     r"(?<=xq<\w+>\s)"
     r"(?:ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored|"
       r"artifact|creature|enchantment|instant|land|planeswalker|sorcery|tribal|"

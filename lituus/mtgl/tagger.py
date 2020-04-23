@@ -343,8 +343,8 @@ def chain(txt):
     # IOT assist in chaining characteristics chain colors, types and exceptions
     # then reify singleton characteristics
     ntxt = color_chain(txt)
-    ntxt = mtgl.re_2chain_exception.sub(lambda m: _2chain_ex_(m),ntxt)
-    ntxt = type_chain(ntxt)
+    ntxt = mtgl.re_2chain_special.sub(lambda m: _2chain_ex_(m),ntxt)
+    #ntxt = type_chain(ntxt)
     #ntxt = reify(ntxt)
 
     #### HAVE TO WORK ON THESE ####
