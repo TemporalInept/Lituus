@@ -122,7 +122,7 @@ re_un = re.compile(r"un(\w)")                      # find 'un'
 # matches mtgl punctuation & spaces not inside a tag
 re_tkn_delim = re.compile(
     r"([:,\.\"\'•—\s])"
-    r"(?![\w\s\+\/\-=¬∧∨⊕⋖⋗≤≥≡→⭰]+>)"
+    r"(?![\w\s\+\/\-=¬∧∨⊕⋖⋗≤≥≡→⭰']+>)"
 )
 
 # matches mtgl conjoining operators in a mtgl tag parameter
@@ -974,6 +974,7 @@ re_align_sub = re.compile(
 )
 
 # special case of subtype alignment where we have subtype characteristic type
+# i.e. Mercy Killing
 re_align_sub_sc = re.compile(
     r"(ch<¬?(?:" + re_sub_char.pattern + ")>)"
     r"\s"
@@ -981,6 +982,18 @@ re_align_sub_sc = re.compile(
     r"\s"
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|"
       r"planeswalker|sorcery|tribal|historic)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+)
+
+# two consecutive types (separated by a space) i.e. Grisly Spectacle
+# NOTE: we only want to grab the type here
+re_align_dual = re.compile(
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+     r"(?:¬?[∧∨⊕](?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
+     r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
+    r" " # don't want to match newlines
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+     r"(?:¬?[∧∨⊕](?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
+     r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
 
 ####

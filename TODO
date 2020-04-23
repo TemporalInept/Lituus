@@ -82,5 +82,5 @@ creature&artifact or black&creature
 
 80. Should we look for consecutive space delimited types i.e. artifact creature
  
-
+81. Have to go back and look at regexes with '\s' and make sure newlines are not causing bad matches
 

@@ -323,13 +323,14 @@ def powt(txt):
 
 def align_types(txt):
     """
-    aligns super to type and sub to type for easier chaining
+    conducts alignment of types
     :param txt: tagged oracle txt
     :return: aligned txt
     """
     ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),txt)
     ntxt = mtgl.re_align_sub_sc.sub(lambda m: _align_type_(m), ntxt)
     ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)
+    ntxt = mtgl.re_align_dual.sub(lambda m: _align_type_(m),ntxt)
     return ntxt
 
 def chain(txt):
