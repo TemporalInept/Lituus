@@ -82,17 +82,13 @@ creature&artifact or black&creature
  
 81. Have to go back and look at regexes with '\s' and make sure newlines are not causing bad matches
 
-82. have to deconflict "xo<mana> xa<cost>" to be mana_cost is there anywhere else where just "cost" is not an action?
-
 83. for stuff like spectacle cost i.e. Rafter Demon do we need a special tag and how 
 
-84. will have to combined activated and ability as in Training Ground
+84. will have to combine activated and ability as in Training Ground
 
 86. what to do about "highest" as in Juxtapose
 
-87. It may have been easier/better to deconflict cost by patterns that remain an action
-
-88. Tag symbol? see Drought
+88. Tag 'symbol'? see Drought
 
 89. Look for {1}0 in json - it's still showing up in some foreign text
 
@@ -102,7 +98,7 @@ creature&artifact or black&creature
 
 92. See Timesifter "nu<2> or more" - we could change this to "op<>=> nu<2>"
 
-93. Unblocked in Imprioson is not being tagged
+93. Unblocked in Imprison is not being tagged
 
 94. Tag forms of "amount of"
 
