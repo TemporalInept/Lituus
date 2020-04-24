@@ -553,9 +553,10 @@ re_kw = re.compile(
 # TODO: what to do with cycle, phase in, phase out, copy, flip
 lituus_actions = [ # words not defined in the rules but important any way
     'put','remove','distribute','get','return','draw','move','look','pay','deal',
-    'gain','lose','attack','block','add','enter','leave','choose','die','spend',
-    'unspend','take','reduce','trigger','prevent','declare','have','switch','assign',
-    'win','defend','skip','flip','cycle','phase','become','share','turn','produce',
+    'gain','lose','attack','block','unblock','add','enter','leave','choose','die',
+    'spend','unspend','take','reduce','trigger','prevent','declare','have','switch',
+    'assign','win','defend','skip','flip','cycle','phase','become','share','turn',
+    'produce',
     'named', # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
 ]
@@ -798,6 +799,35 @@ re_zone = re.compile(
 )
 
 ####
+## STATUS
+####
+
+# Status 110.5, is hard as they are status words only in past tense except for
+# face up/face down which have hyphens (see Break Open) As status they appear:
+#  'tapped','untapped',
+#  'flipped','unflipped',
+#  'face-up','face-down',
+#  'phased-in','phased-out'
+# NOTE: excluding reminder text (which we remove) there is only 1 card, Time and
+#  Tide that has a status involving Phasing
+# Status will have already been tagged as something else therefore, we list them
+# here and provide Status Deconfliction further on
+
+status = ['tap','flip','phase','face']
+
+# lituus status TODO: add these 'suspended','unattached'
+# As above, these will have already been tagged as something
+# Attack tagged lituus action is a status when it ends in 'ing' (Hanweir Garrison)
+# although technically if it is preceded by 'is' could still be an action (Adanto Vanguard)
+# Block tagged lituus action is a status when it ends in 'ing' or 'ed' (Aetherplasm)
+# Defend tagged lituus action is a status when it ends in 'ing' (Abyssal Nightstalker)
+# Block
+lituus_status = [
+    'attacking','blocking','defending','transformed','enchanted','equipped',
+    'exiled','attached','activated','revealed'
+]
+
+####
 ## MID-PASS CLEANUP
 ####
 
@@ -857,17 +887,6 @@ re_are_each = re.compile(r"are\sxq<each>\s(?=op<[⊕⋖⋗≤≥≡]>)")
 ####
 ## STATUS DECONFLICTION
 ####
-
-# Status 110.5, is relatively hard as they are status words only in past tense except
-# for face up/face down which have hyphens (see Break Open) As status they appear:
-#  'tapped','untapped',
-#  'flipped','unflipped',
-#  'face-up','face-down',
-#  'phased-in','phased-out'
-# NOTE: excluding reminder text (which we remove) there is only 1 card, Time and
-#  Tide that has a status involving Phasing
-
-status = ['tap','flip','phase','face']
 
 # only looking at tap and flip - it will be a status only if there is a suffix
 # of 'ed' and it is not preceded by 'is'

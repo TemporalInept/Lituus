@@ -8,8 +8,6 @@
 
 8. Look for cards like Tolaria, ..."bands with other"... which may/will cause problems with double quoted words
 
-11. Keep cost as a lituus action or redo as a lituus characterisitic?
-
 12. What words/phrases are we missing for sequences?
 
 16. Can we just standarize a regular expression to catch anamolies in function word_hacks?
@@ -17,9 +15,6 @@
 24. Entity chains like Cautery Sliver
 
 31. How to self ref "Hazezon" in Hazezon Tamar without self reffing "Dragon" in Dragon Egg (for now, am hacking it in multiverse.py
-
-32. Have to figure where/when/how to combine type + card as in Aberrant Researcher
- "... instant or sorcery card ..."
 
 36. See Guided Passage for 'Thing' chaining
 
@@ -90,15 +85,15 @@ creature&artifact or black&creature
 
 88. Tag 'symbol'? see Drought
 
-89. Look for {1}0 in json - it's still showing up in some foreign text
-
 90. Consider changing some cost related tags to 'xr'
 
 91. See jeweled amulet - losing ths suffix on name counters
 
 92. See Timesifter "nu<2> or more" - we could change this to "op<>=> nu<2>"
 
-93. Unblocked in Imprison is not being tagged
-
 94. Tag forms of "amount of"
+
+95. Need to add and deconflict lituus status
+
+96.
 
