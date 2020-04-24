@@ -264,7 +264,7 @@ word_hacks = {
     # acronyms
     "end of turn":"eot","converted mana cost":"cmc",
     # suffixes/tense/possessive (ing,ed,s,'s)
-    "activating":"activateing","activated":"activateed",
+    "activating":"activateing","activated":"activateed","activation":"activateion",
     "creating":"createing","created":"createed",
     "doubling":"doubleing","doubled":"doubled",
     "exchanging":"exchangeing","exchanged":"exchangeed",
@@ -326,19 +326,6 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
 ## BEGIN MTGL REG EX
 ####
 
-"""
- intag = "\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)" a word bounary and not preceded by an 
-  opening tag mark follwoed by 0 or more tag characters or spaces
- allowed suffixes are:
-  "r", "s", "ing", "ed", "'s" a space or the punctuation ':', ',', '.', 
- the below will tag only tokens that are not already tagged and are followed only
- by allowed suffixes 
-  r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)"
-  (\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*) -> preceded by a word boundary and not inside a tag
-  ({}) -> group to catch specified tokens 
-  (?=r|s|ing|ed|'s|:|\.|,|\s) -> only followed by allowed suffixes
-"""
-
 ####
 ## QUANTIFIERS
 ####
@@ -358,7 +345,7 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 
 # numbers are 1 or more digits or a variable X, Y, Z and are not preceded by a brace,
 # '{', which indicates a mana symbol or another
-re_number = re.compile(r"(?<![a-z{])(\d+|x|y|z)\b")
+re_number = re.compile(r"(?<![a-z{])(\d+|x|y|z)(?![a-z}])")
 
 ####
 ## ENTITIES
@@ -370,24 +357,24 @@ objects = [ # objects 109.1
 ]
 obj_tkns = '|'.join(objects)
 re_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(obj_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,|\s)".format(obj_tkns)
 )
 
 # keep suffix but check word boundary in beginning
 lituus_objects = [ # lituus objects
-    "city's blessing",'game','mana pool','commander','mana','attacker','blocker',
-    'it','them','coin','choice',
+    "city's blessing",'game','mana pool','mana cost','commander','mana','attacker',
+    'blocker','it','them','coin','choice','cost',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_obj_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,|\s)".format(lituus_obj_tkns)
 )
 
 # lituus players - keep suffix but check word boundary in beginning
 lituus_players = ['you','opponent','teammate','player','owner','controller']
 lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_ply_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,|\s)".format(lituus_ply_tkns)
 )
 
 ####
@@ -467,7 +454,7 @@ sequences = [
 ]
 seq_tkns = '|'.join(sequences)
 re_seq = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(seq_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,|\s)".format(seq_tkns)
 )
 
 ####
@@ -520,7 +507,7 @@ ability_words = [ # ability words 207.2c Updated 24-Jan-20 with Theros Beyond De
 ]
 aw_tkns = '|'.join(ability_words)
 re_aw = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(aw_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,|\s)".format(aw_tkns)
 )
 
 keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Jan-20
@@ -533,7 +520,7 @@ keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Ja
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(kw_act_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,|\s)".format(kw_act_tkns)
 )
 
 keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
@@ -560,21 +547,21 @@ keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
 ]
 kw_tkns = '|'.join(keywords)
 re_kw = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(kw_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,|\s)".format(kw_tkns)
 )
 
 # TODO: what to do with cycle, phase in, phase out, copy, flip
 lituus_actions = [ # words not defined in the rules but important any way
     'put','remove','distribute','get','return','draw','move','look','pay','deal',
     'gain','lose','attack','block','add','enter','leave','choose','die','spend',
-    'unspend','take','reduce','trigger','prevent','declare','have','switch',
-    'assign','win','defend','cost','skip','flip','cycle','phase','become','share',
-    'turn','produce',
+    'unspend','take','reduce','trigger','prevent','declare','have','switch','assign',
+    'win','defend','skip','flip','cycle','phase','become','share','turn','produce',
     'named', # Special case we only want this specific conjugation
+    'cost',  # will have already been tagged as an object
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(la_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,|\s)".format(la_tkns)
 )
 
 ####
@@ -586,7 +573,7 @@ re_lituus_act = re.compile(
 effects = ["combat damage","damage","effect"]
 eff_tkns = '|'.join(effects)
 re_effect = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(eff_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,|\s)".format(eff_tkns)
 )
 
 ####
@@ -762,7 +749,7 @@ char_tkns = '|'.join(
     sub_characteristics
 )
 re_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(char_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,|\s)".format(char_tkns)
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
@@ -794,7 +781,7 @@ re_single_pt = re.compile(r"ch<power>\sand\sch<toughness>")
 lituus_characteristics = ['life total','control','own','life','hand size','devotion']
 lituus_ch_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(lituus_ch_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,|\s)".format(lituus_ch_tkns)
 )
 
 ####
@@ -807,7 +794,7 @@ zones = [
 ]
 zn_tkns = '|'.join(zones)
 re_zone = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|'s|:|\.|,|\s)".format(zn_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w\s]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,|\s)".format(zn_tkns)
 )
 
 ####
@@ -837,7 +824,7 @@ val_join = {
     "commander ninjutsu":"commander_ninjutsu","split second":"split_second",
     "living weapon":"living_weapon","totem armor":"totem_armor",
     "jump-start":"jump_start","assembly-worker":"assembly_worker",
-    "color identity":"color_identity",
+    "color identity":"color_identity","mana cost":"mana_cost",
 }
 val_join_tkns = '|'.join(val_join.keys())
 re_val_join = re.compile(r"(?<=<)({})(?=>)".format(val_join_tkns))
@@ -903,8 +890,8 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 ## X/Y COUNTER DECONFLICTION
 ####
 
-# NOTE: Frankenstein's Monster is the only one that exhibits this anamoly so for
-#  now the change is hardcoded in multiverse
+# NOTE: Frankenstein's Monster is the only one that exhibits this behaviour so
+# for now the change is hardcoded in multiverse
 # chained counters mistagged as characteristics i.e. Frankenstein's Monster
 # xq<a> ch<p/t val=+2/+0>, ch<p/t val=+1/+1>, or xo<ctr type=+0/+2>
 #re_ctr_chain = re.compile(
@@ -919,20 +906,52 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 
 # turn is an action if it is followed by a 'xm' (modifier) or 'xq' (quantifier)
 # NOTE:
-#  1) suffices are not tagged yet, have to account for them in positive lookahead
+#  1) since suffices are not tagged yet, account for them following the tag close
 #  2) only capture the 'ts' tag id IOT replace it with 'xa' lituus action
 re_turn_action = re.compile(
     r"(ts)"
-    r"(?=<turn(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>(?:r|s|ing|ed|'s)?\s"
+    r"(?=<turn(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>(?:r|s|ing|ed|ion|'s)?\s"
     r"x[m|q]<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)*>)"
 )
+
+####
+## MISC DECONFLICTION
+####
+
+# cost as object vs action
+# Cost is tagged as an object by default. Any 'cost' followed by a mana symbol or
+# "up to" and a mana symbol can be changed as can costs followed by a number or
+# operator number (i.e. Trinisphere)
+# Activated Abilities reduction (Training Grounds, Biomancer's Familiar, Heartstone)
+# "...mana an ability costs to...'
+# After this there are 3 'exceptions' Valiant Changleling, Brutal Suppression,
+#  and Drought
+# NOTE:
+#  1) since suffices are not tagged yet, account for them following the tag close
+re_cost_mana = re.compile(
+    r"xo<cost>(r|s|ing|ed|ion|'s)?(?= (?:pr<up_to> )?{(?:[0-9wubrgscpx\/]+)})"
+)
+re_cost_num = re.compile(
+    r"xo<cost>(r|s|ing|ed|ion|'s)?(?= (?:op<[⊕⋖⋗≤≥≡]> )?nu<(?:[0-9wubrgscpx\/]+)>)"
+)
+re_cost_aa = re.compile(
+    r"(?<=xo<mana> xq<a> ob<ability> )xo<cost>(r|s|ing|ed|ion|'s)?"
+)
+re_cost_except1 = re.compile( # Drought and Brutal Suppresion
+    r"xo<cost>(r|s|ing|ed|ion|'s)?(?= xq<a> xq<additional>)"
+)
+re_cost_except = re.compile( # Drought and Brutal Suppresion and Valiant Changeling
+    r"xo<cost>(r|s|ing|ed|ion|'s)?(?= (?:xq<a> xq<additional>|by more than))"
+)
+
+#re_cost_except2
 
 ####
 ## SUFFICES
 ####
 
 # move any suffices 'r', 's', 'ing' 'ed' or "'s" to parameters inside tags
-re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ing|ed|'s)")
+re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ion|ing|ed|'s)")
 
 ####
 ## ALIGNMENTS

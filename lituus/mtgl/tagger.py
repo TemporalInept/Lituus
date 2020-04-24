@@ -261,10 +261,17 @@ def deconflict_tags(txt):
 
     # TODO: Currently hand-jamming "Will of the Council", "First Strike" and
     #  "Cumulative Upkeep"  because tkn_delimit in mtgl won't check anything
-    #  inside '<' '>' braces
+    #  inside '<' '>' braces in mtgl.val_join
+    #  Additionally, would these be better combined into one dict in mtgl
     ntxt = ntxt.replace("ch<will> of xq<the> council","aw<will_of_the_council>")
     ntxt = ntxt.replace("xq<first> strike","kw<first_strike>")
     ntxt = ntxt.replace("cumulative ts<upkeep>","kw<cumlative_upkeep>")
+
+    # Cost is defined as an object but may be an action
+    ntxt = mtgl.re_cost_mana.sub(r"xa<cost>\1",ntxt)
+    ntxt = mtgl.re_cost_num.sub(r"xa<cost>\1",ntxt)
+    ntxt = mtgl.re_cost_aa.sub(r"xa<cost>\1",ntxt)
+    ntxt = mtgl.re_cost_except.sub(r"xa<cost>\1",ntxt)
 
     # Not a deconfliction perse but to avoid conflicts 'named' is listed as
     # an action, rewrite it here so it shows up xa<name suffix=ed> rather than

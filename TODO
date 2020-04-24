@@ -79,8 +79,30 @@ creature&artifact or black&creature
 76. Add support for flip lands from Ixalan, and other new land types from last 3 sets
 
 78. In regex patterns for tag-value, remove the "'" single quote as it is only present in attributes
-
-80. Should we look for consecutive space delimited types i.e. artifact creature
  
 81. Have to go back and look at regexes with '\s' and make sure newlines are not causing bad matches
+
+82. have to deconflict "xo<mana> xa<cost>" to be mana_cost is there anywhere else where just "cost" is not an action?
+
+83. for stuff like spectacle cost i.e. Rafter Demon do we need a special tag and how 
+
+84. will have to combined activated and ability as in Training Ground
+
+86. what to do about "highest" as in Juxtapose
+
+87. It may have been easier/better to deconflict cost by patterns that remain an action
+
+88. Tag symbol? see Drought
+
+89. Look for {1}0 in json - it's still showing up in some foreign text
+
+90. Consider changing some cost related tags to 'xr'
+
+91. See jeweled amulet - losing ths suffix on name counters
+
+92. See Timesifter "nu<2> or more" - we could change this to "op<>=> nu<2>"
+
+93. Unblocked in Imprioson is not being tagged
+
+94. Tag forms of "amount of"
 

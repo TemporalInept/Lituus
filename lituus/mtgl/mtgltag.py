@@ -40,12 +40,12 @@ import lituus.mtgl.mtgl as mtgl
 """
 
 #### MTG SYMBOLS
-
+# TODO: do we really need the re.I flag
 # match mtg symbol string - one or more symbols of the form: {X}
-re_mtg_sym = re.compile(r"^(\{[0-9wubrgscpxtqe\/]+\})+$",flags=re.M|re.I)
+re_mtg_sym = re.compile(r"^({[0-9wubrgscpxytqe\/]+})+$",flags=re.M|re.I)
 
 # match 1 mana symbol
-re_mtg_ms = re.compile(r"{([0-9wubrgscpx\/]+)}",flags=re.I)
+re_mtg_ms = re.compile(r"{([0-9wubrgscpxyz\/]+)}",flags=re.I)
 
 # match a mana string i.e. 1 or more mana symbols and nothing else
 re_mtg_mstring = re.compile(r"^({([0-9wubrgscpx\/]+)})+$",flags=re.M|re.I)
