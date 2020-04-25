@@ -95,5 +95,17 @@ creature&artifact or black&creature
 
 95. Need to add and deconflict lituus status
 
-96.
+96. See Soul Separator it reads "... with power equal to that card's power and toughness equal to that card's toughness" which results in "power and toughness" being combined. This will happen to Kalitas, Bloodchief of Ghet
+
+97. When deleting reminder text, a hanging space is left behind
+
+98. Tuktuk the Explorer
+"legendary 5/5 colorless Goblin Golem artifact creature token."
+is chained as 
+ch<legendary> ch<p/t val=5/5> ch<colorless> ch<artifact→goblin∧golem> ch<creature> ob<token>.'
+artifact and creature should have been aligned
+This happens because align_dual is done last after aligning super and sub but
+if we move it, will it affect anything?
+
+99. Numbers are being tagged inside ref parameters (Tuktuk)
 

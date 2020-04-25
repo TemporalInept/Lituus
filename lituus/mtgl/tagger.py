@@ -290,10 +290,7 @@ def second_pass(txt):
     :param txt: initial tagged oracle txt (lowered case)
     :return: tagged oracle text
     """
-    # pre_chain for easier chaining
     ntxt = pre_chain(txt)
-
-    # then execute the primary chaining
     ntxt = chain(ntxt)
     return ntxt
 
@@ -334,31 +331,26 @@ def align_types(txt):
     :param txt: tagged oracle txt
     :return: aligned txt
     """
-    ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),txt)
-    ntxt = mtgl.re_align_sub_sc.sub(lambda m: _align_type_(m), ntxt)
+    ntxt = mtgl.re_align_dual.sub(lambda m: _align_type_(m),txt)
     ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)
-    ntxt = mtgl.re_align_dual.sub(lambda m: _align_type_(m),ntxt)
+    #ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),ntxt)
+    #ntxt = mtgl.re_align_sub_sc.sub(lambda m: _align_type_(m),ntxt)
+    #ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)
     return ntxt
 
 def chain(txt):
     """
-     Sequential comma separated charcteristics can be combined into the
-     characteristics parameter of a single object (that may be implied)
+     Sequential charcteristics can be combined into a single characteristic
     :param txt: tagged oracle txt
     :return: modified tagged txt with sequential characterisitcs chained
     NOTE: these must be followed in order
     """
     # IOT assist in chaining characteristics chain colors, types and exceptions
-    # then reify singleton characteristics
     ntxt = color_chain(txt)
     ntxt = mtgl.re_2chain_special.sub(lambda m: _2chain_ex_(m),ntxt)
-    #ntxt = type_chain(ntxt)
-    #ntxt = reify(ntxt)
+    ntxt = type_chain(ntxt)
 
     #### HAVE TO WORK ON THESE ####
-    # chain two characteristics delimited by a conjuction CHAR CONJ CHAR
-    # do these first as they may be inside a larger conjunction
-    #ntxt = mtgl.re_2chain_conj.sub(lambda m: _2chain_conj_(m),txt)
 
     # Multi chains:
     #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'and',
@@ -462,15 +454,25 @@ def _ptchain_(m):
 
 def _align_type_(m):
     """
-    aligns super-type to type
+    aligns super-type(s) or sub-type(s) to type
     :param m: a regex.Match object
     :return: the aligned types
     """
-    # the last tkn will be the type, the first n-1 are the super-type(s)
-    tkns = [x for x in lexer.tokenize(m.group())[0] if x != ',']
-    tid,val,attr = mtgltag.untag(tkns[-1])
-    val += mtgl.ARW + mtgl.AND.join([mtgltag.untag(tkn)[1] for tkn in tkns[:-1]])
-    return mtgltag.retag(tid,val,attr)
+    # split the group into tokens - the last tkn is the type, the first n-1 are
+    # the super-type(s) or subtypes
+    tkns = [x for x in lexer.tokenize(m.group())[0]]
+
+    # untag the type. If it already has an alignment operator use an AND otherwise
+    # need to use the alignment first
+    op = None
+    _,val,attr = mtgltag.untag(tkns[-1])
+    if mtgl.ARW in val: op = mtgl.AND
+    else: op = mtgl.ARW
+
+    # join the characteristics and retag
+    # TODO: make sure we won't see attributes on the preceding characteristics
+    val += op + mtgl.AND.join([mtgltag.untag(tkn)[1] for tkn in tkns[:-1]])
+    return mtgltag.retag('ch',val,attr)
 
 def _reify_st_(m):
     """
