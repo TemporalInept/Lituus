@@ -12,7 +12,7 @@ Tags MTG oracle text in the mtgl format
 
 #__name__ = 'tagger'
 __license__ = 'GPLv3'
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 __date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -34,9 +34,9 @@ def tag(name,txt):
     """
     try:
         ntxt = preprocess(name,txt)
-        ntxt = first_pass(ntxt)
-        ntxt = midprocess(ntxt)
-        ntxt = second_pass(ntxt)
+        #ntxt = first_pass(ntxt)
+        #ntxt = midprocess(ntxt)
+        #ntxt = second_pass(ntxt)
     except (lts.LituusException,re.error) as e:
         raise lts.LituusException(
             lts.ETAGGING,"Tagging {} failed due to {}".format(name,e)
@@ -331,11 +331,9 @@ def align_types(txt):
     :param txt: tagged oracle txt
     :return: aligned txt
     """
-    ntxt = mtgl.re_align_dual.sub(lambda m: _align_type_(m),txt)
-    ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)
-    #ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),ntxt)
-    #ntxt = mtgl.re_align_sub_sc.sub(lambda m: _align_type_(m),ntxt)
-    #ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)
+    ntxt = mtgl.re_align_dual.sub(lambda m: _align_type_(m),txt)   # consecutive types
+    ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)   # sub, type
+    ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),ntxt) # super, type
     return ntxt
 
 def chain(txt):
@@ -349,6 +347,9 @@ def chain(txt):
     ntxt = color_chain(txt)
     ntxt = mtgl.re_2chain_special.sub(lambda m: _2chain_ex_(m),ntxt)
     ntxt = type_chain(ntxt)
+
+    # reification chains [P/T] [COLOR] TYPE [OBJECT]
+    ntxt = mtgl.re_nchain_obj.sub(lambda m: _reify_chain_(m),ntxt)
 
     #### HAVE TO WORK ON THESE ####
 
@@ -400,15 +401,15 @@ def type_chain(txt):
     ntxt = mtgl.re_2chain_type.sub(lambda m: _2type_(m),ntxt)
     return ntxt
 
-def reify(txt):
-    """
-    objectifies singleton types. Finds type characteristics that are not part of
-    a chain and creates an object
-    :param txt: original text
-    :return: objectified text
-    """
-    ntxt = mtgl.re_singleton_type.sub(lambda m: _reify_st_(m),txt)
-    return ntxt
+#def reify(txt):
+#    """
+#    objectifies singleton types. Finds type characteristics that are not part of
+#    a chain and creates an object
+#    :param txt: original text
+#    :return: objectified text
+#    """
+#    ntxt = mtgl.re_singleton_type.sub(lambda m: _reify_st_(m),txt)
+#    return ntxt
 
 ####
 ## PRIVATE FUNCTIONS
@@ -448,8 +449,8 @@ def _ptchain_(m):
     """
     # get the two p/ts and unpack the value
     ch1,ch2 = m.groups()
-    pt1 = mtgltag.untag(ch1)[2]['val']
-    pt2 = mtgltag.untag(ch2)[2]['val']
+    pt1 = mtgltag.tag_attr(ch1)['val']
+    pt2 = mtgltag.tag_attr(ch2)['val']
     return mtgltag.retag('ch','p/t',{'val':pt1 + mtgl.OR + pt2})
 
 def _align_type_(m):
@@ -471,24 +472,24 @@ def _align_type_(m):
 
     # join the characteristics and retag
     # TODO: make sure we won't see attributes on the preceding characteristics
-    val += op + mtgl.AND.join([mtgltag.untag(tkn)[1] for tkn in tkns[:-1]])
+    val += op + mtgl.AND.join([mtgltag.tag_val(tkn) for tkn in tkns[:-1]])
     return mtgltag.retag('ch',val,attr)
 
-def _reify_st_(m):
-    """
-    creates an object from singleton types
-    :param m: a regex.Match object
-    :return: txt with singleton types reified
-    """
-    # 109.2 if there is a reference to a type or subtype but not card, spell or
-    # source, it means a permanent of that type or subtype
-    oval = 'permanent'                           # implied obj is a permanent
-    _,val,attr = mtgltag.untag(m.group(1))       # untag the type characteristic
-    if m.group(2):                               # if we have an object
-        _,oval,oattr = mtgltag.untag(m.group(2)) # untag it
-        attr = mtgltag.merge_attrs([oattr,attr]) # and merge the attribure dicts
-    attr['characteristics'] = val                # add type(s) to attribute dict
-    return mtgltag.retag('ob',oval,attr)         # & return the new object
+#def _reify_st_(m):
+#    """
+#    creates an object from singleton types
+#    :param m: a regex.Match object
+#    :return: txt with singleton types reified
+#    """
+#    # 109.2 if there is a reference to a type or subtype but not card, spell or
+#    # source, it means a permanent of that type or subtype
+#    oval = 'permanent'                           # implied obj is a permanent
+#    _,val,attr = mtgltag.untag(m.group(1))       # untag the type characteristic
+#    if m.group(2):                               # if we have an object
+#        _,oval,oattr = mtgltag.untag(m.group(2)) # untag it
+#        attr = mtgltag.merge_attrs([oattr,attr]) # and merge the attribure dicts
+#    attr['characteristics'] = val                # add type(s) to attribute dict
+#    return mtgltag.retag('ob',oval,attr)         # & return the new object
 
 def _ncolor_(m):
     """
@@ -502,7 +503,7 @@ def _ncolor_(m):
     for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
         try:
             # unpack the color
-            clrs.append(mtgltag.untag(tkn)[1])
+            clrs.append(mtgltag.tag_val(tkn)[1])
         except lts.LituusException:
             try:
                 op = mtgl.conj_op[tkn]
@@ -545,6 +546,51 @@ def _2type_(m):
     except KeyError:
         raise lts.LituusException(lts.ETAGGING,"Illegal op {}".format(m.group(2)))
     return mtgltag.retag('ch',val1+op+val2,mtgltag.merge_attrs([attr1,attr2]))
+
+def _reify_chain_(m):
+    """
+    chains and reifies phrases of the form [P/T] [COLOR] TYPE [OBJECT] into a
+    single object
+    :param m: a regex.Match object
+    :return: the reify characteristic chain
+    """
+    # extract p/t, color, type and object, set up the new tag
+    pt,clr,ent,obj = m.groups()
+
+    # set up the new object tag - 109.2 if there is a reference to a type or
+    # subtype but not card, spell or source, it means a permanent of that type
+    # or subtype
+    tid = 'ob'
+    val = 'permanent' if not obj else mtgltag.tag_val(obj)
+    attr = mtgltag.merge_attrs(
+        [mtgltag.tag_attr(ent),{} if not obj else mtgltag.tag_attr(obj)]
+    )
+
+    # add 'characteristics' to attribute dict and return the new tag
+    assert('characteristics' not in attr)
+    attr['characteristics'] = _chain_char_(mtgltag.tag_val(ent),pt,clr)
+    return mtgltag.retag(tid,val,attr)
+
+def _chain_char_(ch,pt=None,clr=None):
+    """
+    ANDs type, pt and clr encapsulating in parentheses as necessary
+    :param ch: a tagged type, value may be complex
+    :param pt: a pt value i.e x/y may be None
+    :param clr: a color value may be complex or None
+    :return: a tagged object
+    """
+    # set ret to ch, if ch has 'opposite' conjunctions encapsulate in parentheses
+    ret = '('+ch+')' if (pt or clr) and (mtgl.OR in ch or mtgl.AOR in ch) else ch
+
+    # AND the p/t if present. With color is different, encapsulate in parentheses
+    # if it has 'opposite' conjuctions
+    if pt: ret = mtgl.AND + pt
+    if clr:
+        if mtgl.OR in clr: clr = '(' + clr + ')'
+        ret += mtgl.AND + clr
+
+    # and return the chained string
+    return ret
 
 def _nchain_(m):
     """
@@ -599,9 +645,9 @@ def _nchain_(m):
 
 def _aligned_(vals):
     """
-    determines in a list of characteristic tag-values, if an align is present wether
-    the alignment remains as is or should be a subclass of operator. Arranges the
-    list of values such that an alignment will be in the first value
+    determines in a list of characteristic tag-values, if an align is present
+    whether the alignment remains as is or should be a subclass of operator.
+    Arranges the list of values such that an alignment will be in the first value
     :param tkns: list of characteristics which may or may not contain an alignment
     :return: the new list of tkns
     """
@@ -682,16 +728,3 @@ def _2chain_conj_(m):
 
     # return the conjoined characteristic
     return mtgltag.retag('ch',val1+op+val2,mtgltag.merge_attrs([attr1,attr2]))
-
-#def _implied_obj_(cs):
-#    """
-#    determines from list of characteristics what value an object should have
-#    109.2 if there is a reference to a type or subtype but not card, spell or
-#    source, it means a permanent of that type or subtype
-#    :param cs: list of characteristics
-#    :return: 'card' or 'permanent' based on rule 109.2
-#    """
-#    for c in cs:
-#        x = c.replace(mtgl.NOT,'') # remove any negations
-#        if x in mtgl.type_characteristics+mtgl.sub_characteristics: return 'permanent'
-#    return 'card'

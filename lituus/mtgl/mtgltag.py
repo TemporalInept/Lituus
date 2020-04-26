@@ -12,7 +12,7 @@ Defines functions to work with mtgl tags
 
 #__name__ = 'mtgltag'
 __license__ = 'GPLv3'
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 __date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -142,6 +142,12 @@ def untag(tkn):
         return tag,val,attrs
     except AttributeError: # signifies a None returned from re_tag
         raise lts.LituusException(lts.ETAG,"Invalid tag {}".format(tkn))
+
+def tag_id(tkn): return untag(tkn)[0]
+
+def tag_val(tkn): return untag(tkn)[1]
+
+def tag_attr(tkn): return untag(tkn)[2]
 
 def operand(tkn,op=False):
     """

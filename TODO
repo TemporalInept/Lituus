@@ -109,3 +109,13 @@ if we move it, will it affect anything?
 
 99. Numbers are being tagged inside ref parameters (Tuktuk)
 
+100. what to do about supertypes that come before subtypes (Bant Panorama)
+
+101. If we do the nchain_object (p/t color type) need to think about cards like
+Nim Deathmantle which does not have a type only a subtype
+
+102. convert to alignment if type is set?
+
+104.
+
+

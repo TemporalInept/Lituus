@@ -112,7 +112,7 @@ MIN = '−' # not used yet (found in negative loyalty costs)
 
 # CATCHALLS
 # re_dbl_qte = r'".*?"'                            # double quoted string
-re_rem_txt = re.compile(r"\(.+?\)\n?")             # reminder text
+re_rem_txt = re.compile(r"\(.+?\)")             # reminder text
 re_mana_remtxt = re.compile(r"\(({t}: add.+?)\)")  # find add mana inside ()
 re_non = re.compile(r"non(\w)")                    # find 'non' without hyphen
 re_un = re.compile(r"un(\w)")                      # find 'un'
@@ -986,7 +986,8 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ion|ing|ed|'s)")
 # Alignment assists in chaining characteristics and puts the focus on the target
 # of an effect.
 
-# two consecutive types (separated by a space) i.e. Grisly Spectacle
+# two consecutive types (separated by a space) i.e. Grisly Spectacle. This is
+# commonly artifact creature
 # NOTE: on the first type we should not see any attributes
 # TODO: is it necessary to check for conjoined types?
 re_align_dual = re.compile(
@@ -1000,6 +1001,7 @@ re_align_dual = re.compile(
 )
 
 # 205.4b ... some supertypes are closely identified with specific card types...
+# Basic imply lands and world implies enchantment
 # when we have a supertype followed immediately by a card type, combine these as
 # the supertype applies to the card type and to the object (implied or explicit)
 # For example Wave of Vitriol, "...all artifacts, enchantments, and nonbasic
@@ -1118,6 +1120,24 @@ re_2chain_special = re.compile(
     r"((?:ch|ob)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
     r"(?!\s,?(?:ch|ob)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
 )
+
+# Phrases of the form [P/T] [COLOR] TYPE [OBJECT]. This requires that colors
+# and types have been chained and aligned
+re_nchain_obj = re.compile(
+    # optional p/t (value only)
+    r"(?:ch<p/t val=([\d|x|y|z]+/[\d|x|y|z]+)> )?"
+    # optional a color characteristic followed by 0 or more conjunction, color pairs
+    r"(?:ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)"
+     r"(?:[∧∨⊕]¬?(?:white|blue|black|green|red))*)> )?"
+    # mandatory type characteristic
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)?"
+     r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>)"
+    # optional object
+    r"(?: (ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)"
+     r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>))?"
+)
+
 
 #**** TODO UNDER RCONSTRUCTION ****#
 
