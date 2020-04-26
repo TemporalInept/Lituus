@@ -259,13 +259,8 @@ def deconflict_tags(txt):
     # turn could be a lituus action
     ntxt = mtgl.re_turn_action.sub("xa",ntxt)
 
-    # TODO: Currently hand-jamming "Will of the Council", "First Strike" and
-    #  "Cumulative Upkeep"  because tkn_delimit in mtgl won't check anything
-    #  inside '<' '>' braces in mtgl.val_join
-    #  Additionally, would these be better combined into one dict in mtgl
-    ntxt = ntxt.replace("ch<will> of xq<the> council","aw<will_of_the_council>")
-    ntxt = ntxt.replace("xq<first> strike","kw<first_strike>")
-    ntxt = ntxt.replace("cumulative ts<upkeep>","kw<cumlative_upkeep>")
+    # take care of misstagged
+    ntxt = mtgl.re_misstag.sub(lambda m: mtgl.misstag[m.group(1)],ntxt)
 
     # Cost is defined as an object but may be an action
     ntxt = mtgl.re_cost_mana.sub(r"xa<cost>\1",ntxt)

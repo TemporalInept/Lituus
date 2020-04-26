@@ -939,6 +939,17 @@ re_turn_action = re.compile(
 ## MISC DECONFLICTION
 ####
 
+# misstagged - because of the order in which tags are applied some portions of
+# tags are incorrectly tagged i.e. Cumulative Upkeep which is tagged as
+# cummulative ts<upkeep>
+misstag = {
+    "ch<will> of xq<the> council":"aw<will_of_the_council>",
+    "xq<first> strike":"kw<first_strike>",
+    "cumulative ts<upkeep>":"kw<cumlative_upkeep>",
+}
+misstag_tkns = '|'.join(misstag.keys())
+re_misstag = re.compile(r"({})".format(misstag_tkns))
+
 # cost as object vs action
 # Cost is tagged as an object by default. Any 'cost' followed by a mana symbol or
 # "up to" and a mana symbol can be changed as can costs followed by a number or
