@@ -107,8 +107,6 @@ artifact and creature should have been aligned
 This happens because align_dual is done last after aligning super and sub but
 if we move it, will it affect anything?
 
-99. Numbers are being tagged inside ref parameters (Tuktuk)
-
 100. what to do about supertypes that come before subtypes (Bant Panorama)
 
 101. If we do the nchain_object (p/t color type) need to think about cards like
