@@ -344,9 +344,9 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 ####
 
 # numbers are 1 or more digits or one of the variable x, y, z which. Only digits
-# that are preceded by whitespace or a '/' and followed by whitespace, '/' or '.'
-# are matched.
-re_number = re.compile(r"(?<=[\s\/])(\d+|x|y|z])(?=[\s\/\.])")
+# that are preceded by whitespace, a '/', '+' or '-' and followed by whitespace,
+# '/' or '.' are matched.
+re_number = re.compile(r"(?<=[\s\/+-])(\d+|x|y|z])(?=[\s\/+-\.])")
 
 
 ####
