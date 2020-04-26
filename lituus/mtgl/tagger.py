@@ -34,9 +34,9 @@ def tag(name,txt):
     """
     try:
         ntxt = preprocess(name,txt)
-        #ntxt = first_pass(ntxt)
-        #ntxt = midprocess(ntxt)
-        #ntxt = second_pass(ntxt)
+        ntxt = first_pass(ntxt)
+        ntxt = midprocess(ntxt)
+        ntxt = second_pass(ntxt)
     except (lts.LituusException,re.error) as e:
         raise lts.LituusException(
             lts.ETAGGING,"Tagging {} failed due to {}".format(name,e)
@@ -584,7 +584,7 @@ def _chain_char_(ch,pt=None,clr=None):
 
     # AND the p/t if present. With color is different, encapsulate in parentheses
     # if it has 'opposite' conjuctions
-    if pt: ret = mtgl.AND + pt
+    if pt: ret += mtgl.AND + pt
     if clr:
         if mtgl.OR in clr: clr = '(' + clr + ')'
         ret += mtgl.AND + clr
