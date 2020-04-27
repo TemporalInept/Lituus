@@ -165,8 +165,8 @@ def strip(tkn):
     :param tkn: the token
     :return: the unadorned token
     """
-    # TODO why does re_param_prefix return ''
-    return [x for x in mtgl.re_param_prefix.split(tkn) if x != ''][0]
+    if tkn[0] in ["+","-",mtgl.NOT]: return tkn[1:]
+    else: return tkn
 
 def merge_attrs(attrs,strict=1):
     """

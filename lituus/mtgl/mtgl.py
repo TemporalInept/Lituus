@@ -275,6 +275,8 @@ word_hacks = {
     "shuffling":"shuffleing","shuffled":"shuffleed",
     "dealt":"dealed",
     "leaving":"leaveing","left":"leaveed",
+    "won":"wined","winning":"winned",
+    "tied":'tieed',
     "lost":"loseed","losing":"loseing",
     "its":"it's",
     "died":"dieed","dying":"dieing",
@@ -299,7 +301,6 @@ word_hacks = {
     "declaring":"declareing","declared":"declareed",
     "has":"haves","had":"haveed","having":"haveing",
     "putting":"puting",
-    "won":"wined","winning":"winned",
     "skipped":'"skiped',"skipping":"skiping",
     "produced":"produceed","producing":"produceing",
     # status related
@@ -334,7 +335,7 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
 lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that',
     'additional','those','these','their','the','extra','first','second','third',
-    'fourth','fifth','sixth','seventh','eighth','ninth','tenth',
+    'fourth','fifth','sixth','seventh','eighth','ninth','tenth','half','twice',
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -555,10 +556,10 @@ re_kw = re.compile(
 # TODO: what to do with cycle, phase in, phase out, copy, flip
 lituus_actions = [ # words not defined in the rules but important any way
     'put','remove','distribute','get','return','draw','move','look','pay','deal',
-    'gain','lose','attack','block','unblock','add','enter','leave','choose','die',
+    'gain','attack','defend','unblock','block','add','enter','leave','choose','die',
     'spend','unspend','take','reduce','trigger','prevent','declare','have','switch',
-    'assign','win','defend','skip','flip','cycle','phase','become','share','turn',
-    'produce',
+    'assign','win','lose','tie','skip','flip','cycle','phase','become','share',
+    'turn','produce','round',
     'named', # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
 ]
@@ -705,6 +706,9 @@ sub_characteristics = subtype_artifact_characteristics + \
 re_sub_char = re.compile(r"{}".format('|'.join(sub_characteristics)))
 
 # subtype of
+subtypes_of = [
+    'artifact','enchantment','land','planeswalker','instant_sorcery','creature'
+]
 TYPE_ARTIFACT        = 0
 TYPE_ENCHANTMENT     = 1
 TYPE_LAND            = 2
@@ -817,7 +821,7 @@ re_zone = re.compile(
 
 status = ['tap','flip','phase','face']
 
-# lituus status TODO: add these 'suspended','unattached'
+# lituus status
 # As above, these will have already been tagged as something
 # Attack tagged lituus action is a status when it ends in 'ing' (Hanweir Garrison)
 # although technically if it is preceded by 'is' could still be an action (Adanto Vanguard)
@@ -826,7 +830,7 @@ status = ['tap','flip','phase','face']
 # Block
 lituus_status = [
     'attacking','blocking','defending','transformed','enchanted','equipped',
-    'exiled','attached','activated','revealed'
+    'exiled','unattached','attached','activated','revealed','suspended',
 ]
 
 ####
@@ -855,7 +859,7 @@ val_join = {
     "double strike":"double_strike","first strike":"first_strike",
     "commander ninjutsu":"commander_ninjutsu","split second":"split_second",
     "living weapon":"living_weapon","totem armor":"totem_armor",
-    "jump-start":"jump_start","assembly-worker":"assembly_worker",
+    #"jump-start":"jump_start","assembly-worker":"assembly_worker",
     "color identity":"color_identity","mana cost":"mana_cost",
 }
 val_join_tkns = '|'.join(val_join.keys())
@@ -1052,14 +1056,14 @@ re_align_sub = re.compile(
 #  may be followed by an object
 #  are not followed by a characteristic
 # TODO: this fails on alignments
-re_singleton_type = re.compile(
-    r"(?<!ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>,?\s)"
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-     r"(?:¬?[∧∨⊕](?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
-     r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
-    r"(?:\s(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>))?"
-    r"(?!\sch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
-)
+#re_singleton_type = re.compile(
+#    r"(?<!ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>,?\s)"
+#    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+#     r"(?:¬?[∧∨⊕](?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
+#     r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+#    r"(?:\s(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>))?"
+#    r"(?!\sch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+#)
 
 ####
 ## CHAINS

@@ -286,7 +286,7 @@ def second_pass(txt):
     :return: tagged oracle text
     """
     ntxt = pre_chain(txt)
-    ntxt = chain(ntxt)
+    #ntxt = chain(ntxt)
     return ntxt
 
 def pre_chain(txt):
@@ -306,7 +306,7 @@ def pre_chain(txt):
     ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)         # 2.a
     ntxt = mtgl.re_attr_val.sub(r"xr<\1 val=\2\3>",ntxt)               # 2.b
     ntxt = mtgl.re_attr_val_nop.sub(r"xr<\1 val=≡\2>",ntxt)            # 2.c
-    ntxt = align_types(ntxt)                                           # 3
+    #ntxt = align_types(ntxt)                                           # 3
     return ntxt
 
 def powt(txt):
@@ -344,7 +344,7 @@ def chain(txt):
     ntxt = type_chain(ntxt)
 
     # reification chains [P/T] [COLOR] TYPE [OBJECT]
-    ntxt = mtgl.re_nchain_obj.sub(lambda m: _reify_chain_(m),ntxt)
+    #ntxt = mtgl.re_nchain_obj.sub(lambda m: _reify_chain_(m),ntxt)
 
     #### HAVE TO WORK ON THESE ####
 
@@ -395,16 +395,6 @@ def type_chain(txt):
     ntxt = mtgl.re_nchain_type.sub(lambda m: _ntype_(m),txt)
     ntxt = mtgl.re_2chain_type.sub(lambda m: _2type_(m),ntxt)
     return ntxt
-
-#def reify(txt):
-#    """
-#    objectifies singleton types. Finds type characteristics that are not part of
-#    a chain and creates an object
-#    :param txt: original text
-#    :return: objectified text
-#    """
-#    ntxt = mtgl.re_singleton_type.sub(lambda m: _reify_st_(m),txt)
-#    return ntxt
 
 ####
 ## PRIVATE FUNCTIONS

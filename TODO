@@ -24,8 +24,6 @@
 
 43. Stangg Twin in card Stangg is being tagged as <obj ref=self> twin - have to fix this
 
-45. Is rounded (up or down) prevalent enough to tag it? Likewise half/halve
-
 47. How to handle two consecutive objects like Trail of Crumbs "permanent card"
 
 50. Will have to deconflict IKO keyword counters that are incorrectly tagged as 
@@ -39,8 +37,6 @@ keywords
 
 57. Ivory Guardians has object characteristic object phrase will probably see
 a lot becuase the first object is a token
-
-58. Need to define tags and tag symbols like align
 
 59. looking at Dreams of the Dead and Cavern Harpy, do we want creature->white&black
  - in the case of Cavern Harpy, do we want 
@@ -102,6 +98,14 @@ Nim Deathmantle which does not have a type only a subtype
 
 102. convert to alignment if type is set?
 
-104.
+104. After reifying we still have (Quest for Ula's Temple) 
+ch<kraken>, ch<leviathan>, ch<octopus>, or ob<card characteristics=creature→serpent>
+
+105. Should we add implied types when we have a 'hanging' sub-type like such 
+as Nim Deathmantle, God-Pharoah's Gift
+
+106. Remember 'draft' cards being a problem last time
+
+107. Still have to tag combat damage, life
 
 

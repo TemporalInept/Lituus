@@ -316,6 +316,7 @@ def _hack_cards_(jv):
             )
         elif cname == 'Hazezon Tamar':
             # Has first name which won't be self reffed
+            # TODO: what other cards have this
             jv[cname]['text'] = jv[cname]['text'].replace(
                 "When Hazezon leaves",
                 "When Hazezon Tamar leaves"
