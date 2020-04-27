@@ -494,7 +494,7 @@ named_counters = [
     'winch','wind','wish'
 ]
 named_ctr_tkns = '|'.join(named_counters)
-re_named_ctr = re.compile(r"\b({}) (counters*)\b".format(named_ctr_tkns))
+re_named_ctr = re.compile(r"\b({}) counter(s)?\b".format(named_ctr_tkns))
 
 ####
 ## ABILITY WORDS, KEYWORDS, KEYWORD ACTIONS

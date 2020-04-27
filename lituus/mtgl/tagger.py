@@ -179,7 +179,8 @@ def tag_operators(txt):
 def tag_counters(txt):
     """ tags counters (markers) in txt returning tagged txt """
     ntxt = mtgl.re_pt_ctr.sub(r"xo<ctr type=\1\2/\3\4>",txt) # tag p/t counters
-    ntxt = mtgl.re_named_ctr.sub(r"xo<ctr type=\1>",ntxt)    # & named counters
+    #ntxt = mtgl.re_named_ctr.sub(r"xo<ctr type=\1>",ntxt)    # & named counters
+    ntxt = mtgl.re_named_ctr.sub(lambda m: _named_ctr_(m),ntxt)
     return ntxt
 
 def tag_awkws(txt):
@@ -400,12 +401,21 @@ def type_chain(txt):
 ## PRIVATE FUNCTIONS
 ####
 
+def _named_ctr_(m):
+    """
+     creates a named counter tag from m
+    :param m: regex Match object
+    :return: named counter tag
+    """
+    if m.group(2): return "xo<ctr type={} suffix=s>".format(m.group(1))
+    else: return r"xo<ctr type={}>".format(m.group(1))
+
 def _transpose_num_op_(m):
     """
     transpose number or greater|less and replace english w/ symbol. For example,
     nu<1> or greater becomes >= nu<1>
-    :param m:
-    :return:
+    :param m: regex Match object
+    :return: transposed text
     """
     # replace enlgish with operator symbol, then transpose with preceding number
     op = m.group(2)
