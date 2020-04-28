@@ -31,7 +31,7 @@ Defines Lituus error classes for consolidation purposes.
 
 #__name__ = 'Lituus'
 __license__ = 'GPLv3'
-__version__ = '0.2.1'
+__version__ = '0.2.3'
 __date__ = 'April 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'

@@ -287,7 +287,7 @@ def second_pass(txt):
     :return: tagged oracle text
     """
     ntxt = pre_chain(txt)
-    #ntxt = chain(ntxt)
+    ntxt = chain_characteristics(ntxt)
     return ntxt
 
 def pre_chain(txt):
@@ -302,12 +302,14 @@ def pre_chain(txt):
     #   a. temporarily tag attributes as xr
     #   b. assign values where possible to temporary attributes including c.
     #    those without an operator
-    #  3) align supertypes and subtypes
-    ntxt = powt(txt)                                                   # 1
-    ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)         # 2.a
-    ntxt = mtgl.re_attr_val.sub(r"xr<\1 val=\2\3>",ntxt)               # 2.b
-    ntxt = mtgl.re_attr_val_nop.sub(r"xr<\1 val=≡\2>",ntxt)            # 2.c
-    #ntxt = align_types(ntxt)                                           # 3
+    #  3) add types to hanging subtypes
+    #  4) align supertypes and subtypes
+    ntxt = powt(txt)                                                     # 1
+    ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)           # 2.a
+    ntxt = mtgl.re_attr_val.sub(r"xr<\1 val=\2\3>",ntxt)                 # 2.b
+    ntxt = mtgl.re_attr_val_nop.sub(r"xr<\1 val=≡\2>",ntxt)              # 2.c
+    ntxt = mtgl.re_hanging_subtype.sub(lambda m: _insert_type_(m), ntxt) # 3
+    ntxt = align_types(ntxt)                                             # 4
     return ntxt
 
 def powt(txt):
@@ -332,22 +334,26 @@ def align_types(txt):
     ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),ntxt) # super, type
     return ntxt
 
-def chain(txt):
+def chain_characteristics(txt):
     """
      Sequential charcteristics can be combined into a single characteristic
     :param txt: tagged oracle txt
     :return: modified tagged txt with sequential characterisitcs chained
     NOTE: these must be followed in order
     """
+    # start with colors as they may be 'sub-chains' within a large chain or may
+    # be part of a color type pair
+    ntxt = mtgl.re_clr_conjunction_chain.sub(lambda m: _chain_(m),txt)
+    ntxt = mtgl.re_clr_type_chain.sub(lambda m: _clr_type_(m),ntxt)
+
+    #### SCRAPPED FOR NOW
     # IOT assist in chaining characteristics chain colors, types and exceptions
-    ntxt = color_chain(txt)
-    ntxt = mtgl.re_2chain_special.sub(lambda m: _2chain_ex_(m),ntxt)
-    ntxt = type_chain(ntxt)
+    #ntxt = color_chain(txt)
+    #ntxt = mtgl.re_2chain_special.sub(lambda m: _2chain_ex_(m),ntxt)
+    #ntxt = type_chain(ntxt)
 
     # reification chains [P/T] [COLOR] TYPE [OBJECT]
     #ntxt = mtgl.re_nchain_obj.sub(lambda m: _reify_chain_(m),ntxt)
-
-    #### HAVE TO WORK ON THESE ####
 
     # Multi chains:
     #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'and',
@@ -436,6 +442,31 @@ def _metachar_(m):
     if not 'val' in attr: tid = 'xr'
     return mtgltag.retag(tid,val,attr)
 
+def _insert_type_(m):
+    """
+    inserts a type following a hanging subtype where type is the type the subtype
+    belongs to
+    :param m: a regex.Match object
+    :return: subtype type
+    """
+    # unpack the subtype
+    tid,val,attr = mtgltag.untag(m.group(1))
+
+    # create the parameters for the new type tag. Have to get the type of this
+    # subtype (NOTE: assuming its a singleton type as no chain/align have been
+    # conducted) then move any suffix from the subtype to the type
+    mtid = 'ch'
+    mtype = mtgl.subtypes_of[mtgl.subtype(mtgltag.strip(val))]
+    mattr = {}
+    if 'suffix' in attr:
+        mattr['suffix'] = attr['suffix']
+        del attr['suffix']
+
+    # return the two tags
+    return "{} {}".format(
+        mtgltag.retag(tid,val,attr),mtgltag.retag(mtid,mtype,mattr)
+    )
+
 def _ptchain_(m):
     """
     chains p/t or p/t chains
@@ -448,27 +479,70 @@ def _ptchain_(m):
     pt2 = mtgltag.tag_attr(ch2)['val']
     return mtgltag.retag('ch','p/t',{'val':pt1 + mtgl.OR + pt2})
 
-def _align_type_(m):
+def _chain_(m):
     """
-    aligns super-type(s) or sub-type(s) to type
+    chains a group of sequential tokens into one
     :param m: a regex.Match object
-    :return: the aligned types
+    :return: the chained object
     """
-    # split the group into tokens - the last tkn is the type, the first n-1 are
-    # the super-type(s) or subtypes
-    tkns = [x for x in lexer.tokenize(m.group())[0]]
+    # initialize are tag parameters
+    ntid = None
+    nval = []
+    nattr = {}
+    op = mtgl.AND # default is and
 
-    # untag the type. If it already has an alignment operator use an AND otherwise
-    # need to use the alignment first
-    op = None
-    _,val,attr = mtgltag.untag(tkns[-1])
-    if mtgl.ARW in val: op = mtgl.AND
-    else: op = mtgl.ARW
+    # extract the tags and operator
+    for tkn in [tag for tag in lexer.tokenize(m.group())[0] if tag != ',']:
+        try:
+            tid,val,attr = mtgltag.untag(tkn)       # untag the tkn
+            if not ntid: ntid = tid                 # instantiate tag-id once
+            assert(ntid == tid)                     # check that all have same id
+            nval.append(val)                        # add new tag value to the list
+            nattr = mtgltag.merge_attrs(attr,nattr) # & merge the new attribute dict
+        except lts.LituusException:
+            # should be the operator
+            try:
+                op = mtgl.conj_op[tkn]
+            except Keyerror:
+                raise lts.LituusException(lts.MTGL,"Illegal op {}".format(tkn))
+    return mtgltag.retag(ntid,op.join(nval),nattr)
 
-    # join the characteristics and retag
-    # TODO: make sure we won't see attributes on the preceding characteristics
-    val += op + mtgl.AND.join([mtgltag.tag_val(tkn) for tkn in tkns[:-1]])
-    return mtgltag.retag('ch',val,attr)
+def _clr_type_(m):
+    """
+    chains a color type pair appending the color to the type
+    :param m: a regex.Match object
+    :return: the chained object
+    """
+    # before appending the color, have to make sure that color is encapsulated
+    # if a) it has a 'or/'and/or' or b) the type value has a 'or'/'and/or' and
+    # it has an 'and'
+    clr = m.group(1)
+    tid,val,attr = mtgltag.untag(m.group(2))
+    if mtgl.OR in clr or mtgl.AOR in clr: clr = '('+clr+')'
+    if mtgl.OR in val or mtgl.AOR in val and mtgl.AND in clr: clr = '('+clr+')'
+    return mtgltag.retag(tid,val+mtgl.AND+clr,attr)
+
+#def _align_type_(m):
+#    """
+#    aligns super-type(s) or sub-type(s) to type
+#    :param m: a regex.Match object
+#    :return: the aligned types
+#    """
+#    # split the group into tokens - the last tkn is the type, the first n-1 are
+#    # the super-type(s) or subtypes
+#    tkns = [x for x in lexer.tokenize(m.group())[0]]
+#
+#    # untag the type. If it already has an alignment operator use an AND otherwise
+#    # need to use the alignment first
+#    op = None
+#    _,val,attr = mtgltag.untag(tkns[-1])
+#    if mtgl.ARW in val: op = mtgl.AND
+#    else: op = mtgl.ARW
+#
+#    # join the characteristics and retag
+#    # TODO: make sure we won't see attributes on the preceding characteristics
+#    val += op + mtgl.AND.join([mtgltag.tag_val(tkn) for tkn in tkns[:-1]])
+#    return mtgltag.retag('ch',val,attr)
 
 #def _reify_st_(m):
 #    """
@@ -486,61 +560,61 @@ def _align_type_(m):
 #    attr['characteristics'] = val                # add type(s) to attribute dict
 #    return mtgltag.retag('ob',oval,attr)         # & return the new object
 
-def _ncolor_(m):
-    """
-    chains n color characteristics together. They will be comma-delimited and have
-    a conjuction
-    :param m: a regex.Match object
-    :return: the chained colors
-    """
-    clrs = []
-    op = None
-    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
-        try:
-            # unpack the color
-            clrs.append(mtgltag.tag_val(tkn)[1])
-        except lts.LituusException:
-            try:
-                op = mtgl.conj_op[tkn]
-            except KeyError:
-                raise lts.LituusException(lts.ETAGGING, "Illegal op {}".format(tkn))
-    return mtgltag.retag('ch',op.join(clrs),{})
+#def _ncolor_(m):
+#    """
+#    chains n color characteristics together. They will be comma-delimited and have
+#    a conjuction
+#    :param m: a regex.Match object
+#    :return: the chained colors
+#    """
+#    clrs = []
+#    op = None
+#    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
+#        try:
+#            # unpack the color
+#            clrs.append(mtgltag.tag_val(tkn)[1])
+#        except lts.LituusException:
+#            try:
+#                op = mtgl.conj_op[tkn]
+#            except KeyError:
+#                raise lts.LituusException(lts.ETAGGING, "Illegal op {}".format(tkn))
+#    return mtgltag.retag('ch',op.join(clrs),{})
 
-def _ntype_(m):
-    """
-    chains n type characteristics (comma-delimited with conjuction)
-    :param m: a regex.Match object
-    :return: the chained types
-    """
-    vals = []
-    attrs = []
-    op = None
-    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
-        try:
-            # unpack the type and keep the attributes (may have suffixes)
-            _,val,attr = mtgltag.untag(tkn)
-            vals.append(val)
-            attrs.append(attr)
-        except lts.LituusException:
-            try:
-                op = mtgl.conj_op[tkn]
-            except KeyError:
-                raise lts.LituusException(lts.ETAGGING, "Illegal op {}".format(tkn))
-    return mtgltag.retag('ch',op.join(vals),mtgltag.merge_attrs(attrs))
+#def _ntype_(m):
+#    """
+#    chains n type characteristics (comma-delimited with conjuction)
+#    :param m: a regex.Match object
+#    :return: the chained types
+#    """
+#    vals = []
+#    attrs = []
+#    op = None
+#    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
+#        try:
+#            # unpack the type and keep the attributes (may have suffixes)
+#            _,val,attr = mtgltag.untag(tkn)
+#            vals.append(val)
+#            attrs.append(attr)
+#        except lts.LituusException:
+#            try:
+#                op = mtgl.conj_op[tkn]
+#            except KeyError:
+#                raise lts.LituusException(lts.ETAGGING, "Illegal op {}".format(tkn))
+#    return mtgltag.retag('ch',op.join(vals),mtgltag.merge_attrs(attrs))
 
-def _2type_(m):
-    """
-    chains 2 type characteristics separated by a conjunction
-    :param m: a regex.Match object
-    :return: the chained types
-    """
-    _,val1,attr1 = mtgltag.untag(m.group(1))
-    _,val2,attr2 = mtgltag.untag(m.group(3))
-    try:
-        op = mtgl.conj_op[m.group(2)]
-    except KeyError:
-        raise lts.LituusException(lts.ETAGGING,"Illegal op {}".format(m.group(2)))
-    return mtgltag.retag('ch',val1+op+val2,mtgltag.merge_attrs([attr1,attr2]))
+#def _2type_(m):
+#    """
+#    chains 2 type characteristics separated by a conjunction
+#    :param m: a regex.Match object
+#    :return: the chained types
+#    """
+#    _,val1,attr1 = mtgltag.untag(m.group(1))
+#    _,val2,attr2 = mtgltag.untag(m.group(3))
+#    try:
+#        op = mtgl.conj_op[m.group(2)]
+#    except KeyError:
+#        raise lts.LituusException(lts.ETAGGING,"Illegal op {}".format(m.group(2)))
+#    return mtgltag.retag('ch',val1+op+val2,mtgltag.merge_attrs([attr1,attr2]))
 
 def _reify_chain_(m):
     """
@@ -587,101 +661,101 @@ def _chain_char_(ch,pt=None,clr=None):
     # and return the chained string
     return ret
 
-def _nchain_(m):
-    """
-    chains comma or space separated characteristics possibly cantaining an 'and'/'or'
-    into a single object (implied or explicit)
-    :param m: a regex.Match object
-    :return: the chained object
-    """
-    # TODO: should be able to drop the meta related bookkeeping etc
-    # set up our lists for values and attributes
-    vals = []                                   # characteristics to chain
-    attrs = []                                  # & their attributes
-    meta = []                                   # meta characteristics
-    op = mtgl.AND                               # default 'and'ed characteristics
-    tkn = None                                  # current token in chain
+#def _nchain_(m):
+#    """
+#    chains comma or space separated characteristics possibly cantaining an 'and'/'or'
+#    into a single object (implied or explicit)
+#    :param m: a regex.Match object
+#    :return: the chained object
+#    """
+#    # TODO: should be able to drop the meta related bookkeeping etc
+#    # set up our lists for values and attributes
+#    vals = []                                   # characteristics to chain
+#    attrs = []                                  # & their attributes
+#    meta = []                                   # meta characteristics
+#    op = mtgl.AND                               # default 'and'ed characteristics
+#    tkn = None                                  # current token in chain
+#
+#    # untag each characteristic, save the op when we hit it
+#    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
+#        try:
+#            # untag the token
+#            ti,tv,ta = mtgltag.untag(tkn)
+#
+#            # check if it is a meta-characteristic and if it is p/t
+#            if tv in mtgl.meta_characteristics:
+#                assert('val' in ta)  # any metas should have a 'val'
+#                assert(len(ta) == 1) # and only a 'val'
+#
+#                # should only get p/t = 'x/y' here
+#                if tv == 'p/t':
+#                    vals.append(ta['val']) # append the x/y
+#                    del ta['val']          # this should be empty after this
+#                    attrs.append(ta)
+#                else:
+#                    # cannot see anything being here but just in case
+#                    meta.append((tv,ta['val']))
+#            else:
+#                vals.append(tv)
+#                attrs.append(ta)
+#        except lts.LituusException:
+#            # we've hit the operator, save it
+#            try:
+#                op = mtgl.conj_op[tkn]
+#            except KeyError:
+#                raise lts.LituusException(lts.ETAGGING, "Illegal op {}".format(tkn))
+#        except Exception as e:
+#            raise lts.LituusException(
+#                lts.EUNDEF,"Unknown error {} in _nchain_".format(e)
+#            )
 
-    # untag each characteristic, save the op when we hit it
-    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
-        try:
-            # untag the token
-            ti,tv,ta = mtgltag.untag(tkn)
+#    # check alignments, merge the attributes & returned chained characteristics
+#    return mtgltag.retag('ch',op.join(_aligned_(vals)),mtgltag.merge_attrs(attrs))
 
-            # check if it is a meta-characteristic and if it is p/t
-            if tv in mtgl.meta_characteristics:
-                assert('val' in ta)  # any metas should have a 'val'
-                assert(len(ta) == 1) # and only a 'val'
+#def _aligned_(vals):
+#    """
+#    determines in a list of characteristic tag-values, if an align is present
+#    whether the alignment remains as is or should be a subclass of operator.
+#    Arranges the list of values such that an alignment will be in the first value
+#    :param tkns: list of characteristics which may or may not contain an alignment
+#    :return: the new list of tkns
+#    """
+#    # first determine if there is an alignment operator
+#    i = main = sub = None
+#    for i,val in enumerate(vals):
+#        if mtgl.ARW in val:
+#            main,sub = val.split(mtgl.ARW)
+#            break
+#    if not main: return vals
+#    else: vals = vals.copy()
+#
+#    # determine if each other value is a subtype of the aligned type
+#    align = True
+#    for j,val in enumerate(vals):
+#        # ignore the aligned token
+#        if j == i: continue
+#        if mtgl.ARW in val: val = val.split(mtgl.ARW)[1]
+#
+#        # check each operand if there conjunctions
+#        for par in mtgltag.operand(val):
+#            try:
+#                if not mtgl.subtype_of(mtgltag.strip(par),main):
+#                    align = False
+#                    break
+#            except lts.LituusException:
+#                align = False
+#                break
 
-                # should only get p/t = 'x/y' here
-                if tv == 'p/t':
-                    vals.append(ta['val']) # append the x/y
-                    del ta['val']          # this should be empty after this
-                    attrs.append(ta)
-                else:
-                    # cannot see anything being here but just in case
-                    meta.append((tv,ta['val']))
-            else:
-                vals.append(tv)
-                attrs.append(ta)
-        except lts.LituusException:
-            # we've hit the operator, save it
-            try:
-                op = mtgl.conj_op[tkn]
-            except KeyError:
-                raise lts.LituusException(lts.ETAGGING, "Illegal op {}".format(tkn))
-        except Exception as e:
-            raise lts.LituusException(
-                lts.EUNDEF,"Unknown error {} in _nchain_".format(e)
-            )
-
-    # check alignments, merge the attributes & returned chained characteristics
-    return mtgltag.retag('ch',op.join(_aligned_(vals)),mtgltag.merge_attrs(attrs))
-
-def _aligned_(vals):
-    """
-    determines in a list of characteristic tag-values, if an align is present
-    whether the alignment remains as is or should be a subclass of operator.
-    Arranges the list of values such that an alignment will be in the first value
-    :param tkns: list of characteristics which may or may not contain an alignment
-    :return: the new list of tkns
-    """
-    # first determine if there is an alignment operator
-    i = main = sub = None
-    for i,val in enumerate(vals):
-        if mtgl.ARW in val:
-            main,sub = val.split(mtgl.ARW)
-            break
-    if not main: return vals
-    else: vals = vals.copy()
-
-    # determine if each other value is a subtype of the aligned type
-    align = True
-    for j,val in enumerate(vals):
-        # ignore the aligned token
-        if j == i: continue
-        if mtgl.ARW in val: val = val.split(mtgl.ARW)[1]
-
-        # check each operand if there conjunctions
-        for par in mtgltag.operand(val):
-            try:
-                if not mtgl.subtype_of(mtgltag.strip(par),main):
-                    align = False
-                    break
-            except lts.LituusException:
-                align = False
-                break
-
-    # if align is True, put the main type and alignment op at the first value
-    # otherwise replace the align operator with a subclass operator
-    if align:
-        vals[0] = main + mtgl.ARW + vals[0]
-        vals[i] = sub
-    else:
-        vals[i] = vals[i].replace(mtgl.ARW,mtgl.SUB)
-
-    # have to check whether
-    return vals
+#    # if align is True, put the main type and alignment op at the first value
+#    # otherwise replace the align operator with a subclass operator
+#    if align:
+#        vals[0] = main + mtgl.ARW + vals[0]
+#        vals[i] = sub
+#    else:
+#        vals[i] = vals[i].replace(mtgl.ARW,mtgl.SUB)
+#
+#    # have to check whether
+#    return vals
 
 def _2chain_ex_(m):
     """
@@ -702,24 +776,24 @@ def _2chain_ex_(m):
     if tid == 'ob': return "{} {}".format(mtgltag.retag('ch',ch,{}),tkns[-1])
     else: return mtgltag.retag(tid,val + mtgl.ARW + ch,attr)
 
-def _2chain_conj_(m):
-    """
-    chains two characteristics delimited by a conjunction
-    :param m: the regex.Match object
-    :return: the chained characteristics
-    """
-    # pull out the characteristics and operator
-    ch1,op,ch2 = m.groups()
-
-    # unpack the characteristics
-    _,val1,attr1 = mtgltag.untag(ch1)
-    _,val2,attr2 = mtgltag.untag(ch2)
-
-    # convert operator to symbol
-    try:
-        op = mtgl.conj_op[op]
-    except KeyError:
-        raise lts.LituusException(lts.ETAGGING, "Illegal op {}".format(op))
-
-    # return the conjoined characteristic
-    return mtgltag.retag('ch',val1+op+val2,mtgltag.merge_attrs([attr1,attr2]))
+#def _2chain_conj_(m):
+#    """
+#    chains two characteristics delimited by a conjunction
+#    :param m: the regex.Match object
+#    :return: the chained characteristics
+#    """
+#    # pull out the characteristics and operator
+#    ch1,op,ch2 = m.groups()
+#
+#    # unpack the characteristics
+#    _,val1,attr1 = mtgltag.untag(ch1)
+#    _,val2,attr2 = mtgltag.untag(ch2)
+#
+#    # convert operator to symbol
+#    try:
+#        op = mtgl.conj_op[op]
+#    except KeyError:
+#        raise lts.LituusException(lts.ETAGGING, "Illegal op {}".format(op))
+#
+#    # return the conjoined characteristic
+#    return mtgltag.retag('ch',val1+op+val2,mtgltag.merge_attrs([attr1,attr2]))

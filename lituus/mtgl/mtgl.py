@@ -707,7 +707,7 @@ re_sub_char = re.compile(r"{}".format('|'.join(sub_characteristics)))
 
 # subtype of
 subtypes_of = [
-    'artifact','enchantment','land','planeswalker','instant_sorcery','creature'
+    'artifact','enchantment','land','planeswalker','instant∨sorcery','creature'
 ]
 TYPE_ARTIFACT        = 0
 TYPE_ENCHANTMENT     = 1
@@ -1046,6 +1046,17 @@ re_align_sub = re.compile(
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
 )
 
+# hanging subtypes are those subtype characteristics that are not followed by
+# a type characteristic.
+re_hanging_subtype = re.compile(
+    r"(ch<¬?(?:" + re_sub_char.pattern + ")"
+        r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)?"
+        r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>)"
+    r"(?! ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)?"
+     r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>)"
+)
+
 ####
 ## REIFICATION
 ####
@@ -1077,44 +1088,76 @@ re_pt_chain = re.compile(
     r"(ch<p/t(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
 )
 
-# Three or more comma-delimited color characteristics with conjunction i.e. Hazezon
-# Tamar As of IKO there are only 6
-re_nchain_clr = re.compile(
-    r"(ch<¬?(white|blue|black|green|red|colorless|multicolored|monocolored)>,\s){2,}"
-    r"(and|or|and/or)\s"
-    r"(ch<¬?(white|blue|black|green|red|colorless|multicolored|monocolored)>)"
+# Characteristic Conjunction Chains are two or more sequential characteristics
+# having the form
+#   [char 1, ..., char n-2] char n-1[,] conjunction op char n
+# that can be combined into a single characteristic
+re_conjunction_chain = re.compile(
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>,\s)*"
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    r",? (and|or|and/or) "
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
 )
 
-# Two color characteristics separated by conjunction i.e. Cavern Harpy
-re_2chain_clr = re.compile(
-    r"ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored))>"
-    r"\s?(and|or|and/or)\s"
-    r"ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored))>"
+# a subset of the conjunction_chain that matches only color chains
+re_clr_conjunction_chain = re.compile(
+    r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>,\s)*"
+    r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>)"
+    r",? (and|or|and/or) "
+    r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>)"
 )
+
+# color type pairs where the pair is not preceded by or followed by a characteristic
+# matches the color value and the type tag
+re_clr_type_chain = re.compile(
+    r"(?<!ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*> )"
+    r"(?:ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)"
+    r"(?:[∧∨⊕]¬?(?:white|blue|black|green|red))*)>)"
+    r" "
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+    r"(?:[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)"
+    r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    r"(?! ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+)
+
+# Three or more comma-delimited color characteristics with conjunction i.e. Hazezon
+# Tamar As of IKO there are only 6
+#re_nchain_clr = re.compile(
+#    r"(ch<¬?(white|blue|black|green|red|colorless|multicolored|monocolored)>,\s){2,}"
+#    r"(and|or|and/or)\s"
+#    r"(ch<¬?(white|blue|black|green|red|colorless|multicolored|monocolored)>)"
+#)
+
+# Two color characteristics separated by conjunction i.e. Cavern Harpy
+#re_2chain_clr = re.compile(
+#    r"ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored))>"
+#    r"\s?(and|or|and/or)\s"
+#    r"ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored))>"
+#)
 
 # Three or more comma-delimited type characteristics w/ conjunction i.e. Swan Song
 # This does not check anything other than singleton types
 # NOTE: We do not check for tribal or historic
-re_nchain_type = re.compile(
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>,\s){2,}"
-    r"(and|or|and/or)\s"
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
-)
+#re_nchain_type = re.compile(
+#    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+#      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>,\s){2,}"
+#    r"(and|or|and/or)\s"
+#    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+#      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+#)
 
 # Two type characteristics separated by conjunction i.e. Aura of Silence but not
 # followed by a characteristic i.e. Temple Thief. Does not check for anything other
 # than singleton types
 # NOTE: Does not check for tribal or historic
-re_2chain_type = re.compile(
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
-    r"\s?(and|or|and/or)\s"
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
-    r"(?!\sch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
-)
+#re_2chain_type = re.compile(
+#    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+#      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+#    r"\s?(and|or|and/or)\s"
+#    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+#      r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+#    r"(?!\sch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+#)
 
 # phrases of the form CHAR, CHAR OBJ|CHAR where:
 #  the phrase is preceded by a quantifier

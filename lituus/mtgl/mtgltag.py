@@ -168,6 +168,15 @@ def strip(tkn):
     if tkn[0] in ["+","-",mtgl.NOT]: return tkn[1:]
     else: return tkn
 
+re_complex_op = re.compile(r"[∧∨⊕→⭰]")
+def complex_ops(tkn):
+    """
+    returns a list of complex operators in the value tkn
+    :param tkn: value to check
+    :return: list of complex operators
+    """
+    return re_complex_op.findall(tkn)
+
 def merge_attrs(attrs,strict=1):
     """
      merges the attributes lists in attrs based on specified strictness level.
