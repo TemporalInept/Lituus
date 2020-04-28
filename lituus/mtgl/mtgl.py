@@ -1112,11 +1112,11 @@ re_clr_conjunction_chain = re.compile(
 re_clr_type_chain = re.compile(
     r"(?<!ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*> )"
     r"(?:ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)"
-    r"(?:[∧∨⊕]¬?(?:white|blue|black|green|red))*)>)"
+     r"(?:[∧∨⊕]¬?(?:white|blue|black|green|red))*)>)"
     r" "
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)"
-    r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+     r"(?:[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)*"
+     r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
     r"(?! ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
 )
 
@@ -1177,7 +1177,7 @@ re_2chain_special = re.compile(
       r"artifact|creature|enchantment|instant|land|planeswalker|sorcery|tribal|"
       r"historic|legendary|basic|snow|world))>)"
     r",\s(?:ch<(¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)>)\s"
-    r"((?:ch|ob)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    #r"((?:ch|ob)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
     r"(?!\s,?(?:ch|ob)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰']+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
 )
 

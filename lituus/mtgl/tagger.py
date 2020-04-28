@@ -336,7 +336,7 @@ def align_types(txt):
 
 def chain_characteristics(txt):
     """
-     Sequential charcteristics can be combined into a single characteristic
+    Sequential charcteristics can be combined into a single characteristic
     :param txt: tagged oracle txt
     :return: modified tagged txt with sequential characterisitcs chained
     NOTE: these must be followed in order
@@ -344,7 +344,7 @@ def chain_characteristics(txt):
     # start with colors as they may be 'sub-chains' within a large chain or may
     # be part of a color type pair
     ntxt = mtgl.re_clr_conjunction_chain.sub(lambda m: _chain_(m),txt)
-    ntxt = mtgl.re_clr_type_chain.sub(lambda m: _clr_type_(m),ntxt)
+    #ntxt = mtgl.re_clr_type_chain.sub(lambda m: _clr_type_(m),ntxt)
 
     #### SCRAPPED FOR NOW
     # IOT assist in chaining characteristics chain colors, types and exceptions
@@ -522,27 +522,29 @@ def _clr_type_(m):
     if mtgl.OR in val or mtgl.AOR in val and mtgl.AND in clr: clr = '('+clr+')'
     return mtgltag.retag(tid,val+mtgl.AND+clr,attr)
 
-#def _align_type_(m):
-#    """
-#    aligns super-type(s) or sub-type(s) to type
-#    :param m: a regex.Match object
-#    :return: the aligned types
-#    """
-#    # split the group into tokens - the last tkn is the type, the first n-1 are
-#    # the super-type(s) or subtypes
-#    tkns = [x for x in lexer.tokenize(m.group())[0]]
-#
-#    # untag the type. If it already has an alignment operator use an AND otherwise
-#    # need to use the alignment first
-#    op = None
-#    _,val,attr = mtgltag.untag(tkns[-1])
-#    if mtgl.ARW in val: op = mtgl.AND
-#    else: op = mtgl.ARW
-#
-#    # join the characteristics and retag
-#    # TODO: make sure we won't see attributes on the preceding characteristics
-#    val += op + mtgl.AND.join([mtgltag.tag_val(tkn) for tkn in tkns[:-1]])
-#    return mtgltag.retag('ch',val,attr)
+def _align_type_(m):
+    """
+    aligns super-type(s) or sub-type(s) to type
+    :param m: a regex.Match object
+    :return: the aligned types
+    """
+    # split the group into tokens - the last tkn is the type, the first n-1 are
+    # the super-type(s) or subtypes
+    tkns = [x for x in lexer.tokenize(m.group())[0]]
+
+    # untag the type. Determine the operator - if it already has an alignment
+    # operator use an AND otherwise need to use the alignment first. Also have
+    # to make sure the type is not complex, if it is encapsulate it
+    _,val,attr = mtgltag.untag(tkns[-1])
+    op = None
+    if mtgl.ARW in val: op = mtgl.AND
+    else: op = mtgl.ARW
+    if mtgltag.complex_ops(val): val = '('+val+')'
+
+    # join the characteristics and retag
+    # TODO: make sure we won't see attributes on the preceding characteristics
+    val += op + mtgl.AND.join([mtgltag.tag_val(tkn) for tkn in tkns[:-1]])
+    return mtgltag.retag('ch',val,attr)
 
 #def _reify_st_(m):
 #    """
