@@ -74,11 +74,11 @@ re_loy_cost = re.compile(r"[\+−]?nu<[\d|x]+>")
 # extract components of a tag (excluding all prop-values)
 # TODO: scrub this
 re_tag = re.compile(
-    r"(\w\w)"                            # 2 char tag-id       
-    r"<"                                 # opening bracket
-    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬→⭰]+?)"      # tag value (w/ optional starting not)
-    r"( [\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*" # 0 or more attributes delimited by space
-    r">"                                 # closing bracket
+    r"(\w\w)"                             # 2 char tag-id       
+    r"<"                                  # opening bracket
+    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬→⭰'\(\)]+?)"  # tag value (w/ optional starting not)
+    r"( [\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*"  # 0 or more attributes delimited by space
+    r">"                                  # closing bracket
 )
 
 # extract the attribute pairs
@@ -177,6 +177,53 @@ def complex_ops(tkn):
     """
     return re_complex_op.findall(tkn)
 
+re_paren = re.compile(r"[\(\)]")
+def is_wrapped(tkn):
+    """
+    determines if tkn is wrapped by paranethesis
+    :param tkn: tkn to check
+    :return: True if tkn is wrapped
+    """
+    return re_paren.search(tkn) is not None
+
+def unwrap(tkn):
+    """
+    removes OUTER parenthesis from tkn NOTE: only removes the outer paranethesis
+    does not remove any internal
+    :param tkn: tkn to uwrap
+    :return: unwrapped token
+    """
+    # TODO: why does this return ['',tkn,'']
+    try:
+        return re_paren.split(tkn)[1]
+    except IndexError:
+        return tkn
+
+def wrap(tkn):
+    """
+    encapsulates the tkn in parenthesis
+    :param tkn: tkn to wrap
+    :return: the wrapped token
+    """
+    return '('+tkn+')'
+
+def is_aligned(tkn):
+    """
+    determines if tkn is aligned
+    :param tkn: value to check
+    :return: returns True if tkn is aligned
+    """
+    if mtgl.ARW in tkn: return True
+    else: return False
+
+def split_align(tkn):
+    """
+    splits tkn on alignment operator
+    :param tkn: value to split
+    :return: aligned-type,aligned-characteristics
+    """
+    return tkn.split(mtgl.ARW)
+
 def merge_attrs(attrs,strict=1):
     """
      merges the attributes lists in attrs based on specified strictness level.
@@ -193,7 +240,7 @@ def merge_attrs(attrs,strict=1):
     """
     if not attrs: return {} # don't bother if the list is empty
     mattrs = {}
-    keys = list(set.union(*map(set,[x.keys() for x in attrs])))
+    keys = list(set.union(*map(set,[attr.keys() for attr in attrs])))
     for key in keys:
         vals = set()
 

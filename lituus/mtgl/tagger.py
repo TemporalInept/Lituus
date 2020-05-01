@@ -12,8 +12,8 @@ Tags MTG oracle text in the mtgl format
 
 #__name__ = 'tagger'
 __license__ = 'GPLv3'
-__version__ = '0.1.4'
-__date__ = 'April 2020'
+__version__ = '0.1.5'
+__date__ = 'May 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -288,6 +288,7 @@ def second_pass(txt):
     """
     ntxt = pre_chain(txt)
     ntxt = chain_characteristics(ntxt)
+    ntxt = reify(ntxt)
     return ntxt
 
 def pre_chain(txt):
@@ -329,7 +330,7 @@ def align_types(txt):
     :param txt: tagged oracle txt
     :return: aligned txt
     """
-    ntxt = mtgl.re_align_dual.sub(lambda m: _align_type_(m),txt)   # consecutive types
+    ntxt = mtgl.re_align_dual.sub(lambda m: _align_dual_(m),txt)   # consecutive types
     ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)   # sub, type
     ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),ntxt) # super, type
     return ntxt
@@ -344,64 +345,22 @@ def chain_characteristics(txt):
     # start with colors as they may be 'sub-chains' within a large chain or may
     # be part of a color type pair
     ntxt = mtgl.re_clr_conjunction_chain.sub(lambda m: _chain_(m),txt)
-    #ntxt = mtgl.re_clr_type_chain.sub(lambda m: _clr_type_(m),ntxt)
+    ntxt = mtgl.re_clr_conjunction_chain_special.sub(lambda m: _chain_(m),ntxt)
+    ntxt = mtgl.re_clr_type_chain.sub(lambda m: _clr_type_(m),ntxt)
 
-    #### SCRAPPED FOR NOW
-    # IOT assist in chaining characteristics chain colors, types and exceptions
-    #ntxt = color_chain(txt)
-    #ntxt = mtgl.re_2chain_special.sub(lambda m: _2chain_ex_(m),ntxt)
-    #ntxt = type_chain(ntxt)
-
-    # reification chains [P/T] [COLOR] TYPE [OBJECT]
-    #ntxt = mtgl.re_nchain_obj.sub(lambda m: _reify_chain_(m),ntxt)
-
-    # Multi chains:
-    #  a) 3 or more comma separated characteristics w/ explicit conjunctions 'and',
-    #   'or' or 'and/or' which may or may not be followed by more characteristics
-    #    and/or an object
-    #  b) 3 or more space separated characteristics w/o a conjuction and followed
-    #   by a an object Spawning Pit
-    #ntxt = mtgl.re_nchain_conj.sub(lambda m: _nchain_(m),ntxt)
-    #ntxt = mtgl.re_nchain_space.sub(lambda m: _nchain_(m),ntxt)
-
-    # Dual chains make up the prevalent characteristic chain but care must be
-    # taken to not inadvertently chain characteristics inadverntly:
-    #  a) 2 characteristics delimited by a conjunction may or may not be
-    #   followed by an object
-    #  b) 2 comma-delimited char followed by an object and preceded by a quantifier
-    #   (quantifier char, char, obj) i.e. Chrome Mox (As of TBD, only 19 cards)
-    #ntxt = mtgl.re_2chain_conjunction.sub(lambda m: _nchain_(m),ntxt)
-    #ntxt = mtgl.re_2chain_quant_obj.sub(lambda m: _2chain_qo_(m),ntxt)
+    # chain conjunctions
+    ntxt = mtgl.re_conjunction_chain.sub(lambda m: _chain_(m),ntxt)
+    ntxt = mtgl.re_conjunction_chain_special.sub(lambda m: _chain_special_(m),ntxt)
 
     return ntxt
 
-def color_chain(txt):
+def reify(txt):
     """
-    chains color chains both dual and nchains. Color chains will either be
-    conjuctive i.e clr1 and clr2 or comma-delimited i.e. clr1, clr2, or clr3
-    :param txt: current text
-    :return: txt with color chains
+    reifies characteristics
+    :param txt: tagged and chained txt
+    :return: txt with reified characteristics
     """
-    # do nchains then dual chains
-    ntxt = mtgl.re_nchain_clr.sub(lambda m: _ncolor_(m),txt)
-    ntxt = mtgl.re_2chain_clr.sub(
-        lambda m: r"ch<{}{}{}>".format(
-            m.group(1),mtgl.conj_op[m.group(2)],m.group(3)
-        ),ntxt
-    )
-    return ntxt
-
-def type_chain(txt):
-    """
-    chains type chains both dual and nchains. Type chains will either be
-    conjuctive i.e type1 and type2 or comma-delimited i.e. type1, type2, or type3
-    :param txt: current text
-    :return: txt with type chains
-    """
-    # do nchains then dual chains
-    ntxt = mtgl.re_nchain_type.sub(lambda m: _ntype_(m),txt)
-    ntxt = mtgl.re_2chain_type.sub(lambda m: _2type_(m),ntxt)
-    return ntxt
+    return txt
 
 ####
 ## PRIVATE FUNCTIONS
@@ -485,27 +444,106 @@ def _chain_(m):
     :param m: a regex.Match object
     :return: the chained object
     """
-    # initialize are tag parameters
+    # initialize new tag parameters
     ntid = None
     nval = []
     nattr = {}
     op = mtgl.AND # default is and
 
+    # initialize loop variables
+    aligned = True
+    atype = None
+
     # extract the tags and operator
-    for tkn in [tag for tag in lexer.tokenize(m.group())[0] if tag != ',']:
+    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
         try:
-            tid,val,attr = mtgltag.untag(tkn)       # untag the tkn
-            if not ntid: ntid = tid                 # instantiate tag-id once
-            assert(ntid == tid)                     # check that all have same id
-            nval.append(val)                        # add new tag value to the list
-            nattr = mtgltag.merge_attrs(attr,nattr) # & merge the new attribute dict
+            # untag the tag and check for meta characterisitcs
+            tid,val,attr = mtgltag.untag(tkn)
+            if val in mtgl.meta_characteristics: return m.group()
+
+            # instantiate the new tag-id once (for now, make sure eah tag has
+            # the same tag-id
+            if not ntid: ntid = tid
+            assert(ntid == tid)
+
+            # check for alignment on the same type across all tokens
+            # See Quest for Ula's Temple
+            if not mtgltag.is_aligned(val): aligned = False
+            else:
+                # get the type and set atype if necessary then ensure the new
+                # type is the same as atype
+                ptype = val.split(mtgl.ARW)[0]
+                if not atype: atype = ptype
+                if atype != ptype: aligned = False
+
+            # check for complex values and wrap in () present then append the
+            # tag-value and merge the tag's attribute dict
+            if mtgltag.complex_ops(val): val = mtgltag.wrap(val)
+            nval.append(val)
+            nattr = mtgltag.merge_attrs([attr,nattr])
         except lts.LituusException:
             # should be the operator
             try:
                 op = mtgl.conj_op[tkn]
             except Keyerror:
                 raise lts.LituusException(lts.MTGL,"Illegal op {}".format(tkn))
-    return mtgltag.retag(ntid,op.join(nval),nattr)
+
+    # if there is no alignment, join the values by the operator. otherwise
+    # condense alignment joining only the aligned characteristics
+    # For example creature→skeleton, creature→vampire, or creature→zombie>
+    # becomes creature→(skeleton∨vampire∨zomebie)
+    if not aligned: nval = op.join(nval)
+    else:
+        nval = "{}→({})".format(
+            atype,op.join([_repackage_aligned_val_(x) for x in nval])
+        )
+
+    # create the new tag
+    return mtgltag.retag(ntid,nval,nattr)
+
+def _repackage_aligned_val_(val):
+    """
+    for aligned values will unwrap parenthesis as necessary, extract the aligned
+    characteristics from the aligned val and rewrap those characteristics as
+    necessary
+    :param val: val to repackage
+    :return: repackaged val
+    """
+    if not mtgltag.is_wrapped(val): return mtgltag.split_align(val)[1]
+    else:
+        val = mtgltag.unwrap(val)
+        return mtgltag.wrap(mtgltag.split_align(val)[1])
+
+def _chain_special_(m):
+    """
+    chains or aligns two sequential characteristics separated by a comma
+    :param m: a regex.Match object
+    :return: the chained object
+    """
+    # the first will be a value only but have to unpack the second
+    ch1,ch2,op = m.groups()
+    tid,val,attr = mtgltag.untag(ch2)
+    ntag = None
+
+    # don't do anything if ch1 and val are the same type
+    if mtgltag.strip(ch1) == mtgltag.strip(val): return m.group()
+
+    # two possibilities. If val is complex, we need to align otherwise conjoin
+    if not mtgltag.complex_ops(val):
+        # if there is a hanging conjunction use it otherwise use and
+        nop = mtgl.conj_op[op] if op else mtgl.AND
+        ntag = mtgltag.retag(tid,ch1+nop+val,attr)
+        if nop != mtgl.AND: ntag += ', {}'.format(op)
+    else:
+        # the first operand is the main type, subsequent will be 'and'ed with ch1
+        # and aligned to the first
+        vals = mtgltag.operand(val)
+        ntag = mtgltag.retag(
+            tid,"{}→({})".format(vals[0],mtgl.AND.join(vals[1:]+[ch1])),attr
+        )
+
+    # return the tag plus any hanging conjunctions
+    return ntag
 
 def _clr_type_(m):
     """
@@ -518,13 +556,24 @@ def _clr_type_(m):
     # it has an 'and'
     clr = m.group(1)
     tid,val,attr = mtgltag.untag(m.group(2))
-    if mtgl.OR in clr or mtgl.AOR in clr: clr = '('+clr+')'
-    if mtgl.OR in val or mtgl.AOR in val and mtgl.AND in clr: clr = '('+clr+')'
+    if mtgl.OR in clr or mtgl.AOR in clr: clr = mtgltag.wrap(clr)
+    if mtgl.OR in val or mtgl.AOR in val and mtgl.AND in clr: val = mtgltag.wrap(val)
     return mtgltag.retag(tid,val+mtgl.AND+clr,attr)
+
+def _align_dual_(m):
+    """
+    aligns or chains two consecutive types depending on presence of conjunction
+    operator
+    :param m: a regex.Match object
+    :return: the aligned or chained types
+    """
+    # if we have a conjunction operator chain otherwise align
+    if m.group(2) in mtgl.conj_op: return _chain_(m)
+    else: return _align_type_(m)
 
 def _align_type_(m):
     """
-    aligns super-type(s) or sub-type(s) to type
+    aligns super-type(s) and sub-type(s) to type
     :param m: a regex.Match object
     :return: the aligned types
     """
@@ -539,7 +588,7 @@ def _align_type_(m):
     op = None
     if mtgl.ARW in val: op = mtgl.AND
     else: op = mtgl.ARW
-    if mtgltag.complex_ops(val): val = '('+val+')'
+    if mtgltag.complex_ops(val): val = mtgltag.wrap(val)
 
     # join the characteristics and retag
     # TODO: make sure we won't see attributes on the preceding characteristics
@@ -651,13 +700,13 @@ def _chain_char_(ch,pt=None,clr=None):
     :return: a tagged object
     """
     # set ret to ch, if ch has 'opposite' conjunctions encapsulate in parentheses
-    ret = '('+ch+')' if (pt or clr) and (mtgl.OR in ch or mtgl.AOR in ch) else ch
+    ret = mtgltag.wrap(ch) if (pt or clr) and (mtgl.OR in ch or mtgl.AOR in ch) else ch
 
     # AND the p/t if present. With color is different, encapsulate in parentheses
     # if it has 'opposite' conjuctions
     if pt: ret += mtgl.AND + pt
     if clr:
-        if mtgl.OR in clr: clr = '(' + clr + ')'
+        if mtgl.OR in clr: clr = mtgltag.wrap(clr)
         ret += mtgl.AND + clr
 
     # and return the chained string

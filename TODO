@@ -56,9 +56,7 @@ a lot becuase the first object is a token
  a. Wave of Vitriol goes type<-super
  b. Cautery Sliver goes type<-sub
 
-74. See Purge ch<artifact> ch<creature∨black> ch<creature> it should be 
-creature&artifact or black&creature
- o See Elven Riders - the "with flying" only applies to the creatures and not the walls
+74. See Elven Riders - the "with flying" only applies to the creatures and not the walls
  Both of these occur in  mtgl.re_2chain_conj
 
 76. Add support for flip lands from Ixalan, and other new land types from last 3 sets
@@ -83,26 +81,31 @@ creature&artifact or black&creature
 
 95. Need to add and deconflict lituus status
 
-96. See Soul Separator it reads "... with power equal to that card's power and toughness equal to that card's toughness" which results in "power and toughness" being combined. This will happen to Kalitas, Bloodchief of Ghet
-xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card suffix='s> xr<toughness>
+96. See Soul Separator it reads "... with power equal to that card's power and toughness equal to that card's toughness" which results in "power and toughness" being combined. This will happen to Kalitas, Bloodchief of Ghet 
+xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card suffix='s> xr<toughness> 
 
 97. When deleting reminder text, a hanging space is left behind
-
-100. what to do about supertypes that come before subtypes (Bant Panorama)
-
-101. If we do the nchain_object (p/t color type) need to think about cards like
-Nim Deathmantle which does not have a type only a subtype
-
-102. convert to alignment if type is set?
-
-104. After reifying we still have (Quest for Ula's Temple) 
-ch<kraken>, ch<leviathan>, ch<octopus>, or ob<card characteristics=creature→serpent>
-
-105. Should we add implied types when we have a 'hanging' sub-type like such 
-as Nim Deathmantle, God-Pharoah's Gift
 
 106. Remember 'draft' cards being a problem last time
 
 107. Still have to tag combat damage, life
+
+108. Going to have to figure out when to transpose conjunctions from AND to OR i.e. with Blind Obedience, Mox Amber there is an implied 'all' or 'each' with Decree of Annihilation there is a 'all' quanitifier (inside or after conjunction_chain)
+
+110. pr<top> ob<card> here top should be a quantifier
+
+111. Nature's Chose "...is ka<untap suffix=ed>..." should be a status. mtgl.re\_status is checking for a preceding "is " and 
+
+112. Kalia of the Vast - tapped and attacking should both be status
+
+113. Life and Limb has two all quanitifiers.
+
+114. Wandering Mage "...xp<player> or ch<planeswalker>..." see this a lot. How do we want to handle it?
+
+115. See Soul Separator currently have ch<creature→zombie∧black> after tagger._clr_type_ should the zombie and black be wrapped i.e. ch<creature→(zombie∧black)> or leave as 
+
+117. Cards like Martyrdom, Captain's Maneuver, Price of Betrayal are going to present a problem " target creature, planeswalker, or player"
+
+
 
 
