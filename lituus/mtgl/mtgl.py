@@ -1141,24 +1141,17 @@ re_conjunction_chain_special = re.compile(
     r"(?:, (and|or|and/or))?"
 )
 
+re_pob_chain = re.compile(
+    r"ch<(¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))"
+     r"[∧∨⊕](¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))>"
+    r",\s"
+    r"ch<(¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))>"
+    r"(?:, (and|or|and/or))"
+)
+
 ####
 ## REIFICATION
 ####
-
-# find singleton types, characteristics that have
-#  one or more logical operator joined types
-#  are not preceded by a characteristic (and a comma or conjuction)
-#  may be followed by an object
-#  are not followed by a characteristic
-# TODO: this fails on alignments
-#re_singleton_type = re.compile(
-#    r"(?<!ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>,?\s)"
-#    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-#     r"(?:¬?[∧∨⊕](?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
-#     r"(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
-#    r"(?:\s(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>))?"
-#    r"(?!\sch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?:\s[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
-#)
 
 # Phrases of the form [P/T] [COLOR] TYPE [OBJECT]. This requires that colors
 # and types have been chained and aligned
@@ -1178,7 +1171,6 @@ re_reify_char = re.compile(
 )
 
 #**** TODO UNDER RCONSTRUCTION ****#
-
 
 # Three or more comma-delimited color characteristics with conjunction i.e. Hazezon
 # Tamar As of IKO there are only 6

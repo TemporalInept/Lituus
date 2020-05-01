@@ -351,6 +351,11 @@ def chain_characteristics(txt):
     # chain conjunctions
     ntxt = mtgl.re_conjunction_chain.sub(lambda m: _chain_(m),ntxt)
     ntxt = mtgl.re_conjunction_chain_special.sub(lambda m: _chain_special_(m),ntxt)
+    ntxt = mtgl.re_pob_chain.sub( # Price of Betrayal
+        lambda m: r"ch<{0}{4}{1}{4}{2}>, {3}".format(
+            m.group(1),m.group(2),m.group(3),m.group(4),mtgl.conj_op[m.group(4)]),
+        ntxt
+    )
 
     return ntxt
 
