@@ -177,6 +177,15 @@ def complex_ops(tkn):
     """
     return re_complex_op.findall(tkn)
 
+re_conj_op = re.compile(r"[∧∨⊕]")
+def conjunction_ops(tkn):
+    """
+    returns a list of conjunction operators in the value tkn
+    :param tkn: value to check
+    :return: list of conjunction operators
+    """
+    return re_conj_op.findall(tkn)
+
 re_paren = re.compile(r"[\(\)]")
 def is_wrapped(tkn):
     """
@@ -185,6 +194,14 @@ def is_wrapped(tkn):
     :return: True if tkn is wrapped
     """
     return re_paren.search(tkn) is not None
+
+def wrap(tkn):
+    """
+    encapsulates the tkn in parenthesis
+    :param tkn: tkn to wrap
+    :return: the wrapped token
+    """
+    return '('+tkn+')'
 
 def unwrap(tkn):
     """
@@ -198,14 +215,6 @@ def unwrap(tkn):
         return re_paren.split(tkn)[1]
     except IndexError:
         return tkn
-
-def wrap(tkn):
-    """
-    encapsulates the tkn in parenthesis
-    :param tkn: tkn to wrap
-    :return: the wrapped token
-    """
-    return '('+tkn+')'
 
 def is_aligned(tkn):
     """
