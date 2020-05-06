@@ -25,6 +25,7 @@
 43. Stangg Twin in card Stangg is being tagged as <obj ref=self> twin - have to fix this
 
 47. How to handle two consecutive objects like Trail of Crumbs "permanent card"
+ o align these similar to characteristics?
 
 50. Will have to deconflict IKO keyword counters that are incorrectly tagged as 
 keywords
@@ -33,20 +34,8 @@ keywords
 
 53. Can use the possessive suffix "'s" for some meta characteristics see Sewer Nemesis
 
-54. Sarpadian Empires, Vol. VII is a good example of 'grouping' vs 'chaining' and needs to be handled prior to 3chain
-
 57. Ivory Guardians has object characteristic object phrase will probably see
 a lot becuase the first object is a token
-
-59. looking at Dreams of the Dead and Cavern Harpy, do we want creature->white&black
- - in the case of Cavern Harpy, do we want 
-    "blue|black&creature" which if precedence is left to right works but
-    "creature->blue|black" is easier
-  - brings an interesting observation in the case of Cavern Harpy, there is an
-    implied object (as is there is in Terror) and creature is the target of the
-    effect
-
-66. When we get to singleton characteristics have to take into account landwalk, possibly cycling see Ayumi, the Last Visitor
 
 69. Cloudseeder, the last 'cloud sprite' is not being tagged as an object. Is it because of the double quote?
 
@@ -73,9 +62,7 @@ a lot becuase the first object is a token
 
 90. Consider changing some cost related tags to 'xr'
 
-92. See Timesifter "nu<2> or more" - we could change this to "op<>=> nu<2>"
-
-94. Tag forms of "amount of"
+94. Tag forms of "amount of", amount
 
 95. Need to add and deconflict lituus status
 
@@ -98,10 +85,10 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 113. Life and Limb has two all quanitifiers.
 
-114. Wandering Mage "...xp<player> or ch<planeswalker>..." see this a lot. How do we want to handle it?
+114. Wandering Mage "...xp<player> or ch<planeswalker>..." How do we want to handle it?
+ o Cards like Martyrdom, Captain's Maneuver are going to present a problem " target creature, planeswalker, or player"
 
-117. Cards like Martyrdom, Captain's Maneuver are going to present a problem " target creature, planeswalker, or player"
+127. See Silumgar Monument
+'{t}: xa<add> {u} or {b}.\n{4}{u}{b}: ob<card ref=self> xa<become suffix=s> xq<a> ob<permanent characteristics=creature→(4/4∧blue∧black∧(artifact∧dragon))> pr<with> kw<flying> sq<until> ts<eot>.'
+ we can unwrap the inner artifact&dragon
 
-121. Define order of precedence, thinking parenthesis, prefix (not,+,-), align (->) and conjunction (and, or, and/or)
-
-122.

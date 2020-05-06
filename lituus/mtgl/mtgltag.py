@@ -118,6 +118,10 @@ def is_mana(tkn):
     except lts.LituusException:
         return False
 
+####
+## TAG RELATED
+####
+
 def is_tag(tkn):
     try:
         _ = untag(tkn)
@@ -143,30 +147,75 @@ def untag(tkn):
     except AttributeError: # signifies a None returned from re_tag
         raise lts.LituusException(lts.ETAG,"Invalid tag {}".format(tkn))
 
-def tag_id(tkn): return untag(tkn)[0]
+re_hanging = re.compile(r"(\s)>") # find hanging spaces before ending angle brace
+def retag(tag,val,attrs):
+    """
+     builds a tag from tag name, tag-value and attribute list
+    :param tag: two character tag name
+    :param val: the tag value
+    :param attrs: dict of key=property,value=prop-value
+    :return: the built tag
+    """
+    return re_hanging.sub(
+        '>',"{}<{} {}>".format(
+            tag,val," ".join(["=".join([a,attrs[a]]) for a in attrs])
+        )
+    )
 
-def tag_val(tkn): return untag(tkn)[1]
+# TAG COMPONENTS
 
-def tag_attr(tkn): return untag(tkn)[2]
+def tag_id(tag): return untag(tag)[0]
 
-def operand(tkn,op=False):
+def tag_val(tag): return untag(tag)[1]
+
+def tag_attr(tag): return untag(tag)[2]
+
+# TAG VALUES
+
+def operand(val,op=False):
     """
     splits the parameter tkn in operands and operators
     :param tkn: the paramater value
     :param op: if true returns operators as well
     :return: list of parameter operands (operators if specified)
     """
-    if op: return mtgl.re_param_delim_wop.split(tkn)
-    else: return mtgl.re_param_delim_nop.split(tkn)
+    # TODO: why is '' returned
+    if op: return [x for x in mtgl.re_param_delim_wop.split(val) if x != '']
+    else: return [x for x in mtgl.re_param_delim_nop.split(val) if x != '']
 
-def strip(tkn):
+# infix to postfix of complex value expressions
+exp_ops = [mtgl.ARW,mtgl.AND,mtgl.OR,mtgl.AOR,]
+_OPP_ = {
+    mtgl.NOT:4, mtgl.ADD:4, mtgl.SUB:4, # prefix
+    mtgl.ARW:3,                         # align
+    mtgl.AND:2, mtgl.OR:2, mtgl.AOR:2,  # conjunction
+    '(':1
+}
+def _precedence_(op1,op2): return _OPP_[op1] <= _OPP_[op2]
+def postfix(val):
+    """ convert the infix expression of val to postfix """
+    p = []
+    s = []
+    for tkn in operand(val,True):
+        if tkn == '(': s.append(tkn)
+        elif tkn == ')':
+            while(s and s[-1] != '('): p.append(s.pop())
+            if s and s[-1] == '(': s.pop()
+        elif tkn in exp_ops:
+            while(s and _precedence_(tkn,s[-1])): p.append(s.pop())
+            s.append(tkn)
+        else: p.append(tkn)
+    while(s): p.append(s.pop())
+    return p
+
+def strip(val):
     """
-    removes prefix operators from tkn i.e. negate, plus, minus
-    :param tkn: the token
-    :return: the unadorned token
+    removes prefix operators from the value i.e. negate, plus, minus
+    :param val: the value
+    :return: the unadorned value
     """
-    if tkn[0] in ["+","-",mtgl.NOT]: return tkn[1:]
-    else: return tkn
+    if val[0] in ["+","-",mtgl.NOT]: return val[1:]
+    else: return val
 
 re_complex_op = re.compile(r"[∧∨⊕→⭰]")
 def complex_ops(tkn):
@@ -203,35 +252,46 @@ def wrap(tkn):
     """
     return '('+tkn+')'
 
-def unwrap(tkn):
+def unwrap(val):
     """
     removes OUTER parenthesis from tkn NOTE: only removes the outer paranethesis
     does not remove any internal
-    :param tkn: tkn to uwrap
+    :param val: value to uwrap
     :return: unwrapped token
     """
-    # TODO: why does this return ['',tkn,'']
-    try:
-        return re_paren.split(tkn)[1]
-    except IndexError:
-        return tkn
+    if val.startswith('(') and val.endswith(')'): return val[1:-1]
+    else: return val
 
-def is_aligned(tkn):
+def is_aligned(val):
     """
-    determines if tkn is aligned
-    :param tkn: value to check
-    :return: returns True if tkn is aligned
+    determines if val is aligned. NOTE: only checks if there is a top level
+    alignment. For example will return True for creature->artifact but False
+    for creature&artifact->equipment since the top level operator is an 'and'
+    :param val: value to check
+    :return: returns True if val is aligned
     """
-    if mtgl.ARW in tkn: return True
+    # if value is converted to postfix and the last item in the postfix exp. is
+    # an alignment, we have a top level alignment
+    if postfix(val)[-1] == mtgl.ARW: return True
     else: return False
 
-def split_align(tkn):
+def split_align(val):
     """
-    splits tkn on alignment operator
-    :param tkn: value to split
+    splits val on alignment operator. See above, will only split the top-level
+    alignment if it exists
+    :param val: value to split
     :return: aligned-type,aligned-characteristics
     """
-    return tkn.split(mtgl.ARW)
+    if not is_aligned(val): return val,''
+    else:
+        # once confirmed as a top-level alignment, the first alignment operator
+        # is the one to split on. everything to the left is the aligned type &
+        # everything to the right is the aligned characteristics
+        exp = operand(val,True)
+        i = exp.index(mtgl.ARW)
+        atype = ''.join(exp[:i])
+        aval = ''.join(exp[i+1:])
+        return atype,aval
 
 def merge_attrs(attrs,strict=1):
     """
@@ -269,29 +329,6 @@ def merge_attrs(attrs,strict=1):
             )
         mattrs[key] = mtgl.AND.join([val for val in vals])
     return mattrs
-
-re_hanging = re.compile(r"(\s)>") # find hanging spaces before ending angle brace
-def retag(tag,val,attrs):
-    """
-     builds a tag from tag name, tag-value and attribute list
-    :param tag: two character tag name
-    :param val: the tag value
-    :param attrs: dict of key=property,value=prop-value
-    :return: the built tag
-    """
-    return re_hanging.sub(
-        '>',"{}<{} {}>".format(
-            tag,val," ".join(["=".join([a,attrs[a]]) for a in attrs])
-        )
-    )
-
-def same_tag(tkns):
-    tid = None
-    for tkn in tkns:
-        t = mtgl.untag(tkn)[0]
-        if not tid: tid = t
-        elif t != tid: return False
-    return True
 
 def is_tgr_word(tkn):
     try:

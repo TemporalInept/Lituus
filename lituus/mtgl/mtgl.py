@@ -95,6 +95,8 @@ GE  = '≥' # mtgl greater than or equal
 EQ  = '≡' # mtgl equal to
 ARW = '→' # alignment
 SUB = '⭰' # subclass/inheritance
+ADD = '+' # plus sign
+SUB = '-' # minus sign
 # symbols defined in oracle text
 HYP = '—' # mtg long hyphen
 BLT = '•' # mtg bullet
@@ -112,7 +114,7 @@ MIN = '−' # not used yet (found in negative loyalty costs)
 
 # CATCHALLS
 # re_dbl_qte = r'".*?"'                            # double quoted string
-re_rem_txt = re.compile(r"\(.+?\)")             # reminder text
+re_rem_txt = re.compile(r"\(.+?\)")                # reminder text
 re_mana_remtxt = re.compile(r"\(({t}: add.+?)\)")  # find add mana inside ()
 re_non = re.compile(r"non(\w)")                    # find 'non' without hyphen
 re_un = re.compile(r"un(\w)")                      # find 'un'
@@ -268,6 +270,7 @@ word_hacks = {
     "creating":"createing","created":"createed",
     "doubling":"doubleing","doubled":"doubled",
     "exchanging":"exchangeing","exchanged":"exchangeed",
+    "equipped":"equiped",
     "exiling":"exileing","exiled":"exileed",
     "fought":"fighted",
     "regenerating":"regenerateing","regenerated":"regenerateed",
@@ -423,8 +426,8 @@ re_generic_turn = re.compile(r"\b({})".format('|'.join(generic_turns)))
 #   keys is provided. Since OrderedDict implementation varies across Python 3.x
 #   versions this is preferable to having non-portable code
 op = {
-    "less than or equal to":LE,"greater than or equal to":GE,
-    "less than":LT,"greater than":GT,"equal to":EQ,"equal":EQ,
+    "less than or equal to":LE,"greater than or equal to":GE,"less than":LT,
+    "greater than":GT,"equal to":EQ,"equal":EQ,
     "plus":'+',"minus":'-',
 }
 op_keys = [
@@ -434,7 +437,7 @@ op_keys = [
 re_op = re.compile(r"\b({})\b".format('|'.join(list(op_keys))))
 
 # finds number or greater and number or less
-re_num_op = re.compile(r"(nu<(?:\d+|x|y|z)>) or (greater|less)")
+re_num_op = re.compile(r"(nu<(?:\d+|x|y|z)>) or (greater|less|more)")
 
 # prepositions (check for ending tags)
 prepositions = [
@@ -1111,6 +1114,16 @@ re_clr_conjunction_chain_special = re.compile(
     r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>)"
 )
 
+# search for color conjunction type only 2, Soldevi Adnate and Tezzeret's
+# Gatebreaker. These are special cases
+re_clr_conj_type = re.compile(
+    r"ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored))>"
+    r" (and|or|and\or) "
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>)"
+)
+
 # a subset of the conjunction_chain that matches only type chains
 re_type_conjunction_chain = re.compile(
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
@@ -1151,6 +1164,7 @@ re_conjunction_chain_special = re.compile(
     r"(?:, (and|or|and/or))?"
 )
 
+# Price of Betrayal is an exception handled here
 re_pob_chain = re.compile(
     r"ch<(¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))"
      r"[∧∨⊕](¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))>"
@@ -1163,11 +1177,13 @@ re_pob_chain = re.compile(
 ## REIFICATION
 ####
 
-# Phrases of the form [P/T] [COLOR] TYPE [OBJECT]. This requires that colors
-# and types have been chained and aligned
+# Phrases of the form [SUPER] [P/T] [COLOR] TYPE [OBJECT]. This requires colors
+# types have been chained and aligned
 # NOTE: have to account for wrapped types and include an optional '(' inside the
 #  opening tag bracket '<'
-re_reify_char = re.compile(
+re_reify_phrase = re.compile(
+    # optional super-type (value only)
+    r"(?:ch<(¬?legendary|basic|snow|world)> )?"
     # optional p/t (value only)
     r"(?:ch<p/t val=([\d|x|y|z]+/[\d|x|y|z]+)> )?"
     # optional a color characteristic followed by 0 or more conjunction, color pairs
@@ -1180,4 +1196,20 @@ re_reify_char = re.compile(
     # optional object
     r"(?: (ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>))?"
+)
+
+# after above we have have some non-type characteristics followed by an object
+# i.e. Unmask. The characteristic may be complex but will not have an attribute
+# dict. matches the tag-value of the characteristic and the complete tag of the
+# object
+re_reify_single = re.compile(
+    r"ch<(¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)>"
+    r" "
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+)
+
+# finds singleton characteristics left over after reify_phrase, reify_single
+# these can reified into an attribute
+re_reify_singleton_char = re.compile(
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
 )
