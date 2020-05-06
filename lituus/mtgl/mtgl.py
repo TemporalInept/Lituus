@@ -369,7 +369,7 @@ re_obj = re.compile(
 # keep suffix but check word boundary in beginning
 lituus_objects = [ # lituus objects
     "city's blessing",'game','mana pool','mana cost','commander','mana','attacker',
-    'blocker','it','them','coin','choice','cost',
+    'blocker','it','them','coin','choice','cost',"amount of",
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
@@ -768,11 +768,7 @@ re_ch_pt = re.compile(r"(\+|-)?nu<(\d+|x|y|z)>/(\+|-)?nu<(\d+|x|y|z)>(?! counter
 # meta 'attribute' values see Rathi Intimidator picks out three values 1) the
 # attribute, 2) the operator and 3) the value of the attribute
 re_attr_val = re.compile(
-    r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)>"
-    r" "
-    r"op<([⊕⋖⋗≤≥≡])>"
-    r" "
-    r"nu<(\d+|x|y|z)>"
+    r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)> op<([⊕⋖⋗≤≥≡])> nu<(\d+|x|y|z)>"
 )
 
 # meta 'attribute' value see Repeal where no operator is present
@@ -788,7 +784,9 @@ re_single_pt = re.compile(r"ch<power> and ch<toughness>")
 
 # lituus characteristics
 # TODO: keep control, own?
-lituus_characteristics = ['life total','control','own','life','hand size','devotion']
+lituus_characteristics = [
+    'life total','control','own','life','hand size','devotion'
+]
 lituus_ch_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
     r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(lituus_ch_tkns)
@@ -864,6 +862,7 @@ val_join = {
     "living weapon":"living_weapon","totem armor":"totem_armor",
     #"jump-start":"jump_start","assembly-worker":"assembly_worker",
     "color identity":"color_identity","mana cost":"mana_cost",
+    "amount of":"amount_of",
 }
 val_join_tkns = '|'.join(val_join.keys())
 re_val_join = re.compile(r"(?<=<)({})(?=>)".format(val_join_tkns))

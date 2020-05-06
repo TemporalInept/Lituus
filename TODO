@@ -23,6 +23,7 @@
 41. Have to see how Companion will be treated i.e. as one of the 100 or an extra
 
 43. Stangg Twin in card Stangg is being tagged as <obj ref=self> twin - have to fix this
+ it's accounted for in mtgl.token_names but because self ref is done first it is not tagged
 
 47. How to handle two consecutive objects like Trail of Crumbs "permanent card"
  o align these similar to characteristics?
@@ -61,8 +62,6 @@ a lot becuase the first object is a token
 88. Tag 'symbol'? see Drought
 
 90. Consider changing some cost related tags to 'xr'
-
-94. Tag forms of "amount of", amount
 
 95. Need to add and deconflict lituus status
 
