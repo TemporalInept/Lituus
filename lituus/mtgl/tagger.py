@@ -86,19 +86,19 @@ def tag_ref(name,txt):
     NOTE: this does not handle words like "it" that require contextual understanding
      to determine if "it" referes to this card or something else
     """
-    # replace self references
-    ntxt = mtgl.re_self_ref(name).sub(r"ob<card ref=self>",txt)
-
-    # token names
+    # token names - do token names first so Stangg Twin is tagged prior to Stangg
     ntxt = mtgl.re_tkn_ref1.sub(
         lambda m: r"{} ob<token ref={}>".format(
-            m.group(1),mtgl.TN2R[m.group(2)]),ntxt
+            m.group(1), mtgl.TN2R[m.group(2)]), txt
     )
     ntxt = mtgl.re_tkn_ref2.sub(
         lambda m: r"create ob<token ref={}>, {} token".format(
-            mtgl.TN2R[m.group(1)],m.group(2)
-        ),ntxt
+            mtgl.TN2R[m.group(1)], m.group(2)
+        ), ntxt
     )
+
+    # replace self references
+    ntxt = mtgl.re_self_ref(name).sub(r"ob<card ref=self>",ntxt)
 
     # meld tokens from Eldritch Moon
     ntxt = mtgl.re_tkn_ref3.sub(

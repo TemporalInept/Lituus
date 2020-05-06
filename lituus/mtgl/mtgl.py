@@ -171,7 +171,7 @@ token_names = [
     # See https://mtg.gamepedia.com/Token/Full_List#Tokens
     "Etherium Cell","Land Mine","Mask","Marit Lage","Kaldra","Carnivore","Twin",
     "Minor Demon","Urami","Karox Bladewing","Ashaya, the Awoken World",
-    "Lightning Rager","Stoneforged Blade","Tuktuk the Returned","Mowu","Stang Twin",
+    "Lightning Rager","Stoneforged Blade","Tuktuk the Returned","Mowu","Stangg Twin",
     "Butterfly","Hornet","Wasp","Wirefly","Ragavan","Kelp","Wood",
     "Wolves of the Hunt","Voja, Friend to Elves","Tombspawn"
 ]
