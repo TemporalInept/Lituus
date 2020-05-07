@@ -363,7 +363,7 @@ objects = [ # objects 109.1
 ]
 obj_tkns = '|'.join(objects)
 re_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(obj_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(obj_tkns)
 )
 
 # keep suffix but check word boundary in beginning
@@ -373,14 +373,14 @@ lituus_objects = [ # lituus objects
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(lituus_obj_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(lituus_obj_tkns)
 )
 
 # lituus players - keep suffix but check word boundary in beginning
 lituus_players = ['you','opponent','teammate','player','owner','controller']
 lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(lituus_ply_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(lituus_ply_tkns)
 )
 
 ####
@@ -460,7 +460,7 @@ sequences = [
 ]
 seq_tkns = '|'.join(sequences)
 re_seq = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(seq_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(seq_tkns)
 )
 
 ####
@@ -513,7 +513,7 @@ ability_words = [ # ability words 207.2c Updated 24-Jan-20 with Theros Beyond De
 ]
 aw_tkns = '|'.join(ability_words)
 re_aw = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(aw_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(aw_tkns)
 )
 
 keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Jan-20
@@ -526,7 +526,7 @@ keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Ja
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(kw_act_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(kw_act_tkns)
 )
 
 keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
@@ -553,7 +553,7 @@ keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
 ]
 kw_tkns = '|'.join(keywords)
 re_kw = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(kw_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(kw_tkns)
 )
 
 # TODO: what to do with cycle, phase in, phase out, copy, flip
@@ -568,7 +568,7 @@ lituus_actions = [ # words not defined in the rules but important any way
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(la_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(la_tkns)
 )
 
 ####
@@ -580,7 +580,7 @@ re_lituus_act = re.compile(
 effects = ["combat damage","damage","effect"]
 eff_tkns = '|'.join(effects)
 re_effect = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(eff_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(eff_tkns)
 )
 
 ####
@@ -759,7 +759,7 @@ char_tkns = '|'.join(
     sub_characteristics
 )
 re_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(char_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(char_tkns)
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
@@ -789,7 +789,7 @@ lituus_characteristics = [
 ]
 lituus_ch_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(lituus_ch_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(lituus_ch_tkns)
 )
 
 ####
@@ -802,7 +802,7 @@ zones = [
 ]
 zn_tkns = '|'.join(zones)
 re_zone = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|:|\.|,| )".format(zn_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(zn_tkns)
 )
 
 ####
@@ -937,7 +937,7 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 #  2) only capture the 'ts' tag id IOT replace it with 'xa' lituus action
 re_turn_action = re.compile(
     r"(ts)"
-    r"(?=<turn(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>(?:r|s|ing|ed|ion|'s)? "
+    r"(?=<turn(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>(?:r|s|ing|ed|ion|'s|s')? "
     r"x[m|q]<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
 )
 
@@ -967,19 +967,19 @@ re_misstag = re.compile(r"({})".format(misstag_tkns))
 # NOTE:
 #  1) since suffices are not tagged yet, account for them following the tag close
 re_cost_mana = re.compile(
-    r"xo<cost>(r|s|ing|ed|ion|'s)?(?= (?:pr<up_to> )?{(?:[0-9wubrgscpx\/]+)})"
+    r"xo<cost>(r|s|ing|ed|ion|'s|s')?(?= (?:pr<up_to> )?{(?:[0-9wubrgscpx\/]+)})"
 )
 re_cost_num = re.compile(
-    r"xo<cost>(r|s|ing|ed|ion|'s)?(?= (?:op<[⊕⋖⋗≤≥≡]> )?nu<(?:[0-9wubrgscpx\/]+)>)"
+    r"xo<cost>(r|s|ing|ed|ion|'s|s')?(?= (?:op<[⊕⋖⋗≤≥≡]> )?nu<(?:[0-9wubrgscpx\/]+)>)"
 )
 re_cost_aa = re.compile(
-    r"(?<=xo<mana> xq<a> ob<ability> )xo<cost>(r|s|ing|ed|ion|'s)?"
+    r"(?<=xo<mana> xq<a> ob<ability> )xo<cost>(r|s|ing|ed|ion|'s|s')?"
 )
 re_cost_except1 = re.compile( # Drought and Brutal Suppresion
-    r"xo<cost>(r|s|ing|ed|ion|'s)?(?= xq<a> xq<additional>)"
+    r"xo<cost>(r|s|ing|ed|ion|'s|s')?(?= xq<a> xq<additional>)"
 )
 re_cost_except = re.compile( # Drought and Brutal Suppresion and Valiant Changeling
-    r"xo<cost>(r|s|ing|ed|ion|'s)?(?= (?:xq<a> xq<additional>|by more than))"
+    r"xo<cost>(r|s|ing|ed|ion|'s|s')?(?= (?:xq<a> xq<additional>|by more than))"
 )
 
 #re_cost_except2
@@ -989,7 +989,7 @@ re_cost_except = re.compile( # Drought and Brutal Suppresion and Valiant Changel
 ####
 
 # move any suffices 'r', 's', 'ing' 'ed' or "'s" to parameters inside tags
-re_suffix = re.compile(r"(\w\w)<(.+?)>(r|s|ion|ing|ed|'s)")
+re_suffix = re.compile(r"(\w\w)<(.+?)>(s'|r|s|ion|ing|ed|'s)")
 
 ####
 ## ALIGNMENTS
