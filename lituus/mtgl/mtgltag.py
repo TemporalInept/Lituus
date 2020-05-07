@@ -76,15 +76,15 @@ re_loy_cost = re.compile(r"[\+−]?nu<[\d|x]+>")
 re_tag = re.compile(
     r"(\w\w)"                             # 2 char tag-id       
     r"<"                                  # opening bracket
-    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬→⭰'\(\)]+?)"  # tag value (w/ optional starting not)
-    r"( [\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*"  # 0 or more attributes delimited by space
+    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬→'\(\)]+?)"  # tag value (w/ optional starting not)
+    r"( [\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*"  # 0 or more attributes delimited by space
     r">"                                  # closing bracket
 )
 
 # extract the attribute pairs
 re_tag_attrs = re.compile(
     r"(\w+="                        # alphanumeric property and =
-    r"[\w\+/\-¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+)" # prop-value
+    r"[\w\+/\-¬∧∨⊕⋖⋗≤≥≡→'\(\)]+)" # prop-value
     r"[ >]"                         # followed by space or closing bracket
 )
 
@@ -217,7 +217,7 @@ def strip(val):
     if val[0] in ["+","-",mtgl.NOT]: return val[1:]
     else: return val
 
-re_complex_op = re.compile(r"[∧∨⊕→⭰]")
+re_complex_op = re.compile(r"[∧∨⊕→]")
 def complex_ops(tkn):
     """
     returns a list of complex operators in the value tkn

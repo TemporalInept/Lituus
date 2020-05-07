@@ -94,7 +94,6 @@ LE  = '≤' # mtgl less than or equal
 GE  = '≥' # mtgl greater than or equal
 EQ  = '≡' # mtgl equal to
 ARW = '→' # alignment
-SUB = '⭰' # subclass/inheritance
 ADD = '+' # plus sign
 SUB = '-' # minus sign
 # symbols defined in oracle text
@@ -124,12 +123,12 @@ re_un = re.compile(r"un(\w)")                      # find 'un'
 # matches mtgl punctuation & spaces not inside a tag
 re_tkn_delim = re.compile(
     r"([:,\.\"\'•—\s])"
-    r"(?![\w \+\/\-=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+>)"
+    r"(?![\w \+\/\-=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+>)"
 )
 
 # matches mtgl conjoining operators in a mtgl tag parameter
-re_param_delim_nop = re.compile(r"[∧∨⊕⋖⋗≤≥≡→⭰\(\)]")    # w\o operators
-re_param_delim_wop = re.compile(r"([∧∨⊕⋖⋗≤≥≡→⭰\(\)])")  # w\ operators
+re_param_delim_nop = re.compile(r"[∧∨⊕⋖⋗≤≥≡→\(\)]")    # w\o operators
+re_param_delim_wop = re.compile(r"([∧∨⊕⋖⋗≤≥≡→\(\)])")  # w\ operators
 
 # matches prefix operators
 re_param_prefix = re.compile(r"[\+\-¬]")
@@ -369,7 +368,7 @@ re_obj = re.compile(
 # keep suffix but check word boundary in beginning
 lituus_objects = [ # lituus objects
     "city's blessing",'game','mana pool','mana cost','commander','mana','attacker',
-    'blocker','it','them','coin','choice','cost',"amount of",
+    'blocker','it','them','coin','choice','cost',"amount of",'life',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
@@ -594,7 +593,7 @@ meta_characteristics = [ # 100.3
 re_meta_char = re.compile(r"{}".format('|'.join(meta_characteristics)))
 re_meta_attr = re.compile( # for meta characteristics
     r"(ch<(?:p/t|everything|text|name|mana cost|cmc|power|toughness|"
-      r"color_identity|color|type)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+      r"color_identity|color|type)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
 color_characteristics = [ # 105.1, 105.2a, 105.2b, 105.2c
@@ -768,17 +767,17 @@ re_ch_pt = re.compile(r"(\+|-)?nu<(\d+|x|y|z)>/(\+|-)?nu<(\d+|x|y|z)>(?! counter
 # meta 'attribute' values see Rathi Intimidator picks out three values 1) the
 # attribute, 2) the operator and 3) the value of the attribute
 re_attr_val = re.compile(
-    r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)> op<([⊕⋖⋗≤≥≡])> nu<(\d+|x|y|z)>"
+    r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)> op<([⊕⋖⋗≤≥≡])> nu<(\d+|x|y|z)>"
 )
 
 # meta 'attribute' value see Repeal where no operator is present
-re_attr_val_nop = re.compile(r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)> nu<(\d+|x|y|z)>")
+re_attr_val_nop = re.compile(r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)> nu<(\d+|x|y|z)>")
 
 # ... base power and toughness X/Y i.e. Godhead of Awe then power and toughness
 # i.e Transmutation
 re_base_pt = re.compile(
     r"base ch<power> and ch<toughness> "
-    r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 re_single_pt = re.compile(r"ch<power> and ch<toughness>")
 
@@ -872,7 +871,7 @@ re_negate_tag = re.compile(r"non-(\w\w)<(.+?)>")
 
 # Hanging Basic finds the supertype not followed by an explicit land
 re_hanging_basic = re.compile(
-    r"(ch<¬?basic>)(?! ch<land(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    r"(ch<¬?basic>)(?! ch<land(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
 # Hanging Snow finds the supertype that is followed by a land subtype (with no
@@ -880,7 +879,7 @@ re_hanging_basic = re.compile(
 re_hanging_snow = re.compile(
     r"(ch<¬?snow>)"
     r"(?= ch<¬?(?:forest|island|mountain|plains|swamp)"
-      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
 # phrases related to number of something
@@ -922,9 +921,9 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 # chained counters mistagged as characteristics i.e. Frankenstein's Monster
 # xq<a> ch<p/t val=+2/+0>, ch<p/t val=+1/+1>, or xo<ctr type=+0/+2>
 #re_ctr_chain = re.compile(
-#    r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>, ){2}"
+#    r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>, ){2}"
 #    r"or "
-#    r"(xo<ctr(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)>)"
+#    r"(xo<ctr(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)>)"
 #)
 
 ####
@@ -937,8 +936,8 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 #  2) only capture the 'ts' tag id IOT replace it with 'xa' lituus action
 re_turn_action = re.compile(
     r"(ts)"
-    r"(?=<turn(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>(?:r|s|ing|ed|ion|'s|s')? "
-    r"x[m|q]<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    r"(?=<turn(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>(?:r|s|ing|ed|ion|'s|s')? "
+    r"x[m|q]<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
 ####
@@ -1012,21 +1011,21 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(s'|r|s|ion|ing|ed|'s)")
 #re_align_dual = re.compile(
 #    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
 #     r"(?:[∧∨⊕]¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
-#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 #    r" (?:(and|or|and/or) )?"
 #    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
 #     r"(?:[∧∨⊕]¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
-#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 #)
 
 re_align_dual = re.compile(
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)?"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
     r" (?:(and|or|and/or) )?"
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)?"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
 )
 
 # 205.4b ... some supertypes are closely identified with specific card types...
@@ -1041,7 +1040,7 @@ re_align_super = re.compile(
     r"(ch<¬?(?:legendary|basic|snow|world)> )+"
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
      r"(?:[∧∨⊕→]¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
 # on or more space delimited subtypes followed by a type will be aligned. We have
@@ -1055,18 +1054,18 @@ re_align_sub = re.compile(
     r"(ch<¬?(?:" + re_sub_char.pattern + ")> )+"
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
      r"(?:[∧∨⊕→]¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
 # hanging subtypes are those subtype characteristics that are not followed by
 # a type characteristic.
 re_hanging_subtype = re.compile(
     r"(ch<¬?(?:" + re_sub_char.pattern + ")"
-     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)?"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
     r"(?! ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)?"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
 )
 
 ####
@@ -1076,9 +1075,9 @@ re_hanging_subtype = re.compile(
 
 # ... p/t X/Y or p/t A/B ...
 re_pt_chain = re.compile(
-    r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
     r" or "
-    r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
 # Characteristic Conjunction Chains are two or more sequential characteristics
@@ -1086,10 +1085,10 @@ re_pt_chain = re.compile(
 #   [char 1, ..., char n-2] char n-1[,] conjunction op char n
 # that can be combined into a single characteristic
 re_conjunction_chain = re.compile(
-    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>, )*"
-    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>, )*"
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
     r",? (and|or|and/or) "
-    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
 # a subset of the conjunction_chain that matches only color chains
@@ -1120,35 +1119,35 @@ re_clr_conj_type = re.compile(
     r"ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored))>"
     r" (and|or|and\or) "
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)?"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
 )
 
 # a subset of the conjunction_chain that matches only type chains
 re_type_conjunction_chain = re.compile(
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)?"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>, )*"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>, )*"
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)?"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
     r",? (and|or|and/or) "
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)?"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
 )
 
 # color type pairs where the pair is not preceded by or followed by a characteristic
 # matches the color value and the type tag
 re_clr_type_chain = re.compile(
-    r"(?<!ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*> )"
+    r"(?<!ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*> )"
     r"(?:ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)"
      r"(?:[∧∨⊕]¬?(?:white|blue|black|green|red))*)>)"
     r" "
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
      r"(?:[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)*"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
-    r"(?! ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
+    r"(?! ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
 # phrases of the form CHAR, TYPE[...] where CHAR is predominately a type except
@@ -1160,7 +1159,7 @@ re_conjunction_chain_special = re.compile(
       r"artifact|creature|enchantment|instant|land|planeswalker|sorcery|tribal|"
       r"historic|legendary|basic|snow|world))>"
     r", "
-    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
     r"(?:, (and|or|and/or))?"
 )
 
@@ -1191,11 +1190,11 @@ re_reify_phrase = re.compile(
      r"(?:[∧∨⊕]¬?(?:white|blue|black|green|red))*)> )?"
     # mandatory type characteristic
     r"(ch<\(?¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)?"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
     # optional object
-    r"(?: (ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\('\)]+?)*>))?"
+    r"(?: (ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))?"
 )
 
 # after above we have have some non-type characteristics followed by an object
@@ -1203,13 +1202,13 @@ re_reify_phrase = re.compile(
 # dict. matches the tag-value of the characteristic and the complete tag of the
 # object
 re_reify_single = re.compile(
-    r"ch<(¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)>"
+    r"ch<(¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)>"
     r" "
-    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
 # finds singleton characteristics left over after reify_phrase, reify_single
 # these can reified into an attribute
 re_reify_singleton_char = re.compile(
-    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→⭰'\(\)]+?)*>)"
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )

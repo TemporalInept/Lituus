@@ -57,8 +57,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 106. Remember 'draft' cards being a problem last time
 
-107. Still have to tag life
-
 108. Going to have to figure out when to transpose conjunctions from AND to OR i.e. with Blind Obedience, Mox Amber there is an implied 'all' or 'each' with Decree of Annihilation there is a 'all' quanitifier (inside or after conjunction_chain)
 
 110. pr<top> ob<card> here top should be a quantifier
@@ -74,6 +72,7 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 '{t}: xa<add> {u} or {b}.\n{4}{u}{b}: ob<card ref=self> xa<become suffix=s> xq<a> ob<permanent characteristics=creature→(4/4∧blue∧black∧(artifact∧dragon))> pr<with> kw<flying> sq<until> ts<eot>.'
  we can unwrap the inner artifact&dragon
 
-128. Remove subclass operator, no longer using
+129. tag any left over 'more's i.e. Survival Guide, as preoposition maybe
 
-129.
+130.
+
