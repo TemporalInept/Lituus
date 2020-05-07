@@ -982,7 +982,8 @@ re_cost_except = re.compile( # Drought and Brutal Suppresion and Valiant Changel
     r"xo<cost>(r|s|ing|ed|ion|'s|s')?(?= (?:xq<a> xq<additional>|by more than))"
 )
 
-#re_cost_except2
+# finds phrase tapped and attacking (suffixes have not been handled yet)
+re_tna = re.compile(r"(?<=st<tapped> and )(xa)(?=<attack>ing)")
 
 ####
 ## SUFFICES

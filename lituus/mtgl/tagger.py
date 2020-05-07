@@ -274,6 +274,9 @@ def deconflict_tags(txt):
     # xa<named>
     ntxt = ntxt.replace("xa<named>","xa<name suffix=ed>")
 
+    # can changed attack in phrases tapped and attacking to a lituus status
+    ntxt = mtgl.re_tna.sub(r"xs",ntxt)
+
     return ntxt
 
 ####

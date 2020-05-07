@@ -31,10 +31,6 @@ a lot becuase the first object is a token
 
 71. Add a english i.e. ASCII field for names like Lim-dul's vault
 
-72. Have to make sure the subclass operator fits 
- a. Wave of Vitriol goes type<-super
- b. Cautery Sliver goes type<-sub
-
 74. See Elven Riders - the "with flying" only applies to the creatures and not the walls
  Both of these occur in  mtgl.re_2chain_conj
 
@@ -61,15 +57,13 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 106. Remember 'draft' cards being a problem last time
 
-107. Still have to tag combat damage, life
+107. Still have to tag life
 
 108. Going to have to figure out when to transpose conjunctions from AND to OR i.e. with Blind Obedience, Mox Amber there is an implied 'all' or 'each' with Decree of Annihilation there is a 'all' quanitifier (inside or after conjunction_chain)
 
 110. pr<top> ob<card> here top should be a quantifier
 
 111. Nature's Chose "...is ka<untap suffix=ed>..." should be a status. mtgl.re\_status is checking for a preceding "is " and 
-
-112. Kalia of the Vast - tapped and attacking should both be status 15 of these total
 
 113. Life and Limb has two all quanitifiers.
 
@@ -80,3 +74,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 '{t}: xa<add> {u} or {b}.\n{4}{u}{b}: ob<card ref=self> xa<become suffix=s> xq<a> ob<permanent characteristics=creature→(4/4∧blue∧black∧(artifact∧dragon))> pr<with> kw<flying> sq<until> ts<eot>.'
  we can unwrap the inner artifact&dragon
 
+128. Remove subclass operator, no longer using
+
+129.
