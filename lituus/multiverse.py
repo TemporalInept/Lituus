@@ -328,6 +328,12 @@ def _hack_cards_(jv):
                 "with a +2/+0, +1/+1, or +0/+2 counter",
                 "with a +2/+0 counter, +1/+1 counter, or +0/+2 counter",
             )
+        elif cname == "Cloudseeder":
+            # replace "Cloud Sprite can block... with a self-ref
+            jv[cname]['text'] = jv[cname]['text'].replace(
+                "Cloud Sprite can block",
+                "ob<card ref=self> can block"
+            )
 
         """
          bugs in mtgjson for Start // Finish related to side A, Start

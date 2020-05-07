@@ -1,11 +1,5 @@
 2. How to combine/use face converted mana cost in MTGCard
 
-3. Do we need to remove zone from command zone (in tagger)
-
-4. Do we need to switch shuffle your library clause - will now read ", then shuffle your library" rather as a seperate sentence (tagger)
-
-5. Keep replacement of "your opponent(s)" with "opponents" (tagger)?
-
 8. Look for cards like Tolaria, ..."bands with other"... which may/will cause problems with double quoted words
 
 12. What words/phrases are we missing for sequences?
@@ -34,8 +28,6 @@ keywords
 
 57. Ivory Guardians has object characteristic object phrase will probably see
 a lot becuase the first object is a token
-
-69. Cloudseeder, the last 'cloud sprite' is not being tagged as an object because it is not preceded by "Create ... named"
 
 71. Add a english i.e. ASCII field for names like Lim-dul's vault
 
