@@ -220,6 +220,7 @@ def midprocess(txt):
          same as cards like "As Foretold"
         b. replace "any number of" with nu<z>
         c. remove "are each" if followed by an operator
+       7. replace 'mana cost' as xo<cost type=mana>
     :param txt: tagged oracle txt
     :return: processed oracle txt
     """
@@ -232,6 +233,7 @@ def midprocess(txt):
     ntxt = mtgl.re_equal_y.sub(r"nu<y>, where nu<y> is \1",ntxt)         # 6.a
     ntxt = mtgl.re_equal_z.sub(r"nu<z>",ntxt)                            # 6.b
     ntxt = mtgl.re_are_each.sub(r"",ntxt)                                # 6.c
+    ntxt = mtgl.re_mana_cost.sub(r"xo<cost type=mana\1",ntxt)            #7
     return ntxt
 
 re_empty_postfix = re.compile(r"\ssuffix=(?=)>")
@@ -401,7 +403,7 @@ def deconflict_lituus_status(txt):
     # activated and triggered, first chain the 5 'or' conjunctions
     ntxt = mtgl.re_ab_type_chain.sub(r"xs<activate∨trigger suffix=ed>",ntxt)
     ntxt = mtgl.re_ab_status.sub(r"xs<\1 suffix=ed>",ntxt)
-    ntxt = mtgl.re_activation_cost.sub(r"xo<activation_cost>",ntxt)
+    ntxt = mtgl.re_activation_cost.sub(r"xo<cost type=activation\1>",ntxt)
 
     return ntxt
 

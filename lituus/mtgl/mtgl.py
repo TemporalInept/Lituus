@@ -871,7 +871,7 @@ re_ab_type_chain = re.compile(r"ka<activate suffix=ed> or xa<trigger suffix=ed>"
 re_ab_status = re.compile(r"[kx]a<(activate|trigger) suffix=ed>(?= ob)")
 
 # activation cost - combine this as activation_cost
-re_activation_cost = re.compile(r"ka<activate suffix=ion> xo<cost>")
+re_activation_cost = re.compile(r"ka<activate suffix=ion> xo<cost( suffix=s)?>")
 
 ####
 ## MID-PASS CLEANUP
@@ -899,7 +899,7 @@ val_join = {
     "double strike":"double_strike","first strike":"first_strike",
     "commander ninjutsu":"commander_ninjutsu","split second":"split_second",
     "living weapon":"living_weapon","totem armor":"totem_armor",
-    "color identity":"color_identity","mana cost":"mana_cost",
+    "color identity":"color_identity",#"mana cost":"mana_cost",
     "amount of":"amount_of","that is":"that_is","that are":"that_are",
 }
 val_join_tkns = '|'.join(val_join.keys())
@@ -929,6 +929,9 @@ re_hanging_snow = re.compile(
 re_equal_y = re.compile(r"(?<=op<[⊕⋖⋗≤≥≡]> )(xq<the> number of)")
 re_equal_z = re.compile(r"xq<any> number of")
 re_are_each = re.compile(r"are xq<each> (?=op<[⊕⋖⋗≤≥≡]>)")
+
+# find xo<mana cost> for conversion
+re_mana_cost = re.compile(r"xo<mana cost( suffix=s)?>")
 
 ####
 ## STATUS DECONFLICTION

@@ -84,4 +84,4 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 137. tag abiity with preceding 'type' mana, activated, triggered
 
-138. Right doing mana_cost and activation_cost (as well as cmc) should these be retagged under cost (such as xo<cost type=mana> ?
+140. should costs i.e. mana cost, activation cost be retagged as 'attributes'
