@@ -44,11 +44,7 @@ a lot becuase the first object is a token
 
 86. what to do about "highest" as in Juxtapose
 
-88. Tag 'symbol'? see Drought
-
 90. Consider changing some cost related tags to 'xr'
-
-95. Need to add and deconflict lituus status
 
 96. See Soul Separator it reads "... with power equal to that card's power and toughness equal to that card's toughness" which results in "power and toughness" being combined. This will happen to Kalitas, Bloodchief of Ghet 
 xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card suffix='s> xr<toughness> 
@@ -61,8 +57,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 110. pr<top> ob<card> here top should be a quantifier
 
-111. Nature's Chose "...is ka<untap suffix=ed>..." should be a status. mtgl.re\_status is checking for a preceding "is " and 
-
 113. Life and Limb has two all quanitifiers.
 
 114. Wandering Mage "...xp<player> or ch<planeswalker>..." How do we want to handle it?
@@ -74,5 +68,20 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 129. tag any left over 'more's i.e. Survival Guide, as preoposition maybe
 
-130.
+130. if we tag standalone characteristics as 'xr', we will have to change up how we treat objects
 
+131. In some cases, discarded could be a quantifier i.e. Volrath the Falled '...discarded card...'
+
+132. deconflict exile as zone?
+
+133. Jhoira's Timebug will cause problems
+
+134. Not all tapped are being tagged correctly as status (Captain's Claws, Nature's Chosen)
+
+135. replace no followed by ojbect with 0
+
+136, Need to figure out how to standarize the treatment of suffixes in status
+
+137. tag abiity with preceding 'type' mana, activated, triggered
+
+138. Right doing mana_cost and activation_cost (as well as cmc) should these be retagged under cost (such as xo<cost type=mana> ?

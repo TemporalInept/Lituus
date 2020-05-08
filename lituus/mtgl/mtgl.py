@@ -151,7 +151,7 @@ def re_self_ref(name):
     :return: the self ref regex pattern
     """
     return re.compile(
-        r"(this spell|this permanent|this card|her|his|{}|{})\b".format(
+        r"\b(this spell|this permanent|this card|her|his|{}|{})\b".format(
             name,name.split(',')[0]
         )
     )
@@ -333,11 +333,13 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
 ## QUANTIFIERS
 ####
 
-# Quantifying words
+# Quantifying words - NOTE we want to combine "that is" and "that are" as a
+# single quantifier
 lituus_quantifiers = [
-    'a','target','each','all','any','every','another','other','this','that',
-    'additional','those','these','their','the','extra','first','second','third',
-    'fourth','fifth','sixth','seventh','eighth','ninth','tenth','half','twice',
+    'a','target','each','all','any','every','another','other','this','that is',
+    'that are','that','additional','those','these','their','the','extra','first',
+    'second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth',
+    'half','twice',
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -362,24 +364,24 @@ objects = [ # objects 109.1
 ]
 obj_tkns = '|'.join(objects)
 re_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(obj_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(obj_tkns)
 )
 
 # keep suffix but check word boundary in beginning
 lituus_objects = [ # lituus objects
     "city's blessing",'game','mana pool','mana cost','commander','mana','attacker',
-    'blocker','it','them','coin','choice','cost',"amount of",'life',
+    'blocker','it','them','coin','choice','cost',"amount of",'life','symbol',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(lituus_obj_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(lituus_obj_tkns)
 )
 
 # lituus players - keep suffix but check word boundary in beginning
 lituus_players = ['you','opponent','teammate','player','owner','controller']
 lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(lituus_ply_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(lituus_ply_tkns)
 )
 
 ####
@@ -512,7 +514,7 @@ ability_words = [ # ability words 207.2c Updated 24-Jan-20 with Theros Beyond De
 ]
 aw_tkns = '|'.join(ability_words)
 re_aw = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(aw_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(aw_tkns)
 )
 
 keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Jan-20
@@ -525,7 +527,7 @@ keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Ja
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(kw_act_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(kw_act_tkns)
 )
 
 keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
@@ -552,7 +554,7 @@ keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
 ]
 kw_tkns = '|'.join(keywords)
 re_kw = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(kw_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(kw_tkns)
 )
 
 # TODO: what to do with cycle, phase in, phase out, copy, flip
@@ -567,7 +569,7 @@ lituus_actions = [ # words not defined in the rules but important any way
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(la_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(la_tkns)
 )
 
 ####
@@ -579,7 +581,7 @@ re_lituus_act = re.compile(
 effects = ["combat damage","damage","effect"]
 eff_tkns = '|'.join(effects)
 re_effect = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(eff_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(eff_tkns)
 )
 
 ####
@@ -758,7 +760,7 @@ char_tkns = '|'.join(
     sub_characteristics
 )
 re_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(char_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(char_tkns)
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
@@ -822,16 +824,54 @@ re_zone = re.compile(
 status = ['tap','flip','phase','face']
 
 # lituus status
-# As above, these will have already been tagged as something
-# Attack tagged lituus action is a status when it ends in 'ing' (Hanweir Garrison)
-# although technically if it is preceded by 'is' could still be an action (Adanto Vanguard)
-# Block tagged lituus action is a status when it ends in 'ing' or 'ed' (Aetherplasm)
-# Defend tagged lituus action is a status when it ends in 'ing' (Abyssal Nightstalker)
-# Block
+# As above, these will have already been tagged as something and will have to
+# be deconficted - they are only listed here for reference
 lituus_status = [
     'attacking','blocking','defending','transformed','enchanted','equipped',
-    'exiled','unattached','attached','activated','revealed','suspended',
+    'exiled','unattached','attached','activated','triggered','revealed',
+    'suspended',
 ]
+
+# deconflictions are broken down
+
+# Past tense deconflictions: transform, suspend, [un]attach. reveal are keywords
+# /keyword actions that are statuses if they have an 'ed' suffix
+re_ed_lituus_status = re.compile(
+    r"(k[aw])(?=<(?:transform|suspend|(?:un)?attach|reveal) suffix=ed>)"
+)
+
+# Past tense deconflictions: enchant, equip and exile are keywords/keyword actions
+# that are statuses if they have an 'ed' suffix and precede a Thing (have to check
+# for players as well as objects - don't think lituus objects but check hough)
+re_ed_thing_lituus_status = re.compile(
+    r"(k[aw])(?=<(?:enchant|equip|exile) suffix=ed> (?:ob|xp|xo))"
+)
+
+# combat related attacking, blocking, and tapped that are conjoined. In the first
+# term we have to check for both ka and st with regards to tapped because cards
+# like Geist of Saint Traft has an incorrectly tagged status. This will only match
+# the phrases "tapped and attacking" and "attacking or blocking
+re_combat_status_chain = re.compile(
+    r"(st|ka|xa)<(tap|attack) suffix=(ed|ing)>"
+    r" (and|or|and/or) "
+    r"xa<(attack|block) suffix=ing>"
+)
+
+# the remainder of attacking, blocking, and defending will be considered statuses
+# unless they are preceded by an 'is' or a Thing or followed by a "does not" (Johan)
+re_combat_status = re.compile(
+    r"(?<!(?:(?:ob|xo|xp)|is|are)<.+?> )xa<(attack|block|defend) suffix=ing>"
+)
+
+# activated/triggered
+# finds the phrase "activated or triggered i.e. Stifle (5 total)
+re_ab_type_chain = re.compile(r"ka<activate suffix=ed> or xa<trigger suffix=ed>")
+
+# when activate or trigger with suffex ed is followed by an object it is a status
+re_ab_status = re.compile(r"[kx]a<(activate|trigger) suffix=ed>(?= ob)")
+
+# activation cost - combine this as activation_cost
+re_activation_cost = re.compile(r"ka<activate suffix=ion> xo<cost>")
 
 ####
 ## MID-PASS CLEANUP
@@ -859,9 +899,8 @@ val_join = {
     "double strike":"double_strike","first strike":"first_strike",
     "commander ninjutsu":"commander_ninjutsu","split second":"split_second",
     "living weapon":"living_weapon","totem armor":"totem_armor",
-    #"jump-start":"jump_start","assembly-worker":"assembly_worker",
     "color identity":"color_identity","mana cost":"mana_cost",
-    "amount of":"amount_of",
+    "amount of":"amount_of","that is":"that_is","that are":"that_are",
 }
 val_join_tkns = '|'.join(val_join.keys())
 re_val_join = re.compile(r"(?<=<)({})(?=>)".format(val_join_tkns))
@@ -899,7 +938,7 @@ re_are_each = re.compile(r"are xq<each> (?=op<[⊕⋖⋗≤≥≡]>)")
 # of 'ed' and it is not preceded by 'is'
 re_status = re.compile(
     r"(?<!is )"
-    r"([kx]a)<(un)?({})>(ed)".format('|'.join(status[0:2]))
+    r"([kx]a)<(un)?({})>(?=ed)".format('|'.join(status[0:2]))
 )
 
 # Phase can be Status, Action or Turn Structure
@@ -1008,16 +1047,6 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(s'|r|s|ion|ing|ed|'s)")
 # two consecutive types (separated by a space) or a conjuction i.e. Grisly Spectacle
 # and Mox Amber. This is commonly artifact creature
 # NOTE: on the first type we should not see any attributes
-#re_align_dual = re.compile(
-#    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-#     r"(?:[∧∨⊕]¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
-#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
-#    r" (?:(and|or|and/or) )?"
-#    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-#     r"(?:[∧∨⊕]¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
-#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
-#)
-
 re_align_dual = re.compile(
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
      r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"

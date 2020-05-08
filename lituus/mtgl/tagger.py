@@ -242,7 +242,7 @@ def deconflict_tags(txt):
     :return: tagged oracle text
     """
     # Tapped, Flipped
-    ntxt = mtgl.re_status.sub(r"st<\2\3p\4>",txt)
+    ntxt = mtgl.re_status.sub(r"st<\2\3>",txt)
 
     # phase - can be Status (Time and Tide), Turn Structure (Breath of Fury) or
     #  action (Ertai's Familiar)
@@ -274,9 +274,6 @@ def deconflict_tags(txt):
     # xa<named>
     ntxt = ntxt.replace("xa<named>","xa<name suffix=ed>")
 
-    # can changed attack in phrases tapped and attacking to a lituus status
-    ntxt = mtgl.re_tna.sub(r"xs",ntxt)
-
     return ntxt
 
 ####
@@ -286,12 +283,15 @@ def deconflict_tags(txt):
 def second_pass(txt):
     """
     performs a second pass of the oracle txt, working on Things and Attributes,
+    and lituus statuses which may have to be deconflicted
+
     :param txt: initial tagged oracle txt (lowered case)
     :return: tagged oracle text
     """
     ntxt = pre_chain(txt)
     ntxt = chain(ntxt)
     ntxt = reify(ntxt)
+    ntxt = deconflict_lituus_status(ntxt)
     return ntxt
 
 def pre_chain(txt):
@@ -382,6 +382,27 @@ def reify(txt):
     ntxt = mtgl.re_reify_phrase.sub(lambda m: _reify_phrase_(m),txt)
     ntxt = mtgl.re_reify_single.sub(lambda m: _reify_single_(m),ntxt)
     ntxt = mtgl.re_reify_singleton_char.sub(lambda m: _reify_singleton_(m),ntxt)
+    return ntxt
+
+def deconflict_lituus_status(txt):
+    """
+    Lituus status have already been tagged as something else but required reified
+    characteristics IOT to deconflict
+    :param txt: tagged, chained and reified txt
+    :return: txt with lituus statuses deconflicted
+    """
+    ntxt = mtgl.re_ed_lituus_status.sub(r"xs",txt)
+    ntxt = mtgl.re_ed_thing_lituus_status.sub(r"xs",ntxt)
+
+    # combat related
+    ntxt = mtgl.re_combat_status_chain.sub(lambda m: _combat_status_chain_(m),ntxt)
+    ntxt = mtgl.re_combat_status.sub(r"xs<\1 suffix=ing>",ntxt)
+
+    # activated and triggered, first chain the 5 'or' conjunctions
+    ntxt = mtgl.re_ab_type_chain.sub(r"xs<activate∨trigger suffix=ed>",ntxt)
+    ntxt = mtgl.re_ab_status.sub(r"xs<\1 suffix=ed>",ntxt)
+    ntxt = mtgl.re_activation_cost.sub(r"xo<activation_cost>",ntxt)
+
     return ntxt
 
 ####
@@ -531,6 +552,7 @@ def _repackage_aligned_val_(val):
     :param val: val to repackage
     :return: repackaged val
     """
+    # TODO: is this really necessary?
     if not mtgltag.is_wrapped(val): return mtgltag.split_align(val)[1]
     else:
         val = mtgltag.unwrap(val)
@@ -659,6 +681,24 @@ def _reify_singleton_(m):
             if not cat: cat = tcat
             elif cat != tcat: assert(False) # should never get here
         return mtgltag.retag('xr',cat,mtgltag.merge_attrs([attr,{'val':val}]))
+
+def _combat_status_chain_(m):
+    """
+    deconflicts and chains a conjunction of combat related statuses
+    :param m: the regex.Match object
+    :return: deconflicted and chained text
+    """
+    # pull out what we need
+    op1 = m.group(2)
+    op = mtgl.conj_op[m.group(4)]
+    op2 = m.group(5)
+
+    # reappend suffixes
+    op1 = 'tapped' if op1 == 'tap' else op1 +'ing'
+    op2 = op2 + 'ing'
+
+    # chain and retag
+    return mtgltag.retag('xs',op1+op+op2,{})
 
 def _clr_type_(m):
     """
