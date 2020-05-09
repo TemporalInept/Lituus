@@ -1026,6 +1026,11 @@ re_cost_except = re.compile( # Drought and Brutal Suppresion and Valiant Changel
 # finds phrase tapped and attacking (suffixes have not been handled yet)
 re_tna = re.compile(r"(?<=st<tapped> and )(xa)(?=<attack>ing)")
 
+# find exile preceded by a preposition
+re_zn_exile = re.compile(
+    r"(?<=pr<\w+?> )(ka<exile>)"
+)
+
 ####
 ## SUFFICES
 ####
@@ -1243,4 +1248,19 @@ re_reify_single = re.compile(
 # these can reified into an attribute
 re_reify_singleton_char = re.compile(
     r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
+)
+
+####
+## MERGE
+####
+
+# find phrases of the form [quantifier] [status] ob IOT to merge the quantifier
+# and status in the object
+# TODO: this will find everything that has an object, caller will have to verify
+#  that at least the quantifier or status is present
+re_qso = re.compile(
+    r"(?:xq<(\w+?)> )?"
+    r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
+    r"(?:(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))"
 )

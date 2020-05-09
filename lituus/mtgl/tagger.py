@@ -262,6 +262,9 @@ def deconflict_tags(txt):
     # turn could be a lituus action
     ntxt = mtgl.re_turn_action.sub("xa",ntxt)
 
+    # exile is a zone if preceded by a preposition
+    ntxt = mtgl.re_zn_exile.sub("zn<exile>",ntxt)
+
     # take care of misstagged
     ntxt = mtgl.re_misstag.sub(lambda m: mtgl.misstag[m.group(1)],ntxt)
 
@@ -294,6 +297,7 @@ def second_pass(txt):
     ntxt = chain(ntxt)
     ntxt = reify(ntxt)
     ntxt = deconflict_lituus_status(ntxt)
+    ntxt = merge(ntxt)
     return ntxt
 
 def pre_chain(txt):
@@ -405,6 +409,15 @@ def deconflict_lituus_status(txt):
     ntxt = mtgl.re_ab_status.sub(r"xs<\1 suffix=ed>",ntxt)
     ntxt = mtgl.re_activation_cost.sub(r"xo<cost type=activation\1>",ntxt)
 
+    return ntxt
+
+def merge(ntxt):
+    """
+    Many objects are preceded by a quantifier and/or a status, merge those into
+    the object as an attribute
+    :param txt: tagged, chained and reified txt with deconflicted status
+    :return: objects with preceding status and quantifier merge
+    """
     return ntxt
 
 ####
