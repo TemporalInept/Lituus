@@ -76,10 +76,20 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 134. Not all tapped are being tagged correctly as status (Captain's Claws, Nature's Chosen)
 
-135. replace no followed by ojbect with 0
+135. replace no followed by object with 0
 
 136, Need to figure out how to standarize the treatment of suffixes in status
+
+137. Look at Sieges i.e. Monastery Siege, have to tag khans or dragons 
+
+138. Tag single ?
 
 137. tag abiity with preceding 'type' mana, activated, triggered
 
 140. should costs i.e. mana cost, activation cost be retagged as 'attributes'
+
+143. See Assasin's Blade "xp<you> havve been" two v's in have
+
+146. Tag mode? appears in a few cards (outside of reminder text)
+
+147. combat (by itself) is not being tagged as a turn structure

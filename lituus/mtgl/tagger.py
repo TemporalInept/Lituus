@@ -185,10 +185,11 @@ def tag_counters(txt):
 
 def tag_awkws(txt):
     """ tags ability words, keywords and action words returning tagged txt """
-    ntxt = mtgl.re_aw.sub(r"aw<\1>",txt)          # tag ability words
-    ntxt = mtgl.re_kw.sub(r"kw<\1>",ntxt)         # tag keywords
-    ntxt = mtgl.re_kw_act.sub(r"ka<\1>",ntxt)     # tag keyword actions
-    ntxt = mtgl.re_lituus_act.sub(r"xa<\1>",ntxt) # tag lituus actions
+    ntxt = mtgl.re_aw.sub(r"aw<\1>",txt)                        # ability words
+    ntxt = mtgl.re_kw.sub(r"kw<\1>",ntxt)                       # keywords
+    ntxt = mtgl.re_kw_act.sub(r"ka<\1>",ntxt)                   # keyword actions
+    ntxt = mtgl.re_lituus_act.sub(r"xa<\1>",ntxt)               # lituus actions
+    ntxt = mtgl.re_lituus_target_verb.sub(r"xa<target>\1",ntxt) # target action
     return ntxt
 
 def tag_effects(txt):
@@ -296,7 +297,7 @@ def second_pass(txt):
     ntxt = pre_chain(txt)
     ntxt = chain(ntxt)
     ntxt = reify(ntxt)
-    ntxt = deconflict_lituus_status(ntxt)
+    ntxt = deconflict_tags2(ntxt)
     ntxt = merge(ntxt)
     return ntxt
 
@@ -313,13 +314,15 @@ def pre_chain(txt):
     #   b. assign values where possible to temporary attributes including c.
     #    those without an operator
     #  3) add types to hanging subtypes
-    #  4) align supertypes and subtypes
+    #  4) modify anamolous characteristic action charactistic
+    #  5) align supertypes and subtypes
     ntxt = powt(txt)                                                    # 1
     ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)          # 2.a
     ntxt = mtgl.re_attr_val.sub(r"xr<\1 val=\2\3>",ntxt)                # 2.b
     ntxt = mtgl.re_attr_val_nop.sub(r"xr<\1 val=≡\2>",ntxt)             # 2.c
     ntxt = mtgl.re_hanging_subtype.sub(lambda m: _insert_type_(m),ntxt) # 3
-    ntxt = align_types(ntxt)                                            # 4
+    ntxt = mtgl.re_disjoint_ch.sub(r"\2 \1 \3",ntxt)                    # 4
+    ntxt = align_types(ntxt)                                            # 5
     return ntxt
 
 def powt(txt):
@@ -345,8 +348,8 @@ def align_types(txt):
     #   aligning super and sub
     #  2. Need to check cards like Gargantuan Gorilla for dual types after aligning
     #   super and sub
-    ntxt = mtgl.re_align_dual.sub(lambda m: _align_dual_(m),txt)  # consecutive types
-    ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)    # sub, type
+    ntxt = mtgl.re_align_dual.sub(lambda m: _align_dual_(m),txt)   # consecutive types
+    ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)   # sub, type
     ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),ntxt) # super, type
     ntxt = mtgl.re_align_dual.sub(lambda m: _align_dual_(m),ntxt)  # consecutive types
     return ntxt
@@ -390,24 +393,31 @@ def reify(txt):
     ntxt = mtgl.re_reify_singleton_char.sub(lambda m: _reify_singleton_(m),ntxt)
     return ntxt
 
-def deconflict_lituus_status(txt):
+def deconflict_tags2(txt):
     """
-    Lituus status have already been tagged as something else but required reified
-    characteristics IOT to deconflict
+    Deconflicts tags which are easier to do after characterstics have been reifed
     :param txt: tagged, chained and reified txt
     :return: txt with lituus statuses deconflicted
     """
+    # start of with lituus statuses that have been tagged as something else
     ntxt = mtgl.re_ed_lituus_status.sub(r"xs",txt)
     ntxt = mtgl.re_ed_thing_lituus_status.sub(r"xs",ntxt)
 
     # combat related
     ntxt = mtgl.re_combat_status_chain.sub(lambda m: _combat_status_chain_(m),ntxt)
     ntxt = mtgl.re_combat_status.sub(r"xs<\1 suffix=ing>",ntxt)
+    ntxt = mtgl.re_blocked_status.sub(r"xs<\1block suffix=ed>",ntxt)
 
     # activated and triggered, first chain the 5 'or' conjunctions
     ntxt = mtgl.re_ab_type_chain.sub(r"xs<activate∨trigger suffix=ed>",ntxt)
     ntxt = mtgl.re_ab_status.sub(r"xs<\1 suffix=ed>",ntxt)
     ntxt = mtgl.re_activation_cost.sub(r"xo<cost type=activation\1>",ntxt)
+
+    # deconflict target as quantifier, object or action. 1) handle specials cases
+    # follow rules for actions but are in fact objects. 2) take care of actions
+    ntxt = mtgl.re_target_sc.sub(r"ob<target> and xq<that> ob<target>",ntxt)
+    ntxt = mtgl.re_target_act.sub(r"xa<target>",ntxt)
+    ntxt = mtgl.re_target_obj.sub(r"ob<target>",ntxt)
 
     return ntxt
 
@@ -705,7 +715,7 @@ def _combat_status_chain_(m):
     """
     # pull out what we need
     op1 = m.group(2)
-    op = mtgl.conj_op[m.group(4)]
+    op = mtgl.conj_op[m.group(4)] if m.group(4) else mtgl.AND
     op2 = m.group(5)
 
     # reappend suffixes

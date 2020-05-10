@@ -305,6 +305,7 @@ word_hacks = {
     "putting":"puting",
     "skipped":'"skiped',"skipping":"skiping",
     "produced":"produceed","producing":"produceing",
+    "resolved":"resolveed","resolving":"resolveing",
     # status related
     "tapping":"taping","tapped":"taped","untapping":"untaped","untapped":"untaped",
     "flipping":"fliping","flipped":"fliped",
@@ -339,7 +340,7 @@ lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that is',
     'that are','that','additional','those','these','their','the','extra','first',
     'second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth',
-    'half','twice',
+    'half','twice','new','single',
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -348,10 +349,10 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 ## NUMBERS
 ####
 
-# numbers are 1 or more digits or one of the variable x, y, z which. Only digits
-# that are preceded by whitespace, a '/', '+' or '-' and followed by whitespace,
-# '/' or '.' are matched.
-re_number = re.compile(r"(?<=[ \/+-])(\d+|x|y|z])(?=[ \/+-\.])")
+# numbers are 1 or more digits or one of the variable x, y, z which. Only those
+# that are preceded by whitespace, a '/', '+', '-' or start a line and that are
+# followed by whitespace '/' or '.' are matched.
+re_number = re.compile(r"(?<=(?:^|[ \/+-]))(\d+|x|y|z])(?=[ \/+-\.])")
 
 
 ####
@@ -359,7 +360,7 @@ re_number = re.compile(r"(?<=[ \/+-])(\d+|x|y|z])(?=[ \/+-\.])")
 ####
 
 # keep suffix but check word boundary in beginning
-objects = [ # objects 109.1
+objects = [ # objects 109.1 NOTE target can also be an object (115.1)
     'ability','card','copy','token','spell','permanent','emblem','source'
 ]
 obj_tkns = '|'.join(objects)
@@ -370,7 +371,8 @@ re_obj = re.compile(
 # keep suffix but check word boundary in beginning
 lituus_objects = [ # lituus objects
     "city's blessing",'game','mana pool','mana cost','commander','mana','attacker',
-    'blocker','it','them','coin','choice','cost',"amount of",'life','symbol',
+    'blocker','itself','it','them','coin','choice','cost',"amount of",'life',
+    'symbol',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
@@ -378,7 +380,9 @@ re_lituus_obj = re.compile(
 )
 
 # lituus players - keep suffix but check word boundary in beginning
-lituus_players = ['you','opponent','teammate','player','owner','controller']
+lituus_players = [
+    'you','opponent','teammate','player','owner','controller','they'
+]
 lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
     r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(lituus_ply_tkns)
@@ -449,8 +453,8 @@ re_prep = re.compile(r"\b(?<!<)({})\b(?!>)".format('|'.join(prepositions)))
 
 # conditional/requirement related
 conditionals = [
-    'only if','if','would','unless','rather than','instead','may','except','not',
-    'only','cannot'
+    'only if','if','would','could','unless','rather than','instead','may','except',
+    'not','only','cannot'
 ]
 re_cond = re.compile(r"\b({})\b".format('|'.join(conditionals)))
 
@@ -563,14 +567,18 @@ lituus_actions = [ # words not defined in the rules but important any way
     'gain','attack','defend','unblock','block','add','enter','leave','choose','die',
     'spend','unspend','take','reduce','trigger','prevent','declare','have','switch',
     'assign','win','lose','tie','skip','flip','cycle','phase','become','share',
-    'turn','produce','round',
+    'turn','produce','round','resolve',
     'named', # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(la_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=s|ing|ed|ion|:|\.|,|\s)".format(la_tkns)
 )
+
+# because target is primarily a quantifier we will only tag the verb version
+# with suffix 's', 'ing' or 'ed' NOTE: currently have only seen 's'
+re_lituus_target_verb = re.compile(r'\btarget(s|ing|ed)\b')
 
 ####
 ## EFFECTS
@@ -645,7 +653,7 @@ re_subtype_land_char = re.compile(
 subtype_planeswalker_characteristics = [
     "ajani","aminatou","angrath","arlinn","ashiok","bolas","calix,chandra","dack",
     "daretti","davriel","domri","dovin","elspeth","estrid","freyalise","garruk",
-    "gideon,huatli","jace","jaya","karn","kasmina","kaya","kiora","koth","liliana",
+    "gideon","huatli","jace","jaya","karn","kasmina","kaya","kiora","koth","liliana",
     "nahiri","narset","nissa","nixilis","oko","ral","rowan","saheeli","samut",
     "sarkhan","serra","sorin","tamiyo","teferi","teyo","tezzeret,tibalt","ugin",
     "venser","vivien","vraska","will","windgrace","wrenn","xenagos","yanggu",
@@ -832,7 +840,11 @@ lituus_status = [
     'suspended',
 ]
 
-# deconflictions are broken down
+####
+## DECONFLICTIONS
+####
+
+## Action/Status
 
 # Past tense deconflictions: transform, suspend, [un]attach. reveal are keywords
 # /keyword actions that are statuses if they have an 'ed' suffix
@@ -849,19 +861,25 @@ re_ed_thing_lituus_status = re.compile(
 
 # combat related attacking, blocking, and tapped that are conjoined. In the first
 # term we have to check for both ka and st with regards to tapped because cards
-# like Geist of Saint Traft has an incorrectly tagged status. This will only match
-# the phrases "tapped and attacking" and "attacking or blocking
+# like Geist of Saint Traft have incorrectly tagged status.
+# This matches the phrases "tapped and attacking", "attacking or blocking and
+# "unblocked attacking"
 re_combat_status_chain = re.compile(
-    r"(st|ka|xa)<(tap|attack) suffix=(ed|ing)>"
-    r" (and|or|and/or) "
+    r"(st|ka|xa)<((?:un)?(?:tap|attack|block)) suffix=(ed|ing)>"
+    r"(?: ?(and|or|and/or)? )"
     r"xa<(attack|block) suffix=ing>"
 )
 
 # the remainder of attacking, blocking, and defending will be considered statuses
 # unless they are preceded by an 'is' or a Thing or followed by a "does not" (Johan)
+# and (un)blocked will be always be considered a status
 re_combat_status = re.compile(
-    r"(?<!(?:(?:ob|xo|xp)|is|are)<.+?> )xa<(attack|block|defend) suffix=ing>"
+    r"(?<!(?:(?:ob|xo|xp)<\w+?>|is|are|was) )"
+    r"xa<((?:un|¬)?attack|block|defend) suffix=ing>"
+    r"(?! does cn<not>)"
 )
+re_blocked_status = re.compile(r"xa<(un)?block suffix=ed>")
+
 
 # activated/triggered
 # finds the phrase "activated or triggered i.e. Stifle (5 total)
@@ -872,6 +890,25 @@ re_ab_status = re.compile(r"[kx]a<(activate|trigger) suffix=ed>(?= ob)")
 
 # activation cost - combine this as activation_cost
 re_activation_cost = re.compile(r"ka<activate suffix=ion> xo<cost( suffix=s)?>")
+
+# Target
+# target may be a quantifier, an object (115.1) or an action (Bronze Horze).
+
+# special case (2 cards Meddle, Quicksilver Dragon) that contain the phrase
+# "target and that target" - here both are objects
+re_target_sc = re.compile(r"xq<target> and xq<that> xq<target>")
+
+# that target (aside from above) and could target are references to an action
+#re_target_act = re.compile(r"(?<=xq<that> )(xq<target>)")
+#re_target_act2 = re.compile(r"(?<=cn<could> )(xq<target>)")
+re_target_act = re.compile(r"(?<=(?:xq<that>|cn<could>) )(xq<target>)")
+
+# Find target quantifier that is not followed by an mtg object, a status or
+# a player/opponent - these are objects
+re_target_obj = re.compile(
+    r"(xq<target>)"
+    r"(?! (?:ob|st|xs|xo<commander>|(?:xp<(?:player|opponent(?: suffix=(?:s|s'|'s))?))))"
+)
 
 ####
 ## MID-PASS CLEANUP
@@ -1105,6 +1142,17 @@ re_hanging_subtype = re.compile(
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
 )
 
+# An anamoulous phrasing found in 3 cards (Assassin's Blade, Exile, Tilonalli's
+# Skinshifter) where characteristics are separated by an action (attacking)
+# TODO: so far have only found cases where the action is attacking. have to be
+#  on the lookout for other tokens
+re_disjoint_ch = re.compile(
+    r"(ch<(?:¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored|"
+      r"historic|legendary|basic|snow|world))>)"
+    r" (xa<.*?>) "
+    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
+)
+
 ####
 ## CHAINS
 # Sequential characteristics
@@ -1234,10 +1282,9 @@ re_reify_phrase = re.compile(
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))?"
 )
 
-# after above we have have some non-type characteristics followed by an object
-# i.e. Unmask. The characteristic may be complex but will not have an attribute
-# dict. matches the tag-value of the characteristic and the complete tag of the
-# object
+# after above we have some non-type characteristics followed by an object i.e.
+# Unmask. The characteristic may be complex but will not have an attribute dict.
+# matches the tag-value of the characteristic and the complete tag of the object
 re_reify_single = re.compile(
     r"ch<(¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)>"
     r" "
