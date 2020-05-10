@@ -397,8 +397,18 @@ phases = [
     'beginning','precombat main','combat','postcombat main','ending','main'
 ]
 re_phase = re.compile(r"\b({}) phase".format('|'.join(phases)))
-# TODO: this might not work
-re_combat_phase = re.compile(r"\bcombat\b") # combat may appear with phase
+
+# because there are cases where combat is not followed by phase, have to do
+# additional checks.
+#  1. preceded by a quantifier this, each or that
+#  2. preceded by a sequence (NOTE: they have not been tagged yet)
+re_combat_phase = re.compile(
+    #r"(?<=(?:xq<(?:this|each|that)>) )"
+    #r"(?<=(?:(?:xq<(?:this|each|that|additional)>)|during) )"
+    r"(?<=(?:(?:xq<\w+?>)|during) )"
+    r"combat(?! damage)"
+)
+
 
 # steps
 # 501.1 beginning phase steps - untap, upkeep, draw
