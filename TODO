@@ -82,14 +82,12 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 137. Look at Sieges i.e. Monastery Siege, have to tag khans or dragons 
 
-138. Tag single ?
-
-137. tag abiity with preceding 'type' mana, activated, triggered
+138. tag abiity with preceding 'type' mana, activated, triggered
 
 140. should costs i.e. mana cost, activation cost be retagged as 'attributes'
 
-143. See Assasin's Blade "xp<you> havve been" two v's in have
-
 146. Tag mode? appears in a few cards (outside of reminder text)
 
-147. combat (by itself) is not being tagged as a turn structure
+148. tag phrase "no more than" followed by a number
+
+149.

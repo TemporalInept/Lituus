@@ -250,7 +250,7 @@ word_hacks = {
     "can't":"cannot","don't":"do not","didn't":"did not","it's":"it is",
     "isn't": "is not","haven't":"have not","hasn't":"has not","aren't":"are not",
     "you're":"you are","couldn't":"could not","they're":"they are",
-    "doesn't":"does not","you've":"you havve",
+    "doesn't":"does not","you've":"you have",
     "that's":"that is","wasn't":"was not","weren't":"were not",
     # special
     'an':"a",
@@ -397,6 +397,8 @@ phases = [
     'beginning','precombat main','combat','postcombat main','ending','main'
 ]
 re_phase = re.compile(r"\b({}) phase".format('|'.join(phases)))
+# TODO: this might not work
+re_combat_phase = re.compile(r"\bcombat\b") # combat may appear with phase
 
 # steps
 # 501.1 beginning phase steps - untap, upkeep, draw
@@ -879,7 +881,6 @@ re_combat_status = re.compile(
     r"(?! does cn<not>)"
 )
 re_blocked_status = re.compile(r"xa<(un)?block suffix=ed>")
-
 
 # activated/triggered
 # finds the phrase "activated or triggered i.e. Stifle (5 total)
