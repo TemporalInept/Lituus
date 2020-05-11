@@ -45,6 +45,7 @@ import lituus.mtgl.mtgl as mtgl
 re_mtg_sym = re.compile(r"^({[0-9wubrgscpxytqe\/]+})+$",flags=re.M|re.I)
 
 # match 1 mana symbol
+# TODO: allow for presence of '+' or '-'
 re_mtg_ms = re.compile(r"{([0-9wubrgscpxyz\/]+)}",flags=re.I)
 
 # match a mana string i.e. 1 or more mana symbols and nothing else

@@ -36,7 +36,7 @@ import lituus as lts
  Mana symbols (energy, tap and untap) are already enclosed by braces '{' and '}', 
  continue this concept using '<' and '>' to tag important words. All text is 
  lowered  cased. Then special words as defined in the Magic: The Gathering 
- Comprehensive Rules (3-May 2019) are tagged in addition to words that are common 
+ Comprehensive Rules (22 Jan 2020) are tagged in addition to words that are common 
  throughout mtg card oracles. 
  
  Each tag is a two letter identifier followed by a '<', the word and a '>' 
@@ -67,6 +67,7 @@ import lituus as lts
   Lituus Chacteristics = xc<LITUUS CHARACTERISTIC>
   Lituus Objects = xo<LITUUS OBJECT>
   Lituus Quantifiers = xq<LITUUS QUANTIFIER>
+  Lituus Qualifiers = xl<LITUUS QUALIFIER>
   Lituus Modifiers = xm<LITUUS MODIFIER>
   Lituus Thing = xt<LITUUS THING>
   Lituus Attribute = xr<META-CHARACTERISTIC>
@@ -334,8 +335,8 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
 ## QUANTIFIERS
 ####
 
-# Quantifying words - NOTE we want to combine "that is" and "that are" as a
-# single quantifier
+# Quantifying words
+# TODO:  combine "that is" and "that are" as a  single  quantifier?
 lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that is',
     'that are','that','additional','those','these','their','the','extra','first',
@@ -344,6 +345,16 @@ lituus_quantifiers = [
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
+
+####
+## QUALFIERS
+####
+
+# Qualifying words - currently only more and less
+
+lituus_qualifiers = ['less','more']
+qualifier_tkns = '|'.join(lituus_qualifiers)
+re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 
 ####
 ## NUMBERS
@@ -441,13 +452,13 @@ re_generic_turn = re.compile(r"\b({})".format('|'.join(generic_turns)))
 #   keys is provided. Since OrderedDict implementation varies across Python 3.x
 #   versions this is preferable to having non-portable code
 op = {
-    "less than or equal to":LE,"greater than or equal to":GE,"less than":LT,
-    "greater than":GT,"equal to":EQ,"equal":EQ,
-    "plus":'+',"minus":'-',
+    "less than or equal to":LE,"no more than":LE,"greater than or equal to":GE,
+    "less than":LT,"more than":GT,"greater than":GT,"equal to":EQ,"equal":EQ,"plus":'+',
+    "minus":'-',
 }
 op_keys = [
-    "less than or equal to","greater than or equal to","less than",
-    "greater than","equal to","equal","plus","minus",
+    "less than or equal to","no more than","greater than or equal to","less than",
+    "more than","greater than","equal to","equal","plus","minus",
 ]
 re_op = re.compile(r"\b({})\b".format('|'.join(list(op_keys))))
 
@@ -464,7 +475,7 @@ re_prep = re.compile(r"\b(?<!<)({})\b(?!>)".format('|'.join(prepositions)))
 # conditional/requirement related
 conditionals = [
     'only if','if','would','could','unless','rather than','instead','may','except',
-    'not','only','cannot'
+    'not','only','cannot','can',
 ]
 re_cond = re.compile(r"\b({})\b".format('|'.join(conditionals)))
 
@@ -1323,3 +1334,11 @@ re_qso = re.compile(
     r"(?:(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))"
 )
+
+####
+## PHRASING
+####
+
+# Finds phrases of the form {n} more|less for cost increase/reduction
+# TODO: need to be able to match more than one mana symbol i.e. Aerial Formation
+re_mc_mod = re.compile(r"({\w*?}) (more|less)")

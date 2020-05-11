@@ -37,6 +37,7 @@ def tag(name,txt):
         ntxt = first_pass(ntxt)
         ntxt = midprocess(ntxt)
         ntxt = second_pass(ntxt)
+        #ntxt = third_pass(ntxt)
     except (lts.LituusException,re.error) as e:
         raise lts.LituusException(
             lts.ETAGGING,"Tagging {} failed due to {}".format(name,e)
@@ -143,6 +144,7 @@ def first_pass(txt):
     ntxt = mtgl.re_effect.sub(r"ef<\1>",ntxt)    # effects
     ntxt = tag_characteristics(ntxt)             # chars. - done after #s
     ntxt = mtgl.re_zone.sub(r"zn<\1>",ntxt)      # zones
+    ntxt = mtgl.re_qualifier.sub(r"xl<\1>",ntxt) # qualifiers
     return ntxt
 
 def tag_entities(txt):
@@ -180,8 +182,7 @@ def tag_operators(txt):
 def tag_counters(txt):
     """ tags counters (markers) in txt returning tagged txt """
     ntxt = mtgl.re_pt_ctr.sub(r"xo<ctr type=\1\2/\3\4>",txt) # tag p/t counters
-    #ntxt = mtgl.re_named_ctr.sub(r"xo<ctr type=\1>",ntxt)    # & named counters
-    ntxt = mtgl.re_named_ctr.sub(lambda m: _named_ctr_(m),ntxt)
+    ntxt = mtgl.re_named_ctr.sub(lambda m: _named_ctr_(m),ntxt) # & named counters
     return ntxt
 
 def tag_awkws(txt):
@@ -294,8 +295,7 @@ def second_pass(txt):
     """
     performs a second pass of the oracle txt, working on Things and Attributes,
     and lituus statuses which may have to be deconflicted
-
-    :param txt: initial tagged oracle txt (lowered case)
+    :param txt: first pass tagged oracle txt
     :return: tagged oracle text
     """
     ntxt = pre_chain(txt)
@@ -433,6 +433,17 @@ def merge(ntxt):
     :return: objects with preceding status and quantifier merge
     """
     return ntxt
+
+def third_pass(txt):
+    """
+    performs a third pass of the oracle txt, concentrating on specific phrases
+    :param txt: second pass tagged oracle txt
+    :return: tagged oracle text
+    """
+    # cost increase/reduction
+    ntxt = mtgl.re_mc_mod.sub(
+        lambda m: r"{}{}".format('+' if m.group(2) == 'more' else '-',m.group(1)),txt)
+    return txt
 
 ####
 ## PRIVATE FUNCTIONS
