@@ -276,6 +276,9 @@ def deconflict_tags(txt):
     ntxt = mtgl.re_cost_aa.sub(r"xa<cost>\1",ntxt)
     ntxt = mtgl.re_cost_except.sub(r"xa<cost>\1",ntxt)
 
+    # Tag combat preceded by from as an object
+    ntxt = mtgl.re_from_combat.sub(r"xo<combat>",ntxt)
+
     # Not a deconfliction perse but to avoid conflicts 'named' is listed as
     # an action, rewrite it here so it shows up xa<name suffix=ed> rather than
     # xa<named>

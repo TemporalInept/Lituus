@@ -403,8 +403,6 @@ re_phase = re.compile(r"\b({}) phase".format('|'.join(phases)))
 #  1. preceded by a quantifier this, each or that
 #  2. preceded by a sequence (NOTE: they have not been tagged yet)
 re_combat_phase = re.compile(
-    #r"(?<=(?:xq<(?:this|each|that)>) )"
-    #r"(?<=(?:(?:xq<(?:this|each|that|additional)>)|during) )"
     r"(?<=(?:(?:xq<\w+?>)|during) )"
     r"combat(?! damage)"
 )
@@ -1070,6 +1068,9 @@ re_cost_except1 = re.compile( # Drought and Brutal Suppresion
 re_cost_except = re.compile( # Drought and Brutal Suppresion and Valiant Changeling
     r"xo<cost>(r|s|ing|ed|ion|'s|s')?(?= (?:xq<a> xq<additional>|by more than))"
 )
+
+# from combat find untagged combat preceded by from
+re_from_combat = re.compile(r"(?<=pr<from> )combat")
 
 # finds phrase tapped and attacking (suffixes have not been handled yet)
 re_tna = re.compile(r"(?<=st<tapped> and )(xa)(?=<attack>ing)")
