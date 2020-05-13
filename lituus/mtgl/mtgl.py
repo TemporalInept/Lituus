@@ -1351,6 +1351,13 @@ re_consecutive_obj = re.compile(
 )
 
 ####
+## MISC POST CHAIN OPERATIONS
+####
+
+# find 'no' followed by an object
+re_no2num = re.compile(r"(no)(?= ob<)")
+
+####
 ## MERGE
 ####
 

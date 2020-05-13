@@ -402,10 +402,13 @@ def post_chain(txt):
     """
     Further reduced objects and does additional tagging that can only be done
     after reification
+     1. combine consecutive space delimited objects where possible
+     2. replace no followed by an object with 0
     :param txt: chained and reified oracle txt
     :return: further reduced oracle text
     """
     ntxt = mtgl.re_consecutive_obj.sub(lambda m: _consecutive_obj_(m),txt)
+    ntxt = mtgl.re_no2num.sub(r"nu<0>",ntxt)
     return ntxt
 
 def deconflict_tags2(txt):
