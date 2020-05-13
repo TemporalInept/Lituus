@@ -176,7 +176,7 @@ def tag_attr(tag): return untag(tag)[2]
 def operand(val,op=False):
     """
     splits the parameter tkn in operands and operators
-    :param tkn: the paramater value
+    :param val: the paramater value
     :param op: if true returns operators as well
     :return: list of parameter operands (operators if specified)
     """

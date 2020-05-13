@@ -301,6 +301,7 @@ def second_pass(txt):
     ntxt = pre_chain(txt)
     ntxt = chain(ntxt)
     ntxt = reify(ntxt)
+    ntxt = post_chain(ntxt)
     ntxt = deconflict_tags2(ntxt)
     ntxt = merge(ntxt)
     return ntxt
@@ -346,16 +347,16 @@ def align_types(txt):
     :param txt: tagged oracle txt
     :return: aligned txt
     """
-    # TODO: don't like this but we have to run align_type two times once in
-    #  front and once on the back end
-    #  1. Need to check cards like Silumgar Monument for dual types prior to
-    #   aligning super and sub
-    #  2. Need to check cards like Gargantuan Gorilla for dual types after aligning
-    #   super and sub
-    ntxt = mtgl.re_align_dual.sub(lambda m: _align_dual_(m),txt)   # consecutive types
+    #  Run align_dual up front to check cards like Silumgar Monument for dual
+    #  types prior to aligning super and sub
+    #  Then after aligning super and sub, run align_n to:
+    #   1. Check cards like Gargantuan Gorilla for dual types
+    #   2. Check cards like Warden of the First Tree for more than 2 consecutive
+    #    types
+    ntxt = mtgl.re_align_dual.sub(lambda m: _align_n_(m),txt)      # dual types
     ntxt = mtgl.re_align_sub.sub(lambda m: _align_type_(m),ntxt)   # sub, type
     ntxt = mtgl.re_align_super.sub(lambda m: _align_type_(m),ntxt) # super, type
-    ntxt = mtgl.re_align_dual.sub(lambda m: _align_dual_(m),ntxt)  # consecutive types
+    ntxt = mtgl.re_align_n.sub(lambda m: _align_n_(m),ntxt)        # consecutive types
     return ntxt
 
 def chain(txt):
@@ -397,6 +398,16 @@ def reify(txt):
     ntxt = mtgl.re_reify_singleton_char.sub(lambda m: _reify_singleton_(m),ntxt)
     return ntxt
 
+def post_chain(txt):
+    """
+    Further reduced objects and does additional tagging that can only be done
+    after reification
+    :param txt: chained and reified oracle txt
+    :return: further reduced oracle text
+    """
+    ntxt = mtgl.re_consecutive_obj.sub(lambda m: _consecutive_obj_(m),txt)
+    return ntxt
+
 def deconflict_tags2(txt):
     """
     Deconflicts tags which are easier to do after characterstics have been reifed
@@ -433,6 +444,7 @@ def merge(ntxt):
     :return: objects with preceding status and quantifier merge
     """
     return ntxt
+
 
 def third_pass(txt):
     """
@@ -521,10 +533,11 @@ def _ptchain_(m):
     pt2 = mtgltag.tag_attr(ch2)['val']
     return mtgltag.retag('ch','p/t',{'val':pt1 + mtgl.OR + pt2})
 
-def _chain_(m):
+def _chain_(m,strict=1):
     """
     chains a group of sequential tokens into one
     :param m: a regex.Match object
+    :param strict: how to handle attribute merging (see mtgltag.merge_attributes)
     :return: the chained object
     """
     # initialize new tag parameters
@@ -554,7 +567,8 @@ def _chain_(m):
             else:
                 # get the type and set atype if necessary then ensure the new
                 # type is the same as atype
-                ptype = val.split(mtgl.ARW)[0]
+                #ptype = val.split(mtgl.ARW)[0]
+                ptype = mtgltag.split_align(val)[0]
                 if not atype: atype = ptype
                 if atype != ptype: aligned = False
 
@@ -563,13 +577,13 @@ def _chain_(m):
             #if mtgltag.complex_ops(val): val = mtgltag.wrap(val)
             if mtgltag.conjunction_ops(val): val = mtgltag.wrap(val)
             nval.append(val)
-            nattr = mtgltag.merge_attrs([attr,nattr])
+            nattr = mtgltag.merge_attrs([attr,nattr],strict)
         except lts.LituusException:
             # should be the operator
             try:
                 op = mtgl.conj_op[tkn]
-            except Keyerror:
-                raise lts.LituusException(lts.MTGL,"Illegal op {}".format(tkn))
+            except KeyError:
+                raise lts.LituusException(lts.EMTGL,"Illegal op {}".format(tkn))
 
     # if there is no alignment, join the values by the operator. otherwise
     # condense alignment joining only the aligned characteristics
@@ -722,6 +736,35 @@ def _reify_singleton_(m):
             elif cat != tcat: assert(False) # should never get here
         return mtgltag.retag('xr',cat,mtgltag.merge_attrs([attr,{'val':val}]))
 
+def _consecutive_obj_(m):
+    """
+    joins two consecutive objects these can be possessive, aligned or the most
+    common, nontoken permanent
+    :param m:
+    :return:
+    """
+    # unpack the objects
+    _,val1,attr1 = mtgltag.untag(m.group(1))
+    _,val2,attr2 = mtgltag.untag(m.group(2))
+
+    if val1 == 'copy':
+        # deconflict, copy here is an action
+        return "{} {}".format(mtgltag.retag('xa',val1,attr1),m.group(2))
+    elif val2 == 'copy':
+        # only 1 card I found, copy is an action
+        return "{} {}".format(m.group(2),mtgltag.retag('xa',val2,attr2))
+    elif mtgltag.strip(val1) == 'token' and mtgltag.strip(val2) == 'permanent':
+        # nontoken permanent - chain them
+        return _chain_(m,0)
+    elif mtgltag.strip(val1) == 'permanent' and mtgltag.strip(val2) in ['card','spell']:
+        # align permanent under val2
+        assert(mtgltag.complex_ops(val1) == [] and mtgltag.complex_ops(val2) == [])
+        return mtgltag.retag(
+            'ob',"{}→permanent".format(val2),mtgltag.merge_attrs([attr1,attr2])
+        )
+    else:
+        return m.group()
+
 def _combat_status_chain_(m):
     """
     deconflicts and chains a conjunction of combat related statuses
@@ -780,22 +823,39 @@ def _clr_conj_type_(m):
         val = "{}→({}{}{})".format(atype,aval,op,clr)
     return mtgltag.retag('ch',val,attr)
 
-def _align_dual_(m):
+#def _align_dual_(m):
+#    """
+#    aligns or chains two consecutive types depending on presence of conjunction
+#    operator
+#    :param m: a regex.Match object
+#    :return: the aligned or chained types
+#    """
+#    # have to make sure that each non-operator type is not the same so we don't
+#    # inadavertently combine "... creatures and creatures..."
+#    # TODO: find the example where this has negatvie results
+#    if mtgltag.tag_val(m.group(1)) == mtgltag.tag_val(m.group(3)): return m.group()
+#    if m.group(2) in mtgl.conj_op: return _chain_(m)
+#    else:
+#        for tkn in [m.group(1),m.group(3)]:
+#            if mtgltag.complex_ops(mtgltag.tag_val(tkn)): return _chain_(m)
+#    return _align_type_(m)
+
+def _align_n_(m):
     """
-    aligns or chains two consecutive types depending on presence of conjunction
-    operator
+    aligns/chains two ore more consecutive types with/without a conjunction op
     :param m: a regex.Match object
-    :return: the aligned or chained types
+    :return: the aligned/chained type
     """
-    # verify first that the types are not the same i.e. Elven Rider
-    if mtgltag.tag_val(m.group(1)) == mtgltag.tag_val(m.group(3)): return m.group()
-    #return _chain_(m)
-    # if we have a connjunction operator or complex operand(s), chain
-    # otherwise align
+    # have to make sure that each non-operator type is not the same so we don't
+    # inadavertently combine "... creatures and creatures..."
+    vals = [mtgltag.tag_val(x) for x in m.groups() if x and mtgltag.is_tag(x)]
+    if len(set(vals)) == 1: return m.group()
+
+    # determine if we are chaining or aligning
     if m.group(2) in mtgl.conj_op: return _chain_(m)
     else:
-        for tkn in [m.group(1),m.group(3)]:
-            if mtgltag.complex_ops(mtgltag.tag_val(tkn)): return _chain_(m)
+        for val in vals:
+            if mtgltag.complex_ops(val): return _chain_(m)
     return _align_type_(m)
 
 def _align_type_(m):

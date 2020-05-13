@@ -12,7 +12,7 @@ Defines regexes,strings and helper functions used in the mtgl format
 
 #__name__ = 'mtgl'
 __license__ = 'GPLv3'
-__version__ = '0.1.4'
+__version__ = '0.1.5'
 __date__ = 'May 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -151,11 +151,15 @@ def re_self_ref(name):
     :param name: the name of the card
     :return: the self ref regex pattern
     """
-    return re.compile(
-        r"\b(this spell|this permanent|this card|her|his|{}|{})\b".format(
-            name,name.split(',')[0]
-        )
-    )
+    # NOTE: making the assumption that subtypes supercede self references
+    self_refs = ['this card','this spell','this permanent','his','her']
+    if name.lower() not in sub_characteristics:
+        # covers creatures like Assembly-Worker
+        self_refs.append(name)
+    if name.lower().split(',')[0] not in sub_characteristics:
+        # covers planeswalkers like Gideon, the Oathsworn
+        self_refs.append(name.split(',')[0])
+    return re.compile(r"\b({})\b".format('|'.join(self_refs)))
 
 # Token Names with special needs
 # The majority of these can be found in the phrase
@@ -453,12 +457,12 @@ re_generic_turn = re.compile(r"\b({})".format('|'.join(generic_turns)))
 #   versions this is preferable to having non-portable code
 op = {
     "less than or equal to":LE,"no more than":LE,"greater than or equal to":GE,
-    "less than":LT,"more than":GT,"greater than":GT,"equal to":EQ,"equal":EQ,"plus":'+',
-    "minus":'-',
+    "less than":LT,"more than":GT,"greater than":GT,"equal to":EQ,"equal":EQ,
+    "at least":GE,"plus":'+',"minus":'-',
 }
 op_keys = [
     "less than or equal to","no more than","greater than or equal to","less than",
-    "more than","greater than","equal to","equal","plus","minus",
+    "more than","greater than","equal to","equal","at least","plus","minus",
 ]
 re_op = re.compile(r"\b({})\b".format('|'.join(list(op_keys))))
 
@@ -582,13 +586,14 @@ re_kw = re.compile(
     r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(kw_tkns)
 )
 
-# TODO: what to do with cycle, phase in, phase out, copy, flip
+# TODO: what to do with cycle, phase in, phase out, flip
 lituus_actions = [ # words not defined in the rules but important any way
     'put','remove','distribute','get','return','draw','move','look','pay','deal',
     'gain','attack','defend','unblock','block','add','enter','leave','choose','die',
     'spend','unspend','take','reduce','trigger','prevent','declare','have','switch',
     'assign','win','lose','tie','skip','flip','cycle','phase','become','share',
     'turn','produce','round','resolve',
+    'copy',  # will have already been tagged?
     'named', # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
 ]
@@ -1125,6 +1130,23 @@ re_align_dual = re.compile(
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
 )
 
+# 2 or more consecutive types. Come fomr cards like Warden of the First Tree and
+# Figure of Destiny, We capture it here just in case future cards
+# display this behavior. This will default to dual types as above for exactly 2
+# consecutive types
+re_align_n = re.compile(
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+    r" (?:(and|or|and/or) )?"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+    r"(?: (ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+     r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))*"
+)
+
 # 205.4b ... some supertypes are closely identified with specific card types...
 # Basic imply lands and world implies enchantment
 # when we have a supertype followed immediately by a card type, combine these as
@@ -1320,17 +1342,27 @@ re_reify_singleton_char = re.compile(
     r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
+# finds two consecutive objects. This may be permanent card i.e. Celestial Gatekeeper
+# possesive i.e Teferi's Response or nontoken permanent i.e. City in a Bottle
+re_consecutive_obj = re.compile(
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+    r" "
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+)
+
 ####
 ## MERGE
 ####
 
-# find phrases of the form [quantifier] [status] ob IOT to merge the quantifier
-# and status in the object
+# find phrases of the form [quantifier] [status] object IOT to merge the
+# quantifier and status in the object
 # TODO: this will find everything that has an object, caller will have to verify
 #  that at least the quantifier or status is present
 re_qso = re.compile(
     r"(?:xq<(\w+?)> )?"
-    r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
+    r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
+    # TODO: don't think we need the double wrapping 
     r"(?:(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))"
 )
@@ -1341,4 +1373,4 @@ re_qso = re.compile(
 
 # Finds phrases of the form {n} more|less for cost increase/reduction
 # TODO: need to be able to match more than one mana symbol i.e. Aerial Formation
-re_mc_mod = re.compile(r"({\w*?}) (more|less)")
+re_mc_mod = re.compile(r"({\w*?}) xl(more|less)")

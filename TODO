@@ -74,7 +74,7 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 134. Not all tapped are being tagged correctly as status (Captain's Claws, Nature's Chosen)
 
-135. replace no followed by object with 0
+135. replace no followed by object with 0 - where do we put this?
 
 136, Need to figure out how to standarize the treatment of suffixes in status
 
@@ -86,12 +86,18 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 146. Tag mode? appears in a few cards (outside of reminder text)
 
-152. Look at the phrase at least n 
-
 153. High Seas, good example of grouping
 
 154. Phrasing includes "player has more Thing than player"
 
 155. Votes i.e. Coercive Portal have to tag them similar to 137
 
-156. 
+156. Tag many
+
+157. Land Equilibrium >= followed by "as many" have to do something about this
+
+158. deconflict copy as object vs action
+
+162.
+
+
