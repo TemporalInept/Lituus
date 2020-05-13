@@ -39,6 +39,8 @@ import lituus.mtgl.mtgl as mtgl
   tag-attributes is a list of space delimited attribute pairs attr=val 
 """
 
+# TODO: do we still need the flags?
+
 #### MTG SYMBOLS
 # TODO: do we really need the re.I flag
 # match mtg symbol string - one or more symbols of the form: {X}

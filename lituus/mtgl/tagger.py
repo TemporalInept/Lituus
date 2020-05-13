@@ -303,7 +303,7 @@ def second_pass(txt):
     ntxt = reify(ntxt)
     ntxt = post_chain(ntxt)
     ntxt = deconflict_tags2(ntxt)
-    ntxt = merge(ntxt)
+    #ntxt = merge(ntxt)
     return ntxt
 
 def pre_chain(txt):
@@ -437,6 +437,10 @@ def deconflict_tags2(txt):
     ntxt = mtgl.re_target_act.sub(r"xa<target>",ntxt)
     ntxt = mtgl.re_target_obj.sub(r"ob<target>",ntxt)
 
+    # deconflict copy as action vs object (TODO: this could be done in the first
+    # deconfliction)
+    ntxt = mtgl.re_copy_act.sub(r"xa<copy\2>",ntxt)
+
     return ntxt
 
 def merge(ntxt):
@@ -448,7 +452,6 @@ def merge(ntxt):
     """
     return ntxt
 
-
 def third_pass(txt):
     """
     performs a third pass of the oracle txt, concentrating on specific phrases
@@ -456,8 +459,8 @@ def third_pass(txt):
     :return: tagged oracle text
     """
     # cost increase/reduction
-    ntxt = mtgl.re_mc_mod.sub(
-        lambda m: r"{}{}".format('+' if m.group(2) == 'more' else '-',m.group(1)),txt)
+    #ntxt = mtgl.re_mc_qualifier.sub(
+    #    lambda m: r"{}{}".format('+' if m.group(2) == 'more' else '-',m.group(1)),txt)
     return txt
 
 ####
@@ -755,7 +758,7 @@ def _consecutive_obj_(m):
         return "{} {}".format(mtgltag.retag('xa',val1,attr1),m.group(2))
     elif val2 == 'copy':
         # only 1 card I found, copy is an action
-        return "{} {}".format(m.group(2),mtgltag.retag('xa',val2,attr2))
+        return "{} {}".format(m.group(1),mtgltag.retag('xa',val2,attr2))
     elif mtgltag.strip(val1) == 'token' and mtgltag.strip(val2) == 'permanent':
         # nontoken permanent - chain them
         return _chain_(m,0)

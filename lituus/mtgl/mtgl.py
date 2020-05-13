@@ -924,8 +924,6 @@ re_activation_cost = re.compile(r"ka<activate suffix=ion> xo<cost( suffix=s)?>")
 re_target_sc = re.compile(r"xq<target> and xq<that> xq<target>")
 
 # that target (aside from above) and could target are references to an action
-#re_target_act = re.compile(r"(?<=xq<that> )(xq<target>)")
-#re_target_act2 = re.compile(r"(?<=cn<could> )(xq<target>)")
 re_target_act = re.compile(r"(?<=(?:xq<that>|cn<could>) )(xq<target>)")
 
 # Find target quantifier that is not followed by an mtg object, a status or
@@ -934,6 +932,14 @@ re_target_obj = re.compile(
     r"(xq<target>)"
     r"(?! (?:ob|st|xs|xo<commander>|(?:xp<(?:player|opponent(?: suffix=(?:s|s'|'s))?))))"
 )
+
+# Copy
+# copy by default is tagged as an object but can be an action. NOTE: some
+# deconfliction has already occurred in consecutive object handling
+
+# copy followed by a quantifier or 'it' is an action
+# TODO: put in optional suffix=s
+re_copy_act = re.compile(r"(ob<copy( suffix=s)?>)(?= (?:xq<|xo<it>))")
 
 ####
 ## MID-PASS CLEANUP
@@ -1379,5 +1385,6 @@ re_qso = re.compile(
 ####
 
 # Finds phrases of the form {n} more|less for cost increase/reduction
-# TODO: need to be able to match more than one mana symbol i.e. Aerial Formation
-re_mc_mod = re.compile(r"({\w*?}) xl(more|less)")
+# TODO: is this even helpful?
+# grab one or more mana symbols followed by a qualifier
+re_mc_qualifier = re.compile(r"((?:{(?:[0-9wubrgscpx\/]+)})+) xl<(more|less)>")
