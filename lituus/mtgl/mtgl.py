@@ -1308,6 +1308,14 @@ re_pob_chain = re.compile(
     r"(?:, (and|or|and/or))"
 )
 
+# a subset of the conjunction_chain that matches only keyword chains
+re_kw_chain = re.compile(
+    r"(kw<[\w-]+>, )*"
+    r"(kw<[\w-]+>)"
+    r",? (and|or|and/or) "
+    r"(kw<[\w-]+>)"
+)
+
 ####
 ## REIFICATION
 ####
@@ -1363,28 +1371,53 @@ re_consecutive_obj = re.compile(
 # find 'no' followed by an object
 re_no2num = re.compile(r"(no)(?= ob<)")
 
+# find phrases of the form ATTR OP with no following number
+re_uninit_attr = re.compile(
+    r"xr<(p/t|everything|text|name|mana cost|cmc|power|toughness|"
+      r"color_identity|color|type)>"
+    r" op<(.)>"
+    r"(?! nu)"
+)
+
 ####
 ## MERGE
 ####
+
+# phrases of the form OBJECT with ATTR
+re_obj_with_attr = re.compile(
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+    r" pr<with> "
+    r"xr<(p/t|everything|text|name|mana cost|cmc|power|toughness|"
+      r"color_identity|color|type) val=(.)(\w*?)>"
+)
+
+# phrases of the form OBJECT with KEYWORD (assumes chained keywords)
+re_obj_with_kw = re.compile(
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+    r" pr<with> "
+    r"kw<([\w-]+)>"
+
+)
 
 # find phrases of the form [quantifier] [status] object IOT to merge the
 # quantifier and status in the object
 # TODO: this will find everything that has an object, caller will have to verify
 #  that at least the quantifier or status is present
-re_qso = re.compile(
-    r"(?:xq<(\w+?)> )?"
-    r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
-    # TODO: don't think we need the double wrapping 
-    r"(?:(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))"
-)
+#re_qso = re.compile(
+#    r"(?:xq<(\w+?)> )?"
+#    r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
+#    # TODO: don't think we need the double wrapping
+#    r"(?:(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))"
+#)
 
 ####
 ## PHRASING
 ####
 
-# Finds phrases of the form {n} more|less for cost increase/reduction
-# TODO: is this even helpful?
-# grab one or more mana symbols followed by a qualifier
-re_mc_qualifier = re.compile(r"((?:{(?:[0-9wubrgscpx\/]+)})+) xl<(more|less)>")
+# Finds phrases of the form {n} more|less for cost increase/reduction one or more
+# mana symbols followed by a qualifier
+#re_mc_qualifier = re.compile(r"((?:{(?:[0-9wubrgscpx\/]+)})+) xl<(more|less)>")

@@ -236,7 +236,7 @@ def midprocess(txt):
     ntxt = mtgl.re_equal_y.sub(r"nu<y>, where nu<y> is \1",ntxt)         # 6.a
     ntxt = mtgl.re_equal_z.sub(r"nu<z>",ntxt)                            # 6.b
     ntxt = mtgl.re_are_each.sub(r"",ntxt)                                # 6.c
-    ntxt = mtgl.re_mana_cost.sub(r"xo<cost type=mana\1",ntxt)            #7
+    ntxt = mtgl.re_mana_cost.sub(r"xo<cost type=mana\1>",ntxt)            #7
     return ntxt
 
 re_empty_postfix = re.compile(r"\ssuffix=(?=)>")
@@ -303,7 +303,8 @@ def second_pass(txt):
     ntxt = reify(ntxt)
     ntxt = post_chain(ntxt)
     ntxt = deconflict_tags2(ntxt)
-    #ntxt = merge(ntxt)
+    ntxt = mtgl.re_kw_chain.sub(lambda m: _chain_(m),ntxt) # chain keywords prior to merge
+    ntxt = merge(ntxt)
     return ntxt
 
 def pre_chain(txt):
@@ -409,6 +410,7 @@ def post_chain(txt):
     """
     ntxt = mtgl.re_consecutive_obj.sub(lambda m: _consecutive_obj_(m),txt)
     ntxt = mtgl.re_no2num.sub(r"nu<0>",ntxt)
+    ntxt = mtgl.re_uninit_attr.sub(r"xr<\1 val=\2y>, where nu<y> is",ntxt)
     return ntxt
 
 def deconflict_tags2(txt):
@@ -443,13 +445,16 @@ def deconflict_tags2(txt):
 
     return ntxt
 
-def merge(ntxt):
+def merge(txt):
     """
-    Many objects are preceded by a quantifier and/or a status, merge those into
-    the object as an attribute
+    Many objects are followed by additional criteria:
+     1. with ATTR
+     2. with keyword(s)
     :param txt: tagged, chained and reified txt with deconflicted status
-    :return: objects with preceding status and quantifier merge
+    :return: objects with following critieria merged
     """
+    ntxt = mtgl.re_obj_with_attr.sub(lambda m: _obj_with__(m),txt)
+    ntxt = mtgl.re_obj_with_kw.sub(lambda m: _obj_with__(m),ntxt)
     return ntxt
 
 def third_pass(txt):
@@ -876,9 +881,6 @@ def _align_type_(m):
     _,val,attr = mtgltag.untag(tkns[-1])
     vs = mtgl.AND.join([mtgltag.tag_val(tkn) for tkn in tkns[:-1]])
 
-    #op = mtgl.AND
-    #if not mtgltag.is_aligned(val): op = mtgl.ARW
-
     # if the type is already aligned, need to wrap the aligned characteristics
     if mtgltag.is_aligned(mtgltag.unwrap(val)):
         atype,aval = mtgltag.split_align(mtgltag.unwrap(val))
@@ -891,3 +893,14 @@ def _align_type_(m):
 
     # TODO: make sure we won't see attributes on the preceding characteristics
     return mtgltag.retag('ch',val,attr)
+
+def _obj_with__(m):
+    """
+    merges object and trailing 'with' clause
+    :param m: the RegEx.match object
+    :return: object merge with training 'with' clause
+    """
+    # untag the object & create the 'with' attribute
+    tid,val,attr = mtgltag.untag(m.group(1))
+    wattr = {'with':''.join(m.groups()[1:])}
+    return mtgltag.retag(tid,val,mtgltag.merge_attrs([attr,wattr],0))
