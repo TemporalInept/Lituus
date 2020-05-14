@@ -354,9 +354,10 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 ## QUALFIERS
 ####
 
-# Qualifying words - currently only more and less
+# Qualifying words
+# TODO: not sure if this is the best place for 'back' or not
 
-lituus_qualifiers = ['less','more']
+lituus_qualifiers = ['less','more','back']
 qualifier_tkns = '|'.join(lituus_qualifiers)
 re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 
