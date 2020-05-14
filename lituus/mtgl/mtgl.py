@@ -370,7 +370,6 @@ re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 # followed by whitespace '/' or '.' are matched.
 re_number = re.compile(r"(?<=(?:^|[ \/+-]))(\d+|x|y|z])(?=[ \/+-\.])")
 
-
 ####
 ## ENTITIES
 ####
@@ -388,7 +387,7 @@ re_obj = re.compile(
 lituus_objects = [ # lituus objects
     "city's blessing",'game','mana pool','mana cost','commander','mana','attacker',
     'blocker','itself','it','them','coin','choice','cost',"amount of",'life',
-    'symbol',
+    'symbol','rest',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
