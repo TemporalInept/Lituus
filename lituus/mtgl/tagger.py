@@ -255,7 +255,8 @@ def deconflict_tags(txt):
     ntxt = mtgl.re_action_phase.sub(r"xa<phase amplifier=\2 suffix=\1>",ntxt)
     ntxt = mtgl.re_ts_phase.sub(r"ts<phase suffix=\1>",ntxt)
 
-    # actions and turn structure may result in empty suffixes
+    # actions and turn structure may result in empty suffixes fix them here before
+    # moving on
     ntxt = re_empty_postfix.sub('>',ntxt)
 
     # Face Up/Down
@@ -279,6 +280,9 @@ def deconflict_tags(txt):
 
     # Tag combat preceded by from as an object
     ntxt = mtgl.re_from_combat.sub(r"xo<combat>",ntxt)
+
+    # retag discarded as status where necessary
+    ntxt = mtgl.re_discard_act.sub(r"xs<discarded>",ntxt)
 
     # Not a deconfliction perse but to avoid conflicts 'named' is listed as
     # an action, rewrite it here so it shows up xa<name suffix=ed> rather than

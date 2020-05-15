@@ -1012,6 +1012,14 @@ re_status = re.compile(
     r"([kx]a)<(un)?({})>(?=ed)".format('|'.join(status[0:2]))
 )
 
+# discarded is a status if it is preceded by the and followed by card Remeber
+# suffixes have not been processed yet
+re_discard_act = re.compile(
+    r"(?<=xq<the> )"
+    r"ka<discard>(?:ed)"
+    r"(?= ob<)"
+)
+
 # Phase can be Status, Action or Turn Structure
 re_status_phase = re.compile(r"(xa<phase>ed-)pr<(in|out)>") # all status have a hyphen
 re_action_phase = re.compile(r"xa<phase>(s|ed)? pr<(in|out)>")
@@ -1021,6 +1029,8 @@ re_ts_phase = re.compile(r"xa<phase>(s?)(?=\W)")
 # "...exile the top card of your library face down.", generally 'turn'
 re_status_face = re.compile(r"face-pr<(up|down)>")
 re_mod_face = re.compile(r"face pr<(up|down)>")
+
+# discarded may be a status (remember suffixes have not been processed yet
 
 ####
 ## X/Y COUNTER DECONFLICTION

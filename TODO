@@ -68,8 +68,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 130. if we tag standalone characteristics as 'xr', we will have to change up how we treat objects
 
-131. In some cases, discarded could be a quantifier i.e. Volrath the Falled '...discarded card...'
-
 133. Jhoira's Timebug will cause problems
 
 134. Not all tapped are being tagged correctly as status (Captain's Claws, Nature's Chosen)
