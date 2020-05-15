@@ -37,7 +37,7 @@ def tag(name,txt):
         ntxt = first_pass(ntxt)
         ntxt = midprocess(ntxt)
         ntxt = second_pass(ntxt)
-        #ntxt = third_pass(ntxt)
+        ntxt = third_pass(ntxt)
     except (lts.LituusException,re.error) as e:
         raise lts.LituusException(
             lts.ETAGGING,"Tagging {} failed due to {}".format(name,e)
@@ -463,10 +463,14 @@ def merge(txt):
 
 def third_pass(txt):
     """
-    performs a third pass of the oracle txt, concentrating on specific phrases
+    performs a third pass of the oracle txt, working on Things and specific phrases
     :param txt: second pass tagged oracle txt
     :return: tagged oracle text
     """
+    # cost (NOTE: activation costs have already been handled) move additional
+    # or keyword inside cost
+    ntxt = mtgl.re_cost_type.sub(lambda m:_cost_type_(m),txt)
+
     # TODO: should we put
     #  in any order
     #  in a random order
@@ -474,7 +478,7 @@ def third_pass(txt):
     # cost increase/reduction
     #ntxt = mtgl.re_mc_qualifier.sub(
     #    lambda m: r"{}{}".format('+' if m.group(2) == 'more' else '-',m.group(1)),txt)
-    return txt
+    return ntxt
 
 ####
 ## PRIVATE FUNCTIONS
@@ -905,10 +909,21 @@ def _align_type_(m):
 def _obj_with__(m):
     """
     merges object and trailing 'with' clause
-    :param m: the RegEx.match object
+    :param m: the regex.match object
     :return: object merge with training 'with' clause
     """
     # untag the object & create the 'with' attribute
     tid,val,attr = mtgltag.untag(m.group(1))
     wattr = {'with':''.join(m.groups()[1:])}
     return mtgltag.retag(tid,val,mtgltag.merge_attrs([attr,wattr],0))
+
+def _cost_type_(m):
+    """
+    merge cost type and cost
+    :param m: the regex.Match object
+    :return: cost type is moved to cost attribute
+    """
+    # untag the cost tag and insert the cost type as a new attribute
+    tid,val,attr = mtgltag.untag(m.group(2))
+    attr['type'] = mtgltag.tag_val(m.group(1))
+    return mtgltag.retag(tid,val,attr)

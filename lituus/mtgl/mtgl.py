@@ -1427,6 +1427,15 @@ re_obj_with_kw = re.compile(
 #)
 
 ####
+## THINGS
+####
+
+# find cost preceded by additional or kw
+re_cost_type = re.compile(
+    r"(xq<additional>|kw<[\w-]+>) (xo<cost(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
+)
+
+####
 ## PHRASING
 ####
 

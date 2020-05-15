@@ -1,12 +1,8 @@
-2. How to combine/use face converted mana cost in MTGCard
-
 8. Look for cards like Tolaria, ..."bands with other"... which may/will cause problems with double quoted words
 
 12. What words/phrases are we missing for sequences?
 
 16. Can we just standarize a regular expression to catch anamolies in function word_hacks?
-
-31. How to self ref "Hazezon" in Hazezon Tamar without self reffing "Dragon" in Dragon Egg (for now, am hacking it in multiverse.py
 
 36. See Guided Passage for 'Thing' chaining
 
@@ -22,7 +18,7 @@
 50. Will have to deconflict IKO keyword counters that are incorrectly tagged as 
 keywords
 
-52. How to handle cards like Transmutation "switch target creature's power and toughness"
+52. How to handle cards like Transmutation "switch target creature's power and toughness" so that power and toughnes are not combined into p/t
 
 53. Can use the possessive suffix "'s" for some meta characteristics see Sewer Nemesis
 
@@ -37,8 +33,6 @@ a lot becuase the first object is a token
 76. Add support for flip lands from Ixalan, and other new land types from last 3 sets
 
 78. In regex patterns for tag-value, remove the "'" single quote as it is only present in attributes
-
-83. for stuff like spectacle cost i.e. Rafter Demon do we need a special tag and how 
 
 84. will have to combine activated and ability as in Training Ground
 
