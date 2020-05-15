@@ -159,6 +159,8 @@ def re_self_ref(name):
     if name.lower().split(',')[0] not in sub_characteristics:
         # covers planeswalkers like Gideon, the Oathsworn
         self_refs.append(name.split(',')[0])
+    if name.lower().split(' ')[0] not in sub_characteristics:
+        self_refs.append(name.split(' ')[0])
     return re.compile(r"\b({})\b".format('|'.join(self_refs)))
 
 # Token Names with special needs
