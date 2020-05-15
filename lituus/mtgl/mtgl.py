@@ -347,7 +347,7 @@ lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that is',
     'that are','that','additional','those','these','their','the','extra','first',
     'second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth',
-    'half','twice','new','single',
+    'half','twice','new','single','same'
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -1032,8 +1032,6 @@ re_ts_phase = re.compile(r"xa<phase>(s?)(?=\W)")
 re_status_face = re.compile(r"face-pr<(up|down)>")
 re_mod_face = re.compile(r"face pr<(up|down)>")
 
-# discarded may be a status (remember suffixes have not been processed yet
-
 ####
 ## X/Y COUNTER DECONFLICTION
 ####
@@ -1228,15 +1226,23 @@ re_pt_chain = re.compile(
     r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
-# Characteristic Conjunction Chains are two or more sequential characteristics
-# having the form
-#   [char 1, ..., char n-2] char n-1[,] conjunction op char n
-# that can be combined into a single characteristic
-re_conjunction_chain = re.compile(
-    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>, )*"
-    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
-    r",? (and|or|and/or) "
-    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
+# chain two or more sequential tags of the same id having the form
+#   [tid 1, ..., tid n-2] tid n-1[,] conjunction op tid n
+# that can be combined into a single tag
+def re_chain(tid):
+    """
+    compiles a conjunction chaing pattern of type tid
+    :param tid: the two letter tag-id to search for
+    :return: regex.Pattern
+    """
+    return re.compile(
+        r"({0}<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+          r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>, )*"
+        r"({0}<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+          r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
+        r",? (and|or|and/or) "
+        r"({0}<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+          r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)".format(tid)
 )
 
 # a subset of the conjunction_chain that matches only color chains
@@ -1318,14 +1324,6 @@ re_pob_chain = re.compile(
     r", "
     r"ch<(¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))>"
     r"(?:, (and|or|and/or))"
-)
-
-# a subset of the conjunction_chain that matches only keyword chains
-re_kw_chain = re.compile(
-    r"(kw<[\w-]+>, )*"
-    r"(kw<[\w-]+>)"
-    r",? (and|or|and/or) "
-    r"(kw<[\w-]+>)"
 )
 
 ####
@@ -1410,7 +1408,6 @@ re_obj_with_kw = re.compile(
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
     r" pr<with> "
     r"kw<([\w-]+)>"
-
 )
 
 # find phrases of the form [quantifier] [status] object IOT to merge the

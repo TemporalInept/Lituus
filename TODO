@@ -32,8 +32,6 @@ a lot becuase the first object is a token
 
 76. Add support for flip lands from Ixalan, and other new land types from last 3 sets
 
-78. In regex patterns for tag-value, remove the "'" single quote as it is only present in attributes
-
 84. will have to combine activated and ability as in Training Ground
 
 86. what to do about "highest" as in Juxtapose
@@ -70,8 +68,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 138. tag abiity with preceding 'type' mana, activated, triggered
 
-140. should costs i.e. mana cost, activation cost be retagged as 'attributes'
-
 146. Tag mode? appears in a few cards (outside of reminder text)
 
 153. High Seas, good example of grouping
@@ -90,4 +86,8 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 166. Tag the phrase in any order? (144) vs in a random order? (63) or leave as is?
 
-168.
+168. Spliced not being tagged see Minamo's Meddling
+
+169. Status deconfliction is not working
+
+170.

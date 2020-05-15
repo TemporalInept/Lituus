@@ -299,6 +299,13 @@ def second_pass(txt):
     """
     performs a second pass of the oracle txt, working on Things and Attributes,
     and lituus statuses which may have to be deconflicted
+     1. conduct pre chaining of characteristics
+     2. chain characteristics
+     3. reify characteristics
+     4. conduct post chaining
+     5. additional deconfliction of tags
+     6. chain other tags
+     7. merge objects with preceding/following tags
     :param txt: first pass tagged oracle txt
     :return: tagged oracle text
     """
@@ -307,7 +314,7 @@ def second_pass(txt):
     ntxt = reify(ntxt)
     ntxt = post_chain(ntxt)
     ntxt = deconflict_tags2(ntxt)
-    ntxt = mtgl.re_kw_chain.sub(lambda m: _chain_(m),ntxt) # chain keywords prior to merge
+    ntxt = chain_other(ntxt)
     ntxt = merge(ntxt)
     return ntxt
 
@@ -379,7 +386,7 @@ def chain(txt):
     ntxt = mtgl.re_clr_conj_type.sub(lambda m: _clr_conj_type_(m),ntxt)
 
     # chain conjunctions
-    ntxt = mtgl.re_conjunction_chain.sub(lambda m: _chain_(m),ntxt)
+    ntxt = mtgl.re_chain('ch').sub(lambda m: _chain_(m),ntxt)
     ntxt = mtgl.re_conjunction_chain_special.sub(lambda m: _chain_special_(m),ntxt)
     ntxt = mtgl.re_pob_chain.sub( # Price of Betrayal
         lambda m: r"ch<{0}{4}{1}{4}{2}>, {3}".format(
@@ -423,7 +430,7 @@ def deconflict_tags2(txt):
     :param txt: tagged, chained and reified txt
     :return: txt with lituus statuses deconflicted
     """
-    # start of with lituus statuses that have been tagged as something else
+    # start off with lituus statuses that have been tagged as something else
     ntxt = mtgl.re_ed_lituus_status.sub(r"xs",txt)
     ntxt = mtgl.re_ed_thing_lituus_status.sub(r"xs",ntxt)
 
@@ -447,6 +454,16 @@ def deconflict_tags2(txt):
     # deconfliction)
     ntxt = mtgl.re_copy_act.sub(r"xa<copy\2>",ntxt)
 
+    return ntxt
+
+def chain_other(txt):
+    """
+    chains tags other than characteristics
+    :param txt: the tagged text
+    :return: text with additional tags chained
+    """
+    ntxt = mtgl.re_chain('kw').sub(lambda m: _chain_(m),txt)
+    ntxt = mtgl.re_chain('zn').sub(lambda m: _chain_(m),ntxt)
     return ntxt
 
 def merge(txt):
