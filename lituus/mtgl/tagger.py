@@ -467,6 +467,10 @@ def third_pass(txt):
     :param txt: second pass tagged oracle txt
     :return: tagged oracle text
     """
+    # TODO: should we put
+    #  in any order
+    #  in a random order
+    #  as many as
     # cost increase/reduction
     #ntxt = mtgl.re_mc_qualifier.sub(
     #    lambda m: r"{}{}".format('+' if m.group(2) == 'more' else '-',m.group(1)),txt)

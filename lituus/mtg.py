@@ -62,6 +62,15 @@ legal_multicnt = {
     "Persistent Petitioners":INF,
     "Seven Dwarves":7,
 }
+draft_cards = [
+    'Cogwork Tracker','Lore Seeker','Spire Phantasm','Canal Dredger',
+    'Pyretic Hunter','Cogwork Librarian','Cogwork Grinder','Archdemon of Paliano',
+    'Lurking Automaton','Paliano, the High City','Caller of the Untamed',
+    'Whispergear Sneak','Paliano Vanguard','Arcane Savant','Aether Searcher',
+    'Regicide','Illusionary Informant','Smuggler Captain','Noble Banneret',
+    'Volatile Chimera','Cogwork Spy',"Leovold's Operative",'Garbage Fire',
+    'Animus of Predation','Agent of Acquisitions','Deal Broker','Custodi Peacekeeper'
+]
 mana_combinations = mana_colors + ["".join(x) for x in
                                    combinations(mana_colors, 2)] + \
                     ["".join(x) for x in combinations(mana_colors, 3)] + \

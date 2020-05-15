@@ -25,6 +25,7 @@ import pickle
 import json
 import requests
 from hashlib import md5
+import regex as re
 import lituus as lts
 import lituus.mtg as mtg
 import lituus.pack as pack
@@ -273,6 +274,7 @@ def harvest(name,jcard):
 
     return dcard
 
+re_draft = re.compile(r"[Dd]raft(?:ing|ed)?")
 def _hack_cards_(jv):
     """
     Fixes errors in json representation and hard codes hacks to modify card
@@ -281,13 +283,25 @@ def _hack_cards_(jv):
     :return: the modified json multiverse
     """
     for cname in jv:
+        # older versions of cards may have semi-colon rather than a comma
+        # modify modal spells removing newlines betweem modes
         if 'text' in jv[cname]:
-            # older versions of cards may have semi-colon rather than a comma
-            # modify modal spells removing newlines betweem modes
             jv[cname]['text'] = jv[cname]['text'].replace(';',',')
             jv[cname]['text'] = jv[cname]['text'].replace("\n• ",mtgl.BLT)
 
-        # hard-code hacks for easier processing
+        # remove any lines in draft cards that reference draft(ing|ed) or
+        # 'you noted'
+        if cname in mtg.draft_cards:
+            lines = []
+            for line in jv[cname]['text'].split('\n'):
+                #if 'draft' in line: continue
+                if re_draft.search(line): continue
+                if 'you noted' in line: continue
+                if 'you guessed' in line: continue
+                lines.append(line)
+            jv[cname]['text'] = '\n'.join(lines)
+
+        # hard-coded hacks for easier processing
         if cname == "Urborg, Tomb of Yawgmoth":
             # Urborg has an implied "Add B" because it makes itself a swamp
             jv[cname]['text'] += "\n{T}: Add {B}.\n"
