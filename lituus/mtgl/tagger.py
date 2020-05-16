@@ -320,19 +320,19 @@ def second_pass(txt):
 
 def pre_chain(txt):
     """
-    Facilitates chaining
+    Facilitates chaining by
+     1) handle special case of 'base power and toughness' replace phrase base
+     ch<power> and ch<toughness> ch<p/t val=X/Y> with ch<p/t val=X/Y>
+     2) attributes - (stand alone meta-characteristics)
+      a. temporarily tag attributes as xr
+      b. assign values where possible to temporary attributes including c.
+        those without an operator
+     3) add types to hanging subtypes
+     4) modify anamolous characteristic action charactistic
+     5) align supertypes and subtypes
     :param txt: txt to prechain
     :return: prechainned text
     """
-    #  1) handle special case of 'base power and toughness' replace phrase
-    #   base ch<power> and ch<toughness> ch<p/t val=X/Y> with ch<p/t val=X/Y>
-    #  2) attributes - (stand alone meta-characteristics)
-    #   a. temporarily tag attributes as xr
-    #   b. assign values where possible to temporary attributes including c.
-    #    those without an operator
-    #  3) add types to hanging subtypes
-    #  4) modify anamolous characteristic action charactistic
-    #  5) align supertypes and subtypes
     ntxt = powt(txt)                                                    # 1
     ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)          # 2.a
     ntxt = mtgl.re_attr_val.sub(r"xr<\1 val=\2\3>",ntxt)                # 2.b
@@ -386,7 +386,11 @@ def chain(txt):
     ntxt = mtgl.re_clr_conj_type.sub(lambda m: _clr_conj_type_(m),ntxt)
 
     # chain conjunctions
-    ntxt = mtgl.re_chain('ch').sub(lambda m: _chain_(m),ntxt)
+    # TODO: Hacky we don't want to chain Elven Riders so have to perform a check
+    # first prior to substituting
+    ntxt = mtgl.re_chain('ch').sub(lambda m: _chain_check_(m),ntxt)
+    #ntxt = mtgl.re_chain('ch').sub(lambda m: _chain_(m),ntxt)
+
     ntxt = mtgl.re_conjunction_chain_special.sub(lambda m: _chain_special_(m),ntxt)
     ntxt = mtgl.re_pob_chain.sub( # Price of Betrayal
         lambda m: r"ch<{0}{4}{1}{4}{2}>, {3}".format(
@@ -572,6 +576,16 @@ def _ptchain_(m):
     pt1 = mtgltag.tag_attr(ch1)['val']
     pt2 = mtgltag.tag_attr(ch2)['val']
     return mtgltag.retag('ch','p/t',{'val':pt1 + mtgl.OR + pt2})
+
+def _chain_check_(m):
+    """
+    checks first if chaining should be conducted
+    :param m: regex.Match object
+    :return: the chained object or the original text
+    """
+    vals = [mtgltag.tag_val(x) for x in m.groups() if x and mtgltag.is_tag(x)]
+    if _skip_chain_(vals): return m.group()
+    else: return _chain_(m)
 
 def _chain_(m,strict=1):
     """
@@ -863,33 +877,21 @@ def _clr_conj_type_(m):
         val = "{}→({}{}{})".format(atype,aval,op,clr)
     return mtgltag.retag('ch',val,attr)
 
-#def _align_dual_(m):
-#    """
-#    aligns or chains two consecutive types depending on presence of conjunction
-#    operator
-#    :param m: a regex.Match object
-#    :return: the aligned or chained types
-#    """
-#    # have to make sure that each non-operator type is not the same so we don't
-#    # inadavertently combine "... creatures and creatures..."
-#    # TODO: find the example where this has negatvie results
-#    if mtgltag.tag_val(m.group(1)) == mtgltag.tag_val(m.group(3)): return m.group()
-#    if m.group(2) in mtgl.conj_op: return _chain_(m)
-#    else:
-#        for tkn in [m.group(1),m.group(3)]:
-#            if mtgltag.complex_ops(mtgltag.tag_val(tkn)): return _chain_(m)
-#    return _align_type_(m)
-
 def _align_n_(m):
     """
     aligns/chains two ore more consecutive types with/without a conjunction op
     :param m: a regex.Match object
     :return: the aligned/chained type
     """
-    # have to make sure that each non-operator type is not the same so we don't
-    # inadavertently combine "... creatures and creatures..."
+    # TODO: what card did this safeguard against
+    #  have to make sure that each non-operator type is not the same so we don't
+    #  inadavertently combine "... creatures and creatures..."
+    #vals = [mtgltag.tag_val(x) for x in m.groups() if x and mtgltag.is_tag(x)]
+    #if len(set(vals)) == 1: return m.group()
+    # have two make sure the conjunction is not part of two separate clauses i.e.
+    # Elven Riders
     vals = [mtgltag.tag_val(x) for x in m.groups() if x and mtgltag.is_tag(x)]
-    if len(set(vals)) == 1: return m.group()
+    if _skip_chain_(vals): return m.group()
 
     # determine if we are chaining or aligning
     if m.group(2) in mtgl.conj_op: return _chain_(m)
@@ -897,6 +899,20 @@ def _align_n_(m):
         for val in vals:
             if mtgltag.complex_ops(val): return _chain_(m)
     return _align_type_(m)
+
+def _skip_chain_(vals):
+    """
+    determines if the list of tags in ts should be not be chained
+    :param vals: list of tag values to be chained
+    :return: True if skip, False otherwise
+    """
+    # if each value has the same base type and at least one is not aligned we skip
+    btype = mtgltag.base_type(vals[0])
+    aligned = True
+    for val in vals:
+        if mtgltag.base_type(val) != btype: return False
+        if not mtgltag.is_aligned(mtgltag.unwrap(val)): aligned = False
+    return not aligned
 
 def _align_type_(m):
     """

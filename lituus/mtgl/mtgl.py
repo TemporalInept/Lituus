@@ -899,14 +899,18 @@ re_combat_status_chain = re.compile(
 )
 
 # the remainder of attacking, blocking, and defending will be considered statuses
-# unless they are preceded by an 'is' or a Thing or followed by a "does not" (Johan)
-# and (un)blocked will be always be considered a status
+# unless they are preceded by an is/not or a Thing or followed by a "does not"
+# (Johan) and (un)blocked will be always be considered a status if not preced by
+# is/is not
 re_combat_status = re.compile(
-    r"(?<!(?:(?:ob|xo|xp)<\w+?>|is|are|was) )"
+    r"(?<!(?:(?:ob|xo|xp)<\w+?>|is|are|was)(?: cn<not>)? )"
     r"xa<((?:un|¬)?attack|block|defend) suffix=ing>"
     r"(?! does cn<not>)"
 )
-re_blocked_status = re.compile(r"xa<(un)?block suffix=ed>")
+re_blocked_status = re.compile(
+    r"(?<!(is|are|was)(?: cn<not>)? )"
+    r"xa<(un)?block suffix=ed>"
+)
 
 # activated/triggered
 # finds the phrase "activated or triggered i.e. Stifle (5 total)
@@ -1146,10 +1150,9 @@ re_align_dual = re.compile(
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
 )
 
-# 2 or more consecutive types. Come fomr cards like Warden of the First Tree and
-# Figure of Destiny, We capture it here just in case future cards
-# display this behavior. This will default to dual types as above for exactly 2
-# consecutive types
+# 2 or more consecutive types. Cards like Warden of the First Tree and Figure of
+# Destiny, We capture it here just in case future cards display this behavior.
+# This will default to dual types as above for exactly 2 consecutive types
 re_align_n = re.compile(
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
      r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)?"

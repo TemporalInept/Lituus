@@ -238,6 +238,20 @@ def conjunction_ops(tkn):
     """
     return re_conj_op.findall(tkn)
 
+def base_type(val):
+    """
+    returns the base type(s) of the characteristics in val or None
+    :param val: the tag value to check
+    :return: the base type(s) or None
+    """
+    # TODO: error checking?
+    val = unwrap(val)
+    if is_aligned(val): val = split_align(val)[0]
+    if conjunction_ops(val): val = operand(val)
+    else: val = [val]
+    #for i,v in enumerate(val): val[i] = strip(v)
+    return val
+
 re_paren = re.compile(r"[\(\)]")
 def is_wrapped(tkn):
     """
