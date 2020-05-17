@@ -1430,9 +1430,10 @@ re_obj_with_kw = re.compile(
 ## THINGS
 ####
 
-# find cost preceded by additional or kw
+# find cost preceded by a keyword
 re_cost_type = re.compile(
-    r"(xq<additional>|kw<[\w-]+>) (xo<cost(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
+    #r"(xq<additional>|kw<[\w-]+>) (xo<cost(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
+    r"(kw<[\w-]+>) (xo<cost(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
 ####

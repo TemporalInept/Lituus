@@ -173,6 +173,17 @@ def tag_val(tag): return untag(tag)[1]
 
 def tag_attr(tag): return untag(tag)[2]
 
+def vanilla(tag):
+    """
+    a tag is considered vanilla if it has a simple (singleton) value and its
+    attributes are empty or at most contain a suffix
+    :param tag:
+    :return:
+    """
+    if complex_ops(tag_val(tag)): return False
+    if tag_attr(tag) and list(tag_attr(tag).keys()) != ['suffix']: return False
+    return True
+
 # TAG VALUES
 
 def operand(val,op=False):

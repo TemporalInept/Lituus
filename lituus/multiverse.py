@@ -328,13 +328,6 @@ def _hack_cards_(jv):
                 "lands tapped for mana produce",
                 "if a land is tapped for mana, it produces"
             )
-        #elif cname == 'Hazezon Tamar':
-        #    # Has first name which won't be self reffed
-        #    # TODO: what other cards have this
-        #    jv[cname]['text'] = jv[cname]['text'].replace(
-        #        "When Hazezon leaves",
-        #        "When Hazezon Tamar leaves"
-        #    )
         elif cname == "Frankenstein's Monster":
             # add counter behind he first two so they are not incorrectly
             # tagged as characteristics

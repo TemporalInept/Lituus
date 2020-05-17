@@ -463,11 +463,18 @@ def deconflict_tags2(txt):
 def chain_other(txt):
     """
     chains tags other than characteristics
+     1. zones and keywords will be compined
+     2. combine objects if spell and/or ability
     :param txt: the tagged text
     :return: text with additional tags chained
     """
     ntxt = mtgl.re_chain('kw').sub(lambda m: _chain_(m),txt)
     ntxt = mtgl.re_chain('zn').sub(lambda m: _chain_(m),ntxt)
+    ntxt = mtgl.re_chain('ob').sub(lambda m: _chain_obj_(m),ntxt)
+    ntxt = mtgl.re_chain('xo').sub(lambda m: _chain_ctr_(m),ntxt)
+    ntxt = mtgl.re_chain('nu').sub(lambda m: _chain_(m),ntxt)
+    ntxt = mtgl.re_chain('xc').sub(lambda m: _chain_(m),ntxt)
+    ntxt = mtgl.re_chain('pr').sub(lambda m: _chain_(m),ntxt)
     return ntxt
 
 def merge(txt):
@@ -579,7 +586,7 @@ def _ptchain_(m):
 
 def _chain_check_(m):
     """
-    checks first if chaining should be conducted
+    checks first if chaining should be conducted otherwise return original txt
     :param m: regex.Match object
     :return: the chained object or the original text
     """
@@ -604,7 +611,7 @@ def _chain_(m,strict=1):
     aligned = True
     atype = None
 
-    # extract the tags and operator
+    # extract the tags and operator #
     for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
         try:
             # untag the tag and check for meta characterisitcs
@@ -960,3 +967,68 @@ def _cost_type_(m):
     tid,val,attr = mtgltag.untag(m.group(2))
     attr['type'] = mtgltag.tag_val(m.group(1))
     return mtgltag.retag(tid,val,attr)
+
+def _chain_obj_(m):
+    """
+    chains objects where applicable
+    :param m: regex.Match object
+    :return: chained spell(s) and ability(s)
+    """
+    # return values
+    val = attr = None
+
+    # only continue if it a simple TERM1 OP TERM2 conjunction
+    if mtgltag.is_tag(m.group(2)) and mtgltag.is_tag(m.group(4)):
+        # untag the two objects and grab the operator
+        _,val1,attr1 = mtgltag.untag(m.group(2))
+        _,val2,attr2 = mtgltag.untag(m.group(4))
+        op = mtgl.conj_op[m.group(3)]
+
+        if val1 in mtgl.objects and val2 in mtgl.objects:
+            if mtgltag.vanilla(m.group(2)) and mtgltag.vanilla(m.group(4)):
+                val = val1 + op + val2
+                attr = mtgltag.merge_attrs([attr1,attr2])
+            elif val1 == 'source' and val2 == 'source':
+                val = 'source'
+                attr = mtgltag.merge_attrs([attr1,attr2],0)
+        elif val1 == 'spell' and val2 in ['ability','permanent']:
+            tid = tid1
+            val = val1 + op + val2
+            attr = mtgltag.merge_attrs([attr1,attr2])
+
+    if val: return mtgltag.retag('ob',val,attr)
+    else: return m.group()
+
+def _chain_ctr_(m):
+    """
+    determines if m specifies a chaine of counters and if so chains them otherwise
+    returns the orginal text
+    :param m: regex.Match object
+    :return: the chained coutners
+    """
+    ntid = 'xo'
+    nval = 'ctr'
+    nattr = []
+    op = mtgl.AND
+
+    for tkn in [x for x in lexer.tokenize(m.group())[0] if x != ',']:
+        try:
+            # we have caught every chain with a tag-id of xo, if we find any
+            # non-counter, return the original text
+            _,val,attr = mtgltag.untag(tkn)
+            if val != 'ctr': return m.group()
+            nattr.append(attr)
+        except lts.LituusException:
+            # should be the operator
+            try:
+                op = mtgl.conj_op[tkn]
+            except KeyError:
+                raise lts.LituusException(lts.EMTGL,"Illegal op {}".format(tkn))
+
+    # unlike other chains, here we are chaining the 'type' in the attribute dict
+    # merge_attr will automatically and the ctrs,replace with the right op
+    attr = mtgltag.merge_attrs(nattr,0)
+    attr['type'] = attr['type'].replace(mtgl.AND,op)
+
+    # & return it
+    return mtgltag.retag('xo','ctr',attr)
