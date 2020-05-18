@@ -182,6 +182,8 @@ def import_cards(mv,tc,n2r,mverse):
             jcard = mverse[cname]
             dcard = harvest(cname,jcard)
             dcard['tag'] = tagger.tag(cname,dcard['oracle'])
+            dcard['mtgt'] = grapher.graph(cname,dcard)
+            #grapher.graph(cname,dcard)
         except KeyError as e:
             # shouldn't get this
             print("Multiververse error, lost card {}".format(e))

@@ -93,6 +93,10 @@ class MTGCard(object):
     @property
     def tag(self): return self._card['tag']
 
+    # TODO: for debugging only
+    @property
+    def tree(self): return self._card['mtgt']
+
     @property # NOTE: this may include duplicates
     def keywords(self): raise lts.LituusException(lts.EIMPL,"Pending")
 

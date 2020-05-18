@@ -495,8 +495,8 @@ def third_pass(txt):
     :param txt: second pass tagged oracle txt
     :return: tagged oracle text
     """
-    # cost (NOTE: activation costs have already been handled) move additional
-    # or keyword inside cost
+    # cost (NOTE: activation costs have already been handled) move any keyword the
+    # tag
     ntxt = mtgl.re_cost_type.sub(lambda m:_cost_type_(m),txt)
 
     # TODO: should we put

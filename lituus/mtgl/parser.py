@@ -12,8 +12,8 @@ Parses tagged oracle text and resolves tagger errors using contextual informatio
 
 #__name__ = 'parser'
 __license__ = 'GPLv3'
-__version__ = '0.2.0'
-__date__ = 'March 2020'
+__version__ = '0.2.1'
+__date__ = 'May 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -23,8 +23,5 @@ import re
 import lituus.mtgl.mtgl as mtgl
 import lituus.mtgl.list_util as ll
 import lituus.mtgl.mtgltag as tag
-
-# constants/helpers
-re_draft = re.compile(r"draft(ing|ed)?")
 
 def parse(txt): return

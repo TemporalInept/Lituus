@@ -1443,3 +1443,37 @@ re_cost_type = re.compile(
 # Finds phrases of the form {n} more|less for cost increase/reduction one or more
 # mana symbols followed by a qualifier
 #re_mc_qualifier = re.compile(r"((?:{(?:[0-9wubrgscpx\/]+)})+) xl<(more|less)>")
+
+####
+## GRAPHING EXPRESSIONS
+####
+
+####
+## LINE TYPES
+####
+
+# Ability word lines start with an ability word followed by a long hypen and then
+# the ability clause and end with a sentence
+re_aw_line = re.compile(r"^(aw<[\w-]+>) —")
+
+# Keyword lines start with a keyword (or object keyword if landwalk) and contain
+# one or more comma separated keyword claues
+re_kw_line = re.compile(
+    r"^"
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*> )?"
+    r"(kw<[\w-]+>)"
+)
+
+# Ability lines (113.3) are not keyword lines or ability word lines. There are
+# four subtypes:
+#  113.3a Spell - an instant or sorcery
+#  113.3b Activated - of the form cost : effect
+#  113.3c Triggered - of the form TRIGGER
+#  113.3d static - none of the above
+
+# Activated (112.3b) contain a ':' which splits the cost and effect
+re_activated_line = re.compile(r":")
+
+# Triggered (112.3c) lines starts with a trigger preamble
+re_triggered_line = re.compile(r"^(tp<\w+>)")
