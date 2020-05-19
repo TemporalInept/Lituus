@@ -56,11 +56,13 @@ class MTGTree:
      only the functions provided by the class definition vice the networkx object
      directly.
     """
-    def __init__(self,tree=None):
+    def __init__(self,cname,tree=None):
         """
          Creates an empty null tree unless tree is definied
+        :param cname: the name of the card (for printing purposees
         :param tree: a networkx.OrderedDiGraph
         """
+        self._name = cname
         if tree is None:
             self._t = Tree()         # an empty null tree
             self._ns = {}            # node-id dictionary
@@ -81,15 +83,14 @@ class MTGTree:
                     if node != 'root':
                         raise MTGTException('Invalid node-id: {}'.format(node))
 
-    def print(self,cname,show_attr=False):
+    def print(self,show_attr=False):
         """
          prints the tree with each branch indented 3 spaces from parent
-        :param cname: the name of this card
         :param show_attr: if set, shows the attributes of the nodes
         CREDIT Will (https://stackoverflow.com/users/15721/will)
         """
         ds = nx.shortest_path_length(self._t, 'root')
-        print('<{}>'.format(cname))
+        print('<{}>'.format(self._name))
         for cid in self.children('root'): self._print_node_(cid," ",show_attr)
 
     def _print_node_(self,nid,indent,show_attr=False):

@@ -38,8 +38,6 @@ a lot becuase the first object is a token
 96. See Soul Separator it reads "... with power equal to that card's power and toughness equal to that card's toughness" which results in "power and toughness" being combined. This will happen to Kalitas, Bloodchief of Ghet 
 xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card suffix='s> xr<toughness> 
 
-97. When deleting reminder text, a hanging space is left behind
-
 108. Going to have to figure out when to transpose conjunctions from AND to OR i.e. with Blind Obedience, Mox Amber there is an implied 'all' or 'each' with Decree of Annihilation there is a 'all' quanitifier (inside or after conjunction_chain) Luminesce black and red
 
 110. pr<top> ob<card> here top should be a quantifier
@@ -91,5 +89,14 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 171. Losing the suffix on +n/+n counters
 
-172. What to do about color or colors. do we lose meaning if condense to just colors
+172. What to do about "color or colors". do we lose meaning if condense to just colors
+
+174. do we need to annotate optional parameters in the keyword nodes of the tree i.e. quality in equip
+
+174. For non-standard keyword lines:
+ a. confirm these are all 'cost' related
+ b. will have to at some point graph the non-standard text
+
+175. 
+
 

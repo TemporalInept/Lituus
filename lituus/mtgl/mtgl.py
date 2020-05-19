@@ -334,6 +334,13 @@ e2i_tkns = '|'.join(list(E2I.keys()))
 re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
 
 ####
+## MISC
+####
+
+# reminder text including the space preceding
+re_reminder = re.compile(r" \(.+?\)")
+
+####
 ## BEGIN MTGL REG EX
 ####
 
@@ -370,7 +377,7 @@ re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 # numbers are 1 or more digits or one of the variable x, y, z which. Only those
 # that are preceded by whitespace, a '/', '+', '-' or start a line and that are
 # followed by whitespace '/' or '.' are matched.
-re_number = re.compile(r"(?<=(?:^|[ \/+-]))(\d+|x|y|z])(?=[ \/+-\.])")
+re_number = re.compile(r"(?<=(?:^|[ \/+-]))(\d+|x|y|z])(?=[\s\/+-\.])")
 
 ####
 ## ENTITIES
@@ -386,6 +393,7 @@ re_obj = re.compile(
 )
 
 # keep suffix but check word boundary in beginning
+# TODO: rest does not belong here
 lituus_objects = [ # lituus objects
     "city's blessing",'game','mana pool','mana cost','commander','mana','attacker',
     'blocker','itself','it','them','coin','choice','cost',"amount of",'life',
@@ -423,7 +431,6 @@ re_combat_phase = re.compile(
     r"(?<=(?:(?:xq<\w+?>)|during) )"
     r"combat(?! damage)"
 )
-
 
 # steps
 # 501.1 beginning phase steps - untap, upkeep, draw
@@ -545,7 +552,8 @@ ability_words = [ # ability words 207.2c Updated 24-Jan-20 with Theros Beyond De
 ]
 aw_tkns = '|'.join(ability_words)
 re_aw = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(aw_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)"
+    r"({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(aw_tkns)
 )
 
 keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Jan-20
@@ -558,34 +566,38 @@ keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Ja
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(kw_act_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)"
+    r"({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(kw_act_tkns)
 )
 
 keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
     'deathtouch','defender','double strike','enchant','equip','first strike',
     'flash','flying','haste','hexproof','indestructible','intimidate','landwalk',
     'lifelink','protection','reach','shroud','trample','vigilance','banding',
-    'rampage','cumulative upkeep','flanking','phasing','buyback','shadow','cycling',
-    'cycle','echo','horsemanship','fading','kicker','multikicker','flashback',
-    'madness','fear','morph','megamorph','amplify','provoke','storm','affinity',
-    'entwine','modular','sunburst','bushido','soulshift','splice','offering',
-    'ninjutsu','commander ninjutsu','epic','convoke','dredge','transmute',
-    'bloodthirst','haunt','replicate','forecast','graft','recover','ripple',
-    'split second','suspend','vanishing','absorb','aura swap','delve','fortify',
-    'frenzy','gravestorm','poisonous','transfigure','champion','changeling','evoke',
-    'hideaway','prowl','reinforce','conspire','persist','wither','retrace','devour',
-    'exalted','unearth','cascade','annihilator','level up','rebound','totem armor',
-    'infect','battle cry','living weapon','undying','miracle','soulbond','overload',
-    'scavenge','unleash','cipher','evolve','extort','fuse','bestow','tribute',
-    'dethrone','outlast','prowess','dash','exploit','menace','renown','awaken',
-    'devoid','ingest','myriad','surge','skulk','emerge','escalate','melee','crew',
-    'fabricate','partner with','partner','undaunted','improvise','aftermath',
-    'embalm','eternalize','afflict','ascend','assist','jump-start','mentor',
-    'afterlife','riot','spectacle','escape'
+    'rampage','cumulative upkeep','flanking','phasing','buyback','shadow',
+    'cycling','cycle','echo','horsemanship','fading','kicker','multikicker',
+    'flashback','madness','fear','morph','megamorph','amplify','provoke','storm',
+    'affinity','entwine','modular','sunburst','bushido','soulshift','splice',
+    'offering','ninjutsu','commander ninjutsu','epic','convoke','dredge',
+    'transmute','bloodthirst','haunt','replicate','forecast','graft','recover',
+    'ripple','split second','suspend','vanishing','absorb','aura swap','delve',
+    'fortify','frenzy','gravestorm','poisonous','transfigure','champion',
+    'changeling','evoke','hideaway','prowl','reinforce','conspire','persist',
+    'wither','retrace','devour','exalted','unearth','cascade','annihilator',
+    'level up','rebound','totem armor','infect','battle cry','living weapon',
+    'undying','miracle','soulbond','overload','scavenge','unleash','cipher',
+    'evolve','extort','fuse','bestow','tribute','dethrone','outlast','prowess',
+    'dash','exploit','menace','renown','awaken','devoid','ingest','myriad','surge',
+    'skulk','emerge','escalate','melee','crew','fabricate','partner with','partner',
+    'undaunted','improvise','aftermath','embalm','eternalize','afflict','ascend',
+    'assist','jump-start','mentor','afterlife','riot','spectacle','escape'
 ]
 kw_tkns = '|'.join(keywords)
 re_kw = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(kw_tkns)
+    # NOTE: we have to add checks for the long hyphen and end of string to
+    # ensure we tag all keywords
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)"
+    r"({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(kw_tkns)
 )
 
 # TODO: what to do with cycle, phase in, phase out, flip
@@ -796,7 +808,7 @@ char_tkns = '|'.join(
     sub_characteristics
 )
 re_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(char_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|\b)".format(char_tkns)
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
@@ -1443,37 +1455,3 @@ re_cost_type = re.compile(
 # Finds phrases of the form {n} more|less for cost increase/reduction one or more
 # mana symbols followed by a qualifier
 #re_mc_qualifier = re.compile(r"((?:{(?:[0-9wubrgscpx\/]+)})+) xl<(more|less)>")
-
-####
-## GRAPHING EXPRESSIONS
-####
-
-####
-## LINE TYPES
-####
-
-# Ability word lines start with an ability word followed by a long hypen and then
-# the ability clause and end with a sentence
-re_aw_line = re.compile(r"^(aw<[\w-]+>) —")
-
-# Keyword lines start with a keyword (or object keyword if landwalk) and contain
-# one or more comma separated keyword claues
-re_kw_line = re.compile(
-    r"^"
-    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*> )?"
-    r"(kw<[\w-]+>)"
-)
-
-# Ability lines (113.3) are not keyword lines or ability word lines. There are
-# four subtypes:
-#  113.3a Spell - an instant or sorcery
-#  113.3b Activated - of the form cost : effect
-#  113.3c Triggered - of the form TRIGGER
-#  113.3d static - none of the above
-
-# Activated (112.3b) contain a ':' which splits the cost and effect
-re_activated_line = re.compile(r":")
-
-# Triggered (112.3c) lines starts with a trigger preamble
-re_triggered_line = re.compile(r"^(tp<\w+>)")

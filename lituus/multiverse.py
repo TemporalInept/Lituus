@@ -182,10 +182,8 @@ def import_cards(mv,tc,n2r,mverse):
             jcard = mverse[cname]
             dcard = harvest(cname,jcard)
             dcard['tag'] = tagger.tag(cname,dcard['oracle'])
-            dcard['mtgt'] = grapher.graph(cname,dcard)
-            #grapher.graph(cname,dcard)
-        except KeyError as e:
-            # shouldn't get this
+            #dcard['mtgt'] = grapher.graph(dcard)
+        except KeyError as e: # shouldn't get this
             print("Multiververse error, lost card {}".format(e))
 
         # determine if the card goes in the multiverse dict or transformed
@@ -257,8 +255,6 @@ def harvest(name,jcard):
             'colors': jcard['colors'],
             'oracle': jcard['text'] if 'text' in jcard else "",
             'tag': "",
-            'tkn':[],
-            'mtgl':[],
             'mtgt':None,
             'sets': jcard['printings'],
         }

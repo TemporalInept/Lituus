@@ -41,8 +41,6 @@ class MTGCard(object):
         self._kws = []            # list of keywords
         self._aws = []            # list of ability words
 
-    def tree(self): raise lts.LituusException(lts.EIMPL,"Pending")
-
     """ pretty print card's tree """
     def print(self,attr=False): raise lts.LituusException(lts.EIMPL,"Pending")
 
@@ -93,7 +91,6 @@ class MTGCard(object):
     @property
     def tag(self): return self._card['tag']
 
-    # TODO: for debugging only
     @property
     def tree(self): return self._card['mtgt']
 

@@ -73,7 +73,7 @@ def preprocess(name,txt):
     ntxt = mtgl.re_word_hack.sub(lambda m: mtgl.word_hacks[m.group(1)],ntxt) # 4
     ntxt = mtgl.re_wd2int.sub(lambda m: mtgl.E2I[m.group(1)],ntxt)           # 5
     ntxt = mtgl.re_mana_remtxt.sub(r"\1",ntxt)                               # 6
-    ntxt = mtgl.re_rem_txt.sub("",ntxt)                                      # 6
+    ntxt = mtgl.re_reminder.sub("",ntxt)                                     # 6
     ntxt = mtgl.re_non.sub(r"non-\1", ntxt)                                  # 7
     return ntxt
 
@@ -188,7 +188,7 @@ def tag_counters(txt):
 def tag_awkws(txt):
     """ tags ability words, keywords and action words returning tagged txt """
     ntxt = mtgl.re_aw.sub(r"aw<\1>",txt)                        # ability words
-    ntxt = mtgl.re_kw.sub(r"kw<\1>",ntxt)                       # keywords
+    ntxt = mtgl.re_kw.sub(r"kw<\1>",ntxt)                       # keyword abilities
     ntxt = mtgl.re_kw_act.sub(r"ka<\1>",ntxt)                   # keyword actions
     ntxt = mtgl.re_lituus_act.sub(r"xa<\1>",ntxt)               # lituus actions
     ntxt = mtgl.re_lituus_target_verb.sub(r"xa<target>\1",ntxt) # target action
