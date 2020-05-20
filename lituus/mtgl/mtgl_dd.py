@@ -27,7 +27,7 @@ import regex as re
 
 # Ability word lines start with an ability word followed by a long hypen and then
 # the ability clause and end with a sentence
-re_aw_line = re.compile(r"^(aw<[\w-]+>) —")
+re_aw_line = re.compile(r"^(aw<[\w-]+>) — (.+?)\.$")
 
 # Keyword lines start with a keyword (or object keyword if landwalk) and contain
 # one or more comma separated keyword claues
@@ -395,3 +395,10 @@ kw_param_template = {
     'spectacle':('cost','cost'),
     'escape':('cost','cost'),
 }
+
+####
+## ABILITY WORDS
+####
+
+# Ability words (207.2c) have the form
+# AW —

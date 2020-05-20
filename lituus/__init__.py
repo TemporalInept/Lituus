@@ -32,7 +32,7 @@ Defines Lituus error classes for consolidation purposes.
 #__name__ = 'Lituus'
 __license__ = 'GPLv3'
 __version__ = '0.2.3'
-__date__ = 'April 2020'
+__date__ = 'May 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'

@@ -41,8 +41,18 @@ def graph(dcard):
     # single node w/ all keyword clauses which facilitates searching for keywords
     kwid = t.add_node(parent,'keywords')
 
+    # three basic line types:
+    # 1) ability word line: (207.2c) have no definition in the comprehensive rules
+    #  but based on card texts, follow simple rules of the form:
+    #  AW — ABILITY DEFINITION.(starts with an ability word, contain a long hyphen
+    #  and end with a sentence)
+    # 2) keyword line: contains one or more comma seperated keyword clauses.
+    #    a) standard - does not end with a period or double quote
+    #    b) non-standard - contains non-standard 'cost' & ends w/ a period
+    # 3) ability line (not a keyword or ability word line) Four general types
+    #  112.3a Spell, 112.3b Activated, 112.3c Triggered & 112.3d static
     for line in [x for x in dcard['tag'].split('\n')]:
-        if dd.re_aw_line.search(line): t.add_node(parent,'aw-line',line=line)
+        if dd.re_aw_line.search(line): graph_ability_word(t,parent,line)
         elif dd.re_kw_line.search(line):
             # enumerate and graph each keyword clause
             for ktype,kw,param in dd.re_kw_clause.findall(line):
@@ -58,6 +68,15 @@ def graph(dcard):
     if t.is_leaf('keywords:0'): t.del_node('keywords:0')
 
     return t
+
+def graph_ability_word(t,pid,line):
+    """
+    graphs the ability word line in tree t at parent pid
+    :param t: the tree
+    :param pid: the parent
+    :param line: the aw line to graph
+    """
+    pass
 
 def graph_keyword(t,pid,kw,ktype,param):
     """
@@ -75,23 +94,21 @@ def graph_keyword(t,pid,kw,ktype,param):
     try:
         m = dd.kw_param[kw].search(param)
         if m.endpos == len(param):
-            # have a good match, continue
-            if m.group() != '':
+            if m.group() != '': # have a good match, continue
                 try:
                     for i,k in enumerate(dd.kw_param_template[kw]):
                         if m.group(i+1): t.add_node(kwid,k,value=m.group(i+1))
                 except IndexError:
-                    raise RuntimeError("Error with {} does not match template".format(kw))
-                except KeyError:
-                    t.add_node(kwid,'NO-TEMPLATE',kw=kw,param=param)
+                    raise RuntimeError(
+                        "Error with {} does not match template".format(kw)
+                    )
         else:
-            raise lts.LituusException(lts.EDATA,"incomplete match")
+            raise lts.LituusException(lts.ETREE,"Incomplete match for {}".format(kw))
     except KeyError:
         # either a misstagged kewyord or one that does not have a function
-        t.add_node(kwid,'MISSTAG-ERROR',kw=kw,param=param)
-    except AttributeError:
-        # don't have it coded yet TODO: remove after debugging
-        t.add_node(kwid,'NOT-IMPLEMENTED',kw=kw,param=param)
+        raise lts.LituusException(
+            lts.ETREE,"Missing template for keyword {}".format(kw)
+        )
 
 ####
 ## PRIVATE FUNCTIONS
