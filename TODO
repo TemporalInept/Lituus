@@ -97,8 +97,8 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 175. For partner with, after graphing do we want to replace id with actual Card Name
 
-176. Would be nice once graphed to combine all keyword lines into a single 'list' of keywords
+177. In mtgt repace MTGTExceptions with LituusExceptions
 
-177.
+178. I thought the MTGTree was configured to find nodes with just the name excluding the id i.e. keywords rather than keywords:0
 
 
