@@ -90,15 +90,7 @@ def graph_kw_node(t,pid,kw,ktype,param):
     if ktype: t.add_node(kwid,'type',value=ktype)
     try:
         m = dd.kw_param[kw].search(param)
-        if m is None:
-            # may be non-standard kw line check for leading long hyphen. If so,
-            # strip the long hyphen and pass the entire param as a value to the
-            # first parameter in the param_template
-            # TODO: do not like this handling at all
-            # TODO: should we annotate that it is non-standard
-            if param.startswith(mtgl.HYP):
-                t.add_node(kwid,dd.kw_param_template[kw][0],value=param[1:])
-        elif m.endpos == len(param):
+        if m.endpos == len(param):
             # have a good match, continue
             if m.group() != '':
                 try:

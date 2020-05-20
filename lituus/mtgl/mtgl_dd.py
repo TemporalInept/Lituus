@@ -83,6 +83,8 @@ re_kw_clause = re.compile(
 # no parameters
 re_kw_empty = re.compile('')
 
+# generic parameters
+
 # kewords of the form KEYWORD [optional word] [QUALITY]
 # This covers generic keyword QUALITY but also matches
 #  Affinity (702.40) Affinity for [QUALITY]
@@ -92,6 +94,36 @@ re_kw_thing = re.compile(
     r"(?:pr<for>|sq<an?>)? ?"
     r"((?:ob|xp|xo)"
     r"<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+)
+
+# keywords of the form KEYWORD N
+# second pattern is for Vanishing (706.62) one of which (Tidewalker) does not
+# have a 'N'
+# TODO: could just remove the fist pattern and use the optional 'N' but not
+#  sure if I like that
+re_kw_n = re.compile(r"nu<(\d+|x|y|z])>")
+re_kw_n2 = re.compile(r"(?:nu<(\d+|x|y|z])>)?")
+
+# keywords of the form KEYWORD [cost]
+# This will capture cost where cost is a mana string or a non-standard cost
+# mana costs will be in group 1 and non-standard will be in group 2
+re_kw_cost = re.compile(r"(?:((?:{[0-9wubrgscpx\/]+})+)|—(.+?)$)")
+
+# same as above but adds an additional optional cost preceded by 'and/or'
+# seen in some kicker keyword lines
+re_kw_cost2 = re.compile(
+    r"((?:{[0-9wubrgscpx\/]+})+)"
+    r"(?: and/or ((?:{[0-9wubrgscpx\/]+})+))?"
+)
+
+# special parameters for specific keywords
+
+# 702.6 Equip ([quality])? [cost]
+# TODO: make this keyword_cost
+re_kw_equip = re.compile(
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)? ?"
+    r"((?:{[0-9wubrgscpx\/]+})+)"
 )
 
 # keywords of the form KEWYWORD (from [quality])? i.e. protection, hexproof
@@ -123,25 +155,6 @@ re_kw_partner = re.compile(
     r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
     r")?"
-)
-
-# keywords of the form KEYWORD N
-# second pattern is for Vanishing (706.62) one of which (Tidewalker) does not
-# have a 'N'
-# TODO: could just remove the fist pattern and use the optional 'N' but not
-#  sure if I like that
-re_kw_n = re.compile(r"nu<(\d+|x|y|z])>")
-re_kw_n2 = re.compile(r"(?:nu<(\d+|x|y|z])>)?")
-
-# keywords of the form KEYWORD [cost]
-# TODO: these may be non-standard i.e. non-mana costs
-re_kw_cost = re.compile(r"((?:{[0-9wubrgscpx\/]+})+)")
-
-# same as above but adds an additional optional cost preceded by 'and/or'
-# seen in some kicker keyword lines
-re_kw_cost2 = re.compile(
-    r"((?:{[0-9wubrgscpx\/]+})+)"
-    r"(?: and/or ((?:{[0-9wubrgscpx\/]+})+))?"
 )
 
 # splice (702.46) splice onto [quality] [cost]
@@ -292,8 +305,7 @@ kw_param = {
     'melee':re_kw_empty,             # 702.120
     'crew':re_kw_n,                  # 702.121
     'fabricate':re_kw_n,             # 702.122
-    'partner':re_kw_partner,         # 702.123 # TODO
-    #'partner_with':None # 702.123f not captured as such
+    'partner':re_kw_partner,         # 702.123
     'undaunted':re_kw_empty,         # 702.124
     'improvise':re_kw_empty,         # 702.125
     'aftermath':re_kw_empty,         # 702.126
@@ -317,69 +329,69 @@ kw_param_template = {
     'hexproof':('quality','quality','quality'),
     'protection':('quality','quality','quality'),
     'rampage':('n',),
-    'cumlative_upkeep':('cost',),
-    'buyback':('cost',),
-    'cycling':('cost',),
-    'echo':('cost',),
+    'cumlative_upkeep':('cost','cost'),
+    'buyback':('cost','cost'),
+    'cycling':('cost','cost'),
+    'echo':('cost','cost'),
     'fading':('n',),
     'kicker':('cost','cost'),
     'multikicker':('cost','cost'),
-    'flashback':('cost',),
-    'madness':('cost',),
-    'morph':('cost',),
-    'megamorph':('cost',),
+    'flashback':('cost','cost'),
+    'madness':('cost','cost'),
+    'morph':('cost','cost'),
+    'megamorph':('cost','cost'),
     'amplify':('n',),
     'affinity':('quality',),
-    'entwine':('cost',),
+    'entwine':('cost','cost'),
     'modular':('n',),
     'bushido':('n',),
     'soulshift':('n',),
     'splice':('quality','cost','cost',),
-    'ninjutsu':('cost',),
-    'commander_ninjutsu':('cost',),
+    'ninjutsu':('cost','cost'),
+    'commander_ninjutsu':('cost','cost'),
     'dredge':('n',),
-    'transmute':('cost',),
+    'transmute':('cost','cost'),
     'bloodthirst':('n',),
-    'replicate':('cost',),
+    'replicate':('cost','cost'),
     'forecast':('activated-ability',),
     'graft':('n',),
-    'recover':('cost',),
+    'recover':('cost','cost'),
     'ripple':('n',),
     'suspend':('n','cost','instruction',),
     'vanishing':('n',),
     'absorb':('n',),
-    'aura_swap':('cost',),
-    'fortify':('cost',),
+    'aura_swap':('cost','cost'),
+    'fortify':('cost','cost'),
     'frenzy':('n',),
     'poisonous':('n',),
-    'transfigure':('cost',),
+    'transfigure':('cost','cost'),
     'champion':('quality',),
-    'evoke':('cost',),
-    'prowl':('cost',),
+    'evoke':('cost','cost'),
+    'prowl':('cost','cost'),
     'reinforce':('n',),
     'devour':('n',),
-    'unearth':('cost',),
+    'unearth':('cost','cost'),
     'annihilator':('n',),
-    'level_up':('cost',),
-    'miracle':('cost',),
-    'overload':('cost',),
-    'scavenge':('cost',),
-    'bestow':('cost',),
+    'level_up':('cost','cost'),
+    'miracle':('cost','cost'),
+    'overload':('cost','cost'),
+    'scavenge':('cost','cost'),
+    'bestow':('cost','cost'),
     'tribute':('n',),
-    'outlast':('cost',),
-    'dash':('cost',),
+    'outlast':('cost','cost'),
+    'dash':('cost','cost'),
     'renown':('n',),
-    'awaken':('cost',),
-    'surge':('cost',),
-    'emerge':('cost',),
-    'escalate':('cost',),
+    'awaken':('cost','cost'),
+    'surge':('cost','cost'),
+    'emerge':('cost','cost'),
+    'escalate':('cost','cost'),
     'crew':('n',),
     'fabricate':('n',),
     'partner':('with',),
-    'embalm':('cost',),
-    'eternalize':('cost',),
+    'embalm':('cost','cost'),
+    'eternalize':('cost','cost'),
     'afflict':('n',),
     'afterlife':('n',),
-    'spectacle':('cost',),
-    'escape':('cost',),
+    'spectacle':('cost','cost'),
+    'escape':('cost','cost'),
 }
