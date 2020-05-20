@@ -61,6 +61,9 @@ EIMPL    =  8 # ImplementationError
 EMTGL    = 10 # Generic MTGL Error
 ETAG     = 11 # MTGL Tag Error
 ETAGGING = 12 # Error while tagging oracle
+# MTG TREE RELATED
+ETREE    = 20 # Generic tree error
+ENODE    = 21 # Node error
 
 # for setup.py us
 version = __version__

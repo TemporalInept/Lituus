@@ -21,9 +21,7 @@ __status__ = 'Development'
 
 import networkx as nx
 from networkx.classes.ordered import OrderedDiGraph as Tree
-
-class MTGTException(Exception):
-    def __init__(self,message): Exception.__init__(self,message)
+import lituus as lts
 
 #### PRINT SYMBOLS
 # root, no symbol
@@ -81,7 +79,9 @@ class MTGTree:
                 except ValueError:
                     # the root node or there is an error in the node-ids
                     if node != 'root':
-                        raise MTGTException('Invalid node-id: {}'.format(node))
+                        raise lts.LTSException(
+                            lts.ENODE,'Invalid node-id: {}'.format(node)
+                        )
 
     def print(self,show_attr=False):
         """
@@ -130,7 +130,7 @@ class MTGTree:
         try:
             return self._t.node[nid]
         except KeyError:
-            raise MTGTException("No such node {}".format(nid))
+            raise lts.LituusException(lts.ENODE,"No such node {}".format(nid))
 
     """ returns a list of all node ids in depth-first order """
     def nodes(self): return [n for n in nx.dfs_preorder_nodes(self._t,'root')]
@@ -141,16 +141,20 @@ class MTGTree:
             return self._t.node[nid][attr]
         except KeyError:
             if not nid in self._t:
-                raise MTGTException("No such node {}".format(nid))
+                raise lts.LituusException(
+                    lts.ENODE,"No such node {}".format(nid)
+                )
             else:
-                raise MTGTException("No such attribute {}".format(nid))
+                raise lts.LituusException(
+                    lts.EATTR,"No such attribute {}".format(nid)
+                )
 
     """ returns whether the node with id nid is a leaf """
     def is_leaf(self,nid):
         try:
             return self._t.out_degree[nid] == 0
         except KeyError:
-            raise MTGTException("No such node {}".format(nid))
+            raise lts.LituusException(lts.ENODE,"No such node {}".format(nid))
 
     """ returns the parent id of the node with id nid """
     def parent(self,nid):
@@ -159,28 +163,28 @@ class MTGTree:
         except StopIteration:
             return None
         except KeyError:
-            raise MTGTException("No such node {}".format(nid))
+            raise lts.LituusException(lts.ENODE,"No such node {}".format(nid))
 
     """ returns a list of ancestors of node nid (in no particular order) """
     def ancestors(self,nid):
         try:
             return [n for n in nx.ancestors(self._t,nid)]
         except nx.NetworkXError:
-            raise MTGTException("No such node {}".format(nid))
+            raise lts.LituusException(lts.ENODE,"No such node {}".format(nid))
 
     """ returns a list ofall descendants of node nid (in no particular order) """
     def descendants(self,nid):
         try:
             return [n for n in nx.descendants(self._t,nid)]
         except nx.NetworkXError:
-            raise MTGTException("No such node {}".format(nid))
+            raise lts.LituusException(lts.ENODE,"No such node {}".format(nid))
 
     """ returns the children of the node with id nid """
     def children(self,nid):
         try:
             return [n for n in self._t.successors(nid)]
         except KeyError:
-            raise MTGTException("No such node {}".format(nid))
+            raise lts.LituusException(lts.ENODE,"No such node {}".format(nid))
 
     """ returns the siblings of the node with id nid """
     def siblings(self,nid):
@@ -189,7 +193,7 @@ class MTGTree:
             ss.remove(nid)
             return ss
         except KeyError:
-            raise MTGTException("No such node {}".format(nid))
+            raise lts.LituusException(lts.ENODE,"No such node {}".format(nid))
 
     """ returns the immediate 'left' sibling """
     def left_sibling(self,nid):
@@ -197,10 +201,9 @@ class MTGTree:
             ss = self.children(self.parent(nid))
             i = ss.index(nid)
             return ss[i-1]
-        except IndexError:
-            return None
+        except IndexError: return None
         except KeyError:
-            raise MTGTException("No such node {}".format(nid))
+            raise lts.LituusException(lts.ENODE,"No such node {}".format(nid))
 
     """ returns the immediate 'left' sibling """
     def right_sibling(self,nid):
@@ -208,10 +211,9 @@ class MTGTree:
             ss = self.children(self.parent(nid))
             i = ss.index(nid)
             return ss[i+1]
-        except IndexError:
-            return None
+        except IndexError: return None
         except KeyError:
-            raise MTGTException("No such node {}".format(nid))
+            raise lts.LituusException(lts.ENODE,"No such node {}".format(nid))
 
     def add_node(self,pid,ntype,**kwargs):
         """
@@ -247,7 +249,8 @@ class MTGTree:
         :param cid: child-id
         """
         # don't allow edges to be added to a node with a parent
-        if self.parent(cid): raise MTGTException("{} has a parent".format(cid))
+        if self.parent(cid):
+            raise lts.LituusException(lts.ENODE,"{} is not rootless".format(cid))
         self._t.add_edge(pid,cid)
 
     """ removes node nid, edges into nid and the subtree at node nid """
@@ -267,7 +270,7 @@ class MTGTree:
         try:
             self._t.node[nid][k] = v
         except KeyError:
-            raise MTGTException("No such node {}".format(nid))
+            raise lts.LituusException(lts.ENODE,"No such node {}".format(nid))
 
     # TODO:
     def del_attr(self): pass
@@ -282,7 +285,8 @@ class MTGTree:
         :param val: the val that the given attribute key will have
         :return: a list of node ids
         """
-        if val and not attr: raise MTGTException("Cannot have val without attr")
+        if val and not attr:
+            raise lts.LituusException(lts.ETREE,"Cannot have val without attr")
         found = []
         i = 0
         while True:
