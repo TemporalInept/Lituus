@@ -94,7 +94,7 @@ re_kw_thing = re.compile(
 re_kw_equip = re.compile(
     r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)? ?"
-    r"({[0-9wubrgscpx\/]+})+"
+    r"((?:{[0-9wubrgscpx\/]+})+)"
 )
 
 # keywords of the form KEWYWORD (from [quality])? i.e. protection, hexproof
@@ -119,14 +119,21 @@ re_kw_from_qual = re.compile(
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))?"
 )
 
+# keywords of the form KEYWORD for [quality] (affinity)
+# TODO: could we combine this and above into as well as kw_thing into a simple
+#  kw_qual expression?
+re_kw_for_qual = re.compile(
+    r"pr<for> "
+    r"((?:ob|xr)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+)
+
 # keywords of the form KEYWORD N
 re_kw_n = re.compile(r"nu<(\d+|x|y|z])>")
 
 # keywords of the form KEYWORD [cost]
 # TODO: these may be non-standard i.e. non-mana costs
-re_kw_cost = re.compile(
-    r"((?:{[0-9wubrgscpx\/]+})+)"
-)
+re_kw_cost = re.compile(r"((?:{[0-9wubrgscpx\/]+})+)")
 
 # same as above but adds an additional optional cost preceded by 'and/or'
 # seen in some kicker keyword lines
@@ -135,149 +142,161 @@ re_kw_cost2 = re.compile(
     r"(?: and/or ((?:{[0-9wubrgscpx\/]+})+))?"
 )
 
+# splice splice onto [quality] [cost]
+# TODO: cannot get rid of the 'hidden group' in the cost portion
+re_kw_splice = re.compile(
+    r"pr<onto> "
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+    r"(?: ((?:{[0-9wubrgscpx\/]+})+)|—(.+?)$)"
+)
+
 ## KEYWORD ABILITY PARAMETER TEMPLATES
 # NOTE: for banding, 702.21b specifies "bands with other", this phrase is not
 #  found in keyword lines but is granted by one of a few cards (Catherdal of Serra)
 kw_param = {
-    'deathtouch':re_kw_empty,      # 702.2
-    'defender':re_kw_empty,        # 702.3
-    'double_strike':re_kw_empty,   # 702.4
-    'enchant':re_kw_thing,         # 702.5
-    'equip':re_kw_equip,           # 702.6
-    'first_strike':re_kw_empty,    # 702.7
-    'flash':re_kw_empty,           # 702.8
-    'flying':re_kw_empty,          # 702.9
-    'haste':re_kw_empty,           # 702.10
-    'hexproof':re_kw_from_qual,    # 702.11
-    'indestructible':re_kw_empty,  # 702.12
-    'intimidate':re_kw_empty,      # 702.13
-    'landwalk':re_kw_empty,        # 702.14
-    'lifelink':re_kw_empty,        # 702.15
-    'protection':re_kw_from_qual,  # 702.16
-    'reach':re_kw_empty,           # 702.17
-    'shroud':re_kw_empty,          # 702.18
-    'trample':re_kw_empty,         # 702.19
-    'vigilance':re_kw_empty,       # 702.20
-    'banding':re_kw_empty,         # 702.21
-    'rampage':re_kw_n,             # 702.22
-    'cumlative_upkeep':re_kw_cost, # 702.23
-    'flanking':re_kw_empty,        # 702.24
-    'phasing':re_kw_empty,         # 702.25
-    'buyback':re_kw_cost,          # 702.26
-    'shadow':re_kw_empty,          # 702.27
-    'cycling':re_kw_cost,          # 702.28
-    'echo':re_kw_cost,             # 702.29
-    'horsemanship':re_kw_empty,    # 702.30
-    'fading':re_kw_n,              # 702.31
-    'kicker':re_kw_cost2,          # 702.32
-    'multikicker':re_kw_cost2,     # 702.32c
-    'flashback':re_kw_cost,        # 702.33
-    'madness':re_kw_cost,          # 702.34
-    'fear':re_kw_empty,            # 702.35
-    'morph':re_kw_cost,            # 702.36,
-    'megamorph':re_kw_cost,        # 702.36b
-    'amplify':re_kw_n,             # 702.37
-    'provoke':re_kw_empty,        # 702.38
-    'storm':re_kw_empty,          # 702.39
-    'affinity':None,              # 702.40
-    'entwine':None,               # 702.41
-    'modular':None,               # 702.42
-    'sunburst':re_kw_empty,       # 702.43
-    'bushido':None,               # 702.44
-    'soulshift':None,             # 702.45
-    'splice':None,                # 702.46
-    'offering':re_kw_empty,       # 702.47
-    'ninjutsu':None,              # 702.48
-    'epic':re_kw_empty,           # 702.49
-    'convoke':re_kw_empty,        # 702.50
-    'dredge':None,                # 702.51
-    'transmute':None,             # 702.52
-    'bloodthirst':None,           # 702.53
-    'haunt':re_kw_empty,          # 702.54
-    'replicate':None,             # 702.55
-    'forecast':None,              # 702.56
-    'graft':None,                 # 702.57
-    'recover':None,               # 702.58
-    'ripple':None,                # 702.59
-    'split_second':re_kw_empty,   # 702.60
-    'suspend':None,               # 702.61
-    'vanishing':None,             # 702.62
-    'absorb':None,                # 702.63
-    'aura_swap':None,             # 702.64
+    'deathtouch':re_kw_empty,        # 702.2
+    'defender':re_kw_empty,          # 702.3
+    'double_strike':re_kw_empty,     # 702.4
+    'enchant':re_kw_thing,           # 702.5
+    'equip':re_kw_equip,             # 702.6
+    'first_strike':re_kw_empty,      # 702.7
+    'flash':re_kw_empty,             # 702.8
+    'flying':re_kw_empty,            # 702.9
+    'haste':re_kw_empty,             # 702.10
+    'hexproof':re_kw_from_qual,      # 702.11
+    'indestructible':re_kw_empty,    # 702.12
+    'intimidate':re_kw_empty,        # 702.13
+    'landwalk':re_kw_empty,          # 702.14
+    'lifelink':re_kw_empty,          # 702.15
+    'protection':re_kw_from_qual,    # 702.16
+    'reach':re_kw_empty,             # 702.17
+    'shroud':re_kw_empty,            # 702.18
+    'trample':re_kw_empty,           # 702.19
+    'vigilance':re_kw_empty,         # 702.20
+    'banding':re_kw_empty,           # 702.21
+    'rampage':re_kw_n,               # 702.22
+    'cumlative_upkeep':re_kw_cost,   # 702.23
+    'flanking':re_kw_empty,          # 702.24
+    'phasing':re_kw_empty,           # 702.25
+    'buyback':re_kw_cost,            # 702.26
+    'shadow':re_kw_empty,            # 702.27
+    'cycling':re_kw_cost,            # 702.28
+    'echo':re_kw_cost,               # 702.29
+    'horsemanship':re_kw_empty,      # 702.30
+    'fading':re_kw_n,                # 702.31
+    'kicker':re_kw_cost2,            # 702.32
+    'multikicker':re_kw_cost2,       # 702.32c
+    'flashback':re_kw_cost,          # 702.33
+    'madness':re_kw_cost,            # 702.34
+    'fear':re_kw_empty,              # 702.35
+    'morph':re_kw_cost,              # 702.36,
+    'megamorph':re_kw_cost,          # 702.36b
+    'amplify':re_kw_n,               # 702.37
+    'provoke':re_kw_empty,           # 702.38
+    'storm':re_kw_empty,             # 702.39
+    'affinity':re_kw_for_qual,       # 702.40
+    'entwine':re_kw_cost,            # 702.41
+    'modular':re_kw_n,               # 702.42
+    'sunburst':re_kw_empty,          # 702.43
+    'bushido':re_kw_n,               # 702.44
+    'soulshift':re_kw_n,             # 702.45
+    'splice':re_kw_splice,           # 702.46
+    'offering':re_kw_empty,          # 702.47
+    'ninjutsu':re_kw_cost,           # 702.48
+    'commander_ninjutsu':re_kw_cost, # 702.48
+    'epic':re_kw_empty,              # 702.49
+    'convoke':re_kw_empty,           # 702.50
+    'dredge':re_kw_n,                # 702.51
+    'transmute':re_kw_cost,          # 702.52
+    'bloodthirst':re_kw_n,           # 702.53
+    'haunt':re_kw_empty,             # 702.54
+    'replicate':re_kw_cost,          # 702.55
+    'forecast':None,              # 702.56 #TODO
+    'graft':re_kw_n,                 # 702.57
+    'recover':re_kw_cost,            # 702.58
+    'ripple':re_kw_n,                # 702.59
+    'split_second':re_kw_empty,      # 702.60
+    'suspend':None,               # 702.61 #TODO
+    'vanishing':None,             # 702.62 #TODO: one card does not have n
+    'absorb':re_kw_n,                # 702.63
+    'aura_swap':re_kw_cost,          # 702.64
     'delve':re_kw_empty,          # 702.65
-    'fortify':None,               # 702.66
-    'frenzy':None,                # 702.67
+    'fortify':re_kw_cost,            # 702.66
+    'frenzy':re_kw_n,                # 702.67
     'gravestorm':re_kw_empty,     # 702.68
-    'poisonous':None,             # 702.69
-    'transfigure':None,           # 702.70
-    'champion':None,              # 702.71
-    'evoke':None,                 # 702.73
-    'hideaway':re_kw_empty,       # 702.74
-    'prowl':None,                 # 702.75
-    'reinforce':None, # 702.76
-    'conspire':re_kw_empty, # 702.77
-    'persist':re_kw_empty, # 702.78
-    'wither':re_kw_empty, # 702.79
-    'retrace':re_kw_empty, # 702.80
-    'devour':None, # 702.81
-    'exalted':re_kw_empty, # 702.82
-    'unearth':None, # 702.83
-    'cascade':re_kw_empty, # 702.84
-    'annihilator':None, # 702.85
-    'level_up':None, # 702.86
-    'totem_armor':re_kw_empty, # 702.88
-    'infect':re_kw_empty, # 702.89
-    'battle_cry':re_kw_empty, # 702.90
-    'living_weapon':re_kw_empty, # 702.91
-    'undying':re_kw_empty, # 702.92
-    'miracle':None, # 702.93
-    'soulbond':re_kw_empty, # 702.94
-    'overload':None, # 702.95
-    'scavenge':None, # 702.96
-    'unleash':re_kw_empty, # 702.97
-    'cipher':re_kw_empty, # 702.98
-    'evolve':re_kw_empty, # 702.99
-    'extort':re_kw_empty, # 702.100
-    'fuse':re_kw_empty, # 702.101
-    'bestow':None, # 702.102
-    'tribute':None, # 702.103
-    'dethrone':re_kw_empty, # 702.104
+    'poisonous':re_kw_n,             # 702.69
+    'transfigure':re_kw_cost,        # 702.70
+    'champion':None,              # 702.71 #TODO
+    'evoke':re_kw_cost,              # 702.73
+    'hideaway':re_kw_empty,          # 702.74
+    'prowl':re_kw_cost,              # 702.75
+    'reinforce':re_kw_n,             # 702.76
+    'conspire':re_kw_empty,          # 702.77
+    'persist':re_kw_empty,           # 702.78
+    'wither':re_kw_empty,            # 702.79
+    'retrace':re_kw_empty,           # 702.80
+    'devour':re_kw_n,                # 702.81
+    'exalted':re_kw_empty,           # 702.82
+    'unearth':re_kw_cost,            # 702.83
+    'cascade':re_kw_empty,           # 702.84
+    'annihilator':re_kw_n,           # 702.85
+    'level_up':re_kw_cost,           # 702.86
+    'rebound':re_kw_empty,           # 702.87
+    'totem_armor':re_kw_empty,       # 702.88
+    'infect':re_kw_empty,            # 702.89
+    'battle_cry':re_kw_empty,        # 702.90
+    'living_weapon':re_kw_empty,     # 702.91
+    'undying':re_kw_empty,           # 702.92
+    'miracle':re_kw_cost,            # 702.93
+    'soulbond':re_kw_empty,          # 702.94
+    'overload':re_kw_cost,           # 702.95
+    'scavenge':re_kw_cost,           # 702.96
+    'unleash':re_kw_empty,           # 702.97
+    'cipher':re_kw_empty,            # 702.98
+    'evolve':re_kw_empty,            # 702.99
+    'extort':re_kw_empty,            # 702.100
+    'fuse':re_kw_empty,              # 702.101
+    'bestow':re_kw_cost,             # 702.102
+    'tribute':re_kw_n,               # 702.103
+    'dethrone':re_kw_empty,          # 702.104
     #'hidden_agenda':re_kw_empty, # 702.105 (wont' see these)
-    'outlasat':None, # 702.106
-    'prowess':re_kw_empty, # 702.107
-    'dash':None, # 702.108
-    'exploit':re_kw_empty, # 702.109
-    'menace':re_kw_empty, # 702.110
-    'renown':None, # 702.111
-    'awaken':None, # 702.112
-    'devoid':re_kw_empty, # 702.113
-    'ingest':re_kw_empty, # 702.114
-    'myriad':re_kw_empty, # 702.115
-    'surge':None, # 702.116
-    'skulk':re_kw_empty, # 702.117
-    'emerge':None, # 702.118
-    'escalate':None, # 702.119
-    'melee':re_kw_empty, # 702.120
-    'crew':None, # 702.121
-    'fabricate':None, # 702.122
-    'partner':None, # 702.123
+    'outlast':re_kw_cost,            # 702.106
+    'prowess':re_kw_empty,           # 702.107
+    'dash':re_kw_cost,               # 702.108
+    'exploit':re_kw_empty,           # 702.109
+    'menace':re_kw_empty,            # 702.110
+    'renown':re_kw_n,                # 702.111
+    'awaken':re_kw_cost,             # 702.112
+    'devoid':re_kw_empty,            # 702.113
+    'ingest':re_kw_empty,            # 702.114
+    'myriad':re_kw_empty,            # 702.115
+    'surge':re_kw_cost,              # 702.116
+    'skulk':re_kw_empty,             # 702.117
+    'emerge':re_kw_cost,             # 702.118
+    'escalate':re_kw_cost,           # 702.119
+    'melee':re_kw_empty,             # 702.120
+    'crew':re_kw_n,                  # 702.121
+    'fabricate':re_kw_n,             # 702.122
+    'partner':None, # 702.123 # TODO
     #'partner_with':None # 702.123f not captured as such
-    'undaunted':re_kw_empty, # 702.124
-    'improvise':re_kw_empty, # 702.125
-    'aftermath':re_kw_empty, # 702.126
-    'embalm':None, # 702.127
-    'eternalize':None, # 702.128
-    'afflict':None, # 702.129
-    'ascend':re_kw_empty, # 702.130
-    'assist':re_kw_empty, # 702.131
-    'jump-start':re_kw_empty, # 702.132
-    'mentor':re_kw_empty, # 702.133
-    'afterlife':None, # 702.134
-    'riot':re_kw_empty, # 702.135
-    'spectacle':None, # 702.136
-    'escape':None, # 702.137
+    'undaunted':re_kw_empty,         # 702.124
+    'improvise':re_kw_empty,         # 702.125
+    'aftermath':re_kw_empty,         # 702.126
+    'embalm':re_kw_cost,             # 702.127
+    'eternalize':re_kw_cost,         # 702.128
+    'afflict':re_kw_n,               # 702.129
+    'ascend':re_kw_empty,            # 702.130
+    'assist':re_kw_empty,            # 702.131
+    'jump-start':re_kw_empty,        # 702.132
+    'mentor':re_kw_empty,            # 702.133
+    'afterlife':re_kw_n,             # 702.134
+    'riot':re_kw_empty,              # 702.135
+    'spectacle':re_kw_cost,          # 702.136
+    'escape':re_kw_cost,             # 702.137
 }
 
+# assigns expected group names from regex match
 kw_param_template = {
     'enchant':('quality',),
     'equip':('quality','cost'),
@@ -296,4 +315,52 @@ kw_param_template = {
     'morph':('cost',),
     'megamorph':('cost',),
     'amplify':('n',),
+    'affinity':('quality',),
+    'entwine':('cost',),
+    'modular':('n',),
+    'bushido':('n',),
+    'soulshift':('n',),
+    'splice':('quality','cost','cost',),
+    'ninjutsu':('cost',),
+    'commander_ninjutsu':('cost',),
+    'dredge':('n',),
+    'transmute':('cost',),
+    'bloodthirst':('n',),
+    'replicate':('cost',),
+    'graft':('n',),
+    'recover':('cost',),
+    'ripple':('n',),
+    'absorb':('n',),
+    'aura_swap':('cost',),
+    'fortify':('cost',),
+    'frenzy':('n',),
+    'poisonous':('n',),
+    'transfigure':('cost',),
+    'evoke':('cost',),
+    'prowl':('cost',),
+    'reinforce':('n',),
+    'devour':('n',),
+    'unearth':('cost',),
+    'annihilator':('n',),
+    'level_up':('cost',),
+    'miracle':('cost',),
+    'overload':('cost',),
+    'scavenge':('cost',),
+    'bestow':('cost',),
+    'tribute':('n',),
+    'outlast':('cost',),
+    'dash':('cost',),
+    'renown':('n',),
+    'awaken':('cost',),
+    'surge':('cost',),
+    'emerge':('cost',),
+    'escalate':('cost',),
+    'crew':('n',),
+    'fabricate':('n',),
+    'embalm':('cost',),
+    'eternalize':('cost',),
+    'afflict':('n',),
+    'afterlife':('n',),
+    'spectacle':('cost',),
+    'escape':('cost',),
 }

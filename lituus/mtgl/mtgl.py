@@ -1087,6 +1087,7 @@ misstag = {
     "ch<will> of xq<the> council":"aw<will_of_the_council>",
     "xq<first> strike":"kw<first_strike>",
     "cumulative ts<upkeep>":"kw<cumlative_upkeep>",
+    "xo<commander> kw<ninjutsu>":"kw<commander ninjutsu",
 }
 misstag_tkns = '|'.join(misstag.keys())
 re_misstag = re.compile(r"({})".format(misstag_tkns))
