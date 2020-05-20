@@ -83,18 +83,15 @@ re_kw_clause = re.compile(
 # no parameters
 re_kw_empty = re.compile('')
 
-# kewords of the form KEYWORD THING
+# kewords of the form KEYWORD [optional word] [QUALITY]
+# This covers generic keyword QUALITY but also matches
+#  Affinity (702.40) Affinity for [QUALITY]
+#  Champion (702.71) Champion a [QUALITY]
+# keywords of the form KEYWORD for [quality] (affinity)
 re_kw_thing = re.compile(
+    r"(?:pr<for>|sq<an?>)? ?"
     r"((?:ob|xp|xo)"
     r"<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
-)
-
-# 702.6 Equip ([quality])? [cost]
-# TODO: make this keyword_cost
-re_kw_equip = re.compile(
-    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)? ?"
-    r"((?:{[0-9wubrgscpx\/]+})+)"
 )
 
 # keywords of the form KEWYWORD (from [quality])? i.e. protection, hexproof
@@ -119,17 +116,22 @@ re_kw_from_qual = re.compile(
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))?"
 )
 
-# keywords of the form KEYWORD for [quality] (affinity)
-# TODO: could we combine this and above into as well as kw_thing into a simple
-#  kw_qual expression?
-re_kw_for_qual = re.compile(
-    r"pr<for> "
-    r"((?:ob|xr)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+# Partner (702.123) has no parameters but Partner with (702.123f) does
+# Partner with [NAME]
+re_kw_partner = re.compile(
+    r"(?:pr<with> "
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+    r")?"
 )
 
 # keywords of the form KEYWORD N
+# second pattern is for Vanishing (706.62) one of which (Tidewalker) does not
+# have a 'N'
+# TODO: could just remove the fist pattern and use the optional 'N' but not
+#  sure if I like that
 re_kw_n = re.compile(r"nu<(\d+|x|y|z])>")
+re_kw_n2 = re.compile(r"(?:nu<(\d+|x|y|z])>)?")
 
 # keywords of the form KEYWORD [cost]
 # TODO: these may be non-standard i.e. non-mana costs
@@ -142,13 +144,25 @@ re_kw_cost2 = re.compile(
     r"(?: and/or ((?:{[0-9wubrgscpx\/]+})+))?"
 )
 
-# splice splice onto [quality] [cost]
+# splice (702.46) splice onto [quality] [cost]
+# TODO: the trailing period is not passed as parmater on non-standard costs
 # TODO: cannot get rid of the 'hidden group' in the cost portion
 re_kw_splice = re.compile(
     r"pr<onto> "
     r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
     r"(?: ((?:{[0-9wubrgscpx\/]+})+)|—(.+?)$)"
+)
+
+# forecast (702.56) forecast — [actiavated ability]
+re_kw_forecast = re.compile(r"— (.+?)$")
+
+# suspend (702.61) suspend [N] — [cost] [optional inst]
+re_kw_suspend = re.compile(
+    r"nu<(\d+|x|y|z])>"
+    r"—"
+    r"((?:{[0-9wubrgscpx\/]+})+)"
+    r"(?:\. (.+?)$)?"
 )
 
 ## KEYWORD ABILITY PARAMETER TEMPLATES
@@ -195,7 +209,7 @@ kw_param = {
     'amplify':re_kw_n,               # 702.37
     'provoke':re_kw_empty,           # 702.38
     'storm':re_kw_empty,             # 702.39
-    'affinity':re_kw_for_qual,       # 702.40
+    'affinity':re_kw_thing,          # 702.40
     'entwine':re_kw_cost,            # 702.41
     'modular':re_kw_n,               # 702.42
     'sunburst':re_kw_empty,          # 702.43
@@ -212,22 +226,22 @@ kw_param = {
     'bloodthirst':re_kw_n,           # 702.53
     'haunt':re_kw_empty,             # 702.54
     'replicate':re_kw_cost,          # 702.55
-    'forecast':None,              # 702.56 #TODO
+    'forecast':re_kw_forecast,       # 702.56
     'graft':re_kw_n,                 # 702.57
     'recover':re_kw_cost,            # 702.58
     'ripple':re_kw_n,                # 702.59
     'split_second':re_kw_empty,      # 702.60
-    'suspend':None,               # 702.61 #TODO
-    'vanishing':None,             # 702.62 #TODO: one card does not have n
+    'suspend':re_kw_suspend,         # 702.61
+    'vanishing':re_kw_n2,            # 702.62
     'absorb':re_kw_n,                # 702.63
     'aura_swap':re_kw_cost,          # 702.64
-    'delve':re_kw_empty,          # 702.65
+    'delve':re_kw_empty,             # 702.65
     'fortify':re_kw_cost,            # 702.66
     'frenzy':re_kw_n,                # 702.67
-    'gravestorm':re_kw_empty,     # 702.68
+    'gravestorm':re_kw_empty,        # 702.68
     'poisonous':re_kw_n,             # 702.69
     'transfigure':re_kw_cost,        # 702.70
-    'champion':None,              # 702.71 #TODO
+    'champion':re_kw_thing,          # 702.71
     'evoke':re_kw_cost,              # 702.73
     'hideaway':re_kw_empty,          # 702.74
     'prowl':re_kw_cost,              # 702.75
@@ -278,7 +292,7 @@ kw_param = {
     'melee':re_kw_empty,             # 702.120
     'crew':re_kw_n,                  # 702.121
     'fabricate':re_kw_n,             # 702.122
-    'partner':None, # 702.123 # TODO
+    'partner':re_kw_partner,         # 702.123 # TODO
     #'partner_with':None # 702.123f not captured as such
     'undaunted':re_kw_empty,         # 702.124
     'improvise':re_kw_empty,         # 702.125
@@ -327,15 +341,19 @@ kw_param_template = {
     'transmute':('cost',),
     'bloodthirst':('n',),
     'replicate':('cost',),
+    'forecast':('activated-ability',),
     'graft':('n',),
     'recover':('cost',),
     'ripple':('n',),
+    'suspend':('n','cost','instruction',),
+    'vanishing':('n',),
     'absorb':('n',),
     'aura_swap':('cost',),
     'fortify':('cost',),
     'frenzy':('n',),
     'poisonous':('n',),
     'transfigure':('cost',),
+    'champion':('quality',),
     'evoke':('cost',),
     'prowl':('cost',),
     'reinforce':('n',),
@@ -357,6 +375,7 @@ kw_param_template = {
     'escalate':('cost',),
     'crew':('n',),
     'fabricate':('n',),
+    'partner':('with',),
     'embalm':('cost',),
     'eternalize':('cost',),
     'afflict':('n',),

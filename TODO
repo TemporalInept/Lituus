@@ -93,10 +93,12 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 174. do we need to annotate optional parameters in the keyword nodes of the tree i.e. quality in equip
 
-174. For non-standard keyword lines:
- a. confirm these are all 'cost' related
- b. will have to at some point graph the non-standard text
+174. For non-standard keyword lines will have to at some point graph the non-standard text
 
-175. 
+175. For partner with, after graphing do we want to replace id with actual Card Name
+
+176. Would be nice once graphed to combine all keyword lines into a single 'list' of keywords
+
+177.
 
 

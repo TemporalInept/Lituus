@@ -377,7 +377,7 @@ re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 # numbers are 1 or more digits or one of the variable x, y, z which. Only those
 # that are preceded by whitespace, a '/', '+', '-' or start a line and that are
 # followed by whitespace '/' or '.' are matched.
-re_number = re.compile(r"(?<=(?:^|[ \/+-]))(\d+|x|y|z])(?=[\s\/+-\.])")
+re_number = re.compile(r"(?<=(?:^|[ \/+-]))(\d+|x|y|z])(?=[—\s\/+-\.])")
 
 ####
 ## ENTITIES
