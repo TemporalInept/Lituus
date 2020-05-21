@@ -6,7 +6,7 @@
 
 36. See Guided Passage for 'Thing' chaining
 
-37. Modal spells/abilities, level ups and planeswalkers see Charming Prince
+37. level ups and planeswalkers see Charming Prince
 
 40. Need to write save deck functionality
 
@@ -96,5 +96,10 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 174. For non-standard keyword lines will have to at some point graph the non-standard text
 
 175. For partner with, after graphing do we want to replace id with actual Card Name
+
+176. See Warping Wail, opening reminder text is not removed
+
+177.
+
 
 

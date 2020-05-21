@@ -64,6 +64,7 @@ ETAGGING = 12 # Error while tagging oracle
 # MTG TREE RELATED
 ETREE    = 20 # Generic tree error
 ENODE    = 21 # Node error
+EPTRN    = 22 # Pattern Error
 
 # for setup.py us
 version = __version__

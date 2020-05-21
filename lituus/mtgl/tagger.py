@@ -62,6 +62,7 @@ def preprocess(name,txt):
        5. english number words 0 - 10 are replacing with corresponding ints,
        6. Some reminder text is removed, some paraenthesis is removed
        7. replace any 'non' w/out hypen to 'non-' w/ hyphen
+       8. Replace occurrences of ".•" with " •"
     :param name: name of this card
     :param txt: the mtgl text
     :return: preprocessed oracle text
@@ -74,7 +75,8 @@ def preprocess(name,txt):
     ntxt = mtgl.re_wd2int.sub(lambda m: mtgl.E2I[m.group(1)],ntxt)           # 5
     ntxt = mtgl.re_mana_remtxt.sub(r"\1",ntxt)                               # 6
     ntxt = mtgl.re_reminder.sub("",ntxt)                                     # 6
-    ntxt = mtgl.re_non.sub(r"non-\1", ntxt)                                  # 7
+    ntxt = mtgl.re_non.sub(r"non-\1",ntxt)                                   # 7
+    ntxt = mtgl.re_modal_blt.sub(r" •",ntxt)
     return ntxt
 
 def tag_ref(name,txt):

@@ -27,7 +27,7 @@ import regex as re
 
 # Ability word lines start with an ability word followed by a long hypen and then
 # the ability clause and end with a sentence
-re_aw_line = re.compile(r"^(aw<[\w-]+>) — (.+?)\.$")
+re_aw_line = re.compile(r"^aw<([\w-]+)> — (.+?)\.$")
 
 # Keyword lines start with a keyword (or object keyword if landwalk) and contain
 # one or more comma separated keyword claues
@@ -49,11 +49,21 @@ re_kw_line_ns = re.compile(r"^(kw<[\w-]+>)—(.+?)\.$")
 #  113.3c Triggered - of the form TRIGGER
 #  113.3d static - none of the above
 
-# Activated (112.3b) contain a ':' which splits the cost and effect
-re_activated_line = re.compile(r":")
+# Activated (113.3b) contains a ':' which splits the cost and effect
+re_act_check = re.compile(r":")
+re_act_line = re.compile(r"^(.+?): (.+?)$")
 
-# Triggered (112.3c) lines starts with a trigger preamble
-re_triggered_line = re.compile(r"^(tp<\w+>)")
+# Triggered (603.1) lines starts with a trigger preamble
+# Triggered abilities have the form:
+#  [When/Whenever/At] [condition], [effect]. [Instructions]?
+re_tgr_check = re.compile(r"^(tp<\w+>)")
+re_tgr_line = re.compile(
+    r"^tp<(at|whenever|when)> "
+    r"(.+?), "
+    r"([^\.]+)\."
+    r"(?: (.+)\.)?"
+    r"$"
+)
 
 ####
 ## KEYWORDS
@@ -97,11 +107,12 @@ re_kw_thing = re.compile(
 )
 
 # keywords of the form KEYWORD N
+# first includes a non-standard n for the card Arcbound Wanderer
 # second pattern is for Vanishing (706.62) one of which (Tidewalker) does not
 # have a 'N'
 # TODO: could just remove the fist pattern and use the optional 'N' but not
 #  sure if I like that
-re_kw_n = re.compile(r"nu<(\d+|x|y|z])>")
+re_kw_n = re.compile(r"(?:nu<(\d+|x|y|z])>|—(.+?)$)")
 re_kw_n2 = re.compile(r"(?:nu<(\d+|x|y|z])>)?")
 
 # keywords of the form KEYWORD [cost]
@@ -112,18 +123,17 @@ re_kw_cost = re.compile(r"(?:((?:{[0-9wubrgscpx\/]+})+)|—(.+?)$)")
 # same as above but adds an additional optional cost preceded by 'and/or'
 # seen in some kicker keyword lines
 re_kw_cost2 = re.compile(
-    r"((?:{[0-9wubrgscpx\/]+})+)"
+    r"(?:((?:{[0-9wubrgscpx\/]+})+)|—(.+?)$)"
     r"(?: and/or ((?:{[0-9wubrgscpx\/]+})+))?"
 )
 
 # special parameters for specific keywords
 
-# 702.6 Equip ([quality])? [cost]
-# TODO: make this keyword_cost
+# 702.6 Equip ([quality])? [cost] cost may be nonstandard
 re_kw_equip = re.compile(
     r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)? ?"
-    r"((?:{[0-9wubrgscpx\/]+})+)"
+    r"(?:((?:{[0-9wubrgscpx\/]+})+)|—(.+?)$)"
 )
 
 # keywords of the form KEWYWORD (from [quality])? i.e. protection, hexproof
@@ -255,6 +265,7 @@ kw_param = {
     'poisonous':re_kw_n,             # 702.69
     'transfigure':re_kw_cost,        # 702.70
     'champion':re_kw_thing,          # 702.71
+    'changeling':re_kw_empty,        # 702.72
     'evoke':re_kw_cost,              # 702.73
     'hideaway':re_kw_empty,          # 702.74
     'prowl':re_kw_cost,              # 702.75

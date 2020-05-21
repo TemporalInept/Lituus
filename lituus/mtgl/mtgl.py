@@ -338,7 +338,11 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
 ####
 
 # reminder text including the space preceding
-re_reminder = re.compile(r" \(.+?\)")
+re_reminder = re.compile(r" ?\(.+?\)")
+
+# modify modal spells IOT facilitate graphing, find occurrences of ".•",
+# period is used by the grapher to delimit clauses
+re_modal_blt = re.compile(r"\.•")
 
 ####
 ## BEGIN MTGL REG EX
@@ -377,7 +381,9 @@ re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 # numbers are 1 or more digits or one of the variable x, y, z which. Only those
 # that are preceded by whitespace, a '/', '+', '-' or start a line and that are
 # followed by whitespace '/' or '.' are matched.
-re_number = re.compile(r"(?<=(?:^|[ \/+-]))(\d+|x|y|z])(?=[—\s\/+-\.])")
+re_number = re.compile(
+    r"(?<=(?:^|[ \/+-]))(\d+|x|y|z])(?=(?:[—\s\/+-\.]|$))"
+)
 
 ####
 ## ENTITIES

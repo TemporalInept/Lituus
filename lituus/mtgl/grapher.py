@@ -60,8 +60,9 @@ def graph(dcard):
         else:
             if 'Instant' in dcard['type']: t.add_node(parent,'spell-line',line=line)
             elif 'Sorcery' in dcard['type']: t.add_node(parent,'spell-line',line=line)
-            elif dd.re_activated_line.search(line): t.add_node(parent,'act-line',line=line)
-            elif dd.re_triggered_line.search(line): t.add_node(parent,'tgr-line',line=line)
+            elif dd.re_act_check.search(line): graph_activated(t,parent,line)
+            elif dd.re_tgr_check.search(line): graph_triggered(t,parent,line)
+                #t.add_node(parent,'tgr-line',line=line)
             else: t.add_node(parent,'static-line',line=line)
 
     # if the keywords node is empty, delete it
@@ -76,7 +77,15 @@ def graph_ability_word(t,pid,line):
     :param pid: the parent
     :param line: the aw line to graph
     """
-    pass
+    awid = t.add_node(pid,'aw-clause')
+    try:
+        aw,ad = dd.re_aw_line.search(line).groups()
+        t.add_node(awid,'ability-word',value=aw)
+        t.add_node(awid,'definition',value=ad)
+    except AttributeError:
+        raise lts.LituusException(
+            lts.EPTRN,"Failure matching aw line ({})".format(line)
+        )
 
 def graph_keyword(t,pid,kw,ktype,param):
     """
@@ -99,15 +108,53 @@ def graph_keyword(t,pid,kw,ktype,param):
                     for i,k in enumerate(dd.kw_param_template[kw]):
                         if m.group(i+1): t.add_node(kwid,k,value=m.group(i+1))
                 except IndexError:
-                    raise RuntimeError(
-                        "Error with {} does not match template".format(kw)
+                    raise lts.LituusException(
+                        lts.EPTRN,"Error with {} does not match template".format(kw)
                     )
         else:
-            raise lts.LituusException(lts.ETREE,"Incomplete match for {}".format(kw))
+            raise lts.LituusException(lts.PTRN,"Incomplete match for {}".format(kw))
     except KeyError:
         # either a misstagged kewyord or one that does not have a function
         raise lts.LituusException(
-            lts.ETREE,"Missing template for keyword {}".format(kw)
+            lts.EPTRN,"Missing template for keyword {}".format(kw)
+        )
+
+def graph_activated(t,pid,line):
+    """
+    graphs the activated ability in line under parent pid of tree t
+    :param t: the tree
+    :param pid: parent of the line
+    :param line: the tagged text to graph
+    """
+    try:
+        # split the line into cost and effect graph each separately
+        cost,effect = dd.re_act_line.search(line).groups()
+        aaid = t.add_node(pid,'activated-ability')
+        t.add_node(aaid,'activated-cost',value=cost)
+        t.add_node(aaid,'activated-effect',value=effect)
+    except AttributeError:
+        raise lts.LituusException(
+            lts.EPTRN,"Not an activated ability ({})".format(line)
+        )
+
+def graph_triggered(t,pid,line):
+    """
+    graphs the activated ability in line under parent pid of tree t
+    :param t: the tree
+    :param pid: parent of the line
+    :param line: the tagged text to graph
+    """
+    try:
+        # at a minimum will have tp, condition and effect. may have instructions
+        m = dd.re_tgr_line.search(line)
+        taid = t.add_node(pid,'triggered-ability')
+        t.add_node(taid,'triggered-preamble',value=m.group(1))
+        t.add_node(taid,'triggered-condition',value=m.group(2))
+        t.add_node(taid,'triggered-effect',value=m.group(3))
+        if m.group(4): t.add_node(taid,'triggered-instruction',value=m.group(4))
+    except AttributeError:
+        raise lts.LituusException(
+            lts.EPTRN,"Not a triggered ability ({})".format(line)
         )
 
 ####
