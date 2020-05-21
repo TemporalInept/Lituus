@@ -56,12 +56,15 @@ re_act_line = re.compile(r"^(.+?): (.+?)$")
 # Triggered (603.1) lines starts with a trigger preamble
 # Triggered abilities have the form:
 #  [When/Whenever/At] [condition], [effect]. [Instructions]?
+# NOTE: since we are basing our delimitation of the individual 'components',
+#  have to build in checks for periods that are inclosed in double parenthesis
+#  and single, double parenthesis (Reef Worm)
 re_tgr_check = re.compile(r"^(tp<\w+>)")
 re_tgr_line = re.compile(
     r"^tp<(at|whenever|when)> "
     r"(.+?), "
-    r"([^\.]+)\."
-    r"(?: (.+)\.)?"
+    r"([^\.]+)(?:\.|\.\"|\.\'\")"
+    r"(?: (.+)(?:\.|\.\"|\.\'\"))?"
     r"$"
 )
 

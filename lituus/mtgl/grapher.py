@@ -62,7 +62,6 @@ def graph(dcard):
             elif 'Sorcery' in dcard['type']: t.add_node(parent,'spell-line',line=line)
             elif dd.re_act_check.search(line): graph_activated(t,parent,line)
             elif dd.re_tgr_check.search(line): graph_triggered(t,parent,line)
-                #t.add_node(parent,'tgr-line',line=line)
             else: t.add_node(parent,'static-line',line=line)
 
     # if the keywords node is empty, delete it
