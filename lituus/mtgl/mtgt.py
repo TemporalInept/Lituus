@@ -89,7 +89,7 @@ class MTGTree:
         :param show_attr: if set, shows the attributes of the nodes
         CREDIT Will (https://stackoverflow.com/users/15721/will)
         """
-        ds = nx.shortest_path_length(self._t, 'root')
+        ds = nx.shortest_path_length(self._t,'root')
         print('<{}>'.format(self._name))
         for cid in self.children('root'): self._print_node_(cid," ",show_attr)
 

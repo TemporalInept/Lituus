@@ -411,8 +411,67 @@ kw_param_template = {
 }
 
 ####
-## ABILITY WORDS
+## REPLACEMENT EFFECTS (614)
 ####
 
-# Ability words (207.2c) have the form
-# AW —
+## INSTEAD CLAUSES (614.a)
+# These must be done in the order below or false positives will occur
+
+# if would instead i.e. Abandoned Sarcophagus
+#  if [thing] would [a], [b] instead
+re_if_would_instead = re.compile(
+    r"^cn<if> "
+    r"(.+) cn<would> (.+), (.+)"
+    r" cn<instead>\.?$"
+)
+
+# if instead i.e. Cleansing Medidation
+#   if [event/condition] instead [replacement].
+# the instead comes between the condiction and the replacement
+re_if_instead = re.compile(
+    r"^cn<if> "
+    r"(.+)"
+    r" cn<instead> "
+    r"(.+)\.?$"
+)
+
+# if instead fence i.e. Nyxbloom Ancient
+#   if [event/condition], [replacement] instead
+# the instead comes last and the condition and replacment are found by splitting
+# on the last comma
+re_if_instead_fence = re.compile(
+    r"^cn<if> "
+    r"(.+), (.+)"
+    r" cn<instead>\.?$"
+)
+
+# if instead of i.e. Pale Moon
+#   if [event], [replacement] instead of [original]
+re_if_instead_of = re.compile(
+    r"^cn<if> "
+    r"(.+), (.+)"
+    r" cn<instead> of "
+    r"(.+)\.?$"
+)
+
+# instead if i.e. Crown of Empires
+#  [replacement] instead if [condition]
+# the condition and replacement are switched
+re_instead_if = re.compile(
+    r"^(.+)"
+    r" cn<instead> cn<if> "
+    r"(.+)\.?$"
+)
+
+#re_if_instead = re.compile(
+#    r"cn<if> "
+#    r"(.+)"
+#    r" cn<instead>"
+#)
+#re_tgr_line = re.compile(
+#    r"^tp<(at|whenever|when)> "
+#    r"(.+?), "
+#    r"([^\.]+)(?:\.|\.\"|\.\'\")"
+#    r"(?: (.+)(?:\.|\.\"|\.\'\"))?"
+#    r"$"
+#)

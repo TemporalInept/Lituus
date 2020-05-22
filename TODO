@@ -91,15 +91,14 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 172. What to do about "color or colors". do we lose meaning if condense to just colors
 
-174. do we need to annotate optional parameters in the keyword nodes of the tree i.e. quality in equip
-
-174. For non-standard keyword lines will have to at some point graph the non-standard text
-
 175. For partner with, after graphing do we want to replace id with actual Card Name
 
-176. See Warping Wail, opening reminder text is not removed
+177. Replacements
+ o Fatal Push gave problems on previous version, make sure to test it
+ o Have to remember some cards like Dispatch only contain an if and should not be
+  processed as a replacement
 
-177.
+178. 
 
 
 
