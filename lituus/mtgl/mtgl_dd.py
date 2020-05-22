@@ -463,6 +463,25 @@ re_instead_if = re.compile(
     r"(.+)\.?$"
 )
 
+# instead of if i.e. Caravan Vigil
+#  [replacement] instead of [orginal] if [condition]
+re_instead_of_if = re.compile(
+    r"^(.+)"
+    r" cn<instead> of "
+    r"(.+)"
+    r" cn<if> "
+    r"(.+)\.?$"
+)
+
+# that would instead i.e. Ali from Cairo
+#  [original] that would [condition] [replacment] instead.
+re_that_would_instead = re.compile(
+    r"^(.+)"
+    r" xq<that> cn<would> "
+    r"(.+)"
+    r" cn<instead>\.?$"
+)
+
 #re_if_instead = re.compile(
 #    r"cn<if> "
 #    r"(.+)"

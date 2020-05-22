@@ -213,8 +213,7 @@ def tag_characteristics(txt):
 def midprocess(txt):
     """
      prepares tagged txt for second pass
-       1. replaces spaces/hyphens inside tags with underscore IOT make it a
-        single tag value
+       1. replaces spaces inside tags w/ underscore IOT make it a single tag value
        2. moves 'non-' in front of a tag to the negated symbol '¬' inside the tag
        3. deconflict incorrectly tagged tokens
        4. move suffixes to inside the tag's prop-list

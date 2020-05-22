@@ -228,6 +228,15 @@ def graph_repl_instead(t,pid,clause):
         t.add_node(iid,'condition',tograph=m.group(2))
         return True
 
+    # test for instead-of-if clause
+    m = dd.re_instead_of_if.search(clause)
+    if m:
+        iid = t.add_node(pid,'if-instead-of-if',text=clause)
+        t.add_node(iid,'replacement', tograph=m.group(1))
+        t.add_node(iid,'instead-of',tograph=m.group(2))
+        t.add_node(iid,'condition',tograph=m.group(3))
+        return True
+
 ####
 ## PRIVATE FUNCTIONS
 ####

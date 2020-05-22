@@ -402,8 +402,8 @@ re_obj = re.compile(
 # TODO: rest does not belong here
 lituus_objects = [ # lituus objects
     "city's blessing",'game','mana pool','mana cost','commander','mana','attacker',
-    'blocker','itself','it','them','coin','choice','cost',"amount of",'life',
-    'symbol','rest',
+    'blocker','itself','it','them','coin','choice','cost',"amount of",'life total',
+    'life','symbol','rest',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
@@ -993,6 +993,7 @@ val_join = {
     "living weapon":"living_weapon","totem armor":"totem_armor",
     "color identity":"color_identity",#"mana cost":"mana_cost",
     "amount of":"amount_of","that is":"that_is","that are":"that_are",
+    "life total":"life_total",
 }
 val_join_tkns = '|'.join(val_join.keys())
 re_val_join = re.compile(r"(?<=<)({})(?=>)".format(val_join_tkns))

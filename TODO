@@ -94,11 +94,15 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 175. For partner with, after graphing do we want to replace id with actual Card Name
 
 177. Replacements
- o Fatal Push gave problems on previous version, make sure to test it
+ o Fatal Push gave problems on previous version, make sure to test it for now 'instead-if' is handling it
  o Have to remember some cards like Dispatch only contain an if and should not be
   processed as a replacement
 
-178. 
+178. Should we put all replcement effects under a replacement effect node?
+
+179. Should we move ability word definition into the 'main' body of the tree?
+
+180. 
 
 
 
