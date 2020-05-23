@@ -474,7 +474,9 @@ re_instead_of_if = re.compile(
 )
 
 # that would instead i.e. Ali from Cairo
-#  [original] that would [condition] [replacment] instead.
+#  [original] that would [(action) original] (action) [replacment] instead.
+# These cannot be handled by RegEx alone as the condition and replacement are
+# separated by an action word
 re_that_would_instead = re.compile(
     r"^(.+)"
     r" xq<that> cn<would> "
