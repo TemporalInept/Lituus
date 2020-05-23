@@ -358,7 +358,7 @@ lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that is',
     'that are','that','additional','those','these','their','the','extra','first',
     'second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth',
-    'half','twice','new','single','same'
+    'half','twice','new','single','same','next',
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -500,7 +500,7 @@ re_cond = re.compile(r"\b({})\b".format('|'.join(conditionals)))
 
 # sequence/time related  words
 sequences = [
-    'before','next','after','until','begin','beginning','end','ending','then',
+    'before','after','until','begin','beginning','end','ending','then',
     'during','as long as','simultaneously','time'
 ]
 seq_tkns = '|'.join(sequences)
