@@ -174,6 +174,8 @@ def graph_clause(t,pid,clause):
     # starting high up, look for replacement effects
     # TODO: since the intent is to only graph those clauses that are entirely
     #  replacements and not those that contain one, how do we work this
+
+    # instead (614.1a) replacements
     if 'cn<instead>' in clause:
         try:
             nid = graph_repl_instead(t,clause)
@@ -184,7 +186,24 @@ def graph_clause(t,pid,clause):
         except lts.LituusException:
             pass
 
-    t.add_node(pid,'clause',toxt=clause)
+    # skip (614.1b) replacements
+    if 'xa<skip' in clause:
+        try:
+            m = dd.re_skip.search(clause)
+            if m:
+                # get player and phase
+                ply = m.group(1) if m.group(1) else 'xp<you>'
+                phase = m.group(2)
+
+                # graph the effect
+                sid = t.add_node(t.add_node(pid,'replacement-effect'),'skip')
+                t.add_node(sid,'player',tograph=ply)
+                t.add_node(sid,'phase',tograph=phase)
+                return
+        except lts.LituusException:
+            pass
+
+    t.add_node(pid,'clause',text=clause)
 
 ####
 ## REPLACEMENT CLAUSES

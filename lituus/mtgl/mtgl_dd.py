@@ -414,90 +414,60 @@ kw_param_template = {
 ## REPLACEMENT EFFECTS (614)
 ####
 
-## INSTEAD CLAUSES (614.a)
+## INSTEAD CLAUSES (614.1a)
 # These must be done in the order below or false positives will occur
 
 # if would instead i.e. Abandoned Sarcophagus
 #  if [thing] would [a], [b] instead
 re_if_would_instead = re.compile(
-    r"^cn<if> "
-    r"(.+) cn<would> (.+), (.+)"
-    r" cn<instead>\.?$"
+    r"^cn<if> (.+) cn<would> (.+), (.+) cn<instead>\.?$"
 )
 
 # if instead i.e. Cleansing Medidation
 #   if [event/condition] instead [replacement].
 # the instead comes between the condiction and the replacement
-re_if_instead = re.compile(
-    r"^cn<if> "
-    r"(.+)"
-    r" cn<instead> "
-    r"(.+)\.?$"
-)
+re_if_instead = re.compile(r"^cn<if> (.+) cn<instead> (.+)\.?$")
 
 # if instead fence i.e. Nyxbloom Ancient
 #   if [event/condition], [replacement] instead
 # the instead comes last and the condition and replacment are found by splitting
 # on the last comma
-re_if_instead_fence = re.compile(
-    r"^cn<if> "
-    r"(.+), (.+)"
-    r" cn<instead>\.?$"
-)
+re_if_instead_fence = re.compile(r"^cn<if> (.+), (.+) cn<instead>\.?$")
 
 # if instead of i.e. Pale Moon
 #   if [event], [replacement] instead of [original]
-re_if_instead_of = re.compile(
-    r"^cn<if> "
-    r"(.+), (.+)"
-    r" cn<instead> of "
-    r"(.+)\.?$"
-)
+re_if_instead_of = re.compile(r"^cn<if> (.+), (.+) cn<instead> of (.+)\.?$")
 
 # instead if i.e. Crown of Empires
 #  [replacement] instead if [condition]
 # the condition and replacement are switched
-re_instead_if = re.compile(
-    r"^(.+)"
-    r" cn<instead> cn<if> "
-    r"(.+)\.?$"
-)
+re_instead_if = re.compile(r"^(.+) cn<instead> cn<if> (.+)\.?$")
 
 # instead of if i.e. Caravan Vigil
 #  [replacement] instead of [orginal] if [condition]
-re_instead_of_if = re.compile(
-    r"^(.+)"
-    r" cn<instead> of "
-    r"(.+)"
-    r" cn<if> "
-    r"(.+)\.?$"
-)
+re_instead_of_if = re.compile(r"^(.+) cn<instead> of (.+) cn<if> (.+)\.?$")
 
 # that would instead i.e. Ali from Cairo
 #  [original] that would [(action) original] (action) [replacment] instead.
 # These cannot be handled by RegEx alone as the condition and replacement are
 # separated by an action word
 re_that_would_instead = re.compile(
-    r"^(.+)"
-    r" xq<that> cn<would> "
-    r"(.+)"
-    r" cn<instead>\.?$"
+    r"^(.+) xq<that> cn<would> (.+) cn<instead>\.?$"
 )
 
 # would instead i.e. Aegis of honor
 #  [timing] [condition] would [original], [replacment] instead.
 # related to timing
-re_would_instead = re.compile(
-    r"^(.+)"
-    r" cn<would> "
-    r"(.+), (.+)"
-    r" cn<instead>\.?$"
-)
+re_would_instead = re.compile(r"^(.+) cn<would> (.+), (.+) cn<instead>\.?$")
 
 # instead of i.e. Feather, the Redeemed
 # NOTE: these do not have a preceeding if/would
-re_instead_of = re.compile(
-    r"^(.+)"
-    r" cn<instead> of "
-    r"(.+)\.?$"
-)
+re_instead_of = re.compile(r"^(.+) cn<instead> of (.+)\.?$")
+
+## SKIP CLAUSES (614.1b)
+# These must be done in the order below or false positives will occur
+
+# skip clauses i.e. Stasis (Note as of IKO, I found 49) have the form
+#  [player]? skip(s) [phase/step]
+# where if player is not present there is an implied 'you'
+re_skip = re.compile(r"^(?:(.+) )?xa<skip(?: suffix=s)?> (.+)\.?$")
