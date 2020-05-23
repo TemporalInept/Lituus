@@ -203,6 +203,17 @@ def graph_clause(t,pid,clause):
         except lts.LituusException:
             pass
 
+    ## ETB
+    # one time ETB clauses (614.1c)
+    try:
+        perm,ctrs = dd.re_etb_with.search(clause).groups()
+        eid = t.add_node(t.add_node(pid,'replacement-effect'),'ETB-with')
+        t.add_node(eid,'permanent',tograph=perm)
+        t.add_node(eid,'counters',tograph=ctrs)
+        return
+    except AttributeError: # no match
+        pass
+
     t.add_node(pid,'clause',text=clause)
 
 ####

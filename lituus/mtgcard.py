@@ -12,8 +12,8 @@ Defines the MTGCard class - a wrapper around a  card dict
 
 #__name__ = 'mtgcard'
 __license__ = 'GPLv3'
-__version__ = '0.1.1'
-__date__ = 'April 2020'
+__version__ = '0.1.2'
+__date__ = 'May 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -35,11 +35,8 @@ def is_int(s):
 
 class MTGCard(object):
     """ a more manageable wrapper around a card dictionary """
-    def __init__(self,card):
-        # set the card dict then pass the networkx tree to a ParseTree
-        self._card = card         # the card dict
-        self._kws = []            # list of keywords
-        self._aws = []            # list of ability words
+    def __init__(self,card): self._card = card
+
 
     """ pretty print card's tree """
     def print(self,attr=False): raise lts.LituusException(lts.EIMPL,"Pending")
@@ -49,9 +46,6 @@ class MTGCard(object):
 
     @property
     def rid(self): return self._card['rid']
-
-    @property
-    def sets(self): return self._card['sets']
 
     @property
     def super_type(self): return self._card['super-type']
@@ -95,10 +89,14 @@ class MTGCard(object):
     def tree(self): return self._card['mtgt']
 
     @property # NOTE: this may include duplicates
-    def keywords(self): raise lts.LituusException(lts.EIMPL,"Pending")
+    def keywords(self):
+        return [self.tree.attr(k,'value') for k in self.tree.findall('keyword')]
 
     @property
-    def ability_words(self): raise lts.LituusException(lts.EIMPL,"Pending")
+    def ability_words(self):
+        return [
+            self.tree.attr(k,'value') for k in self.tree.findall('ability-word')
+        ]
 
     @property
     def activated_ability(self): raise lts.LituusException(lts.EIMPL,"Pending")

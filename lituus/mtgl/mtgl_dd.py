@@ -471,3 +471,23 @@ re_instead_of = re.compile(r"^(.+) cn<instead> of (.+)\.?$")
 #  [player]? skip(s) [phase/step]
 # where if player is not present there is an implied 'you'
 re_skip = re.compile(r"^(?:(.+) )?xa<skip(?: suffix=s)?> (.+)\.?$")
+
+## ENTERS THE BATTLEFIELD CLAUSES (614.1c)
+# Permanent enters the battlefield with ...
+# As Permanent enters the battlefield ...
+# Permanent enters the battlefield as ...
+
+# Permanent enters the battlefield with ... i.e. Pentavus have the form
+#  [permanent] enters the battlefield with [counters]
+# these are all counters
+re_etb_with = re.compile(
+    r"^(.+) xa<enter suffix=s> xq<the> zn<battlefield> pr<with> (.+)\.?$"
+)
+
+# As permanent enters the battlefield ... i.e. Sewer Nemsis have the form
+# as [permanent] enters the battlefield, [event]
+
+re_as_etb = re.compile(
+    r"^as (.+) xa<enter suffix=s> xq<the> zn<battlefield> (.+)\.?$"
+    #^as ... xa<enter suffix=s> xq<the> zn<battlefield>
+)
