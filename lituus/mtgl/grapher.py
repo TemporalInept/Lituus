@@ -60,11 +60,18 @@ def graph(dcard):
                 for ktype,kw,param in dd.re_kw_clause.findall(line):
                     graph_keyword(t,kwid,kw,ktype,param)
             else:
-                if 'Instant' in dcard['type']: t.add_node(parent,'spell-line',text=line)
-                elif 'Sorcery' in dcard['type']: t.add_node(parent,'spell-line',text=line)
-                elif dd.re_act_check.search(line): graph_activated(t,parent,line)
+                if dd.re_act_check.search(line): graph_activated(t,parent,line)
                 elif dd.re_tgr_check.search(line): graph_triggered(t,parent,line)
-                else: graph_clause(t,t.add_node(parent,'static-line',text=line),line)
+                else:
+                    # for the rest, determine line type & create a line node
+                    if 'Instant' in dcard['type']: ltype = 'spell-line'
+                    elif 'Sorcery' in dcard['type']: ltype = 'spell-line'
+                    else: ltype = 'static-line'
+                    lid = t.add_node(parent,ltype)
+
+                    # then graph each line sentence by sentence
+                    for s in _sentences_(line):
+                        graph_clause(t,t.add_node(lid,'sentence'),s)
         except RuntimeError:
             # For Debugging Purposes
             print("{} {}\n".format(dcard['name'],line))
@@ -135,7 +142,7 @@ def graph_activated(t,pid,line):
     try:
         # split the line into cost and effect graph each separately
         cost,effect = dd.re_act_line.search(line).groups()
-        aaid = t.add_node(pid,'activated-ability',text=line)
+        aaid = t.add_node(pid,'activated-ability')
         graph_clause(t,t.add_node(aaid,'activated-cost',tograph=cost),cost)
         graph_clause(t,t.add_node(aaid,'activated-effect',tograph=effect),effect)
     except AttributeError:
@@ -153,7 +160,7 @@ def graph_triggered(t,pid,line):
     try:
         # at a minimum will have tp, condition and effect. may have instructions
         m = dd.re_tgr_line.search(line)
-        taid = t.add_node(pid,'triggered-ability',text=line)
+        taid = t.add_node(pid,'triggered-ability')
         t.add_node(taid,'triggered-preamble',value=m.group(1))
         graph_clause(t,t.add_node(taid,'triggered-condition'),m.group(2))
         graph_clause(t,t.add_node(taid,'triggered-effect'),m.group(3))
@@ -203,13 +210,34 @@ def graph_clause(t,pid,clause):
         except lts.LituusException:
             pass
 
-    ## ETB
-    # one time ETB clauses (614.1c)
+    ## ETB REPLACMENT CLAUSES (614.1c)
+
+    # Permanent ETB with ...
     try:
         perm,ctrs = dd.re_etb_with.search(clause).groups()
-        eid = t.add_node(t.add_node(pid,'replacement-effect'),'ETB-with')
+        eid = t.add_node(t.add_node(pid,'replacement-effect'),'etb-with')
         t.add_node(eid,'permanent',tograph=perm)
         t.add_node(eid,'counters',tograph=ctrs)
+        return
+    except AttributeError: # no match
+        pass
+
+    # As Permanent ETB ...
+    try:
+        perm,action = dd.re_as_etb.search(clause).groups()
+        eid = t.add_node(t.add_node(pid,'replacement-effect'),'as-etb')
+        t.add_node(eid,'permanent',tograph=perm)
+        t.add_node(eid,'action',tograph=action)
+        return
+    except AttributeError: # no match
+        pass
+
+    # Permanent ETB as
+    try:
+        perm,asa = dd.re_etb_as.search(clause).groups()
+        eid = t.add_node(t.add_node(pid,'replacement-effect'),'etb-as')
+        t.add_node(eid,'permanent',tograph=perm)
+        t.add_node(eid,'as',tograph=asa)
         return
     except AttributeError: # no match
         pass
@@ -314,6 +342,9 @@ def graph_repl_instead(t,clause):
 ####
 ## PRIVATE FUNCTIONS
 ####
+
+# split line into sentences
+def _sentences_(line): return [x.strip() for x in dd.re_sentence.split(line) if x != '']
 
 # find the stem of the action word
 _re_act_wd_ = re.compile(r"(be )?(?:ka|xa)<([\w-]+)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>")

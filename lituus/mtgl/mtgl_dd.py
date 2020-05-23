@@ -22,6 +22,15 @@ __status__ = 'Development'
 import regex as re
 
 ####
+## MISCELLANEOUS
+####
+
+# use with split to break a line into sentences by the period. Grabs all
+# characters upto and including the period
+# TODO: anyway to not include the preceding space on subsequent sentences
+re_sentence = re.compile(r"([^\.]+\.)")
+
+####
 ## LINE TYPES
 ####
 
@@ -485,9 +494,13 @@ re_etb_with = re.compile(
 )
 
 # As permanent enters the battlefield ... i.e. Sewer Nemsis have the form
-# as [permanent] enters the battlefield, [event]
-
+#  as [permanent] enters the battlefield, [event]
 re_as_etb = re.compile(
-    r"^as (.+) xa<enter suffix=s> xq<the> zn<battlefield> (.+)\.?$"
-    #^as ... xa<enter suffix=s> xq<the> zn<battlefield>
+    r"^as (.+) xa<enter(?: suffix=s)> xq<the> zn<battlefield>, (.+)\.$"
+)
+
+# Permanent enters the battlefield as ... i.e.
+#  [Permanent] enters the battlefield as
+re_etb_as = re.compile(
+    r"^(.+) xa<enter(?: suffix=s)> xq<the> zn<battlefield> as (.+)\.$"
 )

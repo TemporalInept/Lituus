@@ -193,7 +193,6 @@ def operand(val,op=False):
     :param op: if true returns operators as well
     :return: list of parameter operands (operators if specified)
     """
-    # TODO: why is '' returned
     if op: return [x for x in mtgl.re_param_delim_wop.split(val) if x != '']
     else: return [x for x in mtgl.re_param_delim_nop.split(val) if x != '']
 

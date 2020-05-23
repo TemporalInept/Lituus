@@ -81,8 +81,7 @@ class MTGCard(object):
     @property
     def oracle(self): return self._card['oracle']
 
-    # TODO: for debugging only
-    @property
+    @property # TODO: for debugging only
     def tag(self): return self._card['tag']
 
     @property
@@ -138,10 +137,10 @@ class MTGCard(object):
         return len(self.color_ident) > 1 if ci else len(self.color) > 1
 
     def is_historic(self):
+        """ returns True if card is historic"""
         return self.is_artifact() | self.is_legendary() | ('Saga' in self.sub_type)
 
     def enters_tapped(self): raise lts.LituusException(lts.EIMPL,"Pending")
-
 
     def enters_tapped_cond(self): raise lts.LituusException(lts.EIMPL,"Pending")
 
