@@ -155,9 +155,10 @@ def graph_triggered(t,pid,line):
         m = dd.re_tgr_line.search(line)
         taid = t.add_node(pid,'triggered-ability',text=line)
         t.add_node(taid,'triggered-preamble',value=m.group(1))
-        t.add_node(taid,'triggered-condition',tograph=m.group(2))
-        t.add_node(taid,'triggered-effect',tograph=m.group(3))
-        if m.group(4): t.add_node(taid,'triggered-instruction',tograph=m.group(4))
+        graph_clause(t,t.add_node(taid,'triggered-condition'),m.group(2))
+        graph_clause(t,t.add_node(taid,'triggered-effect'),m.group(3))
+        if m.group(4):
+            graph_clause(t,t.add_node(taid,'triggered-instruction'),m.group(4))
     except AttributeError:
         raise lts.LituusException(
             lts.EPTRN,"Not a triggered ability ({})".format(line)
@@ -174,12 +175,16 @@ def graph_clause(t,pid,clause):
     # TODO: since the intent is to only graph those clauses that are entirely
     #  replacements and not those that contain one, how do we work this
     if 'cn<instead>' in clause:
-        nid = graph_repl_instead(t,clause)
-        if nid:
-            rid = t.add_node(pid,'replacement-effect')
-            t.add_edge(rid,nid)
-            return
-    t.add_node(pid,'clause',tograph=clause)
+        try:
+            nid = graph_repl_instead(t,clause)
+            if nid:
+                rid = t.add_node(pid,'replacement-effect')
+                t.add_edge(rid,nid)
+                return
+        except lts.LituusException:
+            pass
+
+    t.add_node(pid,'clause',toxt=clause)
 
 ####
 ## REPLACEMENT CLAUSES
@@ -197,7 +202,7 @@ def graph_repl_instead(t,clause):
     # test for if-would-instead
     m = dd.re_if_would_instead.search(clause)
     if m:
-        iid = t.add_ur_node('if-instead-would',text=clause)
+        iid = t.add_ur_node('if-instead-would')
         t.add_node(iid,'thing',tograph=m.group(1))
         t.add_node(iid,'would',tograph=m.group(2))
         t.add_node(iid,'instead',tograph=m.group(3))
@@ -206,7 +211,7 @@ def graph_repl_instead(t,clause):
     # test for if-instead
     m = dd.re_if_instead.search(clause)
     if m:
-        iid = t.add_ur_node('if-instead',text=clause)
+        iid = t.add_ur_node('if-instead')
         t.add_node(iid,'condition',tograph=m.group(1))
         t.add_node(iid,'instead',tograph=m.group(2))
         return iid
@@ -214,7 +219,7 @@ def graph_repl_instead(t,clause):
     # test for if-instead fenced
     m = dd.re_if_instead_fence.search(clause)
     if m:
-        iid = t.add_ur_node('if-instead-fence',text=clause)
+        iid = t.add_ur_node('if-instead-fence')
         t.add_node(iid,'condition',tograph=m.group(1))
         t.add_node(iid,'instead',tograph=m.group(2))
         return iid
@@ -222,7 +227,7 @@ def graph_repl_instead(t,clause):
     # test for if-instead-of clause
     m = dd.re_if_instead_of.search(clause)
     if m:
-        iid = t.add_ur_node('if-instead-of',text=clause)
+        iid = t.add_ur_node('if-instead-of')
         t.add_node(iid,'event',tograph=m.group(1))
         t.add_node(iid,'replacement',tograph=m.group(2))
         t.add_node(iid,'instead-of',tograph=m.group(3))
@@ -231,7 +236,7 @@ def graph_repl_instead(t,clause):
     # test for instead-if clause
     m = dd.re_instead_if.search(clause)
     if m:
-        iid = t.add_ur_node('instead-if',text=clause)
+        iid = t.add_ur_node('instead-if')
         t.add_node(iid,'instead',tograph=m.group(1))
         t.add_node(iid,'condition',tograph=m.group(2))
         return iid
@@ -239,7 +244,7 @@ def graph_repl_instead(t,clause):
     # test for instead-of-if clause
     m = dd.re_instead_of_if.search(clause)
     if m:
-        iid = t.add_ur_node('instead-of-if',text=clause)
+        iid = t.add_ur_node('instead-of-if')
         t.add_node(iid,'replacement', tograph=m.group(1))
         t.add_node(iid,'instead-of',tograph=m.group(2))
         t.add_node(iid,'condition',tograph=m.group(3))
@@ -250,14 +255,28 @@ def graph_repl_instead(t,clause):
     # are separated/identified
     m = dd.re_that_would_instead.search(clause)
     if m:
-        iid = t.add_ur_node('that-would-instead',text=clause)
+        iid = t.add_ur_node('that-would-instead')
         t.add_node(iid,'effect',tograph=m.group(1))
-        try:
-            original,new = _twi_split_(m.group(2))
-        except AttributeError:
-            return None
+        original,new = _twi_split_(m.group(2))
         t.add_node(iid,'original',tograph=original)
         t.add_node(iid,'instead',tograph=new)
+        return iid
+
+    # test for would-instead (timing related)
+    m = dd.re_would_instead.search(clause)
+    if m:
+        iid = t.add_ur_node('would-instead')
+        t.add_node(iid,'condition',tograph=m.group(1))
+        t.add_node(iid,'original',tograph=m.group(2))
+        t.add_node(iid,'instead',tograph=m.group(3))
+        return iid
+
+    # test for instead-of
+    m = dd.re_instead_of.search(clause)
+    if m:
+        iid = t.add_ur_node('instead-of')
+        t.add_node(iid,'replacement',tograph=m.group(1))
+        t.add_node(iid,'instead-of',tograph=m.group(2))
         return iid
 
     return None
@@ -287,7 +306,10 @@ def _twi_split_(txt):
     # occurrence of this word. The 2nd occurrence will be the beginning of new
     # NOTE: some words will "to be" in front
     # NOTE: have only seen lituus action words here but just in case
-    tobe,wd = _re_act_wd_.search(txt).groups()
-    m = _re_2nd_act_(wd,tobe).search(txt)
-    i = m.span()[1] - len(m.group(1))
-    return txt[:i-1],txt[i:]
+    try:
+        tobe,wd = _re_act_wd_.search(txt).groups()
+        m = _re_2nd_act_(wd,tobe).search(txt)
+        i = m.span()[1] - len(m.group(1))
+        return txt[:i-1],txt[i:]
+    except AttributeError:
+        raise lts.LituusException(lts.EPTRN,"Not a twi clause")

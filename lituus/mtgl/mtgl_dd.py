@@ -484,15 +484,20 @@ re_that_would_instead = re.compile(
     r" cn<instead>\.?$"
 )
 
-#re_if_instead = re.compile(
-#    r"cn<if> "
-#    r"(.+)"
-#    r" cn<instead>"
-#)
-#re_tgr_line = re.compile(
-#    r"^tp<(at|whenever|when)> "
-#    r"(.+?), "
-#    r"([^\.]+)(?:\.|\.\"|\.\'\")"
-#    r"(?: (.+)(?:\.|\.\"|\.\'\"))?"
-#    r"$"
-#)
+# would instead i.e. Aegis of honor
+#  [timing] [condition] would [original], [replacment] instead.
+# related to timing
+re_would_instead = re.compile(
+    r"^(.+)"
+    r" cn<would> "
+    r"(.+), (.+)"
+    r" cn<instead>\.?$"
+)
+
+# instead of i.e. Feather, the Redeemed
+# NOTE: these do not have a preceeding if/would
+re_instead_of = re.compile(
+    r"^(.+)"
+    r" cn<instead> of "
+    r"(.+)\.?$"
+)
