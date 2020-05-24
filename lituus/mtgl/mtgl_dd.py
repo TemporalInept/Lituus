@@ -490,17 +490,33 @@ re_skip = re.compile(r"^(?:(.+) )?xa<skip(?: suffix=s)?> (.+)\.?$")
 #  [permanent] enters the battlefield with [counters]
 # these are all counters
 re_etb_with = re.compile(
-    r"^(.+) xa<enter suffix=s> xq<the> zn<battlefield> pr<with> (.+)\.?$"
+    r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> pr<with> (.+)\.?$"
 )
 
 # As permanent enters the battlefield ... i.e. Sewer Nemsis have the form
 #  as [permanent] enters the battlefield, [event]
 re_as_etb = re.compile(
-    r"^as (.+) xa<enter(?: suffix=s)> xq<the> zn<battlefield>, (.+)\.$"
+    r"^as (.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield>, (.+)\.$"
 )
 
 # Permanent enters the battlefield as ... i.e.
 #  [Permanent] enters the battlefield as
 re_etb_as = re.compile(
-    r"^(.+) xa<enter(?: suffix=s)> xq<the> zn<battlefield> as (.+)\.$"
+    r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> as (.+)\.$"
+)
+
+## ENTERS THE BATTLEFIELD CLAUSES (614.1d) - continuous effects
+# TODO: how to not tag etb triggers ??? (Check for comma maybe)
+# Permanent enters the battlefield ...
+# Objects enter the battlefield ...
+# NOTE: have to assume that after above, all remaining ETB fit this
+re_etb_1d = re.compile(
+    r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> (.+)\.$"
+)
+
+## TURNED FACE UP
+# As Permanent is turned face up
+re_turn_up = re.compile(
+    r"^as (.+) is xa<turn suffix=ed> xm<face amplifier=up>, (.+)\.$"
+#as ob<card ref=self> is xa<turn suffix=ed> xm<face amplifier=up>,
 )

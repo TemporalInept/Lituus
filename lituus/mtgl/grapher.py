@@ -187,8 +187,7 @@ def graph_clause(t,pid,clause):
         try:
             nid = graph_repl_instead(t,clause)
             if nid:
-                rid = t.add_node(pid,'replacement-effect')
-                t.add_edge(rid,nid)
+                t.add_edge(t.add_node(pid,'replacement-effect'),nid)
                 return
         except lts.LituusException:
             pass
@@ -196,53 +195,41 @@ def graph_clause(t,pid,clause):
     # skip (614.1b) replacements
     if 'xa<skip' in clause:
         try:
-            m = dd.re_skip.search(clause)
-            if m:
-                # get player and phase
-                ply = m.group(1) if m.group(1) else 'xp<you>'
-                phase = m.group(2)
-
-                # graph the effect
-                sid = t.add_node(t.add_node(pid,'replacement-effect'),'skip')
-                t.add_node(sid,'player',tograph=ply)
-                t.add_node(sid,'phase',tograph=phase)
+            nid = graph_repl_skip(t,clause)
+            if nid:
+                t.add_edge(t.add_node(pid,'replacement-effect'),nid)
                 return
         except lts.LituusException:
             pass
 
-    ## ETB REPLACMENT CLAUSES (614.1c)
-
-    # Permanent ETB with ...
+    # etb1 (614.1c) replacments:
     try:
-        perm,ctrs = dd.re_etb_with.search(clause).groups()
-        eid = t.add_node(t.add_node(pid,'replacement-effect'),'etb-with')
-        t.add_node(eid,'permanent',tograph=perm)
-        t.add_node(eid,'counters',tograph=ctrs)
-        return
-    except AttributeError: # no match
+        nid = graph_repl_etb1(t,clause)
+        if nid:
+            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
+            return
+    except lts.LituusException:
         pass
 
-    # As Permanent ETB ...
+    # etb2 (614.1d) replacements
     try:
-        perm,action = dd.re_as_etb.search(clause).groups()
-        eid = t.add_node(t.add_node(pid,'replacement-effect'),'as-etb')
-        t.add_node(eid,'permanent',tograph=perm)
-        t.add_node(eid,'action',tograph=action)
-        return
-    except AttributeError: # no match
+        nid = graph_repl_etb2(t,clause)
+        if nid:
+            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
+            return
+    except lts.LituusException:
         pass
 
-    # Permanent ETB as
+    # face up (614.1e)
     try:
-        perm,asa = dd.re_etb_as.search(clause).groups()
-        eid = t.add_node(t.add_node(pid,'replacement-effect'),'etb-as')
-        t.add_node(eid,'permanent',tograph=perm)
-        t.add_node(eid,'as',tograph=asa)
-        return
-    except AttributeError: # no match
+        nid = graph_repl_face_up(t,clause)
+        if nid:
+            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
+            return
+    except lts.LituusException:
         pass
 
-    t.add_node(pid,'clause',text=clause)
+    t.add_node(pid, 'clause', text=clause)
 
 ####
 ## REPLACEMENT CLAUSES
@@ -338,6 +325,95 @@ def graph_repl_instead(t,clause):
         return iid
 
     return None
+
+def graph_repl_skip(t,clause):
+    """
+    graphs a skip replacement effect in clause (614.1b)
+    :param t: the tree
+    :param clause: the clause to graph
+    :return: node id of a rootless skip clause
+    """
+    try:
+        ply,phase = dd.re_skip.search(clause).groups()
+        if not ply: ply = 'xp<you'
+        iid = t.add_ur_node('skip')
+        t.add_node(iid,'player',tograph=ply)
+        t.add_node(iid,'phase',tograph=phase)
+        return iid
+    except AttributeError:
+        return None
+
+def graph_repl_etb1(t,clause):
+    """
+    graphs  ETB replacement clauses from (614.1c)
+    :param t: the tree
+    :param clause: the clause to graph
+    :return: node id of the rootless graph or None
+    """
+    # Permanent ETB with ...
+    try:
+        perm,ctrs = dd.re_etb_with.search(clause).groups()
+        iid = t.add_ur_node('etb-with')
+        t.add_node(iid,'permanent',tograph=perm)
+        t.add_node(iid,'counters',tograph=ctrs)
+        return iid
+    except AttributeError: # no match
+        pass
+
+    # As Permanent ETB ...
+    try:
+        perm,action = dd.re_as_etb.search(clause).groups()
+        iid = t.add_ur_node('as-etb')
+        t.add_node(iid,'permanent',tograph=perm)
+        t.add_node(iid,'action',tograph=action)
+        return iid
+    except AttributeError: # no match
+        pass
+
+    # Permanent ETB as
+    try:
+        perm,asa = dd.re_etb_as.search(clause).groups()
+        iid = t.add_ur_node('etb-as')
+        t.add_node(iid,'permanent',tograph=perm)
+        t.add_node(iid,'as',tograph=asa)
+        return iid
+    except AttributeError: # no match
+        pass
+
+    # found nothing
+    return None
+
+def graph_repl_etb2(t,clause):
+    """
+    graphs  ETB replacement clauses from (614.1d)
+    :param t: the tree
+    :param clause: the clause to graph
+    :return: node id of the rootless graph or None
+    """
+    try:
+        perm,effect = dd.re_etb_1d.search(clause).groups()
+        iid = t.add_ur_node('etb-continuous')
+        t.add_node(iid,'permanent',tograph=perm)
+        t.add_node(iid,'effect',tograph=effect)
+        return iid
+    except AttributeError: # no match
+        return None
+
+def graph_repl_face_up(t,clause):
+    """
+    graphs as obj is turned face up (614.1e)
+    :param t: the tree
+    :param clause: the clause to graph
+    :return: node id of the graphed clause or None
+    """
+    try:
+        perm,event = dd.re_turn_up.search(clause).groups()
+        iid = t.add_ur_node('turned-up')
+        t.add_node(iid,'permanent',tograph=perm)
+        t.add_node(iid,'event',tograph=event)
+        return iid
+    except AttributeError:
+        return None
 
 ####
 ## PRIVATE FUNCTIONS
