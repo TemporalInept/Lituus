@@ -215,50 +215,48 @@ def midprocess(txt):
      prepares tagged txt for second pass
        1. replaces spaces inside tags w/ underscore IOT make it a single tag value
        2. moves 'non-' in front of a tag to the negated symbol '¬' inside the tag
-       3. deconflict incorrectly tagged tokens
-       4. move suffixes to inside the tag's prop-list
-       5. set up hanging (a) basic and (b) snow supertypes
-       6. arrange phrases with 'number'
+       3. move suffixes to inside the tag's prop-list
+       4. set up hanging (a) basic and (b) snow supertypes
+       5. arrange phrases with 'number'
         a. arrange phrases of the form op<OP> xq<the> number of ... to read
          op<OP> nu<y>, where nu<y> is the number of ... so that they read the
          same as cards like "As Foretold"
         b. replace "any number of" with nu<z>
         c. remove "are each" if followed by an operator
-       7. replace 'mana cost' as xo<cost type=mana>
+       6. replace 'mana cost' as xo<cost type=mana>
+       7. deconflict incorrectly tagged tokens
     :param txt: tagged oracle txt
     :return: processed oracle txt
     """
     ntxt = mtgl.re_val_join.sub(lambda m: mtgl.val_join[m.group(1)],txt) # 1
     ntxt = mtgl.re_negate_tag.sub(r"\1<¬\2>",ntxt)                       # 2
-    ntxt = deconflict_tags(ntxt)                                         # 3
-    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)                  # 4
-    ntxt = mtgl.re_hanging_basic.sub(r"\1 ch<land>",ntxt)                # 5.a
-    ntxt = mtgl.re_hanging_snow.sub(r"\1 ch<land>",ntxt)                 # 5.b
-    ntxt = mtgl.re_equal_y.sub(r"nu<y>, where nu<y> is \1",ntxt)         # 6.a
-    ntxt = mtgl.re_equal_z.sub(r"nu<z>",ntxt)                            # 6.b
-    ntxt = mtgl.re_are_each.sub(r"",ntxt)                                # 6.c
-    ntxt = mtgl.re_mana_cost.sub(r"xo<cost type=mana\1>",ntxt)            #7
+    ntxt = mtgl.re_suffix.sub(r"\1<\2 suffix=\3>",ntxt)                  # 3
+    ntxt = mtgl.re_hanging_basic.sub(r"\1 ch<land>",ntxt)                # 4.a
+    ntxt = mtgl.re_hanging_snow.sub(r"\1 ch<land>",ntxt)                 # 4.b
+    ntxt = mtgl.re_equal_y.sub(r"nu<y>, where nu<y> is \1",ntxt)         # 5.a
+    ntxt = mtgl.re_equal_z.sub(r"nu<z>",ntxt)                            # 5.b
+    ntxt = mtgl.re_are_each.sub(r"",ntxt)                                # 5.c
+    ntxt = mtgl.re_mana_cost.sub(r"xo<cost type=mana\1>",ntxt)           # 6
+    ntxt = deconflict_tags1(ntxt)                                        # 7
     return ntxt
 
 re_empty_postfix = re.compile(r"\ssuffix=(?=)>")
-def deconflict_tags(txt):
+def deconflict_tags1(txt):
     """
-     deconflicts incorrectly tagged tokens
+    deconflicts incorrectly tagged tokens
     :param txt: oracle txt after initial first pass
     :return: tagged oracle text
     """
     # Tapped, Flipped
-    ntxt = mtgl.re_status.sub(r"st<\2\3>",txt)
+    ntxt = mtgl.re_status.sub(r"st<\1\2 suffix=ed>",txt)
+    ntxt = mtgl.re_status_tap.sub(r"st<\1tap suffix=ed",ntxt)
 
     # phase - can be Status (Time and Tide), Turn Structure (Breath of Fury) or
-    #  action (Ertai's Familiar)
-    ntxt = mtgl.re_status_phase.sub(r"st<phased amplifier=\2>",ntxt)
+    #  action (Ertai's Familiar),
+    ntxt = mtgl.re_status_phase.sub(r"st<phase amplifier=\1 suffix=ed>",ntxt)
     ntxt = mtgl.re_action_phase.sub(r"xa<phase amplifier=\2 suffix=\1>",ntxt)
     ntxt = mtgl.re_ts_phase.sub(r"ts<phase suffix=\1>",ntxt)
-
-    # actions and turn structure may result in empty suffixes fix them here before
-    # moving on
-    ntxt = re_empty_postfix.sub('>',ntxt)
+    ntxt = re_empty_postfix.sub('>', ntxt) # may result in empty suffixes, remove
 
     # Face Up/Down
     ntxt = mtgl.re_status_face.sub(r"st<face amplifier=\1>",ntxt)
@@ -270,14 +268,14 @@ def deconflict_tags(txt):
     # exile is a zone if preceded by a preposition
     ntxt = mtgl.re_zn_exile.sub("zn<exile>",ntxt)
 
+    # Cost is defined as an object but may be an action
+    ntxt = mtgl.re_cost_mana.sub(r"xa<cost\1>",ntxt)
+    ntxt = mtgl.re_cost_num.sub(r"xa<cost\1>",ntxt)
+    ntxt = mtgl.re_cost_aa.sub(r"xa<cost\1>",ntxt)
+    ntxt = mtgl.re_cost_except.sub(r"xa<cost\1>",ntxt)
+
     # take care of misstagged
     ntxt = mtgl.re_misstag.sub(lambda m: mtgl.misstag[m.group(1)],ntxt)
-
-    # Cost is defined as an object but may be an action
-    ntxt = mtgl.re_cost_mana.sub(r"xa<cost>\1",ntxt)
-    ntxt = mtgl.re_cost_num.sub(r"xa<cost>\1",ntxt)
-    ntxt = mtgl.re_cost_aa.sub(r"xa<cost>\1",ntxt)
-    ntxt = mtgl.re_cost_except.sub(r"xa<cost>\1",ntxt)
 
     # Tag combat preceded by from as an object
     ntxt = mtgl.re_from_combat.sub(r"xo<combat>",ntxt)
@@ -458,6 +456,13 @@ def deconflict_tags2(txt):
     # deconflict copy as action vs object (TODO: this could be done in the first
     # deconfliction)
     ntxt = mtgl.re_copy_act.sub(r"xa<copy\2>",ntxt)
+
+    # look at keywords that could be converted to action words i.e. kicked and/or
+    # status i.e. equipped
+    ntxt = mtgl.re_kicker_act.sub(r"xa<kicker suffix=ed>",ntxt)
+    ntxt = mtgl.re_be_kw.sub(r"xa<\1 suffix=ed>",ntxt)
+    ntxt = mtgl.re_kw_status.sub(r"xs<\1 suffix=ed>",ntxt)
+    ntxt = mtgl.re_kw_action.sub(r"xa<\1 suffix=s>",ntxt)
 
     return ntxt
 

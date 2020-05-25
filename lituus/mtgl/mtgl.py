@@ -12,7 +12,7 @@ Defines regexes,strings and helper functions used in the mtgl format
 
 #__name__ = 'mtgl'
 __license__ = 'GPLv3'
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 __date__ = 'May 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -304,8 +304,8 @@ word_hacks = {
     "moving":"moveing","moved":"moveed",
     "paid":"payed",
     "taking":"takeing","took":"takeed",
-    "cycled":"cycleed",
-    #"cycled":"cyclinged", # IOT to match it as the past tense of a keyword
+    #"cycled":"cycleed",
+    "cycled":"cyclinged", # IOT to match it as the past tense of a keyword
     "reducing":"reduceing","reduced":"reduceed",
     "declaring":"declareing","declared":"declareed",
     "has":"haves","had":"haveed","having":"haveing",
@@ -317,6 +317,7 @@ word_hacks = {
     "tapping":"taping","tapped":"taped","untapping":"untaped","untapped":"untaped",
     "flipping":"fliping","flipped":"fliped",
     "phased":"phaseed",
+    "kicked":"kickered"
 }
 word_hack_tkns = '|'.join(word_hacks.keys())
 re_word_hack = re.compile(r"\b({})\b".format(word_hack_tkns))
@@ -697,13 +698,13 @@ re_subtype_land_char = re.compile(
 
 # 205.3j planeswalker types
 subtype_planeswalker_characteristics = [
-    "ajani","aminatou","angrath","arlinn","ashiok","bolas","calix,chandra","dack",
-    "daretti","davriel","domri","dovin","elspeth","estrid","freyalise","garruk",
-    "gideon","huatli","jace","jaya","karn","kasmina","kaya","kiora","koth","liliana",
-    "nahiri","narset","nissa","nixilis","oko","ral","rowan","saheeli","samut",
-    "sarkhan","serra","sorin","tamiyo","teferi","teyo","tezzeret,tibalt","ugin",
-    "venser","vivien","vraska","will","windgrace","wrenn","xenagos","yanggu",
-    "yanling",
+    "ajani","aminatou","angrath","arlinn","ashiok","bolas","calix","chandra",
+    "dack",    "daretti","davriel","domri","dovin","elspeth","estrid","freyalise",
+    "garruk","gideon","huatli","jace","jaya","karn","kasmina","kaya","kiora",
+    "koth","liliana","nahiri","narset","nissa","nixilis","oko","ral","rowan",
+    "saheeli","samut","sarkhan","serra","sorin","tamiyo","teferi","teyo",
+    "tezzeret","tibalt","ugin","venser","vivien","vraska","will","windgrace",
+    "wrenn","xenagos","yanggu","yanling",
 ]
 re_subtype_planeswalker_char = re.compile(
     r"{}".format('|'.join(subtype_planeswalker_characteristics))
@@ -883,7 +884,7 @@ status = ['tap','flip','phase','face']
 lituus_status = [
     'attacking','blocking','defending','transformed','enchanted','equipped',
     'exiled','unattached','attached','activated','triggered','revealed',
-    'suspended',
+    'suspended','kicked','discarded','cycled',
 ]
 
 ####
@@ -921,12 +922,12 @@ re_combat_status_chain = re.compile(
 # (Johan) and (un)blocked will be always be considered a status if not preced by
 # is/is not
 re_combat_status = re.compile(
-    r"(?<!(?:(?:ob|xo|xp)<\w+?>|is|are|was)(?: cn<not>)? )"
+    r"(?<!(?:(?:ob|xo|xp)<\w+?>|is|are|was|be)(?: cn<not>)? )"
     r"xa<((?:un|¬)?attack|block|defend) suffix=ing>"
     r"(?! does cn<not>)"
 )
 re_blocked_status = re.compile(
-    r"(?<!(is|are|was)(?: cn<not>)? )"
+    r"(?<!(is|are|was|be)(?: cn<not>)? )"
     r"xa<(un)?block suffix=ed>"
 )
 
@@ -962,8 +963,27 @@ re_target_obj = re.compile(
 # deconfliction has already occurred in consecutive object handling
 
 # copy followed by a quantifier or 'it' is an action
-# TODO: put in optional suffix=s
 re_copy_act = re.compile(r"(ob<copy( suffix=s)?>)(?= (?:xq<|xo<it>))")
+
+## Keywords that may be actions and/or statuses
+
+# three steps:
+# 1. kicker: (see Tempest Owl) if kicker has a suffix of 'ed' and is preceded
+#  by "was" it is an action
+# 2. be or it: (see Tetravus,Tar Fiend) if a keyword has a suffix of 'ed' and is
+#  preceded by 'be' or 'it', it is an action
+# 3. is: (see Kor Duelist) if a keyword has a suffix of 'ed' and is preceded by
+#  'is' it is a status
+# 4. suffix=s: (see Sidis, Undead Vizier) a keyword with suffix 's' preceded by
+#  a Thing will be considered and action
+re_kicker_act = re.compile(r"(?<=was )kw<kicker suffix=ed>")
+re_be_kw = re.compile(r"(?<=(?:be|xo<it>) )kw<([\w-]+?) suffix=ed>")
+re_kw_status = re.compile(r"(?<=is )kw<([\w-]+?) suffix=ed>")
+re_kw_action = re.compile(
+    r"(?<=(?:xp|ob|xo)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*> )"
+    r"kw<([\w-]+?) suffix=s>"
+)
 
 ####
 ## MID-PASS CLEANUP
@@ -1034,40 +1054,25 @@ re_mana_cost = re.compile(r"xo<mana cost( suffix=s)?>")
 # of 'ed' and it is not preceded by 'is'
 re_status = re.compile(
     r"(?<!is )"
-    r"([kx]a)<(un)?({})>(?=ed)".format('|'.join(status[0:2]))
+    r"(?:[kx]a)<(un)?({}) suffix=ed>".format('|'.join(status[0:2]))
 )
 
-# discarded is a status if it is preceded by the and followed by card Remeber
-# suffixes have not been processed yet
-re_discard_act = re.compile(
-    r"(?<=xq<the> )"
-    r"ka<discard>(?:ed)"
-    r"(?= ob<)"
-)
+# in some cases, if 'tapped' is preceded by an 'is', it is a status but only if
+# it is not followed by a 'for'
+re_status_tap = re.compile(r"(?<=is )(?:[kx]a)<(un)?tap suffix=ed>(?! pr<for>)")
 
 # Phase can be Status, Action or Turn Structure
-re_status_phase = re.compile(r"(xa<phase>ed-)pr<(in|out)>") # all status have a hyphen
-re_action_phase = re.compile(r"xa<phase>(s|ed)? pr<(in|out)>")
+# See Time and Tide for example of phased as a status and as an action
+re_status_phase = re.compile(r"xa<phase suffix=ed>-pr<(in|out)>") # all status have a hyphen
+re_action_phase = re.compile(r"xa<phase(?: suffix=(s|ed))?> pr<(in|out)>")
 re_ts_phase = re.compile(r"xa<phase>(s?)(?=\W)")
 
-# face can be a Status (has a hyphen) or a modifier to an action i.e. Bomat Courier
-# "...exile the top card of your library face down.", generally 'turn'
+# face can be a Status (has a hyphen) i.e. Pull from Eternity or a modifier to
+# an action i.e. Bomat Courier
+#  "...exile the top card of your library face down.", generally 'turn'
+# TODO: this is really a status
 re_status_face = re.compile(r"face-pr<(up|down)>")
 re_mod_face = re.compile(r"face pr<(up|down)>")
-
-####
-## X/Y COUNTER DECONFLICTION
-####
-
-# NOTE: Frankenstein's Monster is the only one that exhibits this behaviour so
-# for now the change is hardcoded in multiverse
-# chained counters mistagged as characteristics i.e. Frankenstein's Monster
-# xq<a> ch<p/t val=+2/+0>, ch<p/t val=+1/+1>, or xo<ctr type=+0/+2>
-#re_ctr_chain = re.compile(
-#    r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>, ){2}"
-#    r"or "
-#    r"(xo<ctr(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)>)"
-#)
 
 ####
 ## TURN (ACTION) DECONFLICTION
@@ -1075,12 +1080,45 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 
 # turn is an action if it is followed by a 'xm' (modifier) or 'xq' (quantifier)
 # NOTE:
-#  1) since suffices are not tagged yet, account for them following the tag close
-#  2) only capture the 'ts' tag id IOT replace it with 'xa' lituus action
+#  1) only capture the 'ts' tag id IOT replace it with 'xa' lituus action
 re_turn_action = re.compile(
     r"(ts)"
     r"(?=<turn(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>(?:r|s|ing|ed|ion|'s|s')? "
     r"x[m|q]<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
+)
+
+####
+## ZONE DECONFLICTION
+####
+# find exile preceded by a preposition
+re_zn_exile = re.compile(r"(?<=pr<\w+?> )(ka<exile>)")
+
+####
+## COST DECONFLICTION
+####
+
+# cost as object vs action
+# Cost is tagged as an object by default. Any 'cost' followed by a mana symbol or
+# "up to" and a mana symbol can be changed as can costs followed by a number or
+# operator number (i.e. Trinisphere)
+# Activated Abilities reduction (Training Grounds, Biomancer's Familiar, Heartstone
+# & Power Artifact)
+# "...mana an ability/object costs to...'
+# After this there are 3 'exceptions' Valiant Changleling, Brutal Suppression,
+#  and Drought
+re_cost_mana = re.compile(
+    r"xo<cost( suffix=s)?>(?= (?:pr<up_to> )?{(?:[0-9wubrgscpx\/]+)})"
+)
+re_cost_num = re.compile(
+    r"xo<cost( suffix=s)?>(?= (?:op<[⊕⋖⋗≤≥≡]> )?nu<(?:[0-9wubrgscpx\/]+)>)"
+)
+re_cost_aa = re.compile(
+    r"(?<=(?:ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>) )"
+    r"xo<cost( suffix=s)?>"
+)
+re_cost_except = re.compile( # Drought and Brutal Suppresion and Valiant Changeling
+    r"xo<cost( suffix=s)?>(?= (?:xq<a> xq<additional>|by more than))"
 )
 
 ####
@@ -1099,41 +1137,17 @@ misstag = {
 misstag_tkns = '|'.join(misstag.keys())
 re_misstag = re.compile(r"({})".format(misstag_tkns))
 
-# cost as object vs action
-# Cost is tagged as an object by default. Any 'cost' followed by a mana symbol or
-# "up to" and a mana symbol can be changed as can costs followed by a number or
-# operator number (i.e. Trinisphere)
-# Activated Abilities reduction (Training Grounds, Biomancer's Familiar, Heartstone)
-# "...mana an ability costs to...'
-# After this there are 3 'exceptions' Valiant Changleling, Brutal Suppression,
-#  and Drought
-# NOTE:
-#  1) since suffices are not tagged yet, account for them following the tag close
-re_cost_mana = re.compile(
-    r"xo<cost>(r|s|ing|ed|ion|'s|s')?(?= (?:pr<up_to> )?{(?:[0-9wubrgscpx\/]+)})"
-)
-re_cost_num = re.compile(
-    r"xo<cost>(r|s|ing|ed|ion|'s|s')?(?= (?:op<[⊕⋖⋗≤≥≡]> )?nu<(?:[0-9wubrgscpx\/]+)>)"
-)
-re_cost_aa = re.compile(
-    r"(?<=xo<mana> xq<a> ob<ability> )xo<cost>(r|s|ing|ed|ion|'s|s')?"
-)
-re_cost_except1 = re.compile( # Drought and Brutal Suppresion
-    r"xo<cost>(r|s|ing|ed|ion|'s|s')?(?= xq<a> xq<additional>)"
-)
-re_cost_except = re.compile( # Drought and Brutal Suppresion and Valiant Changeling
-    r"xo<cost>(r|s|ing|ed|ion|'s|s')?(?= (?:xq<a> xq<additional>|by more than))"
-)
-
 # from combat find untagged combat preceded by from
 re_from_combat = re.compile(r"(?<=pr<from> )combat")
 
 # finds phrase tapped and attacking (suffixes have not been handled yet)
-re_tna = re.compile(r"(?<=st<tapped> and )(xa)(?=<attack>ing)")
+#re_tna = re.compile(r"(?<=st<tapped> and )(xa)(?=<attack>ing)")
 
-# find exile preceded by a preposition
-re_zn_exile = re.compile(
-    r"(?<=pr<\w+?> )(ka<exile>)"
+# discarded is a status if it is preceded by the and followed by card
+re_discard_act = re.compile(
+    r"(?<=xq<the> )"
+    r"ka<discard>(?:ed)"
+    r"(?= ob<)"
 )
 
 ####

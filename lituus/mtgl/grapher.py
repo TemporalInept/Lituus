@@ -229,6 +229,9 @@ def graph_clause(t,pid,clause):
     except lts.LituusException:
         pass
 
+    # applied to a source (614.2, 609,7)
+    if re.compile(r"^cn<if>").search(clause): print("{}\n".format(clause))
+
     t.add_node(pid, 'clause', text=clause)
 
 ####

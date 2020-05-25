@@ -514,9 +514,27 @@ re_etb_1d = re.compile(
     r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> (.+)\.$"
 )
 
-## TURNED FACE UP
+## TURNED FACE UP (614.1e)
 # As Permanent is turned face up
 re_turn_up = re.compile(
     r"^as (.+) is xa<turn suffix=ed> xm<face amplifier=up>, (.+)\.$"
-#as ob<card ref=self> is xa<turn suffix=ed> xm<face amplifier=up>,
 )
+
+## (614.2) applying to damage from a source
+# [source] would deal damage to [target], prevent that damage
+# TODO: some of these have a sequence preceding, have to not graph the sequence
+# TODO: some have a sequence following the target before the comma
+# not to be confused with if-would-insteads
+# if [object] would [event a], [event b]
+re_if_would = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.$")
+re_repl_dmg = re.compile(
+    r"^(.+)"
+    r" cn<would> xa<deal> ef<damage> pr<to> "
+    r"(.+)"
+    r", xa<prevent> xq<that> ef<damage>\.$"
+)
+
+
+####
+## TEST SPACE
+####
