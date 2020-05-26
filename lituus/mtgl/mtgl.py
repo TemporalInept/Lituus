@@ -8,6 +8,7 @@ Foundation, either version 3 of the License, or (at your option) any later
 version.
 
 Defines regexes,strings and helper functions used in the mtgl format
+
 """
 
 #__name__ = 'mtgl'

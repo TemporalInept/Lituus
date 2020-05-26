@@ -372,6 +372,7 @@ def graph_conditional(t,clause):
         cond = dd.re_if_cond_nocost_apc.search(clause).group(1)
         iid = t.add_ur_node('if-cond-no-cost')
         t.add_node(iid,'condition',tograph=cond)
+
         return iid
     except (AttributeError,IndexError):
         pass
