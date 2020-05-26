@@ -15,16 +15,18 @@ Top level directory for MTG card oracle parsing and graphing
 Contains:
  mtgl.py - defines regex, string replacements etc for parsing/processin mtg oracle
   text
- tagger.py - a first-pass parser, tagging mtg oracle text
+ mtgl_dd.py - defines mtgl data dictionary for the grapher
+ mtgltag.py - defines functions to work with mtgl tags
+ tagger.py - tagging mtg oracle text
  lexer.py - tokenizes the tagged text
- parser.py - parses tagged and tokeneized oracle text and graphs it
+ grapher.py - parses the tagged text and graphs it
  mtgt.py - defines the MTGTree (a wrapper around a networkx rooted, ordered DAG)
 """
 
 #__name__ = 'mtgl'
 __license__ = 'GPLv3'
-__version__ = '0.1.1'
-__date__ = 'June 2019'
+__version__ = '0.1.2'
+__date__ = 'May 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'

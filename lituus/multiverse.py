@@ -31,10 +31,7 @@ import lituus.mtg as mtg
 import lituus.pack as pack
 import lituus.mtgl.mtgl as mtgl
 import lituus.mtgl.tagger as tagger
-import lituus.mtgl.lexer as lexer
-import lituus.mtgl.parser as parser
 import lituus.mtgl.grapher as grapher
-import lituus.mtgl.mtgt as mtgt
 import lituus.mtgcard as mtgcard
 
 # file paths and urls

@@ -565,7 +565,6 @@ re_if_cond_nocost_apc = re.compile(
      r" xo<it suffix='s> xo<cost type=mana>\.?$"
 )
 
-
 # TODO: look at Reverent Silence for another APC wording
 
 ####
