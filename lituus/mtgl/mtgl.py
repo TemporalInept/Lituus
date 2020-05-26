@@ -359,7 +359,7 @@ lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that is',
     'that are','that','additional','those','these','their','the','extra','first',
     'second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth',
-    'half','twice','new','single','same','next',
+    'half','twice','new','single','same','next','last',
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -1020,7 +1020,7 @@ val_join = {
     "living weapon":"living_weapon","totem armor":"totem_armor",
     "color identity":"color_identity",#"mana cost":"mana_cost",
     "amount of":"amount_of","that is":"that_is","that are":"that_are",
-    "life total":"life_total",
+    "life total":"life_total","rather than":"rather_than",
 }
 val_join_tkns = '|'.join(val_join.keys())
 re_val_join = re.compile(r"(?<=[<=])({})(?=>)".format(val_join_tkns))

@@ -192,6 +192,16 @@ def graph_clause(t,pid,clause):
         except lts.LituusException:
             pass
 
+    # before moving on, check for any remaining conditionals
+    if clause.startswith('cn<if>'):
+        try:
+            nid = graph_conditional(t,clause)
+            if nid:
+                t.add_edge(t.add_node(pid,'conditional'),nid)
+                return
+        except lts.LituusException:
+            pass
+
     # skip (614.1b) replacements
     if 'xa<skip' in clause:
         try:
@@ -328,6 +338,45 @@ def graph_repl_instead(t,clause):
         return iid
 
     return None
+
+def graph_conditional(t,clause):
+    """
+    graphs decision points starting with 'if'
+    :param t: the tree
+    :param clause: the clause to graph
+    :return: node id of the rootless decsion point or None
+    """
+    # if a player does...
+    try:
+        ply,neg,event = dd.re_if_ply_does.search(clause).groups()
+        iid = t.add_ur_node('if-player-does')
+        t.add_node(iid,'player',tograph=ply)
+        t.add_node(iid,'decision',value='does' if not neg else 'does-not')
+        t.add_node(iid,'event',tograph=event)
+        return iid
+    except AttributeError:
+        pass
+
+    # if [condition], you may [action] rather than pay [self] mana cost
+    try:
+        cond,act = dd.re_if_cond_act_apc.search(clause).groups()
+        iid = t.add_ur_node('if-cond-apc')
+        t.add_node(iid,'condition',tograph=cond)
+        t.add_node(iid,'action',tograph=act)
+        return iid
+    except AttributeError:
+        pass
+
+    # if [condition], you may cast [self] without paying it's mana cost
+    try:
+        cond = dd.re_if_cond_nocost_apc.search(clause).group(1)
+        iid = t.add_ur_node('if-cond-no-cost')
+        t.add_node(iid,'condition',tograph=cond)
+        return iid
+    except (AttributeError,IndexError):
+        pass
+
+    return t.add_ur_node('unknown-cond',tograph=clause)
 
 def graph_repl_skip(t,clause):
     """

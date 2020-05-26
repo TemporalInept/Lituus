@@ -539,9 +539,33 @@ re_repl_dmg = re.compile(
     r", xa<prevent> xq<that> ef<damage>\.$"
 )
 
-## DECISION POINTS
-#  if [player] do|does [not]?,
-re_dec_pt = re.compile(r"^cn<if> (.+) (do(?:es)?)(?: (cn<not>))?,")
+## CONDITIONALS
+# start with an 'if'
+
+#  if [player] do|does [not]?, [event]
+re_if_ply_does = re.compile(r"^cn<if> (.+) do(?:es)?(?: (cn<not>))?, (.+)\.?$")
+
+# alternate playing costs (APC) (118.9)
+# Alternate costs are usually phrased:
+#  You may [action] rather than pay [this object’s] mana cost,
+# and
+#  You may cast [this object] without paying its mana cost.
+
+# here we consider APC that start with an 'if
+# if [condition], you may [action] rather than pay object's mana cost
+re_if_cond_act_apc = re.compile(
+    r"^cn<if> (.+), xp<you> cn<may> (.+)"
+    r" cn<rather_than> xa<pay> ob<card ref=self suffix='s> xo<cost type=mana>\.?$"
+)
+
+# if [condition], you may cast [this object] without paying its mana cost
+re_if_cond_nocost_apc = re.compile(
+    r"^cn<if> (.+),"
+    r" xp<you> cn<may> ka<cast> ob<card ref=self> pr<without> xa<pay suffix=ing>"
+     r" xo<it suffix='s> xo<cost type=mana>\.?$"
+)
+
+# TODO: look at Reverent Silence for another APC wording
 
 ####
 ## TEST SPACE
