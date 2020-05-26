@@ -60,18 +60,26 @@ def graph(dcard):
                 for ktype,kw,param in dd.re_kw_clause.findall(line):
                     graph_keyword(t,kwid,kw,ktype,param)
             else:
-                if dd.re_act_check.search(line): graph_activated(t,parent,line)
+                if 'Instant' in dcard['type'] or 'Sorcery' in dcard['type']:
+                    graph_clause(t,t.add_node(parent,'spell-line'),line)
+                elif dd.re_act_check.search(line): graph_activated(t,parent,line)
                 elif dd.re_tgr_check.search(line): graph_triggered(t,parent,line)
-                else:
+                else: graph_clause(t,t.add_node(parent,'static-line'),line)
+                #if dd.re_act_check.search(line): graph_activated(t,parent,line)
+                #elif dd.re_tgr_check.search(line): graph_triggered(t,parent,line)
+                #else:
+                #    if 'Instant' in dcard['type']: pass
+                #    elif 'Sorcery' in dcard['type']: pass
+                #    else: graph_clause(t,)
                     # for the rest, determine line type & create a line node
-                    if 'Instant' in dcard['type']: ltype = 'spell-line'
-                    elif 'Sorcery' in dcard['type']: ltype = 'spell-line'
-                    else: ltype = 'static-line'
-                    lid = t.add_node(parent,ltype)
+                    #if 'Instant' in dcard['type']: ltype = 'spell-line'
+                    #elif 'Sorcery' in dcard['type']: ltype = 'spell-line'
+                    #else: ltype = 'static-line'
+                    #lid = t.add_node(parent,ltype)
 
                     # then graph each line sentence by sentence
-                    for s in _sentences_(line):
-                        graph_clause(t,t.add_node(lid,'sentence'),s)
+                    #for s in _sentences_(line):
+                    #    graph_clause(t,t.add_node(lid,'sentence'),s)
         except RuntimeError:
             # For Debugging Purposes
             print("{} {}\n".format(dcard['name'],line))
@@ -143,8 +151,8 @@ def graph_activated(t,pid,line):
         # split the line into cost and effect graph each separately
         cost,effect = dd.re_act_line.search(line).groups()
         aaid = t.add_node(pid,'activated-ability')
-        graph_clause(t,t.add_node(aaid,'activated-cost',tograph=cost),cost)
-        graph_clause(t,t.add_node(aaid,'activated-effect',tograph=effect),effect)
+        graph_clause(t,t.add_node(aaid,'activated-cost'),cost)
+        graph_clause(t,t.add_node(aaid,'activated-effect'),effect)
     except AttributeError:
         raise lts.LituusException(
             lts.EPTRN,"Not an activated ability ({})".format(line)
@@ -178,6 +186,17 @@ def graph_clause(t,pid,clause):
     :param pid: parent of the line
     :param clause: the tagged text to graph
     """
+    # break the clause on periods into sentences and graph the sentences
+    for s in [x.strip() for x in dd.re_sentence.split(clause) if x != '']:
+        graph_sentence(t,t.add_node(pid,'sentence'),s)
+
+def graph_sentence(t,pid,clause):
+    """
+    graphs the sentence under parent pid of tree t
+    :param t: the tree
+    :param pid: parent of the line
+    :param clause: the sentence to graph
+    """
     # starting high up, look for replacement effects
     # TODO: since the intent is to only graph those clauses that are entirely
     #  replacements and not those that contain one, how do we work this
@@ -192,7 +211,9 @@ def graph_clause(t,pid,clause):
         except lts.LituusException:
             pass
 
-    # before moving on, check for any remaining conditionals
+    # before moving on, check for any conditionals that start with an 'if',
+    # NOTE: this will also grab some 614.2 damage prevention from a source of
+    #  the form if [source] would [A], [B]
     if clause.startswith('cn<if>'):
         try:
             nid = graph_conditional(t,clause)
@@ -239,10 +260,10 @@ def graph_clause(t,pid,clause):
     except lts.LituusException:
         pass
 
-    # applied to a source (614.2, 609,7)
+    # applied to a source (614.2, 609,7) # TODO:
     #if re.compile(r"^cn<if>").search(clause): print("{}\n".format(clause))
 
-    t.add_node(pid, 'clause', text=clause)
+    t.add_node(pid,'clause',tograph=clause)
 
 ####
 ## REPLACEMENT CLAUSES
@@ -286,7 +307,7 @@ def graph_repl_instead(t,clause):
     m = dd.re_if_instead_of.search(clause)
     if m:
         iid = t.add_ur_node('if-instead-of')
-        t.add_node(iid,'event',tograph=m.group(1))
+        t.add_node(iid,'action',tograph=m.group(1))
         t.add_node(iid,'replacement',tograph=m.group(2))
         t.add_node(iid,'instead-of',tograph=m.group(3))
         return iid
@@ -346,13 +367,34 @@ def graph_conditional(t,clause):
     :param clause: the clause to graph
     :return: node id of the rootless decsion point or None
     """
+    # damage prevention if [object/source] would [old], [new]
+    try:
+        src,old,new = dd.re_if_would.search(clause).groups()
+        iid = t.add_ur_node('damage-repl-if-would')
+        t.add_node(iid,'source',tograph=src)
+        t.add_node(iid,'damage',tograph=old)
+        t.add_node(iid,'prevention',tograph=new)
+        return iid
+    except AttributeError:
+        pass
+
     # if a player does...
     try:
-        ply,neg,event = dd.re_if_ply_does.search(clause).groups()
+        ply,neg,act = dd.re_if_ply_does.search(clause).groups()
         iid = t.add_ur_node('if-player-does')
         t.add_node(iid,'player',tograph=ply)
         t.add_node(iid,'decision',value='does' if not neg else 'does-not')
-        t.add_node(iid,'event',tograph=event)
+        t.add_node(iid,'action',tograph=act)
+        return iid
+    except AttributeError:
+        pass
+
+    # if a player cannot...
+    try:
+        ply,act = dd.re_if_ply_cant.search(clause).groups()
+        iid = t.add_ur_node('if-player-cannot')
+        t.add_node(iid,'player',tograph=ply)
+        t.add_node(iid,'action',tograph=act)
         return iid
     except AttributeError:
         pass
@@ -374,6 +416,32 @@ def graph_conditional(t,clause):
         t.add_node(iid,'condition',tograph=cond)
         return iid
     except (AttributeError,IndexError):
+        pass
+
+    # alternate phrasing of APC if-cond-apc (and Bolas's Citadel)
+    try:
+        cond,act1,act2 = dd.re_if_cond_act_apc.search(clause).groups()
+        if act1:
+            # Bolas's Citadel
+            iid = t.add_ur_node('if-cond-alt-cost')
+            t.add_node(iid,'condition',tograph=cond)
+            t.add_node(iid,'alt-cost',tograph=act1)
+        else:
+            # alternate phrase
+            iid = t.add_ur_node('if-cond-apc')
+            t.add_node(iid,'condition',tograph=cond)
+            t.add_node(iid,'action',tograph=act2)
+        return iid
+    except AttributeError:
+        pass
+
+    try:
+        cond,act = dd.re_if_cond_act.search(clause).groups()
+        iid = t.add_ur_node('if-cond-action')
+        t.add_node(iid,'condition',tograph=cond)
+        t.add_node(iid,'action',tograph=act)
+        return iid
+    except AttributeError:
         pass
 
     return t.add_ur_node('unknown-cond',tograph=clause)
@@ -459,10 +527,10 @@ def graph_repl_face_up(t,clause):
     :return: node id of the graphed clause or None
     """
     try:
-        perm,event = dd.re_turn_up.search(clause).groups()
+        perm,act = dd.re_turn_up.search(clause).groups()
         iid = t.add_ur_node('turned-up')
         t.add_node(iid,'permanent',tograph=perm)
-        t.add_node(iid,'event',tograph=event)
+        t.add_node(iid,'action',tograph=act)
         return iid
     except AttributeError:
         return None
@@ -470,9 +538,6 @@ def graph_repl_face_up(t,clause):
 ####
 ## PRIVATE FUNCTIONS
 ####
-
-# split line into sentences
-def _sentences_(line): return [x.strip() for x in dd.re_sentence.split(line) if x != '']
 
 # find the stem of the action word
 _re_act_wd_ = re.compile(r"(be )?(?:ka|xa)<([\w-]+)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>")

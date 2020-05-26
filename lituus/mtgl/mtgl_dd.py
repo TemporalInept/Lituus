@@ -449,7 +449,7 @@ re_if_instead = re.compile(r"^cn<if> (.+) cn<instead> (.+)\.?$")
 re_if_instead_fence = re.compile(r"^cn<if> (.+), (.+) cn<instead>\.?$")
 
 # if instead of i.e. Pale Moon
-#   if [event], [replacement] instead of [original]
+#   if [action], [replacement] instead of [original]
 re_if_instead_of = re.compile(r"^cn<if> (.+), (.+) cn<instead> of (.+)\.?$")
 
 # instead if i.e. Crown of Empires
@@ -504,7 +504,7 @@ re_as_etb = re.compile(
     r"^as (.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield>, (.+)\.$"
 )
 
-# Permanent enters the battlefield as ... i.e.
+# Permanent enters the battlefield as ... i.e. Clonne
 #  [Permanent] enters the battlefield as
 re_etb_as = re.compile(
     r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> as (.+)\.$"
@@ -512,7 +512,7 @@ re_etb_as = re.compile(
 
 ## ENTERS THE BATTLEFIELD CLAUSES (614.1d) - continuous effects
 # TODO: how to not tag etb triggers ??? (Check for comma maybe)
-# Permanent enters the battlefield ...
+# Permanent enters the battlefield ... i.e. Jungle Hollow
 # Objects enter the battlefield ...
 # NOTE: have to assume that after above, all remaining ETB fit this
 re_etb_1d = re.compile(
@@ -520,7 +520,7 @@ re_etb_1d = re.compile(
 )
 
 ## TURNED FACE UP (614.1e)
-# As Permanent is turned face up
+# As Permanent is turned face up i.e. Gift of Doom
 re_turn_up = re.compile(
     r"^as (.+) is xa<turn suffix=ed> xm<face amplifier=up>, (.+)\.$"
 )
@@ -530,8 +530,13 @@ re_turn_up = re.compile(
 # TODO: some of these have a sequence preceding, have to not graph the sequence
 # TODO: some have a sequence following the target before the comma
 # not to be confused with if-would-insteads
-# if [object] would [event a], [event b]
+
+# similar to 'instead' but is a replacement under 614.2 i.e. Sphere of Purity
+# this will catch regenerate i.e. Mossbridge Troll as well as prevention
+# if [source] would [old], [new]
 re_if_would = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.$")
+
+# TODO: not currently graphed
 re_repl_dmg = re.compile(
     r"^(.+)"
     r" cn<would> xa<deal> ef<damage> pr<to> "
@@ -541,31 +546,54 @@ re_repl_dmg = re.compile(
 
 ## CONDITIONALS
 # start with an 'if'
+# TODO: There are multiple "if you search your library this way, shuffle it."
+#  Could just graph these as a shuffle node but??
 
-#  if [player] do|does [not]?, [event]
+# if [player] do|does [not]?, [action] i.e. Decree of Justice
 re_if_ply_does = re.compile(r"^cn<if> (.+) do(?:es)?(?: (cn<not>))?, (.+)\.?$")
+
+# if [player] cannot, [action] i.e. Brain Pry
+re_if_ply_cant = re.compile(r"^cn<if> (.+) cn<cannot>, (.+)\.?$")
+
+# if [object] would [A], [B]
 
 # alternate playing costs (APC) (118.9)
 # Alternate costs are usually phrased:
 #  You may [action] rather than pay [this object’s] mana cost,
 # and
 #  You may cast [this object] without paying its mana cost.
+# For now, we are only looking at the above that start with 'if'
 
-# here we consider APC that start with an 'if
-# if [condition], you may [action] rather than pay object's mana cost
+# if [condition], you may [action] rather than pay object's mana cost i.e. Snuff Out
 re_if_cond_act_apc = re.compile(
     r"^cn<if> (.+), xp<you> cn<may> (.+)"
     r" cn<rather_than> xa<pay> ob<card ref=self suffix='s> xo<cost type=mana>\.?$"
 )
 
-# if [condition], you may cast [this object] without paying its mana cost
+# if [condition], you may cast [object] without paying its mana cost i.e. Massacre
 re_if_cond_nocost_apc = re.compile(
     r"^cn<if> (.+),"
     r" xp<you> cn<may> ka<cast> ob<card ref=self> pr<without> xa<pay suffix=ing>"
      r" xo<it suffix='s> xo<cost type=mana>\.?$"
 )
 
-# TODO: look at Reverent Silence for another APC wording
+# alternate phrasing found in four card (Bolas's Citadel, Skyshroud Cutter,
+# Reverent Silence and Invigorate)
+#  if [condition], [action]? rather than pay [object]'s mana cost[, you may [action]]?
+# NOTE:
+#  1. only Bolas's Citadel has the intermediate action immediately following
+#  the condition instead of the trailing the action (more in common with K'rrik)
+#  2. the others are merely differently worded versions of if_cond_act_apc
+re_if_cond_alt_act_apc = re.compile(
+    r"^cn<if> (.+), (.+)?"
+    r"cn<rather_than> xa<pay> (?:.+) xo<cost type=mana>"
+    r"(?:, (.+))?\.?$"
+)
+
+# generic TODO: look at these for any additional patterns
+#  if [condition], [action]
+# We want to break on the first comma, see Mythos of Vadrok
+re_if_cond_act = re.compile(r"^cn<if> ([^,]+), (.+)\.?$")
 
 ####
 ## TEST SPACE
