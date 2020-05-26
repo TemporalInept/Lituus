@@ -189,8 +189,9 @@ re_kw_splice = re.compile(
     r"(?: ((?:{[0-9wubrgscpx\/]+})+)|—(.+?)$)"
 )
 
-# forecast (702.56) forecast — [actiavated ability]
-re_kw_forecast = re.compile(r"— (.+?)$")
+# forecast (702.56) forecast — [actiavated ability] and
+# companion (702.139) companion - condition
+re_kw_statement = re.compile(r" ?— (.+?)$")
 
 # suspend (702.61) suspend [N] — [cost] [optional inst]
 re_kw_suspend = re.compile(
@@ -261,7 +262,7 @@ kw_param = {
     'bloodthirst':re_kw_n,           # 702.53
     'haunt':re_kw_empty,             # 702.54
     'replicate':re_kw_cost,          # 702.55
-    'forecast':re_kw_forecast,       # 702.56
+    'forecast':re_kw_statement,      # 702.56
     'graft':re_kw_n,                 # 702.57
     'recover':re_kw_cost,            # 702.58
     'ripple':re_kw_n,                # 702.59
@@ -343,6 +344,8 @@ kw_param = {
     'riot':re_kw_empty,              # 702.135
     'spectacle':re_kw_cost,          # 702.136
     'escape':re_kw_cost,             # 702.137
+    'companion':re_kw_statement,     # 702.138
+    'mutate':re_kw_cost,             # 702.139
 }
 
 # assigns expected group names from regex match
@@ -417,6 +420,8 @@ kw_param_template = {
     'afterlife':('n',),
     'spectacle':('cost','cost'),
     'escape':('cost','cost'),
+    'companion':('condition',),
+    'mutate':('cost','cost'),
 }
 
 ####
@@ -534,6 +539,9 @@ re_repl_dmg = re.compile(
     r", xa<prevent> xq<that> ef<damage>\.$"
 )
 
+## DECISION POINTS
+#  if [player] do|does [not]?,
+re_dec_pt = re.compile(r"^cn<if> (.+) (do(?:es)?)(?: (cn<not>))?,")
 
 ####
 ## TEST SPACE

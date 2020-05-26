@@ -12,7 +12,7 @@ Defines regexes,strings and helper functions used in the mtgl format
 
 #__name__ = 'mtgl'
 __license__ = 'GPLv3'
-__version__ = '0.1.6'
+__version__ = '0.1.7'
 __date__ = 'May 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -167,6 +167,7 @@ def re_self_ref(name):
 # The majority of these can be found in the phrase
 #   "create a token ... named TOKEN_NAME" except Marit Lage, Kaldra which have
 # the form "create TOKEN NAME, .... token."
+# Updated 25-May-20 to IKO
 token_names = [
     # Tokens that have been printed as a non-token card.
     #  See https://mtg.gamepedia.com/Token/Full_List#Printed_as_non-token
@@ -179,7 +180,7 @@ token_names = [
     "Minor Demon","Urami","Karox Bladewing","Ashaya, the Awoken World",
     "Lightning Rager","Stoneforged Blade","Tuktuk the Returned","Mowu","Stangg Twin",
     "Butterfly","Hornet","Wasp","Wirefly","Ragavan","Kelp","Wood",
-    "Wolves of the Hunt","Voja, Friend to Elves","Tombspawn"
+    "Wolves of the Hunt","Voja, Friend to Elves","Tombspawn","Feather"
 ]
 TN2R = {n:md5(n.encode()).hexdigest() for n in token_names}
 
@@ -304,7 +305,6 @@ word_hacks = {
     "moving":"moveing","moved":"moveed",
     "paid":"payed",
     "taking":"takeing","took":"takeed",
-    #"cycled":"cycleed",
     "cycled":"cyclinged", # IOT to match it as the past tense of a keyword
     "reducing":"reduceing","reduced":"reduceed",
     "declaring":"declareing","declared":"declareed",
@@ -520,9 +520,10 @@ re_trigger = re.compile(r"\b(at|whenever|when)\b")
 ## COUNTERS
 ####
 
-# counters 122.1 Updated 24-Jan-20 with Theros Beyond Death
+# counters 122.1 Updated 25-May-20 with IKO
 # two types p/t counters i.e +/-M/+/-N or a named counters (122 total ATT)
 # see (https://mtg.gamepedia.com/Counter_(marker)/Full_List)
+# Ikoria introduced keyword counters which will be kept separate
 # NOTE: this must be done prior to keyword actions processing
 re_pt_ctr = re.compile(r"(\+|-)nu<(\d+)>/(\+|-)nu<(\d+)> (counters*)\b")
 named_counters = [
@@ -533,37 +534,45 @@ named_counters = [
     'fate','feather','filibuster','flood','flying','fungus','fuse','gem','glyph',
     'gold','growth','hatchling','healing','hit','hoofprint','hour','hourglass',
     'hunger','ice','incubation','infection','intervention','isolation','javelin',
-    'ki','level','lore','loyalty','luck','magnet','manifestation','mannequin',
-    'mask','matrix','mine','mining','mire','music','muster','net','omen','ore',
-    'page','pain','paralyzation','petal','petrification','phylactery','pin',
-    'plague','poison','polyp','pressure','prey','pupa','quest','rust','scream',
-    'shell','shield','silver','shred','sleep','sleight','slime','slumber','soot',
-    'spark','spore','storage','strife','study','task','theft','tide','time','tower',
-    'training','trap','treasure','velocity','verse','vitality','volatile','wage',
-    'winch','wind','wish'
+    'ki','knowledge','level','lore','loyalty','luck','magnet','manifestation',
+    'mannequin','mask','matrix','mine','mining','mire','music','muster','net',
+    'omen','ore','page','pain','paralyzation','petal','petrification','phylactery',
+    'pin','plague','poison','polyp','pressure','prey','pupa','quest','rust',
+    'scream','shell','shield','silver','shred','sleep','sleight','slime','slumber',
+    'soot','spark','spore','storage','strife','study','task','theft','tide','time',
+    'tower','training','trap','treasure','velocity','verse','vitality','volatile',
+    'wage','winch','wind','wish',
+
 ]
 named_ctr_tkns = '|'.join(named_counters)
 re_named_ctr = re.compile(r"\b({}) counter(s)?\b".format(named_ctr_tkns))
+iko_counters = [
+    'deathtouch','double strike','first strike','flying','hexproof',
+    'indestructible','lifelink','menace','reach','trample','vigilance',
+]
+iko_ctr_tkns = '|'.join(iko_counters)
+re_iko_ctr = re.compile(r"\b({}) counter\b".format(iko_ctr_tkns))
 
 ####
 ## ABILITY WORDS, KEYWORDS, KEYWORD ACTIONS
 ####
 
-ability_words = [ # ability words 207.2c Updated 24-Jan-20 with Theros Beyond Death
+ability_words = [ # ability words 207.2c Updated 25-May-20 with IKO
     "adamant","addendum","battalion","bloodrush","channel","chroma","cohort",
     "constellation","converge","council's dilemma","delirium","domain","eminence",
-    "enrage","fateful hour","ferocious","formidable","grandeur","hellbent","heroic",
-    "imprint","inspired","join forces","kinship","landfall","lieutenant","metalcraft",
-    "morbid","parley","radiance","raid","rally","revolt","spell mastery","strive",
-    "sweep","tempting offer","threshold","undergrowth","will of the council"
+    "enrage","fateful hour","ferocious","formidable","grandeur","hellbent",
+    "heroic","imprint","inspired","join forces","kinship","landfall","lieutenant",
+    "metalcraft","morbid","parley","radiance","raid","rally","revolt",
+    "spell mastery","strive","sweep","tempting offer","threshold","undergrowth",
+    "will of the council"
 ]
 aw_tkns = '|'.join(ability_words)
 re_aw = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)"
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→=\w ]*)"
     r"({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(aw_tkns)
 )
 
-keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Jan-20
+keyword_actions = [ # (legal) Keyword actions 701.2 - 701.43 Updated IKO 25-May-20
     'activate','attach','unattach','cast','counter','create','destroy','discard',
     'double','exchange','exile','fight','play','regenerate','reveal','sacrifice',
     'scry','search','shuffle','tap','untap','fateseal','clash','abandon',
@@ -573,11 +582,11 @@ keyword_actions = [ # (legal) Keyword actions 701.2 through 701.43 Updated 24-Ja
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)"
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→=\w ]*)"
     r"({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(kw_act_tkns)
 )
 
-keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
+keywords = [ # (legal) Keyword Abilties 702.2 - 702,139 Updated IKO 25-May-20
     'deathtouch','defender','double strike','enchant','equip','first strike',
     'flash','flying','haste','hexproof','indestructible','intimidate','landwalk',
     'lifelink','protection','reach','shroud','trample','vigilance','banding',
@@ -594,20 +603,20 @@ keywords = [ # (legal) Keyword Abilties 702.2 through 702,137 Updated 24-Jan-20
     'level up','rebound','totem armor','infect','battle cry','living weapon',
     'undying','miracle','soulbond','overload','scavenge','unleash','cipher',
     'evolve','extort','fuse','bestow','tribute','dethrone','outlast','prowess',
-    'dash','exploit','menace','renown','awaken','devoid','ingest','myriad','surge',
-    'skulk','emerge','escalate','melee','crew','fabricate','partner with','partner',
-    'undaunted','improvise','aftermath','embalm','eternalize','afflict','ascend',
-    'assist','jump-start','mentor','afterlife','riot','spectacle','escape'
+    'dash','exploit','menace','renown','awaken','devoid','ingest','myriad',
+    'surge','skulk','emerge','escalate','melee','crew','fabricate','partner with',
+    'partner','undaunted','improvise','aftermath','embalm','eternalize','afflict',
+    'ascend','assist','jump-start','mentor','afterlife','riot','spectacle',
+    'escape','companion','mutate',
 ]
 kw_tkns = '|'.join(keywords)
 re_kw = re.compile(
     # NOTE: we have to add checks for the long hyphen and end of string to
     # ensure we tag all keywords
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)"
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→=\w ]*)"
     r"({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(kw_tkns)
 )
 
-# TODO: what to do with cycle, phase in, phase out, flip
 lituus_actions = [ # words not defined in the rules but important any way
     'put','remove','distribute','get','return','draw','move','look','pay','deal',
     'gain','attack','defend','unblock','block','add','enter','leave','choose','die',
@@ -620,7 +629,7 @@ lituus_actions = [ # words not defined in the rules but important any way
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=s|ing|ed|ion|:|\.|,|\s)".format(la_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→=\w ]*)({})(?=s|ing|ed|ion|:|\.|,|\s)".format(la_tkns)
 )
 
 # because target is primarily a quantifier we will only tag the verb version
@@ -636,14 +645,14 @@ re_lituus_target_verb = re.compile(r'\btarget(s|ing|ed)\b')
 effects = ["combat damage","damage","effect"]
 eff_tkns = '|'.join(effects)
 re_effect = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(eff_tkns)
+    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→=\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(eff_tkns)
 )
 
 ####
 ## CHARACTERISTICS
 ####
 
-meta_characteristics = [ # 100.3
+meta_characteristics = [ # 200.1 These are parts of a card
     'p/t','everything','text','name','mana cost','cmc','power','toughness',
     'color identity','color','type'
 ]
@@ -667,9 +676,7 @@ type_characteristics = [  # 300.1, NOTE: we added historic
 ]
 re_type_char = re.compile(r"{}".format('|'.join(type_characteristics)))
 
-# sub characteristics (updated 24-Jan-20 with TBD). Must be updated with relaase
-# of new sets to include adding any token specific types i.e. does not appear on
-# any card
+# sub characteristics (updated 25-Jan-20 with IKO).
 
 # 205.3g artifact subtypes
 subtype_artifact_characteristics = [
@@ -701,8 +708,8 @@ subtype_planeswalker_characteristics = [
     "ajani","aminatou","angrath","arlinn","ashiok","bolas","calix","chandra",
     "dack",    "daretti","davriel","domri","dovin","elspeth","estrid","freyalise",
     "garruk","gideon","huatli","jace","jaya","karn","kasmina","kaya","kiora",
-    "koth","liliana","nahiri","narset","nissa","nixilis","oko","ral","rowan",
-    "saheeli","samut","sarkhan","serra","sorin","tamiyo","teferi","teyo",
+    "koth","liliana","lukka","nahiri","narset","nissa","nixilis","oko","ral",
+    "rowan","saheeli","samut","sarkhan","serra","sorin","tamiyo","teferi","teyo",
     "tezzeret","tibalt","ugin","venser","vivien","vraska","will","windgrace",
     "wrenn","xenagos","yanggu","yanling",
 ]
@@ -736,15 +743,15 @@ subtype_creature_characteristics = [
     "masticore","mercenary","merfolk","metathran","minion","minotaur","mole",
     "monger","mongoose","monk","monkey","moonfolk","mouse","mutant","myr","mystic",
     "naga","nautilus","nephilim","nightmare","nightstalker","ninja","noble",
-    "noggle","nomad","nymph","octopus","ogre","ooze","orb","orc","orgg","ouphe",
-    "ox","oyster","pangolin","peasant","pegasus","pentavite","pest","phelddagrif",
-    "phoenix","pilot","pincher","pirate","plant","praetor","prism","processor",
-    "rabbit","rat","rebel","reflection","rhino","rigger","rogue","sable",
-    "salamander","samurai","sand","saproling","satyr","scarecrow","scion",
+    "noggle","nomad","nymph","octopus","ogre","ooze","orb","orc","orgg","otter",
+    "ouphe","ox","oyster","pangolin","peasant","pegasus","pentavite","pest",
+    "phelddagrif","phoenix","pilot","pincher","pirate","plant","praetor","prism",
+    "processor","rabbit","rat","rebel","reflection","rhino","rigger","rogue",
+    "sable","salamander","samurai","sand","saproling","satyr","scarecrow","scion",
     "scorpion","scout","sculpture","serf","serpent","servo","shade","shaman",
-    "shapeshifter","sheep","siren","skeleton","slith","sliver","slug","snake",
-    "soldier","soltari","spawn","specter","spellshaper","sphinx","spider","spike",
-    "spirit","splinter","sponge","squid","squirrel","starfish","surrakar",
+    "shapeshifter","shark","sheep","siren","skeleton","slith","sliver","slug",
+    "snake","soldier","soltari","spawn","specter","spellshaper","sphinx","spider",
+    "spike","spirit","splinter","sponge","squid","squirrel","starfish","surrakar",
     "survivor","tentacle","tetravite","thalakos","thopter","thrull","treefolk",
     "trilobite","triskelavite","troll","turtle","unicorn","vampire","vedalken",
     "viashino","volver","wall","warlock","warrior","weird","werewolf","whale",
@@ -1016,7 +1023,8 @@ val_join = {
     "life total":"life_total",
 }
 val_join_tkns = '|'.join(val_join.keys())
-re_val_join = re.compile(r"(?<=<)({})(?=>)".format(val_join_tkns))
+re_val_join = re.compile(r"(?<=[<=])({})(?=>)".format(val_join_tkns))
+# TODO: this would be better done via a regular expression vice a dict
 
 # Negated tags i.e. non-XX<...>
 re_negate_tag = re.compile(r"non-(\w\w)<(.+?)>")

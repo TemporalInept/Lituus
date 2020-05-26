@@ -183,8 +183,9 @@ def tag_operators(txt):
 
 def tag_counters(txt):
     """ tags counters (markers) in txt returning tagged txt """
-    ntxt = mtgl.re_pt_ctr.sub(r"xo<ctr type=\1\2/\3\4>",txt) # tag p/t counters
-    ntxt = mtgl.re_named_ctr.sub(lambda m: _named_ctr_(m),ntxt) # & named counters
+    ntxt = mtgl.re_pt_ctr.sub(r"xo<ctr type=\1\2/\3\4>",txt)    # tag p/t counters
+    ntxt = mtgl.re_named_ctr.sub(lambda m: _named_ctr_(m),ntxt) # named counters
+    ntxt = mtgl.re_iko_ctr.sub(r"xo<ctr type=\1>",ntxt)         # & IKO counters
     return ntxt
 
 def tag_awkws(txt):
@@ -1007,7 +1008,7 @@ def _chain_obj_(m):
 
 def _chain_ctr_(m):
     """
-    determines if m specifies a chaine of counters and if so chains them otherwise
+    determines if m specifies a chain of counters and if so chains them otherwise
     returns the orginal text
     :param m: regex.Match object
     :return: the chained coutners
