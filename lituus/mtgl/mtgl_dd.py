@@ -69,12 +69,18 @@ re_act_line = re.compile(r"^(.+?): (.+?)$")
 #  have to build in checks for periods that are inclosed in double parenthesis
 #  and single, double parenthesis (Reef Worm)
 re_tgr_check = re.compile(r"^(tp<\w+>)")
+#re_tgr_line = re.compile(
+#    r"^tp<(at|whenever|when)> "
+#    r"(.+?), "
+#    r"([^\.]+)(?:\.|\.\"|\.\'\")"
+#    r"(?: (.+)(?:\.|\.\"|\.\'\"))?"
+#    r"$"
+#)
 re_tgr_line = re.compile(
     r"^tp<(at|whenever|when)> "
-    r"(.+?), "
-    r"([^\.]+)(?:\.|\.\"|\.\'\")"
-    r"(?: (.+)(?:\.|\.\"|\.\'\"))?"
-    r"$"
+    r"([^,]+), "
+    r"([^\.]+)"
+    r"(?:\. (.+))?\.?$"
 )
 
 ####
@@ -526,22 +532,19 @@ re_turn_up = re.compile(
 )
 
 ## (614.2) applying to damage from a source
-# [source] would deal damage to [target], prevent that damage
-# TODO: some of these have a sequence preceding, have to not graph the sequence
-# TODO: some have a sequence following the target before the comma
-# not to be confused with if-would-insteads
 
 # similar to 'instead' but is a replacement under 614.2 i.e. Sphere of Purity
 # this will catch regenerate i.e. Mossbridge Troll as well as prevention
 # if [source] would [old], [new]
 re_if_would = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.$")
 
-# TODO: not currently graphed
+# the next time [source] would deal damage to [target] this turn, prevent that damage
 re_repl_dmg = re.compile(
-    r"^(.+)"
+    r"^xq<the> xq<next> sq<time>"
+    r"(.+)"
     r" cn<would> xa<deal> ef<damage> pr<to> "
     r"(.+)"
-    r", xa<prevent> xq<that> ef<damage>\.$"
+    r" xq<this> ts<turn>, xa<prevent> xq<that> ef<damage>\.$"
 )
 
 ## CONDITIONALS
@@ -554,8 +557,6 @@ re_if_ply_does = re.compile(r"^cn<if> (.+) do(?:es)?(?: (cn<not>))?, (.+)\.?$")
 
 # if [player] cannot, [action] i.e. Brain Pry
 re_if_ply_cant = re.compile(r"^cn<if> (.+) cn<cannot>, (.+)\.?$")
-
-# if [object] would [A], [B]
 
 # alternate playing costs (APC) (118.9)
 # Alternate costs are usually phrased:

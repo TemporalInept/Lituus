@@ -148,8 +148,7 @@ class MTGCard(object):
 
     def x_cost(self): return '{X}' in self.mana_cost
 
-    def phyrexian_mana(self): 
-        """ returns True if card has Phyrexian Mana symbols in casting """
+    def phyrexian_mana(self):
         return mtgl.re_mtg_phy_ms.match(self.mana_cost) is not None
 
     def acc(self): raise lts.LituusException(lts.EIMPL,"Pending")

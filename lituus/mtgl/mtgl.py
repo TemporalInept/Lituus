@@ -359,7 +359,7 @@ lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that is',
     'that are','that','additional','those','these','their','the','extra','first',
     'second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth',
-    'half','twice','new','single','same','next','last',
+    'half','twice','new','single','same','next','last','opening',
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -1469,14 +1469,16 @@ re_obj_with_kw = re.compile(
 #)
 
 ####
-## THINGS
+## POST PROCESS
 ####
 
-# find cost preceded by a keyword
+# find cost preceded by a keyword i.e. Rafter Demon
 re_cost_type = re.compile(
-    #r"(xq<additional>|kw<[\w-]+>) (xo<cost(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
     r"(kw<[\w-]+>) (xo<cost(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
+
+# find punctuation immediately followed by quotations
+re_encl_punct = re.compile(r"([\.\,])(\'\"|\'|\")")
 
 ####
 ## PHRASING

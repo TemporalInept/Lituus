@@ -55,8 +55,7 @@ def graph(dcard):
     for i,line in enumerate([x for x in dcard['tag'].split('\n')]):
         try:
             if dd.re_aw_line.search(line): graph_ability_word(t,parent,line)
-            elif dd.re_kw_line.search(line):
-                # enumerate and graph each keyword clause
+            elif dd.re_kw_line.search(line):  # graph each keyword clause
                 for ktype,kw,param in dd.re_kw_clause.findall(line):
                     graph_keyword(t,kwid,kw,ktype,param)
             else:
@@ -65,21 +64,6 @@ def graph(dcard):
                 elif dd.re_act_check.search(line): graph_activated(t,parent,line)
                 elif dd.re_tgr_check.search(line): graph_triggered(t,parent,line)
                 else: graph_clause(t,t.add_node(parent,'static-line'),line)
-                #if dd.re_act_check.search(line): graph_activated(t,parent,line)
-                #elif dd.re_tgr_check.search(line): graph_triggered(t,parent,line)
-                #else:
-                #    if 'Instant' in dcard['type']: pass
-                #    elif 'Sorcery' in dcard['type']: pass
-                #    else: graph_clause(t,)
-                    # for the rest, determine line type & create a line node
-                    #if 'Instant' in dcard['type']: ltype = 'spell-line'
-                    #elif 'Sorcery' in dcard['type']: ltype = 'spell-line'
-                    #else: ltype = 'static-line'
-                    #lid = t.add_node(parent,ltype)
-
-                    # then graph each line sentence by sentence
-                    #for s in _sentences_(line):
-                    #    graph_clause(t,t.add_node(lid,'sentence'),s)
         except RuntimeError:
             # For Debugging Purposes
             print("{} {}\n".format(dcard['name'],line))
@@ -89,6 +73,17 @@ def graph(dcard):
 
     return t
 
+def graph_line(t,pid,line):
+    """
+    graphs the line of tagged text
+    :param t: the tree
+    :param pid: parent id
+    :param line: line to graph
+    """
+    if dd.re_act_check.search(line): graph_activated(t,pid,line)
+    elif dd.re_tgr_check.search(line): graph_triggered(t,pid,line)
+    else: graph_clause(t,pid,line)
+
 def graph_ability_word(t,pid,line):
     """
     graphs the ability word line in tree t at parent pid
@@ -96,11 +91,12 @@ def graph_ability_word(t,pid,line):
     :param pid: the parent
     :param line: the aw line to graph
     """
-    awid = t.add_node(pid,'aw-clause',text=line)
+    awid = t.add_node(pid,'aw-clause')
     try:
         aw,ad = dd.re_aw_line.search(line).groups()
         t.add_node(awid,'ability-word',value=aw)
-        graph_clause(t,t.add_node(awid,'definition'),ad)
+        #graph_clause(t,t.add_node(awid,'definition'),ad)
+        graph_line(t,t.add_node(awid,'definition'),ad)
     except AttributeError:
         raise lts.LituusException(
             lts.EPTRN,"Failure matching aw line ({})".format(line)
@@ -261,9 +257,18 @@ def graph_sentence(t,pid,clause):
         pass
 
     # applied to a source (614.2, 609,7) # TODO:
+    if 'xa<prevent' in clause:
+        try:
+            nid = graph_repl_dmg(t,clause)
+            if nid:
+                t.add_edge(t.add_node(pid,'replacement-effect'),nid)
+                return
+        except lts.LituusException:
+            pass
+
     #if re.compile(r"^cn<if>").search(clause): print("{}\n".format(clause))
 
-    t.add_node(pid,'clause',tograph=clause)
+    t.add_node(pid,'ungrqphed-sentence',tograph=clause)
 
 ####
 ## REPLACEMENT CLAUSES
@@ -384,7 +389,7 @@ def graph_conditional(t,clause):
         iid = t.add_ur_node('if-player-does')
         t.add_node(iid,'player',tograph=ply)
         t.add_node(iid,'decision',value='does' if not neg else 'does-not')
-        t.add_node(iid,'action',tograph=act)
+        graph_line(t,t.add_node(iid,'action'),act)
         return iid
     except AttributeError:
         pass
@@ -435,6 +440,7 @@ def graph_conditional(t,clause):
     except AttributeError:
         pass
 
+    # generic if condition, do
     try:
         cond,act = dd.re_if_cond_act.search(clause).groups()
         iid = t.add_ur_node('if-cond-action')
@@ -531,6 +537,22 @@ def graph_repl_face_up(t,clause):
         iid = t.add_ur_node('turned-up')
         t.add_node(iid,'permanent',tograph=perm)
         t.add_node(iid,'action',tograph=act)
+        return iid
+    except AttributeError:
+        return None
+
+def graph_repl_dmg(t,clause):
+    """
+    graphs as obj is turned face up (614.1e)
+    :param t: the tree
+    :param clause: the clause to graph
+    :return: node id of the graphed clause or None
+    """
+    try:
+        src,tgt = dd.re_repl_dmg.search(clause).groups()
+        iid = t.add_ur_node('prevent-damage-this-turn')
+        t.add_node(iid,'source',tograph=src)
+        t.add_node(iid,'target',tograph=tgt)
         return iid
     except AttributeError:
         return None

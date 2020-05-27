@@ -37,7 +37,7 @@ def tag(name,txt):
         ntxt = first_pass(ntxt)
         ntxt = midprocess(ntxt)
         ntxt = second_pass(ntxt)
-        ntxt = third_pass(ntxt)
+        ntxt = postprocess(ntxt)
     except (lts.LituusException,re.error) as e:
         raise lts.LituusException(
             lts.ETAGGING,"Tagging {} failed due to {}".format(name,e)
@@ -496,15 +496,18 @@ def merge(txt):
     ntxt = mtgl.re_obj_with_kw.sub(lambda m: _obj_with__(m),ntxt)
     return ntxt
 
-def third_pass(txt):
+def postprocess(txt):
     """
-    performs a third pass of the oracle txt, working on Things and specific phrases
-    :param txt: second pass tagged oracle txt
-    :return: tagged oracle text
+    post processes tagged txt in preparation for graphing
+    :param txt: tagged text
+    :return: processed txt
     """
-    # cost (NOTE: activation costs have already been handled) move any keyword the
-    # tag
-    ntxt = mtgl.re_cost_type.sub(lambda m:_cost_type_(m),txt)
+    # find "kw cost" rewrite as "cost type=kw"
+    ntxt = mtgl.re_cost_type.sub(lambda m: _cost_type_(m),txt)
+
+    # punctuation followed by a quote (single/double/both) is moved to the outside
+    # NOTE: have only seen periods but just in case
+    ntxt = mtgl.re_encl_punct.sub(r"\2\1",ntxt)
 
     # TODO: should we put
     #  in any order
