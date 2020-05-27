@@ -371,7 +371,7 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 # Qualifying words
 # TODO: not sure if this is the best place for 'back' or not
 
-lituus_qualifiers = ['less','more','back','many']
+lituus_qualifiers = ['less','more','back','many','random']
 qualifier_tkns = '|'.join(lituus_qualifiers)
 re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 
@@ -1152,10 +1152,16 @@ re_from_combat = re.compile(r"(?<=pr<from> )combat")
 #re_tna = re.compile(r"(?<=st<tapped> and )(xa)(?=<attack>ing)")
 
 # discarded is a status if it is preceded by the and followed by card
-re_discard_act = re.compile(
-    r"(?<=xq<the> )"
-    r"ka<discard>(?:ed)"
-    r"(?= ob<)"
+re_discard_act = re.compile(r"(?<=xq<the> )ka<discard suffix=ed>(?= ob<)")
+
+# 'at' is a preposition if followed by a qualifier (random) i.e. Black Cat
+re_at_prep = re.compile(r"(tp<at>)(?= xl<\w+>)")
+
+# 'at' is also a preposition if it is not followed by some number of tokens and
+# a comma
+re_at_prep2 = re.compile(
+    r"(tp<at>)"
+    r"(?=[^,]+?\.)"
 )
 
 ####

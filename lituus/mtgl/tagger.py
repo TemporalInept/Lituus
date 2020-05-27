@@ -282,7 +282,11 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_from_combat.sub(r"xo<combat>",ntxt)
 
     # retag discarded as status where necessary
-    ntxt = mtgl.re_discard_act.sub(r"xs<discarded>",ntxt)
+    ntxt = mtgl.re_discard_act.sub(r"xs<discard suffix=ed>",ntxt)
+
+    # deconflict 'at' making it a preposition when followed by a qualifier
+    ntxt = mtgl.re_at_prep.sub(r"pr<at>",ntxt)
+    ntxt = mtgl.re_at_prep2.sub(r"pr<at>",ntxt)
 
     # Not a deconfliction perse but to avoid conflicts 'named' is listed as
     # an action, rewrite it here so it shows up xa<name suffix=ed> rather than

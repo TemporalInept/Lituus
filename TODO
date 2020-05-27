@@ -112,6 +112,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 “The next time a red source of your choice would deal damage to you this turn, prevent that damage.”
 - See Circle of despair '{1}, ka<sacrifice> xq<a> ob<permanent characteristics=creature>: xq<the> xq<next> sq<time> xq<a> ob<source> of xp<you suffix=r> xo<choice> cn<would> xa<deal> ef<damage> pr<to> xq<any> ob<target> xq<this> ts<turn>, xa<prevent> xq<that> ef<damage>.'
 
-186. Discarded is still not being deconlicted properly
+187.
 
 

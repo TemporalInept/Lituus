@@ -24,10 +24,9 @@ import lituus as lts
 import lituus.mtgl.mtgl as mtgl
 import lituus.mtgl.mtgt as mtgt
 import lituus.mtgl.mtgl_dd as dd
-#import lituus.mtgl.list_util as ll
 import lituus.mtgl.mtgltag as tag
 
-# TODO: remove text attributes after debugging is complete
+# TODO: togroup signifies attributes that need to be graphed
 def graph(dcard):
     """
     graphs the oracle text in card cname return the MTG Tree
@@ -63,6 +62,10 @@ def graph(dcard):
                     graph_clause(t,t.add_node(parent,'spell-line'),line)
                 elif dd.re_act_check.search(line): graph_activated(t,parent,line)
                 elif dd.re_tgr_check.search(line): graph_triggered(t,parent,line)
+                #elif dd.re_tgr_check.search(line):
+                #    # some cards (Dance of the Dead) have two triggered abilities
+                #    # so, we split on trigger preambles and graph separately
+                #    for tline in _ta_split_(line): graph_triggered(t,parent,tline)
                 else: graph_clause(t,t.add_node(parent,'static-line'),line)
         except RuntimeError:
             # For Debugging Purposes
@@ -562,11 +565,14 @@ def graph_repl_dmg(t,clause):
 ####
 
 # find the stem of the action word
-_re_act_wd_ = re.compile(r"(be )?(?:ka|xa)<([\w-]+)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>")
+_re_act_wd_ = re.compile(
+    r"(be )?(?:ka|xa)<([\w-]+)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>"
+)
 def _re_2nd_act_(wd,tobe): # #^.*(now saving to disk).*$
     if tobe:
         return re.compile(
-            r"^.*((?:is|are) (?:ka|xa)<(?:{})(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)".format(wd)
+            r"^.*((?:is|are) "
+              r"(?:ka|xa)<(?:{})(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)".format(wd)
         )
     else:
         return re.compile(

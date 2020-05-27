@@ -83,6 +83,13 @@ re_tgr_line = re.compile(
     r"(?:\. (.+))?\.?$"
 )
 
+re_tgr_clause = re.compile(
+    r"tp<(at|whenever|when)> "
+    r"([^,]+), "
+    r"([^\.]+)"
+    r"(?:\. (.+))?\."
+)
+
 ####
 ## KEYWORDS
 ####
