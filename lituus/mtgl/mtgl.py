@@ -1487,7 +1487,7 @@ re_encl_punct = re.compile(r"([\.\,])(\'\"|\'|\")")
 
 # find status with suffix (these should all be (un)tap but catch
 # everything just in case
-re_status_suffix = re.compile(r"st<(\w+) suffix=(ed)>")
+re_status_suffix = re.compile(r"(st|xs)<(\w+) suffix=(ed)>")
 
 ####
 ## PHRASING
