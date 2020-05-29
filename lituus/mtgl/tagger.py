@@ -250,7 +250,7 @@ def deconflict_tags1(txt):
     """
     # Tapped, Flipped
     ntxt = mtgl.re_status.sub(r"st<\1\2 suffix=ed>",txt)
-    ntxt = mtgl.re_status_tap.sub(r"st<\1tap suffix=ed",ntxt)
+    ntxt = mtgl.re_status_tap.sub(r"st<\1tap suffix=ed>",ntxt)
 
     # phase - can be Status (Time and Tide), Turn Structure (Breath of Fury) or
     #  action (Ertai's Familiar),
@@ -512,6 +512,11 @@ def postprocess(txt):
     # punctuation followed by a quote (single/double/both) is moved to the outside
     # NOTE: have only seen periods but just in case
     ntxt = mtgl.re_encl_punct.sub(r"\2\1",ntxt)
+
+    # combine stem and suffix on status i.e. st<tap suffix=ed> becomes st<tapped>
+    ntxt = mtgl.re_status_suffix.sub(
+        lambda m: r"st<{}>".format(_join_suffix_(m)),ntxt
+    )
 
     # TODO: should we put
     #  in any order
@@ -971,17 +976,6 @@ def _obj_with__(m):
     wattr = {'with':''.join(m.groups()[1:])}
     return mtgltag.retag(tid,val,mtgltag.merge_attrs([attr,wattr],0))
 
-def _cost_type_(m):
-    """
-    merge cost type and cost
-    :param m: the regex.Match object
-    :return: cost type is moved to cost attribute
-    """
-    # untag the cost tag and insert the cost type as a new attribute
-    tid,val,attr = mtgltag.untag(m.group(2))
-    attr['type'] = mtgltag.tag_val(m.group(1))
-    return mtgltag.retag(tid,val,attr)
-
 def _chain_obj_(m):
     """
     chains objects where applicable
@@ -1046,3 +1040,25 @@ def _chain_ctr_(m):
 
     # & return it
     return mtgltag.retag('xo','ctr',attr)
+
+def _cost_type_(m):
+    """
+    merge cost type and cost
+    :param m: the regex.Match object
+    :return: cost type is moved to cost attribute
+    """
+    # untag the cost tag and insert the cost type as a new attribute
+    tid,val,attr = mtgltag.untag(m.group(2))
+    attr['type'] = mtgltag.tag_val(m.group(1))
+    return mtgltag.retag(tid,val,attr)
+
+def _join_suffix_(m):
+    """
+    merge the stem with the suffix
+    :param m: the regex.Match object
+    :return: joined suffix and stem
+    """
+    # TODO: needs to handle all anamolies, not just stems ending with 'p'
+    stem,suffix = m.groups()
+    if stem.endswith('p') and suffix in ['ed','ing']: return stem+'p'+suffix
+    return stem+suffix
