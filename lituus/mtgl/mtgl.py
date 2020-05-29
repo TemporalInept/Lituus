@@ -279,6 +279,7 @@ word_hacks = {
     "exchanging":"exchangeing","exchanged":"exchangeed",
     "equipped":"equiped",
     "exiling":"exileing","exiled":"exileed",
+    "spliced":"spliceed",
     "fought":"fighted",
     "regenerating":"regenerateing","regenerated":"regenerateed",
     "sacrificing":"sacrificeing","sacrificed":"sacrificeed",
@@ -489,6 +490,7 @@ re_num_op = re.compile(r"(nu<(?:\d+|x|y|z)>) or (greater|less|more)")
 prepositions = [
     'on top of','up to','on bottom of','from','to','into','in','on','out','under',
     'onto','top of','top','bottom of','bottom','without','with','for','up','down',
+    'by',
 ]
 re_prep = re.compile(r"\b(?<!<)({})\b(?!>)".format('|'.join(prepositions)))
 
@@ -1159,10 +1161,7 @@ re_at_prep = re.compile(r"(tp<at>)(?= xl<\w+>)")
 
 # 'at' is also a preposition if it is not followed by some number of tokens and
 # a comma
-re_at_prep2 = re.compile(
-    r"(tp<at>)"
-    r"(?=[^,]+?\.)"
-)
+re_at_prep2 = re.compile(r"(tp<at>)(?=[^,]+?\.)")
 
 ####
 ## SUFFICES

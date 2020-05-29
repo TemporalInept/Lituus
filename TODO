@@ -4,8 +4,6 @@
 
 16. Can we just standarize a regular expression to catch anamolies in function word_hacks?
 
-36. See Guided Passage for 'Thing' chaining
-
 37. level ups and planeswalkers see Charming Prince
 
 40. Need to write save deck functionality
@@ -15,12 +13,7 @@
 47. How to handle two consecutive objects like Trail of Crumbs "permanent card"
  o align these similar to characteristics?
 
-50. Will have to deconflict IKO keyword counters that are incorrectly tagged as 
-keywords
-
 52. How to handle cards like Transmutation "switch target creature's power and toughness" so that power and toughnes are not combined into p/t
-
-53. Can use the possessive suffix "'s" for some meta characteristics see Sewer Nemesis
 
 57. Ivory Guardians has object characteristic object phrase will probably see
 a lot becuase the first object is a token
@@ -55,8 +48,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 133. Jhoira's Timebug will cause problems
 
-134. Not all tapped are being tagged correctly as status (Captain's Claws, Nature's Chosen)
-
 136, Need to figure out how to standarize the treatment of suffixes in status
 
 137. Look at Sieges i.e. Monastery Siege, have to tag khans or dragons 
@@ -81,10 +72,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 166. Tag the phrase in any order? (144) vs in a random order? (63) or leave as is?
 
-168. Spliced not being tagged see Minamo's Meddling
-
-169. Status deconfliction is not working
-
 170. see Raging River, left pile was translated to xa<leave suffix=ed> pile
 
 171. Losing the suffix on +n/+n counters
@@ -92,11 +79,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 172. What to do about "color or colors". do we lose meaning if condense to just colors
 
 175. For partner with, after graphing do we want to replace id with actual Card Name
-
-177. Replacements
- o Fatal Push gave problems on previous version, make sure to test it for now 'instead-if' is handling it
- o Have to remember some cards like Dispatch only contain an if and should not be
-  processed as a replacement
 
 178. Should we put all replcement effects under a replacement effect node?
 
@@ -108,10 +90,14 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 183. See Aquamorph Entity has two replacement effect clauses ETB and turned face up
 
-184. Rule 609.7 as a replacment effect
-“The next time a red source of your choice would deal damage to you this turn, prevent that damage.”
-- See Circle of despair '{1}, ka<sacrifice> xq<a> ob<permanent characteristics=creature>: xq<the> xq<next> sq<time> xq<a> ob<source> of xp<you suffix=r> xo<choice> cn<would> xa<deal> ef<damage> pr<to> xq<any> ob<target> xq<this> ts<turn>, xa<prevent> xq<that> ef<damage>.'
+188. should be tagging 'life'
 
-187.
+189. Look at "for each" (pr<for> xq<each>) there are at 900+ of these
 
+190. Need a better way of labeling nodes related to APC. We want an easy way to search for alternate/reduced costs
 
+191. only during restrictions...
+
+192. why were graphing if conditionals in between replacements (have to remember to put these in to the conditional graphing and watch for negative impacts)
+
+193. 

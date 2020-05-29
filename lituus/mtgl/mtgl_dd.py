@@ -12,7 +12,7 @@ Defines a data dictionary (ala "templates") for mtg oracle text
 
 #__name__ = 'mtgl_dd'
 __license__ = 'GPLv3'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 __date__ = 'May 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -25,10 +25,14 @@ import regex as re
 ## MISCELLANEOUS
 ####
 
-# use with split to break a line into sentences by the period. Grabs all
-# characters upto and including the period
-# TODO: anyway to not include the preceding space on subsequent sentences
-re_sentence = re.compile(r"([^\.]+\.)")
+# use with split to break a line into sentences by the period where the period is
+# not enclosed in quotes. Grabs all characters upto the period
+# Thanks to 'Jens' for the solution to this at
+# https://stackoverflow.com/questions/6462578/regex-to-match-all-instances-not-inside-quotes
+# which finds any periods followed by an even number of quotes
+re_sentence = re.compile(
+    r"\.(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"
+)
 
 ####
 ## LINE TYPES
@@ -49,7 +53,7 @@ re_kw_line = re.compile(
 
 # a non-standard keyword line will contain a long hypen and end with a period
 # between the hypen and period is the non-standard cost i.e. Aboroth
-re_kw_line_ns = re.compile(r"^(kw<[\w-]+>)—(.+?)\.$")
+#re_kw_line_ns = re.compile(r"^(kw<[\w-]+>)—(.+?)\.$")
 
 # Ability lines (113.3) are not keyword lines or ability word lines. There are
 # four subtypes:
@@ -58,8 +62,9 @@ re_kw_line_ns = re.compile(r"^(kw<[\w-]+>)—(.+?)\.$")
 #  113.3c Triggered - of the form TRIGGER
 #  113.3d static - none of the above
 
-# Activated (113.3b) contains a ':' which splits the cost and effect
-re_act_check = re.compile(r":")
+# Activated (113.3b) contains a ':' which splits the cost and effect (cannot
+# be inside double quotes)
+re_act_check = re.compile(r"(?<!\"[^\"]+):")
 re_act_line = re.compile(r"^(.+?): (.+?)$")
 
 # Triggered (603.1) lines starts with a trigger preamble
@@ -69,13 +74,6 @@ re_act_line = re.compile(r"^(.+?): (.+?)$")
 #  have to build in checks for periods that are inclosed in double parenthesis
 #  and single, double parenthesis (Reef Worm)
 re_tgr_check = re.compile(r"^(tp<\w+>)")
-#re_tgr_line = re.compile(
-#    r"^tp<(at|whenever|when)> "
-#    r"(.+?), "
-#    r"([^\.]+)(?:\.|\.\"|\.\'\")"
-#    r"(?: (.+)(?:\.|\.\"|\.\'\"))?"
-#    r"$"
-#)
 re_tgr_line = re.compile(
     r"^tp<(at|whenever|when)> "
     r"([^,]+), "
@@ -83,11 +81,20 @@ re_tgr_line = re.compile(
     r"(?:\. (.+))?\.?$"
 )
 
-re_tgr_clause = re.compile(
-    r"tp<(at|whenever|when)> "
-    r"([^,]+), "
-    r"([^\.]+)"
-    r"(?:\. (.+))?\."
+# the following is not a defined line but needs to be handled carefully
+# Quotation enclosed phrases preceded by 'have' (Coral Net) or 'gain' (Abnormal
+# Endurance). Mentioned in 113.1a under effects that grant abilities
+# NOTE: the duration may be in the front or in the back
+# NOTE: handling situations like Diviner's Wand where more than one ability is
+#  granted via an optional check for an 'and' followed by an enclosed phrase
+# These have the form:
+#  [duration],? [object] has/gains "[ability]" [and "ability"]? [duration]?.
+re_enclosed_quote = re.compile(r'\"([^\"]+)\"\.')
+re_grant_ability_check = re.compile(r"xa<(?:have|gain)(?: suffix=\w+)?> \"")
+re_grant_ability = re.compile(
+    r"^(?:(sq<\w+> [^,]+), )?"
+    r"(.+) (xa<(?:have|gain)(?: suffix=\w+)?>) \"([^\"]+)\""
+    r"(?: and \"(.+)\")?(?: (sq<\w+> [^\.]+))?\.$"
 )
 
 ####
@@ -483,7 +490,7 @@ re_that_would_instead = re.compile(
 )
 
 # would instead i.e. Aegis of honor
-#  [timing] [condition] would [original], [replacment] instead.
+#  [duration] [condition] would [original], [replacment] instead.
 # related to timing
 re_would_instead = re.compile(r"^(.+) cn<would> (.+), (.+) cn<instead>\.?$")
 
@@ -497,30 +504,31 @@ re_instead_of = re.compile(r"^(.+) cn<instead> of (.+)\.?$")
 # skip clauses i.e. Stasis (Note as of IKO, I found 49) have the form
 #  [player]? skip(s) [phase/step]
 # where if player is not present there is an implied 'you'
-re_skip = re.compile(r"^(?:(.+) )?xa<skip(?: suffix=s)?> (.+)\.?$")
+re_skip = re.compile(r"^(?:(.+) )?xa<skip(?: suffix=s)?> ([^\.]+)\.$")
 
 ## ENTERS THE BATTLEFIELD CLAUSES (614.1c)
 # Permanent enters the battlefield with ...
 # As Permanent enters the battlefield ...
 # Permanent enters the battlefield as ...
+re_etb_repl_check = re.compile(r"xa<enter(?: suffix=s)?> xq<the> zn<battlefield>")
 
 # Permanent enters the battlefield with ... i.e. Pentavus have the form
 #  [permanent] enters the battlefield with [counters]
 # these are all counters
 re_etb_with = re.compile(
-    r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> pr<with> (.+)\.?$"
+    r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> pr<with> ([^\.]+)\.?$"
 )
 
 # As permanent enters the battlefield ... i.e. Sewer Nemsis have the form
 #  as [permanent] enters the battlefield, [event]
 re_as_etb = re.compile(
-    r"^as (.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield>, (.+)\.$"
+    r"^as (.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield>, ([^\.]+)\.?$"
 )
 
 # Permanent enters the battlefield as ... i.e. Clonne
 #  [Permanent] enters the battlefield as
 re_etb_as = re.compile(
-    r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> as (.+)\.$"
+    r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> as ([^\.]+)\.?$"
 )
 
 ## ENTERS THE BATTLEFIELD CLAUSES (614.1d) - continuous effects
@@ -529,35 +537,37 @@ re_etb_as = re.compile(
 # Objects enter the battlefield ...
 # NOTE: have to assume that after above, all remaining ETB fit this
 re_etb_1d = re.compile(
-    r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> (.+)\.$"
+    r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> ([^\.]+)\.?$"
 )
 
 ## TURNED FACE UP (614.1e)
 # As Permanent is turned face up i.e. Gift of Doom
+re_turn_up_check = re.compile(r"xa<turn suffix=ed> xm<face amplifier=up>")
 re_turn_up = re.compile(
-    r"^as (.+) is xa<turn suffix=ed> xm<face amplifier=up>, (.+)\.$"
+    r"^as (.+) is xa<turn suffix=ed> xm<face amplifier=up>, ([^\.]+)\.?$"
 )
 
 ## (614.2) applying to damage from a source
 
+# check for damage
+re_repl_dmg_check = re.compile(
+    r"(?:ef<damage>|ka<regenerate>)"
+)
+
 # similar to 'instead' but is a replacement under 614.2 i.e. Sphere of Purity
 # this will catch regenerate i.e. Mossbridge Troll as well as prevention
 # if [source] would [old], [new]
-re_if_would = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.$")
+re_if_would = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.?$")
 
 # the next time [source] would deal damage to [target] this turn, prevent that damage
 re_repl_dmg = re.compile(
     r"^xq<the> xq<next> sq<time>"
-    r"(.+)"
-    r" cn<would> xa<deal> ef<damage> pr<to> "
-    r"(.+)"
-    r" xq<this> ts<turn>, xa<prevent> xq<that> ef<damage>\.$"
+    r"(.+) cn<would> xa<deal> ef<damage> pr<to> (.+)"
+    r" xq<this> ts<turn>, xa<prevent> xq<that> ef<damage>\.?$"
 )
 
 ## CONDITIONALS
 # start with an 'if'
-# TODO: There are multiple "if you search your library this way, shuffle it."
-#  Could just graph these as a shuffle node but??
 
 # if [player] do|does [not]?, [action] i.e. Decree of Justice
 re_if_ply_does = re.compile(r"^cn<if> (.+) do(?:es)?(?: (cn<not>))?, (.+)\.?$")
@@ -602,6 +612,38 @@ re_if_cond_alt_act_apc = re.compile(
 #  if [condition], [action]
 # We want to break on the first comma, see Mythos of Vadrok
 re_if_cond_act = re.compile(r"^cn<if> ([^,]+), (.+)\.?$")
+
+# contains unless
+# The rules only mention unless in 722.6 "[A] unless [B]" However going through
+# them while B appears to always be a condition A may be a status or an action
+# depending on the context. For example:
+#  Bountiful Promenade A is a status namely tapped
+#  Bog Elemental A is an action (sacrifice self unless ....)
+# TODO: for now we will label A unless B
+re_unless_cond = re.compile(r"^(.+) cn<unless> ([^\.]+)\.?$")
+
+# contains "only if" (Restrictions)
+# these appear to be of the form
+# [action] only if [cond] see Mox Opal
+# NOTE: They all appear to be either activate or cast restrictions
+re_only_if = re.compile(r"^(.+) cn<only_if> ([^.]+\.?$)")
+
+# contains "rather than"
+# 1. alternate costs (if conditionals must be handled first) of the form
+#  [player] may [action] rather than pay [action]
+# 113.6c covers part of this
+re_rather_than_apc = re.compile(
+    r"^(.+) cn<may> (.+) cn<rather_than> xa<pay> ([^\.]+)\.?$"
+)
+
+# contains except
+# 1. except for: an exclusion i.e. Season of the Witch
+#  [action][,]? except for [object(s)].
+# TODO: Akron Legionnaire is written except for [objects], [restriction]
+# 2. except by
+re_except_for = re.compile(
+    r"^(.+),? cn<except> pr<for> ([^\.]+)\.?$"
+)
 
 ####
 ## TEST SPACE
