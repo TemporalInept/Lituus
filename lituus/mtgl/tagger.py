@@ -514,9 +514,9 @@ def postprocess(txt):
     ntxt = mtgl.re_encl_punct.sub(r"\2\1",ntxt)
 
     # combine stem and suffix on status i.e. st<tap suffix=ed> becomes st<tapped>
-    ntxt = mtgl.re_status_suffix.sub(
-        lambda m: r"st<{}>".format(_join_suffix_(m)),ntxt
-    )
+    ntxt = mtgl.re_status_suffix.sub(lambda m: _join_suffix_(m),ntxt)
+        #lambda m: r"{}<{}>".format(_join_suffix_(m)),ntxt
+    #)
 
     # TODO: should we put
     #  in any order
@@ -1059,6 +1059,7 @@ def _join_suffix_(m):
     :return: joined suffix and stem
     """
     # TODO: needs to handle all anamolies, not just stems ending with 'p'
-    stem,suffix = m.groups()
-    if stem.endswith('p') and suffix in ['ed','ing']: return stem+'p'+suffix
-    return stem+suffix
+    tid,stem,suffix = m.groups()
+    joined = stem+suffix
+    if stem.endswith('p') and suffix in ['ed','ing']: joined = stem+'p'+suffix
+    return "{}<{}>".format(tid,joined)
