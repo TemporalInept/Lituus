@@ -314,6 +314,7 @@ word_hacks = {
     "skipped":'"skiped',"skipping":"skiping",
     "produced":"produceed","producing":"produceing",
     "resolved":"resolveed","resolving":"resolveing",
+    "did":"doed","does":"do",
     # status related
     "tapping":"taping","tapped":"taped","untapping":"untaped","untapped":"untaped",
     "flipping":"fliping","flipped":"fliped",
@@ -624,7 +625,7 @@ lituus_actions = [ # words not defined in the rules but important any way
     'gain','attack','defend','unblock','block','add','enter','leave','choose','die',
     'spend','unspend','take','reduce','trigger','prevent','declare','have','switch',
     'assign','win','lose','tie','skip','flip','cycle','phase','become','share',
-    'turn','produce','round','resolve',
+    'turn','produce','round','resolve','do',
     'copy',  # will have already been tagged?
     'named', # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
