@@ -475,28 +475,28 @@ re_if_instead_of = re.compile(r"^cn<if> (.+), (.+) cn<instead> of (.+)\.?$")
 # instead if i.e. Crown of Empires
 #  [replacement] instead if [condition]
 # the condition and replacement are switched
-re_instead_if = re.compile(r"^(.+) cn<instead> cn<if> (.+)\.?$")
+re_instead_if = re.compile(r"^([^,|\.]+) cn<instead> cn<if> (.+)\.?$")
 
 # instead of if i.e. Caravan Vigil
 #  [replacement] instead of [orginal] if [condition]
-re_instead_of_if = re.compile(r"^(.+) cn<instead> of (.+) cn<if> (.+)\.?$")
+re_instead_of_if = re.compile(r"^([^,|\.]+) cn<instead> of (.+) cn<if> (.+)\.?$")
 
 # that would instead i.e. Ali from Cairo
 #  [original] that would [(action) original] (action) [replacment] instead.
 # These cannot be handled by RegEx alone as the condition and replacement are
 # separated by an action word
 re_that_would_instead = re.compile(
-    r"^(.+) xq<that> cn<would> (.+) cn<instead>\.?$"
+    r"^([^,|\.]+) xq<that> cn<would> (.+) cn<instead>\.?$"
 )
 
 # would instead i.e. Aegis of honor
 #  [duration] [condition] would [original], [replacment] instead.
 # related to timing
-re_would_instead = re.compile(r"^(.+) cn<would> (.+), (.+) cn<instead>\.?$")
+re_would_instead = re.compile(r"^([^,|\.]+) cn<would> (.+), (.+) cn<instead>\.?$")
 
 # instead of i.e. Feather, the Redeemed
 # NOTE: these do not have a preceeding if/would
-re_instead_of = re.compile(r"^(.+) cn<instead> of (.+)\.?$")
+re_instead_of = re.compile(r"^([^,|\.]+) cn<instead> of (.+)\.?$")
 
 ## SKIP CLAUSES (614.1b)
 # These must be done in the order below or false positives will occur
@@ -516,7 +516,7 @@ re_etb_repl_check = re.compile(r"xa<enter(?: suffix=s)?> xq<the> zn<battlefield>
 #  [permanent] enters the battlefield with [counters]
 # these are all counters
 re_etb_with = re.compile(
-    r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> pr<with> ([^\.]+)\.?$"
+    r"^([^,|\.]+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> pr<with> ([^\.]+)\.?$"
 )
 
 # As permanent enters the battlefield ... i.e. Sewer Nemsis have the form
@@ -528,16 +528,15 @@ re_as_etb = re.compile(
 # Permanent enters the battlefield as ... i.e. Clonne
 #  [Permanent] enters the battlefield as
 re_etb_as = re.compile(
-    r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> as ([^\.]+)\.?$"
+    r"^([^,|\.]+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> as ([^\.]+)\.?$"
 )
 
 ## ENTERS THE BATTLEFIELD CLAUSES (614.1d) - continuous effects
-# TODO: how to not tag etb triggers ??? (Check for comma maybe)
 # Permanent enters the battlefield ... i.e. Jungle Hollow
 # Objects enter the battlefield ...
 # NOTE: have to assume that after above, all remaining ETB fit this
 re_etb_1d = re.compile(
-    r"^(.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> ([^\.]+)\.?$"
+    r"^([^,|\.]+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> ([^\.]+)\.?$"
 )
 
 ## TURNED FACE UP (614.1e)
@@ -550,9 +549,7 @@ re_turn_up = re.compile(
 ## (614.2) applying to damage from a source
 
 # check for damage
-re_repl_dmg_check = re.compile(
-    r"(?:ef<damage>|ka<regenerate>)"
-)
+re_repl_dmg_check = re.compile(r"(?:ef<damage>|ka<regenerate>)")
 
 # similar to 'instead' but is a replacement under 614.2 i.e. Sphere of Purity
 # this will catch regenerate i.e. Mossbridge Troll as well as prevention
@@ -566,74 +563,108 @@ re_repl_dmg = re.compile(
     r" xq<this> ts<turn>, xa<prevent> xq<that> ef<damage>\.?$"
 )
 
-## CONDITIONALS
-# start with an 'if'
+# alternate playing costs (APC) (118.9,113.6c)
 
-# if [player] do|does [not]?, [action] i.e. Decree of Justice
-re_if_ply_does = re.compile(r"^cn<if> (.+) do(?:es)?(?: (cn<not>))?, (.+)\.?$")
-
-# if [player] cannot, [action] i.e. Brain Pry
-re_if_ply_cant = re.compile(r"^cn<if> (.+) cn<cannot>, (.+)\.?$")
-
-# alternate playing costs (APC) (118.9)
 # Alternate costs are usually phrased:
 #  You may [action] rather than pay [this object’s] mana cost,
 # and
 #  You may cast [this object] without paying its mana cost.
 # For now, we are only looking at the above that start with 'if'
 
-# if [condition], you may [action] rather than pay object's mana cost i.e. Snuff Out
-re_if_cond_act_apc = re.compile(
-    r"^cn<if> (.+), xp<you> cn<may> (.+)"
-    r" cn<rather_than> xa<pay> ob<card ref=self suffix='s> xo<cost type=mana>\.?$"
+# optional APC (i.e. you may)
+# (if [condition],)? you may [action] rather than pay [cost].
+# NOTE: the condition may or may not be present see Ricochet Trap for a condition
+#  and Bringer of the Red Dawn for a conditionless
+# NOTE: the action may be an alternate/reduced mana payment i.e. Ricochet Trap or
+#  other i.e. Sivvi's Valor
+#re_action_apc = re.compile(
+#    r"^(?:cn<if> (.+), )?xp<you> cn<may> (.+)"
+#    r" cn<rather_than> xa<pay> ob<card ref=self suffix='s> xo<cost type=mana>\.?$"
+#)
+re_action_apc = re.compile(
+    r"^(?:cn<if> (.+), )?xp<you> cn<may> (.+) cn<rather_than> xa<pay> ([^\.]+)\.$"
 )
 
 # if [condition], you may cast [object] without paying its mana cost i.e. Massacre
-re_if_cond_nocost_apc = re.compile(
-    r"^cn<if> (.+),"
-    r" xp<you> cn<may> ka<cast> ob<card ref=self> pr<without> xa<pay suffix=ing>"
+# these are all condition based
+re_cast_apc_nocost = re.compile(
+    r"^cn<if> (.+), "
+    r"xp<you> cn<may> ka<cast> ob<card ref=self> pr<without> xa<pay suffix=ing>"
      r" xo<it suffix='s> xo<cost type=mana>\.?$"
 )
 
-# alternate phrasing found in four card (Bolas's Citadel, Skyshroud Cutter,
-# Reverent Silence and Invigorate)
-#  if [condition], [action]? rather than pay [object]'s mana cost[, you may [action]]?
-# NOTE:
-#  1. only Bolas's Citadel has the intermediate action immediately following
-#  the condition instead of the trailing the action (more in common with K'rrik)
-#  2. the others are merely differently worded versions of if_cond_act_apc
-re_if_cond_alt_act_apc = re.compile(
-    r"^cn<if> (.+), (.+)?"
-    r"cn<rather_than> xa<pay> (?:.+) xo<cost type=mana>"
-    r"(?:, (.+))?\.?$"
+# alternate phrasing found in three cards (Skyshroud Cutter, Reverent Silence &
+# Invigorate).
+#  if [condition], rather than pay self's mana cost you may [action].
+# this is alternate phrasing of re_action_apc
+re_alt_action_apc = re.compile(
+    r"^cn<if> (.+), "
+    r"cn<rather_than> xa<pay> ob<card ref=self suffix='s> xo<cost type=mana>, "
+    r"xp<you> cn<may> (.+)\.?$"
 )
+
+# contains "rather than" - a reverse of re_action_apc i.e. Reverent Silence
+#  1. rather than pay [cost], you may [action]
+re_rather_than_apc = re.compile(
+    r"^cn<rather_than> xa<pay> ([^,]+), xp<you> cn<may> ([^\.]+)\.?$"
+    #r"^([^,|\.]+) cn<may> (.+) cn<rather_than> xa<pay> ([^\.]+)\.$"
+)
+
+## CONDITIONALS
+# start with an 'if'
+
+# if [player] do|does [not]?, [action] i.e. Decree of Justice
+#re_if_ply_does = re.compile(
+#    r"^cn<if> ([^,|^\.]+) do(?:es)?(?: (cn<not>))?, ([^\.]+)\.?$"
+#)
+re_if_ply_does = re.compile(
+    r"^cn<if> ([^,|^\.]+) xa<do(?: suffix=\w+)?>(?: (cn<not>))?, ([^\.]+)\.?$"
+)
+
+# if [player] cannot, [action] i.e. Brain Pry
+re_if_ply_cant = re.compile(r"^cn<if> ([^,|^\.]+) cn<cannot>, ([^\.]+)\.?$")
 
 # generic TODO: look at these for any additional patterns
 #  if [condition], [action]
 # We want to break on the first comma, see Mythos of Vadrok
-re_if_cond_act = re.compile(r"^cn<if> ([^,]+), (.+)\.?$")
+re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.$")
 
 # contains unless
 # The rules only mention unless in 722.6 "[A] unless [B]" However going through
-# them while B appears to always be a condition A may be a status or an action
-# depending on the context. For example:
-#  Bountiful Promenade A is a status namely tapped
-#  Bog Elemental A is an action (sacrifice self unless ....)
-# TODO: for now we will label A unless B
-re_unless_cond = re.compile(r"^(.+) cn<unless> ([^\.]+)\.?$")
+# them while B always appears to always be a condition there are five flavors
+# regarding A, depending on the context.
+#  1. [thing] cannot [action] unless [condition] i.e. Okk
+#  2. [action] unless [condition] i.e. Bog Elemental
+#  3. [status] unless [condition] i.e. Bountiful Promenade
+#  4. [player] may [action] unless [condition] i.e Mystic Remora (only 5 of these)
+#  5. [thing] [action] unless [condition] i.e. Erg Raider's and Minion of Tevesh Szat
+# NOTE: unless is generally part of a clause that is part of a phrase therefore
+#  we do not want to grab anything that extends to the left past a clause (",")
+#  or sentence (".") boundary
+re_cannot_unless = re.compile(
+    r"^([^,|\.]+) cn<cannot> (.+) cn<unless> ([^,]+)\.?$"
+)
+re_action_unless = re.compile(
+    r"^((?:[kx]a<\w+>) (?:.+)) cn<unless> ([^,]+)\.?$"
+)
+re_status_unless = re.compile(
+    r"^st<(\w+)> cn<unless> ([^,]+)\.?$"
+)
+re_may_unless = re.compile(
+    r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,]+)\.?$"
+)
+# TODO: before being able to graph these, we will have to combine quantifiers and
+#  or statuses with objects See Torment of Scarabs ("that player") and Heroic
+#  Defiance (that player) will also have to look for tag-ids of xp and ob
+re_ungraphed_unless = re.compile(r"^([^,|\.]+) cn<unless> ([^,]+)\.?$")
 
 # contains "only if" (Restrictions)
 # these appear to be of the form
 # [action] only if [cond] see Mox Opal
 # NOTE: They all appear to be either activate or cast restrictions
-re_only_if = re.compile(r"^(.+) cn<only_if> ([^.]+\.?$)")
-
-# contains "rather than"
-# 1. alternate costs (if conditionals must be handled first) of the form
-#  [player] may [action] rather than pay [action]
-# 113.6c covers part of this
-re_rather_than_apc = re.compile(
-    r"^(.+) cn<may> (.+) cn<rather_than> xa<pay> ([^\.]+)\.?$"
+#re_only_if = re.compile(r"^([^,|\.]+) cn<only_if> ([^\.]+\.?$)")
+re_only_if = re.compile(
+    r"^(ka<\w+> (?:[^,|\.]+)) cn<only_if> ([^\.]+)\.$"
 )
 
 # contains except
@@ -642,9 +673,11 @@ re_rather_than_apc = re.compile(
 # TODO: Akron Legionnaire is written except for [objects], [restriction]
 # 2. except by
 re_except_for = re.compile(
-    r"^(.+),? cn<except> pr<for> ([^\.]+)\.?$"
+    r"^([^,|\.]+),? cn<except> pr<for> ([^\.]+)\.?$"
 )
 
 ####
 ## TEST SPACE
 ####
+
+re_vanilla_player = re.compile(r"^xp<(\w+)>$")

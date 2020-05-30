@@ -100,4 +100,24 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 192. why were graphing if conditionals in between replacements (have to remember to put these in to the conditional graphing and watch for negative impacts)
 
-193. 
+193. move apc related to seperate function
+
+194. Having issues no with Gobling Bangchuckers. The line itself has two conditionals
+ and would require splitting the line in order to graph correctly
+
+195. Until a search function is implemented in the tree could we use list_utils to search in the list of nodes (tree.nodes)?
+ For example in Seachrome coast the depth first order of nodes is 
+['root', 'static-line:0', 'replacement-effect:0', 'etb-continuous:0', 'permanent:0', 'ungraphed-sentence:0', 'effect:0', 'conditional:0', 'status-unless:0', 'status:0', 'condition:0', 'ungraphed-sentence:1', 'activated-ability:0', 'activated-cost:0', 'ungraphed-sentence:2', 'activated-effect:0', 'ungraphed-sentence:3']
+we can use list_util to splice [etb-continuous, ... ,effect, ..., status-unless] and identifies cards that enter the battlefield tapped unless ... 
+
+196. combine "nu<X> or fewer>" as "<= nu<X>"   
+
+198. Where are the periods getting stripped
+
+200. How graph to be (doing it inside tagger processing leads to multiple errors) might be better to save it for post processing
+
+201. In Xenagos, God of Revels, xenagos is not being self-reffed  because xenagos is a planeswalker subtype because of Xenagos, the Reveler
+
+202. 
+
+
