@@ -509,8 +509,8 @@ re_cond = re.compile(r"\b({})\b".format('|'.join(conditionals)))
 
 # sequence/time related  words
 sequences = [
-    'before','after','until','begin','beginning','end','ending','then',
-    'during','as long as','simultaneously','time'
+    'before','after','until','beginning','end','ending','then','during',
+    'as long as','simultaneously','time'
 ]
 seq_tkns = '|'.join(sequences)
 re_seq = re.compile(
@@ -627,11 +627,11 @@ re_kw = re.compile(
 
 lituus_actions = [  # words not defined in the rules but important any way
     'put','remove','distribute','get','return','draw','move','look','pay','deal',
-    'gain','attack','defend','unblock','block','add','enter','leave','choose','die',
-    'spend','unspend','take','reduce','trigger','prevent','declare','have','switch',
-    'assign','win','lose','tie','skip','flip','cycle','phase','become','share',
-    'turn','produce','round','resolve','do','repeat','change','bid','select',
-    'reselect',
+    'gain','attack','defend','unblock','block','add','enter','leave','choose',
+    'die','spend','unspend','take','reduce','trigger','prevent','declare','have',
+    'switch','assign','win','lose','tie','skip','flip','cycle','phase','become',
+    'share','turn','produce','round','resolve','do','repeat','change','bid',
+    'select','reselect','begin',
     'copy',  # will have already been tagged?
     'named',  # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
