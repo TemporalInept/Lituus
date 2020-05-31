@@ -1514,6 +1514,14 @@ re_encl_punct = re.compile(r"([\.\,])(\'\"|\'|\")")
 # everything just in case
 re_status_suffix = re.compile(r"(st|xs)<(\w+) suffix=(ed)>")
 
+# tagging verb "to be" forms: 'is', 'are' and 'was', 'were' doing this after
+# other tagging to avoid rewriting a lot of patterns
+is_forms = {
+    'is':'xa<is>','are':'xa<is>','was':'xa<is suffix=ed>','were':'xa<is suffix=ed>'
+}
+is_forms_tkns = '|'.join(list(is_forms.keys()))
+re_is2tag = re.compile(r"\b({})\b".format(is_forms_tkns))
+
 ####
 ## PHRASING
 ####

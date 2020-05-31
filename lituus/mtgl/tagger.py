@@ -515,8 +515,10 @@ def postprocess(txt):
 
     # combine stem and suffix on status i.e. st<tap suffix=ed> becomes st<tapped>
     ntxt = mtgl.re_status_suffix.sub(lambda m: _join_suffix_(m),ntxt)
-        #lambda m: r"{}<{}>".format(_join_suffix_(m)),ntxt
-    #)
+
+    # lazy tagging of 'is' verbs as a lituus action to avoid rewriting regex
+    # patterns using 'is' versus a tagged version
+    ntxt = mtgl.re_is2tag.sub(lambda m: mtgl.is_forms[m.group(1)],ntxt)
 
     # TODO: should we put
     #  in any order
