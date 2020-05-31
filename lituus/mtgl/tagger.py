@@ -516,6 +516,9 @@ def postprocess(txt):
     # combine stem and suffix on status i.e. st<tap suffix=ed> becomes st<tapped>
     ntxt = mtgl.re_status_suffix.sub(lambda m: _join_suffix_(m),ntxt)
 
+    # combine type of ability to ability
+    ntxt = mtgl.re_ability_type.sub(lambda m: _join_ability_(m),ntxt)
+
     # lazy tagging of 'is' verbs as a lituus action to avoid rewriting regex
     # patterns using 'is' versus a tagged version
     ntxt = mtgl.re_is2tag.sub(lambda m: mtgl.is_forms[m.group(1)],ntxt)
@@ -1064,4 +1067,17 @@ def _join_suffix_(m):
     tid,stem,suffix = m.groups()
     joined = stem+suffix
     if stem.endswith('p') and suffix in ['ed','ing']: joined = stem+'p'+suffix
+    if stem.endswith('e') and suffix in ['ed','ing']: joined = stem[:-1]+suffix
     return "{}<{}>".format(tid,joined)
+
+def _join_ability_(m):
+    """
+    merges ability type with ability i.e. activated ability
+    :param m: the regex.Match object
+    :return: abilty with type attribute
+    """
+    atype = m.group(1)
+    if not atype: atype = 'bands-with-other'
+    tid,val,attr = mtgltag.untag(m.group(3))
+    attr['type'] = atype
+    return mtgltag.retag(tid,val,attr)

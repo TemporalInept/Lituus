@@ -1,5 +1,3 @@
-8. Look for cards like Tolaria, ..."bands with other"... which may/will cause problems with double quoted words
-
 12. What words/phrases are we missing for sequences?
 
 16. Can we just standarize a regular expression to catch anamolies in function word_hacks?
@@ -122,4 +120,4 @@ we can use list_util to splice [etb-continuous, ... ,effect, ..., status-unless]
 
 203. Six except for/by exceptions (Flame Sweep, Akron Legionnaire, Keldon Firebombers, Inspire Awe)
 
-204. See shrouded lore - why was it graphed as an if conditional and not a if-player-does
+205. except it are more clauses than full phrases
