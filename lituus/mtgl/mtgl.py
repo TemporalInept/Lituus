@@ -1486,6 +1486,14 @@ re_obj_with_kw = re.compile(
     r"kw<([\w-]+)>"
 )
 
+# abilities can be preceded by mana, triggered, activated and in one case "bands
+# with other"
+# NOTE: Assumes that statuses have had their stem and suffix combined
+re_ability_type = re.compile(
+    r"(?:(?:xs|xo)<(\w+)>|(\"bands pr<with> xq<other>\")) "
+     r"(ob<ability(?: suffix=\w?)?>)"
+)
+
 # find phrases of the form [quantifier] [status] object IOT to merge the
 # quantifier and status in the object
 # TODO: this will find everything that has an object, caller will have to verify
