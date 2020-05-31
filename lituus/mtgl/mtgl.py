@@ -153,7 +153,7 @@ def re_self_ref(name):
     :return: the self ref regex pattern
     """
     # NOTE: making the assumption that subtypes supercede self references
-    self_refs = ['this card', 'this spell', 'this permanent', 'his', 'her']
+    self_refs = ['this card','this spell','this permanent','his','her']
     if name.lower() not in sub_characteristics:
         # covers creatures like Assembly-Worker
         self_refs.append(name)
@@ -173,16 +173,16 @@ def re_self_ref(name):
 token_names = [
     # Tokens that have been printed as a non-token card.
     #  See https://mtg.gamepedia.com/Token/Full_List#Printed_as_non-token
-    "Ajani's Pridemate", "Spark Elemental", "Llanowar Elves", "Cloud Sprite",
-    "Goldmeadow Harrier", "Kobolds of Kher Keep", "Metallic Sliver"
-                                                  "Festering Goblin",
+    "Ajani's Pridemate","Spark Elemental","Llanowar Elves","Cloud Sprite",
+    "Goldmeadow Harrier","Kobolds of Kher Keep","Metallic Sliver",
+    "Festering Goblin",
     # Tokens that have not been printed as a non-token card
     # See https://mtg.gamepedia.com/Token/Full_List#Tokens
-    "Etherium Cell", "Land Mine", "Mask", "Marit Lage", "Kaldra", "Carnivore", "Twin",
-    "Minor Demon", "Urami", "Karox Bladewing", "Ashaya, the Awoken World",
-    "Lightning Rager", "Stoneforged Blade", "Tuktuk the Returned", "Mowu", "Stangg Twin",
-    "Butterfly", "Hornet", "Wasp", "Wirefly", "Ragavan", "Kelp", "Wood",
-    "Wolves of the Hunt", "Voja, Friend to Elves", "Tombspawn", "Feather"
+    "Etherium Cell","Land Mine","Mask","Marit Lage","Kaldra","Carnivore","Twin",
+    "Minor Demon","Urami","Karox Bladewing","Ashaya, the Awoken World",
+    "Lightning Rager","Stoneforged Blade","Tuktuk the Returned","Mowu",
+    "Stangg Twin","Butterfly","Hornet","Wasp","Wirefly","Ragavan","Kelp","Wood",
+    "Wolves of the Hunt","Voja, Friend to Elves","Tombspawn","Feather"
 ]
 TN2R = {n: md5(n.encode()).hexdigest() for n in token_names}
 
@@ -200,7 +200,7 @@ re_tkn_ref2 = re.compile(
 # however, since there are only three and no chance of conflict with other words
 # we do a straight replacement re
 meld_tokens = [
-    'Brisela, Voice of Nightmares', 'Chittering Host', 'Hanweir, the Writhing Township'
+    'Brisela, Voice of Nightmares','Chittering Host','Hanweir, the Writhing Township'
 ]
 MN2R = {n: md5(n.encode()).hexdigest() for n in meld_tokens}
 re_tkn_ref3 = re.compile(r"({})".format('|'.join(list(MN2R.keys()))))
@@ -213,8 +213,8 @@ N2R = None
 # basically a hack to catch card names we know are referenced in other cards
 # but are not preceded by 'named' or 'Partner with'
 named_cards = [
-    "Urza's Power Plant", "Urza's Mine", "Urza's Tower",
-    "Throne of Empires", "Crown of Empires", "Scepter of Empires",
+    "Urza's Power Plant","Urza's Mine","Urza's Tower",
+    "Throne of Empires","Crown of Empires","Scepter of Empires",
 ]
 NC2R = {n: md5(n.encode()).hexdigest() for n in named_cards}
 re_oth_ref2 = re.compile(r"({})".format('|'.join(list(NC2R.keys()))))
@@ -260,71 +260,71 @@ re_landwalk_pre = re.compile(r"(\w+?)(?<! land)walk(?!er)")  # seperate type & l
 
 word_hacks = {
     # contractions
-    "can't": "cannot", "don't": "do not", "didn't": "did not", "it's": "it is",
-    "isn't": "is not", "haven't": "have not", "hasn't": "has not", "aren't": "are not",
-    "you're": "you are", "couldn't": "could not", "they're": "they are",
-    "doesn't": "does not", "you've": "you have",
-    "that's": "that is", "wasn't": "was not", "weren't": "were not",
+    "can't":"cannot","don't":"do not","didn't":"did not","it's":"it is",
+    "isn't":"is not","haven't":"have not","hasn't":"has not","aren't":"are not",
+    "you're":"you are","couldn't":"could not","they're":"they are",
+    "doesn't":"does not","you've":"you have",
+    "that's":"that is","wasn't":"was not","weren't":"were not",
     # special
     'an': "a",
     # plural
-    "werewolves": "werewolfs", "allies": "allys", "elves": "elfs", "abilities": "abilitys",
-    "sorceries": "sorcerys", "libraries": "librarys", "armies": "armys",
-    "aurochses": "aurochss", "cyclopes": "cyclops", "fishes": "fishs", "fungi": "fungess",
-    "homunculuses": "homunculuss", "jellyfishes": "jellyfishs", "leeches": "leechs",
-    "mercenaries": "mercenarys", "mongeese": "mongooss", "mice": "mouses", "foxes": "foxs",
-    "nautiluses": "nautiluss", "octopuses": "octopuss", "sphinxes": "sphinxs",
-    "thalakoses": "thalokoss",
+    "werewolves":"werewolfs","allies":"allys","elves":"elfs","abilities":"abilitys",
+    "sorceries":"sorcerys","libraries":"librarys","armies":"armys",
+    "aurochses":"aurochss","cyclopes":"cyclops","fishes":"fishs","fungi":"fungess",
+    "homunculuses":"homunculuss","jellyfishes":"jellyfishs","leeches":"leechs",
+    "mercenaries":"mercenarys","mongeese":"mongooss","mice":"mouses","foxes":"foxs",
+    "nautiluses":"nautiluss","octopuses":"octopuss","sphinxes":"sphinxs",
+    "thalakoses":"thalokoss",
     # acronyms
-    "end of turn": "eot", "converted mana cost": "cmc",
+    "end of turn":"eot","converted mana cost":"cmc",
     # suffixes/tense/possessive (ing,ed,s,'s)
-    "activating": "activateing", "activated": "activateed", "activation": "activateion",
-    "creating": "createing", "created": "createed",
-    "doubling": "doubleing", "doubled": "doubled",
-    "exchanging": "exchangeing", "exchanged": "exchangeed",
-    "equipped": "equiped",
-    "exiling": "exileing", "exiled": "exileed",
-    "spliced": "spliceed",
-    "fought": "fighted",
-    "regenerating": "regenerateing", "regenerated": "regenerateed",
-    "sacrificing": "sacrificeing", "sacrificed": "sacrificeed",
-    "shuffling": "shuffleing", "shuffled": "shuffleed",
-    "dealt": "dealed",
-    "leaving": "leaveing", "left": "leaveed",
-    "won": "wined", "winning": "winned",
+    "activating":"activateing","activated":"activateed","activation":"activateion",
+    "creating":"createing","created":"createed",
+    "doubling":"doubleing","doubled":"doubled",
+    "exchanging":"exchangeing","exchanged":"exchangeed",
+    "equipped":"equiped",
+    "exiling":"exileing","exiled":"exileed",
+    "spliced":"spliceed",
+    "fought":"fighted",
+    "regenerating":"regenerateing","regenerated":"regenerateed",
+    "sacrificing":"sacrificeing","sacrificed":"sacrificeed",
+    "shuffling":"shuffleing","shuffled":"shuffleed",
+    "dealt":"dealed",
+    "leaving":"leaveing","left":"leaveed",
+    "won":"wined","winning":"winned",
     "tied": 'tieed',
-    "lost": "loseed", "losing": "loseing",
-    "its": "it's",
-    "died": "dieed", "dying": "dieing",
-    "choosing": "chooseing", "chosen": "chooseed",
-    "drawn": "drawed",
-    "spent": "spended", "unspent": "unspended",
-    "proliferating": "proliferateing", "proliferated": "proliferateed",
-    "populating": "populateing", "populated": "populateed",
-    "voting": "voteing", "voted": "voteed",
-    "investigating": "investigateing", "investigated": "investigateed",
-    "exploring": "exploreing", "explored": "explored",
-    "copied": "copyied", "copies": "copys",
-    "removing": "removeing", "removed": "removeed",
-    "distributing": "distributeing", "distributed": "distributeed",
-    "got": "getted", "getting": "geting",
-    "moving": "moveing", "moved": "moveed",
-    "paid": "payed",
-    "taking": "takeing", "took": "takeed",
-    "cycled": "cyclinged",  # IOT to match it as the past tense of a keyword
-    "reducing": "reduceing", "reduced": "reduceed",
-    "declaring": "declareing", "declared": "declareed",
-    "has": "haves", "had": "haveed", "having": "haveing",
-    "putting": "puting",
-    "skipped": '"skiped', "skipping": "skiping",
-    "produced": "produceed", "producing": "produceing",
-    "resolved": "resolveed", "resolving": "resolveing",
-    "did": "doed", "does": "do",
+    "lost":"loseed","losing":"loseing",
+    "its":"it's",
+    "died":"dieed","dying":"dieing",
+    "choosing":"chooseing","chosen":"chooseed",
+    "drawn":"drawed",
+    "spent":"spended","unspent":"unspended",
+    "proliferating":"proliferateing","proliferated":"proliferateed",
+    "populating":"populateing","populated":"populateed",
+    "voting":"voteing","voted":"voteed",
+    "investigating":"investigateing","investigated":"investigateed",
+    "exploring":"exploreing","explored":"explored",
+    "copied":"copyied","copies":"copys",
+    "removing":"removeing","removed":"removeed",
+    "distributing":"distributeing","distributed":"distributeed",
+    "got":"getted","getting":"geting",
+    "moving":"moveing","moved":"moveed",
+    "paid":"payed",
+    "taking":"takeing","took":"takeed",
+    "cycled":"cyclinged",  # IOT to match it as the past tense of a keyword
+    "reducing":"reduceing","reduced":"reduceed",
+    "declaring":"declareing","declared":"declareed",
+    "has":"haves","had":"haveed","having":"haveing",
+    "putting":"puting",
+    "skipped": '"skiped', "skipping":"skiping",
+    "produced":"produceed","producing":"produceing",
+    "resolved":"resolveed","resolving":"resolveing",
+    "did":"doed","does":"do",
     # status related
-    "tapping": "taping", "tapped": "taped", "untapping": "untaped", "untapped": "untaped",
-    "flipping": "fliping", "flipped": "fliped",
-    "phased": "phaseed",
-    "kicked": "kickered"
+    "tapping":"taping","tapped":"taped","untapping":"untaped","untapped":"untaped",
+    "flipping":"fliping","flipped":"fliped",
+    "phased":"phaseed",
+    "kicked":"kickered"
 }
 word_hack_tkns = '|'.join(word_hacks.keys())
 re_word_hack = re.compile(r"\b({})\b".format(word_hack_tkns))
@@ -334,9 +334,9 @@ re_word_hack = re.compile(r"\b({})\b".format(word_hack_tkns))
 ####
 
 E2I = {
-    'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
-    'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10',
-    'eleven': '11', 'twelve': '12', 'thirteen': '13', 'fourteen': '14', 'fifteen': '15',
+    'one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7',
+    'eight':'8','nine':'9','ten':'10','eleven':'11','twelve':'12','thirteen':'13',
+    'fourteen':'14','fifteen':'15',
 }
 e2i_tkns = '|'.join(list(E2I.keys()))
 re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
@@ -363,10 +363,10 @@ re_modal_blt = re.compile(r"\.•")
 # Quantifying words
 # TODO:  combine "that is" and "that are" as a  single  quantifier?
 lituus_quantifiers = [
-    'a', 'target', 'each', 'all', 'any', 'every', 'another', 'other', 'this', 'that is',
-    'that are', 'that', 'additional', 'those', 'these', 'their', 'the', 'extra', 'first',
-    'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth',
-    'half', 'twice', 'new', 'single', 'same', 'next', 'last', 'opening',
+    'a','target','each','all','any','every','another','other','this','that is',
+    'that are','that','additional','those','these','their','the','extra','first',
+    'second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth',
+    'half','twice','new','single','same','next','last','opening',
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -378,7 +378,7 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 # Qualifying words
 # TODO: not sure if this is the best place for 'back' or not
 
-lituus_qualifiers = ['less', 'more', 'back', 'many', 'random']
+lituus_qualifiers = ['less','more','back','many','random']
 qualifier_tkns = '|'.join(lituus_qualifiers)
 re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 
@@ -387,7 +387,7 @@ re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 ####
 
 # numbers are 1 or more digits or one of the variable x, y, z which. Only those
-# that are preceded by whitespace, a '/', '+', '-' or start a line and that are
+# that are preceded by whitespace, a '/','+','-' or start a line and that are
 # followed by whitespace '/' or '.' are matched.
 re_number = re.compile(
     r"(?<=(?:^|[ \/+-]))(\d+|x|y|z])(?=(?:[—\s\/+-\.]|$))"
@@ -399,7 +399,7 @@ re_number = re.compile(
 
 # keep suffix but check word boundary in beginning
 objects = [  # objects 109.1 NOTE target can also be an object (115.1)
-    'ability', 'card', 'copy', 'token', 'spell', 'permanent', 'emblem', 'source'
+    'ability','card','copy','token','spell','permanent','emblem','source'
 ]
 obj_tkns = '|'.join(objects)
 re_obj = re.compile(
@@ -409,9 +409,9 @@ re_obj = re.compile(
 # keep suffix but check word boundary in beginning
 # TODO: rest does not belong here
 lituus_objects = [  # lituus objects
-    "city's blessing", 'game', 'mana pool', 'mana cost', 'commander', 'mana', 'attacker',
-    'blocker', 'itself', 'it', 'them', 'coin', 'choice', 'cost', "amount of", 'life total',
-    'life', 'symbol', 'rest', 'monarch',
+    "city's blessing", 'game','mana pool','mana cost','commander','mana','attacker',
+    'blocker','itself','it','them','coin','choice','cost', "amount of", 'life total',
+    'life','symbol','rest','monarch',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
@@ -420,7 +420,7 @@ re_lituus_obj = re.compile(
 
 # lituus players - keep suffix but check word boundary in beginning
 lituus_players = [
-    'you', 'opponent', 'teammate', 'player', 'owner', 'controller', 'they'
+    'you','opponent','teammate','player','owner','controller','they'
 ]
 lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
@@ -433,7 +433,7 @@ re_lituus_ply = re.compile(
 
 # phases 500.1 & 505.1 (collective Main Phase) Note: this will drop the word phase
 phases = [
-    'beginning', 'precombat main', 'combat', 'postcombat main', 'ending', 'main'
+    'beginning','precombat main','combat','postcombat main','ending','main'
 ]
 re_phase = re.compile(r"\b({}) phase".format('|'.join(phases)))
 
@@ -453,16 +453,16 @@ re_combat_phase = re.compile(
 # Note: this will drop the word step
 # Note: because some steps do not include the word 'step' and some steps may mean
 #  multiple things (i.e. untap, draw, end), there are two regexs
-steps1 = ['untap', 'draw', 'end', 'combat damage']  # must be followed by 'step'
+steps1 = ['untap','draw','end','combat damage']  # must be followed by 'step'
 steps2 = [  # may or may not be followed by 'step'
-    'upkeep', 'beginning of combat', 'declare attackers',
-    'declare blockers', 'end of combat', 'cleanup',
+    'upkeep','beginning of combat','declare attackers',
+    'declare blockers','end of combat','cleanup',
 ]
 re_step1 = re.compile(r"\b({}) step".format('|'.join(steps1)))
 re_step2 = re.compile(r"\b({})( step)?".format('|'.join(steps2)))
 
 # generic terms NOTE: standalone 'phase' is handled later in Status)
-generic_turns = ["turn", "step", "eot"]
+generic_turns = ["turn","step","eot"]
 re_generic_turn = re.compile(r"\b({})".format('|'.join(generic_turns)))
 
 ####
@@ -484,8 +484,8 @@ op = {
     "at least": GE, "plus": '+', "minus": '-',
 }
 op_keys = [
-    "less than or equal to", "no more than", "greater than or equal to", "less than",
-    "more than", "greater than", "equal to", "equal", "at least", "plus", "minus",
+    "less than or equal to","no more than","greater than or equal to","less than",
+    "more than","greater than","equal to","equal","at least","plus","minus",
 ]
 re_op = re.compile(r"\b({})\b".format('|'.join(list(op_keys))))
 
@@ -494,23 +494,23 @@ re_num_op = re.compile(r"(nu<(?:\d+|x|y|z)>) or (greater|less|more)")
 
 # prepositions (check for ending tags)
 prepositions = [
-    'on top of', 'up to', 'on bottom of', 'from', 'to', 'into', 'in', 'on', 'out', 'under',
-    'onto', 'top of', 'top', 'bottom of', 'bottom', 'without', 'with', 'for', 'up', 'down',
+    'on top of','up to','on bottom of','from','to','into','in','on','out','under',
+    'onto','top of','top','bottom of','bottom','without','with','for','up','down',
     'by',
 ]
 re_prep = re.compile(r"\b(?<!<)({})\b(?!>)".format('|'.join(prepositions)))
 
 # conditional/requirement related
 conditionals = [
-    'only if', 'if', 'would', 'could', 'unless', 'rather than', 'instead', 'may', 'except',
-    'not', 'only', 'cannot', 'can',
+    'only if','if','would','could','unless','rather than','instead','may','except',
+    'not','only','cannot','can',
 ]
 re_cond = re.compile(r"\b({})\b".format('|'.join(conditionals)))
 
 # sequence/time related  words
 sequences = [
-    'before', 'after', 'until', 'begin', 'beginning', 'end', 'ending', 'then',
-    'during', 'as long as', 'simultaneously', 'time'
+    'before','after','until','begin','beginning','end','ending','then',
+    'during','as long as','simultaneously','time'
 ]
 seq_tkns = '|'.join(sequences)
 re_seq = re.compile(
@@ -535,28 +535,28 @@ re_trigger = re.compile(r"\b(at|whenever|when)\b")
 # NOTE: this must be done prior to keyword actions processing
 re_pt_ctr = re.compile(r"(\+|-)nu<(\d+)>/(\+|-)nu<(\d+)> (counters*)\b")
 named_counters = [
-    'age', 'aim', 'arrow', 'arrowhead', 'awakening', 'blaze', 'blood', 'bounty', 'bribery',
-    'brick', 'cage', 'carrion', 'charge', 'coin', 'credit', 'corpse', 'crystal', 'cube',
-    'currency', 'death', 'delay', 'depletion', 'despair', 'devotion', 'divinity', 'doom',
-    'dream', 'echo', 'egg', 'elixir', 'energy', 'eon', 'experience', 'eyeball', 'fade',
-    'fate', 'feather', 'filibuster', 'flood', 'flying', 'fungus', 'fuse', 'gem', 'glyph',
-    'gold', 'growth', 'hatchling', 'healing', 'hit', 'hoofprint', 'hour', 'hourglass',
-    'hunger', 'ice', 'incubation', 'infection', 'intervention', 'isolation', 'javelin',
-    'ki', 'knowledge', 'level', 'lore', 'loyalty', 'luck', 'magnet', 'manifestation',
-    'mannequin', 'mask', 'matrix', 'mine', 'mining', 'mire', 'music', 'muster', 'net',
-    'omen', 'ore', 'page', 'pain', 'paralyzation', 'petal', 'petrification', 'phylactery',
-    'pin', 'plague', 'poison', 'polyp', 'pressure', 'prey', 'pupa', 'quest', 'rust',
-    'scream', 'shell', 'shield', 'silver', 'shred', 'sleep', 'sleight', 'slime', 'slumber',
-    'soot', 'spark', 'spore', 'storage', 'strife', 'study', 'task', 'theft', 'tide', 'time',
-    'tower', 'training', 'trap', 'treasure', 'velocity', 'verse', 'vitality', 'volatile',
-    'wage', 'winch', 'wind', 'wish',
+    'age','aim','arrow','arrowhead','awakening','blaze','blood','bounty','bribery',
+    'brick','cage','carrion','charge','coin','credit','corpse','crystal','cube',
+    'currency','death','delay','depletion','despair','devotion','divinity','doom',
+    'dream','echo','egg','elixir','energy','eon','experience','eyeball','fade',
+    'fate','feather','filibuster','flood','flying','fungus','fuse','gem','glyph',
+    'gold','growth','hatchling','healing','hit','hoofprint','hour','hourglass',
+    'hunger','ice','incubation','infection','intervention','isolation','javelin',
+    'ki','knowledge','level','lore','loyalty','luck','magnet','manifestation',
+    'mannequin','mask','matrix','mine','mining','mire','music','muster','net',
+    'omen','ore','page','pain','paralyzation','petal','petrification','phylactery',
+    'pin','plague','poison','polyp','pressure','prey','pupa','quest','rust',
+    'scream','shell','shield','silver','shred','sleep','sleight','slime','slumber',
+    'soot','spark','spore','storage','strife','study','task','theft','tide','time',
+    'tower','training','trap','treasure','velocity','verse','vitality','volatile',
+    'wage','winch','wind','wish',
 
 ]
 named_ctr_tkns = '|'.join(named_counters)
 re_named_ctr = re.compile(r"\b({}) counter(s)?\b".format(named_ctr_tkns))
 iko_counters = [
-    'deathtouch', 'double strike', 'first strike', 'flying', 'hexproof',
-    'indestructible', 'lifelink', 'menace', 'reach', 'trample', 'vigilance',
+    'deathtouch','double strike','first strike','flying','hexproof',
+    'indestructible','lifelink','menace','reach','trample','vigilance',
 ]
 iko_ctr_tkns = '|'.join(iko_counters)
 re_iko_ctr = re.compile(r"\b({}) counter\b".format(iko_ctr_tkns))
@@ -566,12 +566,12 @@ re_iko_ctr = re.compile(r"\b({}) counter\b".format(iko_ctr_tkns))
 ####
 
 ability_words = [  # ability words 207.2c Updated 25-May-20 with IKO
-    "adamant", "addendum", "battalion", "bloodrush", "channel", "chroma", "cohort",
-    "constellation", "converge", "council's dilemma", "delirium", "domain", "eminence",
-    "enrage", "fateful hour", "ferocious", "formidable", "grandeur", "hellbent",
-    "heroic", "imprint", "inspired", "join forces", "kinship", "landfall", "lieutenant",
-    "metalcraft", "morbid", "parley", "radiance", "raid", "rally", "revolt",
-    "spell mastery", "strive", "sweep", "tempting offer", "threshold", "undergrowth",
+    "adamant","addendum","battalion","bloodrush","channel","chroma","cohort",
+    "constellation","converge","council's dilemma","delirium","domain","eminence",
+    "enrage","fateful hour","ferocious","formidable","grandeur","hellbent",
+    "heroic","imprint","inspired","join forces","kinship","landfall","lieutenant",
+    "metalcraft","morbid","parley","radiance","raid","rally","revolt",
+    "spell mastery","strive","sweep","tempting offer","threshold","undergrowth",
     "will of the council"
 ]
 aw_tkns = '|'.join(ability_words)
@@ -581,12 +581,12 @@ re_aw = re.compile(
 )
 
 keyword_actions = [  # (legal) Keyword actions 701.2 - 701.43 Updated IKO 25-May-20
-    'activate', 'attach', 'unattach', 'cast', 'counter', 'create', 'destroy', 'discard',
-    'double', 'exchange', 'exile', 'fight', 'play', 'regenerate', 'reveal', 'sacrifice',
-    'scry', 'search', 'shuffle', 'tap', 'untap', 'fateseal', 'clash', 'abandon',
-    'proliferate', 'transform', 'detain', 'populate', 'monstrosity', 'vote', 'bolster',
-    'manifest', 'support', 'investigate', 'meld', 'goad', 'exert', 'explore', 'surveil',
-    'adapt', 'amass',
+    'activate','attach','unattach','cast','counter','create','destroy','discard',
+    'double','exchange','exile','fight','play','regenerate','reveal','sacrifice',
+    'scry','search','shuffle','tap','untap','fateseal','clash','abandon',
+    'proliferate','transform','detain','populate','monstrosity','vote','bolster',
+    'manifest','support','investigate','meld','goad','exert','explore','surveil',
+    'adapt','amass',
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
@@ -595,27 +595,27 @@ re_kw_act = re.compile(
 )
 
 keywords = [  # (legal) Keyword Abilties 702.2 - 702,139 Updated IKO 25-May-20
-    'deathtouch', 'defender', 'double strike', 'enchant', 'equip', 'first strike',
-    'flash', 'flying', 'haste', 'hexproof', 'indestructible', 'intimidate', 'landwalk',
-    'lifelink', 'protection', 'reach', 'shroud', 'trample', 'vigilance', 'banding',
-    'rampage', 'cumulative upkeep', 'flanking', 'phasing', 'buyback', 'shadow',
-    'cycling', 'cycle', 'echo', 'horsemanship', 'fading', 'kicker', 'multikicker',
-    'flashback', 'madness', 'fear', 'morph', 'megamorph', 'amplify', 'provoke', 'storm',
-    'affinity', 'entwine', 'modular', 'sunburst', 'bushido', 'soulshift', 'splice',
-    'offering', 'ninjutsu', 'commander ninjutsu', 'epic', 'convoke', 'dredge',
-    'transmute', 'bloodthirst', 'haunt', 'replicate', 'forecast', 'graft', 'recover',
-    'ripple', 'split second', 'suspend', 'vanishing', 'absorb', 'aura swap', 'delve',
-    'fortify', 'frenzy', 'gravestorm', 'poisonous', 'transfigure', 'champion',
-    'changeling', 'evoke', 'hideaway', 'prowl', 'reinforce', 'conspire', 'persist',
-    'wither', 'retrace', 'devour', 'exalted', 'unearth', 'cascade', 'annihilator',
-    'level up', 'rebound', 'totem armor', 'infect', 'battle cry', 'living weapon',
-    'undying', 'miracle', 'soulbond', 'overload', 'scavenge', 'unleash', 'cipher',
-    'evolve', 'extort', 'fuse', 'bestow', 'tribute', 'dethrone', 'outlast', 'prowess',
-    'dash', 'exploit', 'menace', 'renown', 'awaken', 'devoid', 'ingest', 'myriad',
-    'surge', 'skulk', 'emerge', 'escalate', 'melee', 'crew', 'fabricate', 'partner with',
-    'partner', 'undaunted', 'improvise', 'aftermath', 'embalm', 'eternalize', 'afflict',
-    'ascend', 'assist', 'jump-start', 'mentor', 'afterlife', 'riot', 'spectacle',
-    'escape', 'companion', 'mutate',
+    'deathtouch','defender','double strike','enchant','equip','first strike',
+    'flash','flying','haste','hexproof','indestructible','intimidate','landwalk',
+    'lifelink','protection','reach','shroud','trample','vigilance','banding',
+    'rampage','cumulative upkeep','flanking','phasing','buyback','shadow',
+    'cycling','cycle','echo','horsemanship','fading','kicker','multikicker',
+    'flashback','madness','fear','morph','megamorph','amplify','provoke','storm',
+    'affinity','entwine','modular','sunburst','bushido','soulshift','splice',
+    'offering','ninjutsu','commander ninjutsu','epic','convoke','dredge',
+    'transmute','bloodthirst','haunt','replicate','forecast','graft','recover',
+    'ripple','split second','suspend','vanishing','absorb','aura swap','delve',
+    'fortify','frenzy','gravestorm','poisonous','transfigure','champion',
+    'changeling','evoke','hideaway','prowl','reinforce','conspire','persist',
+    'wither','retrace','devour','exalted','unearth','cascade','annihilator',
+    'level up','rebound','totem armor','infect','battle cry','living weapon',
+    'undying','miracle','soulbond','overload','scavenge','unleash','cipher',
+    'evolve','extort','fuse','bestow','tribute','dethrone','outlast','prowess',
+    'dash','exploit','menace','renown','awaken','devoid','ingest','myriad',
+    'surge','skulk','emerge','escalate','melee','crew','fabricate','partner with',
+    'partner','undaunted','improvise','aftermath','embalm','eternalize','afflict',
+    'ascend','assist','jump-start','mentor','afterlife','riot','spectacle',
+    'escape','companion','mutate',
 ]
 kw_tkns = '|'.join(keywords)
 re_kw = re.compile(
@@ -626,11 +626,11 @@ re_kw = re.compile(
 )
 
 lituus_actions = [  # words not defined in the rules but important any way
-    'put', 'remove', 'distribute', 'get', 'return', 'draw', 'move', 'look', 'pay', 'deal',
-    'gain', 'attack', 'defend', 'unblock', 'block', 'add', 'enter', 'leave', 'choose', 'die',
-    'spend', 'unspend', 'take', 'reduce', 'trigger', 'prevent', 'declare', 'have', 'switch',
-    'assign', 'win', 'lose', 'tie', 'skip', 'flip', 'cycle', 'phase', 'become', 'share',
-    'turn', 'produce', 'round', 'resolve', 'do',
+    'put','remove','distribute','get','return','draw','move','look','pay','deal',
+    'gain','attack','defend','unblock','block','add','enter','leave','choose','die',
+    'spend','unspend','take','reduce','trigger','prevent','declare','have','switch',
+    'assign','win','lose','tie','skip','flip','cycle','phase','become','share',
+    'turn','produce','round','resolve','do','repeat',
     'copy',  # will have already been tagged?
     'named',  # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
@@ -641,7 +641,7 @@ re_lituus_act = re.compile(
 )
 
 # because target is primarily a quantifier we will only tag the verb version
-# with suffix 's', 'ing' or 'ed' NOTE: currently have only seen 's'
+# with suffix 's','ing' or 'ed' NOTE: currently have only seen 's'
 re_lituus_target_verb = re.compile(r'\btarget(s|ing|ed)\b')
 
 ####
@@ -650,7 +650,7 @@ re_lituus_target_verb = re.compile(r'\btarget(s|ing|ed)\b')
 
 # (609) we only tag the word effect, combat damage and effect
 # NOTE: These should not have already been tagged, but just in case
-effects = ["combat damage", "damage", "effect"]
+effects = ["combat damage","damage","effect"]
 eff_tkns = '|'.join(effects)
 re_effect = re.compile(
     r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→=\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(eff_tkns)
@@ -661,8 +661,8 @@ re_effect = re.compile(
 ####
 
 meta_characteristics = [  # 200.1 These are parts of a card
-    'p/t', 'everything', 'text', 'name', 'mana cost', 'cmc', 'power', 'toughness',
-    'color identity', 'color', 'type'
+    'p/t','everything','text','name','mana cost','cmc','power','toughness',
+    'color identity','color','type'
 ]
 re_meta_char = re.compile(r"{}".format('|'.join(meta_characteristics)))
 re_meta_attr = re.compile(  # for meta characteristics
@@ -671,16 +671,16 @@ re_meta_attr = re.compile(  # for meta characteristics
 )
 
 color_characteristics = [  # 105.1, 105.2a, 105.2b, 105.2c
-    'white', 'blue', 'black', 'green', 'red', 'colorless', 'multicolored', 'monocolored'
+    'white','blue','black','green','red','colorless','multicolored','monocolored'
 ]
 re_clr_char = re.compile(r"{}".format('|'.join(color_characteristics)))
 
-super_characteristics = ['legendary', 'basic', 'snow', 'world']  # 205.4a
+super_characteristics = ['legendary','basic','snow','world']  # 205.4a
 re_super_char = re.compile(r"{}".format('|'.join(super_characteristics)))
 
 type_characteristics = [  # 300.1, NOTE: we added historic
-    'artifact', 'creature', 'enchantment', 'instant', 'land', 'planeswalker',
-    'sorcery', 'tribal', 'historic',
+    'artifact','creature','enchantment','instant','land','planeswalker',
+    'sorcery','tribal','historic',
 ]
 re_type_char = re.compile(r"{}".format('|'.join(type_characteristics)))
 
@@ -688,7 +688,7 @@ re_type_char = re.compile(r"{}".format('|'.join(type_characteristics)))
 
 # 205.3g artifact subtypes
 subtype_artifact_characteristics = [
-    "clue", "equipment", "food", "fortification", "gold", "treasure", "vehicle",
+    "clue","equipment","food","fortification","gold","treasure","vehicle",
 ]
 re_subtype_artifact_char = re.compile(
     r"{}".format('|'.join(subtype_artifact_characteristics))
@@ -696,7 +696,7 @@ re_subtype_artifact_char = re.compile(
 
 # 205.3h enchantment subtypes
 subtype_enchantment_characteristics = [
-    "aura", "cartouche", "curse", "saga", "shrine",
+    "aura","cartouche","curse","saga","shrine",
 ]
 re_subtype_enchantment_char = re.compile(
     r"{}".format('|'.join(subtype_enchantment_characteristics))
@@ -704,8 +704,8 @@ re_subtype_enchantment_char = re.compile(
 
 # 205.3i land subtypes
 subtype_land_characteristics = [
-    "desert", "forest", "gate", "island", "lair", "locus", "mine", "mountain",
-    "plains", "power-plant", "swamp", "tower", "urza’s",
+    "desert","forest","gate","island","lair","locus","mine","mountain",
+    "plains","power-plant","swamp","tower","urza’s",
 ]
 re_subtype_land_char = re.compile(
     r"{}".format('|'.join(subtype_land_characteristics))
@@ -713,57 +713,57 @@ re_subtype_land_char = re.compile(
 
 # 205.3j planeswalker types
 subtype_planeswalker_characteristics = [
-    "ajani", "aminatou", "angrath", "arlinn", "ashiok", "bolas", "calix", "chandra",
-    "dack", "daretti", "davriel", "domri", "dovin", "elspeth", "estrid", "freyalise",
-    "garruk", "gideon", "huatli", "jace", "jaya", "karn", "kasmina", "kaya", "kiora",
-    "koth", "liliana", "lukka", "nahiri", "narset", "nissa", "nixilis", "oko", "ral",
-    "rowan", "saheeli", "samut", "sarkhan", "serra", "sorin", "tamiyo", "teferi", "teyo",
-    "tezzeret", "tibalt", "ugin", "venser", "vivien", "vraska", "will", "windgrace",
-    "wrenn", "xenagos", "yanggu", "yanling",
+    "ajani","aminatou","angrath","arlinn","ashiok","bolas","calix","chandra",
+    "dack","daretti","davriel","domri","dovin","elspeth","estrid","freyalise",
+    "garruk","gideon","huatli","jace","jaya","karn","kasmina","kaya","kiora",
+    "koth","liliana","lukka","nahiri","narset","nissa","nixilis","oko","ral",
+    "rowan","saheeli","samut","sarkhan","serra","sorin","tamiyo","teferi","teyo",
+    "tezzeret","tibalt","ugin","venser","vivien","vraska","will","windgrace",
+    "wrenn","xenagos","yanggu","yanling",
 ]
 re_subtype_planeswalker_char = re.compile(
     r"{}".format('|'.join(subtype_planeswalker_characteristics))
 )
 
 # 205.3k instant/sorcery subtypes
-subtype_instant_sorcery_characteristics = ["adventure", "arcane", "trap", ]
+subtype_instant_sorcery_characteristics = ["adventure","arcane","trap", ]
 re_subtype_instant_sorcery_char = re.compile(
     r"{}".format('|'.join(subtype_instant_sorcery_characteristics))
 )
 
 # 205.3m creature subtypes
 subtype_creature_characteristics = [
-    "advisor", "aetherborn", "ally", "angel", "antelope", "ape", "archer", "archon",
-    "army", "artificer", "assassin", "assembly-worker", "atog", "aurochs", "avatar",
-    "azra", "badger", "barbarian", "basilisk", "bat", "bear", "beast", "beeble",
-    "berserker", "bird", "blinkmoth", "boar", "bringer", "brushwagg", "camarid", "camel",
-    "caribou", "carrier", "cat", "centaur", "cephalid", "chimera", "citizen", "cleric",
-    "cockatrice", "construct", "coward", "crab", "crocodile", "cyclops", "dauthi",
-    "demigod", "demon", "deserter", "devil", "dinosaur", "djinn", "dragon", "drake",
-    "dreadnought", "drone", "druid", "dryad", "dwarf", "efreet", "egg", "elder", "eldrazi",
-    "elemental", "elephant", "elf", "elk", "eye", "faerie", "ferret", "fish", "flagbearer",
-    "fox", "frog", "fungus", "gargoyle", "germ", "giant", "gnome", "goat", "goblin", "god",
-    "golem", "gorgon", "graveborn", "gremlin", "griffin", "hag", "harpy", "hellion",
-    "hippo", "hippogriff", "homarid", "homunculus", "horror", "horse", "hound", "human",
-    "hydra", "hyena", "illusion", "imp", "incarnation", "insect", "jackal", "jellyfish",
-    "juggernaut", "kavu", "kirin", "kithkin", "knight", "kobold", "kor", "kraken", "lamia",
-    "lammasu", "leech", "leviathan", "lhurgoyf", "licid", "lizard", "manticore",
-    "masticore", "mercenary", "merfolk", "metathran", "minion", "minotaur", "mole",
-    "monger", "mongoose", "monk", "monkey", "moonfolk", "mouse", "mutant", "myr", "mystic",
-    "naga", "nautilus", "nephilim", "nightmare", "nightstalker", "ninja", "noble",
-    "noggle", "nomad", "nymph", "octopus", "ogre", "ooze", "orb", "orc", "orgg", "otter",
-    "ouphe", "ox", "oyster", "pangolin", "peasant", "pegasus", "pentavite", "pest",
-    "phelddagrif", "phoenix", "pilot", "pincher", "pirate", "plant", "praetor", "prism",
-    "processor", "rabbit", "rat", "rebel", "reflection", "rhino", "rigger", "rogue",
-    "sable", "salamander", "samurai", "sand", "saproling", "satyr", "scarecrow", "scion",
-    "scorpion", "scout", "sculpture", "serf", "serpent", "servo", "shade", "shaman",
-    "shapeshifter", "shark", "sheep", "siren", "skeleton", "slith", "sliver", "slug",
-    "snake", "soldier", "soltari", "spawn", "specter", "spellshaper", "sphinx", "spider",
-    "spike", "spirit", "splinter", "sponge", "squid", "squirrel", "starfish", "surrakar",
-    "survivor", "tentacle", "tetravite", "thalakos", "thopter", "thrull", "treefolk",
-    "trilobite", "triskelavite", "troll", "turtle", "unicorn", "vampire", "vedalken",
-    "viashino", "volver", "wall", "warlock", "warrior", "weird", "werewolf", "whale",
-    "wizard", "wolf", "wolverine", "wombat", "worm", "wraith", "wurm", "yeti", "zombie",
+    "advisor","aetherborn","ally","angel","antelope","ape","archer","archon",
+    "army","artificer","assassin","assembly-worker","atog","aurochs","avatar",
+    "azra","badger","barbarian","basilisk","bat","bear","beast","beeble",
+    "berserker","bird","blinkmoth","boar","bringer","brushwagg","camarid","camel",
+    "caribou","carrier","cat","centaur","cephalid","chimera","citizen","cleric",
+    "cockatrice","construct","coward","crab","crocodile","cyclops","dauthi",
+    "demigod","demon","deserter","devil","dinosaur","djinn","dragon","drake",
+    "dreadnought","drone","druid","dryad","dwarf","efreet","egg","elder","eldrazi",
+    "elemental","elephant","elf","elk","eye","faerie","ferret","fish","flagbearer",
+    "fox","frog","fungus","gargoyle","germ","giant","gnome","goat","goblin","god",
+    "golem","gorgon","graveborn","gremlin","griffin","hag","harpy","hellion",
+    "hippo","hippogriff","homarid","homunculus","horror","horse","hound","human",
+    "hydra","hyena","illusion","imp","incarnation","insect","jackal","jellyfish",
+    "juggernaut","kavu","kirin","kithkin","knight","kobold","kor","kraken","lamia",
+    "lammasu","leech","leviathan","lhurgoyf","licid","lizard","manticore",
+    "masticore","mercenary","merfolk","metathran","minion","minotaur","mole",
+    "monger","mongoose","monk","monkey","moonfolk","mouse","mutant","myr","mystic",
+    "naga","nautilus","nephilim","nightmare","nightstalker","ninja","noble",
+    "noggle","nomad","nymph","octopus","ogre","ooze","orb","orc","orgg","otter",
+    "ouphe","ox","oyster","pangolin","peasant","pegasus","pentavite","pest",
+    "phelddagrif","phoenix","pilot","pincher","pirate","plant","praetor","prism",
+    "processor","rabbit","rat","rebel","reflection","rhino","rigger","rogue",
+    "sable","salamander","samurai","sand","saproling","satyr","scarecrow","scion",
+    "scorpion","scout","sculpture","serf","serpent","servo","shade","shaman",
+    "shapeshifter","shark","sheep","siren","skeleton","slith","sliver","slug",
+    "snake","soldier","soltari","spawn","specter","spellshaper","sphinx","spider",
+    "spike","spirit","splinter","sponge","squid","squirrel","starfish","surrakar",
+    "survivor","tentacle","tetravite","thalakos","thopter","thrull","treefolk",
+    "trilobite","triskelavite","troll","turtle","unicorn","vampire","vedalken",
+    "viashino","volver","wall","warlock","warrior","weird","werewolf","whale",
+    "wizard","wolf","wolverine","wombat","worm","wraith","wurm","yeti","zombie",
     "zubera",
 ]
 re_subtype_creature_char = re.compile(
@@ -781,7 +781,7 @@ re_sub_char = re.compile(r"{}".format('|'.join(sub_characteristics)))
 
 # subtype of
 subtypes_of = [
-    'artifact', 'enchantment', 'land', 'planeswalker', 'instant∨sorcery', 'creature'
+    'artifact','enchantment','land','planeswalker','instant∨sorcery','creature'
 ]
 TYPE_ARTIFACT = 0
 TYPE_ENCHANTMENT = 1
@@ -873,7 +873,7 @@ re_single_pt = re.compile(r"ch<power> and ch<toughness>")
 # lituus characteristics
 # TODO: keep control, own?
 lituus_characteristics = [
-    'life total', 'control', 'own', 'life', 'hand size', 'devotion'
+    'life total','control','own','life','hand size','devotion'
 ]
 lituus_ch_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
@@ -886,7 +886,7 @@ re_lituus_ch = re.compile(
 
 # zones 400.1
 zones = [
-    'library', 'hand', 'battlefield', 'graveyard', 'stack', 'exile', 'command', 'anywhere'
+    'library','hand','battlefield','graveyard','stack','exile','command','anywhere'
 ]
 zn_tkns = '|'.join(zones)
 re_zone = re.compile(
@@ -908,15 +908,15 @@ re_zone = re.compile(
 # Status will have already been tagged as something else therefore, we list them
 # here and provide Status Deconfliction further on
 
-status = ['tap', 'flip', 'phase', 'face']
+status = ['tap','flip','phase','face']
 
 # lituus status
 # As above, these will have already been tagged as something and will have to
 # be deconficted - they are only listed here for reference
 lituus_status = [
-    'attacking', 'blocking', 'defending', 'transformed', 'enchanted', 'equipped',
-    'exiled', 'unattached', 'attached', 'activated', 'triggered', 'revealed',
-    'suspended', 'kicked', 'discarded', 'cycled',
+    'attacking','blocking','defending','transformed','enchanted','equipped',
+    'exiled','unattached','attached','activated','triggered','revealed',
+    'suspended','kicked','discarded','cycled',
 ]
 
 ####
@@ -941,7 +941,7 @@ re_ed_thing_lituus_status = re.compile(
 # combat related attacking, blocking, and tapped that are conjoined. In the first
 # term we have to check for both ka and st with regards to tapped because cards
 # like Geist of Saint Traft have incorrectly tagged status.
-# This matches the phrases "tapped and attacking", "attacking or blocking and
+# This matches the phrases "tapped and attacking","attacking or blocking and
 # "unblocked attacking"
 re_combat_status_chain = re.compile(
     r"(st|ka|xa)<((?:un)?(?:tap|attack|block)) suffix=(ed|ing)>"
@@ -1030,22 +1030,22 @@ re_kw_action = re.compile(
 #  we have to look for the tagged phrase for will of the Council which will be
 #  tagged ch<will> of xq<the> council have to handjam this for now
 val_join = {
-    "city's blessing": "city's_blessing", "precombat main": "precombat_main",
-    "postcombat main": "postcombat_main", "beginning of combat": "beginning_of_combat",
-    "declare attackers": "declare_attackers", "declare blockers": "declare_blockers",
-    "end of combat": "end_of_combat", "combat damage": "combat_damage",
-    "on top of": "on_top_of", "up to": "up_to", "on bottom of": "on_bottom_of",
-    "top of": "top_of", "bottom of": "bottom_of", "only if": "only_if",
-    "as long as": "as_long_as", "council's dilemma": "council's_dilemma",
-    "fateful hour": "fateful_hour", "join forces": "join_forces",
-    "spell mastery": "spell_master", "tempting offer": "tempting_offer",
-    "will of the council": "will_of_the_council",
-    "double strike": "double_strike", "first strike": "first_strike",
-    "commander ninjutsu": "commander_ninjutsu", "split second": "split_second",
-    "living weapon": "living_weapon", "totem armor": "totem_armor",
-    "color identity": "color_identity",  # "mana cost":"mana_cost",
-    "amount of": "amount_of", "that is": "that_is", "that are": "that_are",
-    "life total": "life_total", "rather than": "rather_than",
+    "city's blessing":"city's_blessing","precombat main":"precombat_main",
+    "postcombat main":"postcombat_main","beginning of combat":"beginning_of_combat",
+    "declare attackers":"declare_attackers","declare blockers":"declare_blockers",
+    "end of combat":"end_of_combat","combat damage":"combat_damage",
+    "on top of":"on_top_of","up to":"up_to","on bottom of":"on_bottom_of",
+    "top of":"top_of","bottom of":"bottom_of","only if":"only_if",
+    "as long as":"as_long_as","council's dilemma":"council's_dilemma",
+    "fateful hour":"fateful_hour","join forces":"join_forces",
+    "spell mastery":"spell_master","tempting offer":"tempting_offer",
+    "will of the council":"will_of_the_council",
+    "double strike":"double_strike","first strike":"first_strike",
+    "commander ninjutsu":"commander_ninjutsu","split second":"split_second",
+    "living weapon":"living_weapon","totem armor":"totem_armor",
+    "color identity":"color_identity",  # "mana cost":"mana_cost",
+    "amount of":"amount_of","that is":"that_is","that are":"that_are",
+    "life total":"life_total","rather than":"rather_than",
 }
 val_join_tkns = '|'.join(val_join.keys())
 re_val_join = re.compile(r"(?<=[<=])({})(?=>)".format(val_join_tkns))
@@ -1162,10 +1162,10 @@ re_cost_except = re.compile(  # Drought and Brutal Suppresion and Valiant Change
 # tags are incorrectly tagged i.e. Cumulative Upkeep which is tagged as
 # cummulative ts<upkeep>
 misstag = {
-    "ch<will> of xq<the> council": "aw<will_of_the_council>",
-    "xq<first> strike": "kw<first_strike>",
-    "cumulative ts<upkeep>": "kw<cumlative_upkeep>",
-    "xo<commander> kw<ninjutsu>": "kw<commander ninjutsu",
+    "ch<will> of xq<the> council":"aw<will_of_the_council>",
+    "xq<first> strike":"kw<first_strike>",
+    "cumulative ts<upkeep>":"kw<cumlative_upkeep>",
+    "xo<commander> kw<ninjutsu>":"kw<commander ninjutsu",
 }
 misstag_tkns = '|'.join(misstag.keys())
 re_misstag = re.compile(r"({})".format(misstag_tkns))
@@ -1190,7 +1190,7 @@ re_at_prep2 = re.compile(r"(tp<at>)(?=[^,]+?\.)")
 ## SUFFICES
 ####
 
-# move any suffices 'r', 's', 'ing' 'ed' or "'s" to parameters inside tags
+# move any suffices 'r','s','ing' 'ed' or "'s" to parameters inside tags
 re_suffix = re.compile(r"(\w\w)<(.+?)>(s'|r|s|ion|ing|ed|'s)")
 
 ####
@@ -1338,7 +1338,7 @@ re_clr_conjunction_chain = re.compile(
 re_clr_conjunction_chain_special = re.compile(
     r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>, )*"
     r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>)"
-    r", "
+    r","
     r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>)"
 )
 
@@ -1387,7 +1387,7 @@ re_conjunction_chain_special = re.compile(
     r"ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored|"
     r"artifact|creature|enchantment|instant|land|planeswalker|sorcery|tribal|"
     r"historic|legendary|basic|snow|world))>"
-    r", "
+    r","
     r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
     r"(?:, (and|or|and/or))?"
 )
@@ -1396,7 +1396,7 @@ re_conjunction_chain_special = re.compile(
 re_pob_chain = re.compile(
     r"ch<(¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))"
     r"[∧∨⊕](¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))>"
-    r", "
+    r","
     r"ch<(¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))>"
     r"(?:, (and|or|and/or))"
 )

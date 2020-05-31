@@ -118,6 +118,8 @@ we can use list_util to splice [etb-continuous, ... ,effect, ..., status-unless]
 
 201. In Xenagos, God of Revels, xenagos is not being self-reffed  because xenagos is a planeswalker subtype because of Xenagos, the Reveler
 
-202. 
+202. Finish rather-than clauses 
 
+203. Six except for/by exceptions (Flame Sweep, Akron Legionnaire, Keldon Firebombers, Inspire Awe)
 
+204. See shrouded lore - why was it graphed as an if conditional and not a if-player-does
