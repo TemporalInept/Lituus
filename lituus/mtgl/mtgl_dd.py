@@ -30,9 +30,7 @@ import regex as re
 # Thanks to 'Jens' for the solution to this at
 # https://stackoverflow.com/questions/6462578/regex-to-match-all-instances-not-inside-quotes
 # which finds any periods followed by an even number of quotes
-re_sentence = re.compile(
-    r"\.(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"
-)
+re_sentence = re.compile(r"\.(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")
 
 ####
 ## LINE TYPES
@@ -494,6 +492,12 @@ re_that_would_instead = re.compile(
 # related to timing
 re_would_instead = re.compile(r"^([^,|\.]+) cn<would> (.+), (.+) cn<instead>\.?$")
 
+# may instead (limited replacement - have only seen 2) i.e. Abundance
+# if [player] would [action], [player] may instead [action]
+re_may_instead = re.compile(
+    r"^cn<if> (.+) cn<would> ([^,]+), (.+) cn<may> cn<instead> (.+)\.?$"
+)
+
 # instead of i.e. Feather, the Redeemed
 # NOTE: these do not have a preceeding if/would
 re_instead_of = re.compile(r"^([^,|\.]+) cn<instead> of (.+)\.?$")
@@ -543,7 +547,7 @@ re_etb_1d = re.compile(
 # As Permanent is turned face up i.e. Gift of Doom
 re_turn_up_check = re.compile(r"xa<turn suffix=ed> xm<face amplifier=up>")
 re_turn_up = re.compile(
-    r"^as (.+) is xa<turn suffix=ed> xm<face amplifier=up>, ([^\.]+)\.?$"
+    r"^as (.+) xa<is> xa<turn suffix=ed> xm<face amplifier=up>, ([^\.]+)\.?$"
 )
 
 ## (614.2) applying to damage from a source
@@ -572,17 +576,13 @@ re_repl_dmg = re.compile(
 # For now, we are only looking at the above that start with 'if'
 
 # optional APC (i.e. you may)
-# (if [condition],)? you may [action] rather than pay [cost].
+# (if [condition],)? [player] may [action] rather than pay [cost].
 # NOTE: the condition may or may not be present see Ricochet Trap for a condition
 #  and Bringer of the Red Dawn for a conditionless
 # NOTE: the action may be an alternate/reduced mana payment i.e. Ricochet Trap or
 #  other i.e. Sivvi's Valor
-#re_action_apc = re.compile(
-#    r"^(?:cn<if> (.+), )?xp<you> cn<may> (.+)"
-#    r" cn<rather_than> xa<pay> ob<card ref=self suffix='s> xo<cost type=mana>\.?$"
-#)
 re_action_apc = re.compile(
-    r"^(?:cn<if> (.+), )?xp<you> cn<may> (.+) cn<rather_than> xa<pay> ([^\.]+)\.$"
+    r"^(?:cn<if> (.+), )?(.+) cn<may> (.+) cn<rather_than> xa<pay> ([^\.]+)\.$"
 )
 
 # if [condition], you may cast [object] without paying its mana cost i.e. Massacre
@@ -604,19 +604,24 @@ re_alt_action_apc = re.compile(
 )
 
 # contains "rather than" - a reverse of re_action_apc i.e. Reverent Silence
-#  1. rather than pay [cost], you may [action]
+#  1. rather than pay [cost], [player] may [action]
 re_rather_than_apc = re.compile(
-    r"^cn<rather_than> xa<pay> ([^,]+), xp<you> cn<may> ([^\.]+)\.?$"
-    #r"^([^,|\.]+) cn<may> (.+) cn<rather_than> xa<pay> ([^\.]+)\.$"
+    r"^cn<rather_than> xa<pay> ([^,]+), (.+) cn<may> ([^\.]+)\.?$"
+)
+
+## OPTIONALS
+
+# optional may i.e. Oath of Scholars of the form
+# [player] may [action]
+re_optional_may = re.compile(
+    r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?) "
+     r"cn<may> ([x|k]a<\w+>(?:[^\.]+))\.?$"
 )
 
 ## CONDITIONALS
 # start with an 'if'
 
 # if [player] do|does [not]?, [action] i.e. Decree of Justice
-#re_if_ply_does = re.compile(
-#    r"^cn<if> ([^,|^\.]+) do(?:es)?(?: (cn<not>))?, ([^\.]+)\.?$"
-#)
 re_if_ply_does = re.compile(
     r"^cn<if> ([^,|^\.]+) xa<do(?: suffix=\w+)?>(?: (cn<not>))?, ([^\.]+)\.?$"
 )
@@ -658,22 +663,47 @@ re_may_unless = re.compile(
 #  Defiance (that player) will also have to look for tag-ids of xp and ob
 re_ungraphed_unless = re.compile(r"^([^,|\.]+) cn<unless> ([^,]+)\.?$")
 
-# contains "only if" (Restrictions)
-# these appear to be of the form
-# [action] only if [cond] see Mox Opal
+## STIPULATIONS
+# either limit or add to
+
+# contains "only if" (Restrictions) having the form
+#  [action] only if [cond] see Mox Opal
 # NOTE: They all appear to be either activate or cast restrictions
-#re_only_if = re.compile(r"^([^,|\.]+) cn<only_if> ([^\.]+\.?$)")
-re_only_if = re.compile(
-    r"^(ka<\w+> (?:[^,|\.]+)) cn<only_if> ([^\.]+)\.$"
+re_only_if = re.compile(r"^(ka<\w+> (?:[^,|\.]+)) cn<only_if> ([^\.]+)\.$")
+
+# contains "only during" (phase/step/time restrictions) having the form
+#  [action] only during [step/phase]
+# As above are cast or activate restrictions
+re_only_during = re.compile(
+    r"^(ka<\w+> (?:[^,|\.]+)) cn<only> sq<\w+> ([^\.]+)\.$"
 )
 
 # contains except
-# 1. except for: an exclusion i.e. Season of the Witch
-#  [action][,]? except for [object(s)].
-# TODO: Akron Legionnaire is written except for [objects], [restriction]
-# 2. except by
+
+# With preposition 'for', an exclusion applied to an action i.e. Season of the
+# Witch, has the form:
+#  [action] [objects], except for [objects]
 re_except_for = re.compile(
-    r"^([^,|\.]+),? cn<except> pr<for> ([^\.]+)\.?$"
+    r"^([xk]a<\w+>) ([^,]+),? cn<except> pr<for> ([^\.]+)\.?$"
+)
+
+# With preposition 'by', an exception applied to an action i.e. Noggle Bandit
+#  (so far all blocking related)
+#  [objects] cannot [action] except by [objects]
+# NOTE: the action clause may include a duration i.e. Dread Charge
+re_except_by = re.compile(
+    r"^([^,|\.]+) cn<cannot> (.+) cn<except> pr<by> ([^\.]+)\.?$"
+)
+
+# TODO: Island Sanctuary, Flame Sweep, Akron Legionnaire, Keldon Firebombers,
+#  Slinn Voda, the Rising Deep and Inspire Awe are exceptions to the except for/by
+#  patterns.
+re_except_prep = re.compile(r"^(.+)?cn<except> pr<(\w+)>([^\.]+)\.?$")
+
+# with object 'it' i.e. The Scarab God have the form
+#  [action] except it is a [quality]
+re_except_it = re.compile(
+    r"^([^,|\.]+),? cn<except> xo<it> ([^\.]+)\.?$"
 )
 
 ####

@@ -101,9 +101,11 @@ def multiverse(update=0):
         if fin: fin.close()
 
     # parse the mverse
-    print('Parsing the Multiverse')
+    print('Tagging the Multiverse')
     import_cards(mv,tc,n2r,mverse)
     print("Imported {} cards and {} transformed cards.".format(mv.qty(),len(tc)))
+    #TODO: add graphing here and do the progress bar
+    print('Graphing the Multiverse')
 
     # pickle the multiverse
     fout = None
@@ -179,7 +181,6 @@ def import_cards(mv,tc,n2r,mverse):
             jcard = mverse[cname]
             dcard = harvest(cname,jcard)
             dcard['tag'] = tagger.tag(cname,dcard['oracle'])
-            #dcard['mtgt'] = grapher.graph(dcard)
         except KeyError as e: # shouldn't get this
             print("Multiververse error, lost card {}".format(e))
 
