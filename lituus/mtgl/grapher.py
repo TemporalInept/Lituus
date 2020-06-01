@@ -832,12 +832,13 @@ def graph_only_conjunction(t,phrase):
         # have to look at the first restriction type to determine 'what' clause
         # is. If rtype is only we have a conjunction of timing restrictions
         # otherwise we have a condition and a timing restriction
-        act,rtype,clause,ts = dd.re_only_conjunction.search(phrase).groups()
+        act,ct1,cl1,ct2,cl2 = dd.re_only_conjunction.search(phrase).groups()
         rid = t.add_ur_node('only-conjunction')
         graph_line(t,t.add_node(rid,'action'),act)
-        if rtype == 'only': graph_line(t,t.add_node(rid,'phase'),clause)
-        elif rtype == 'only_if': graph_line(t,t.add_node(rid,'condition'),clause)
-        graph_line(t,t.add_node(rid,'phase'),ts)
+        if ct1 == 'only': graph_line(t,t.add_node(rid,'phase'),cl1)
+        elif ct1 == 'only_if': graph_line(t,t.add_node(rid,'condition'),cl1)
+        if ct2 == 'only': graph_line(t,t.add_node(rid,'phase'),cl2)
+        elif ct2 == 'only_if': graph_line(t,t.add_node(rid,'condition'),cl2)
         return rid
     except AttributeError:
         pass

@@ -670,15 +670,14 @@ re_ungraphed_unless = re.compile(r"^([^,|\.]+) cn<unless> ([^,]+)\.?$")
 # either limit or add to
 
 # some have a conjunction of only restrictions with the basic form
-#  [action] only|only_if [clause] and only [timing]
-# the last clause is related to timing but the first clause depending on if
-# the first conjunction is only or only if will be timing (only) or condition
-#  (only_if)
+#  [action] only|only_if [clause] and only|only_if [clause]
+# for each of the clauses, have to look at the condition type. If it is only
+#  the clause is timing related. If it is only_if, the clause is a condition
 # TODO: Capricorn is an exception to the pattern and is of the form
 #  only [player] may [action] and only during [timing]
 re_only_conj_check = re.compile(r"cn<only(?:\w+)?>")
 re_only_conjunction = re.compile(
-    r"^(ka<\w+> (?:[^,|\.]+)) cn<(\w+)> (.+) and cn<only> ([^\.]+)\.?$"
+    r"^(ka<\w+> (?:[^,|\.]+)) cn<(\w+)> (.+) and cn<(\w+)> ([^\.]+)\.?$"
 )
 
 

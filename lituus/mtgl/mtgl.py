@@ -1531,7 +1531,7 @@ re_status_suffix = re.compile(r"(st|xs)<(\w+) suffix=(\w+)>")
 # other tagging to avoid rewriting a lot of patterns
 is_forms = {
     'is':'xa<is>','are':'xa<is>','was':'xa<is suffix=ed>','were':'xa<is suffix=ed>',
-    'be':'xa<be>'
+    'be':'xa<be>','been':'xa<be suffix=ed>',
 }
 is_forms_tkns = '|'.join(list(is_forms.keys()))
 re_is2tag = re.compile(r"\b({})\b".format(is_forms_tkns))
