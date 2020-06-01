@@ -60,10 +60,13 @@ re_kw_line = re.compile(
 #  113.3c Triggered - of the form TRIGGER
 #  113.3d static - none of the above
 
-# Activated (113.3b) contains a ':' which splits the cost and effect (cannot
-# be inside double quotes)
+# Activated (602.1, 113.3b) contains a ':' which splits the cost and effect (cannot
+# be inside double quotes) have the form:
+#  [cost]: [effect]. [Instructions]?
+# NOTE: knowing where effect and instructions split is difficult. For now we
+#  are assuming the last sentence if present are instructions
 re_act_check = re.compile(r"(?<!\"[^\"]+):")
-re_act_line = re.compile(r"^(.+?): (.+?)$")
+re_act_line = re.compile(r"^(.+?): (.+?)(?:\. ([^.]+))?\.?$")
 
 # Triggered (603.1) lines starts with a trigger preamble
 # Triggered abilities have the form:
@@ -582,7 +585,7 @@ re_repl_dmg = re.compile(
 # NOTE: the action may be an alternate/reduced mana payment i.e. Ricochet Trap or
 #  other i.e. Sivvi's Valor
 re_action_apc = re.compile(
-    r"^(?:cn<if> (.+), )?(.+) cn<may> (.+) cn<rather_than> xa<pay> ([^\.]+)\.$"
+    r"^(?:cn<if> (.+), )?([^,]+) cn<may> (.+) cn<rather_than> xa<pay> ([^\.]+)\.$"
 )
 
 # if [condition], you may cast [object] without paying its mana cost i.e. Massacre
@@ -666,6 +669,19 @@ re_ungraphed_unless = re.compile(r"^([^,|\.]+) cn<unless> ([^,]+)\.?$")
 ## STIPULATIONS
 # either limit or add to
 
+# some have a conjunction of only restrictions with the basic form
+#  [action] only|only_if [clause] and only [timing]
+# the last clause is related to timing but the first clause depending on if
+# the first conjunction is only or only if will be timing (only) or condition
+#  (only_if)
+# TODO: Capricorn is an exception to the pattern and is of the form
+#  only [player] may [action] and only during [timing]
+re_only_conj_check = re.compile(r"cn<only(?:\w+)?>")
+re_only_conjunction = re.compile(
+    r"^(ka<\w+> (?:[^,|\.]+)) cn<(\w+)> (.+) and cn<only> ([^\.]+)\.?$"
+)
+
+
 # contains "only if" (Restrictions) having the form
 #  [action] only if [cond] see Mox Opal
 # NOTE: They all appear to be either activate or cast restrictions
@@ -675,7 +691,22 @@ re_only_if = re.compile(r"^(ka<\w+> (?:[^,|\.]+)) cn<only_if> ([^\.]+)\.$")
 #  [action] only during [step/phase]
 # As above are cast or activate restrictions
 re_only_during = re.compile(
-    r"^(ka<\w+> (?:[^,|\.]+)) cn<only> sq<\w+> ([^\.]+)\.$"
+    r"^(ka<\w+> (?:[^,|\.]+)) cn<only> sq<during> ([^\.]+)\.?$"
+)
+
+# contains only could i.e. Voracious Null
+#  ([player] optional)? [action] (but)? only [timing] [player] could [action]
+# NOTE: appears to be only in instrcutions of activated ability, if so, the
+#  last period will not be present
+re_only_could = re.compile(
+    r"^(?:([^,|\.]+) cn<(\w+)> )?"
+    r"(ka<\w+> (?:.+)) cn<only> (.+) (xp<\w+>) cn<could> ([^\.]+)\.?$"
+)
+
+# can-only i.e. Konda's Banner
+# [Thing] can [action] only [restriction]
+re_can_only = re.compile(
+    r"^([^,|\.]+) cn<can> (.+) cn<only> ([^\.]+)\.?$"
 )
 
 # contains except

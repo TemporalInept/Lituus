@@ -393,7 +393,6 @@ def chain(txt):
     # TODO: Hacky we don't want to chain Elven Riders so have to perform a check
     # first prior to substituting
     ntxt = mtgl.re_chain('ch').sub(lambda m: _chain_check_(m),ntxt)
-    #ntxt = mtgl.re_chain('ch').sub(lambda m: _chain_(m),ntxt)
 
     ntxt = mtgl.re_conjunction_chain_special.sub(lambda m: _chain_special_(m),ntxt)
     ntxt = mtgl.re_pob_chain.sub( # Price of Betrayal
@@ -486,6 +485,7 @@ def chain_other(txt):
     ntxt = mtgl.re_chain('nu').sub(lambda m: _chain_(m),ntxt)
     ntxt = mtgl.re_chain('xc').sub(lambda m: _chain_(m),ntxt)
     ntxt = mtgl.re_chain('pr').sub(lambda m: _chain_(m),ntxt)
+    ntxt = mtgl.re_chain_quantifiers.sub(lambda m: _chain_(m),ntxt)
     return ntxt
 
 def merge(txt):

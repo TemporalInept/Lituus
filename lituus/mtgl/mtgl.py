@@ -366,7 +366,7 @@ lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that is',
     'that are','that','additional','those','these','their','the','extra','first',
     'second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth',
-    'half','twice','new','single','same','next','last','opening',
+    'half','twice','new','single','same','next','last','opening','which',
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -411,7 +411,7 @@ re_obj = re.compile(
 lituus_objects = [  # lituus objects
     "city's blessing", 'game','mana pool','mana cost','commander','mana','attacker',
     'blocker','itself','it','them','coin','choice','cost', "amount of", 'life total',
-    'life','symbol','rest','monarch',
+    'life','symbol','rest','monarch','pile'
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
@@ -1007,6 +1007,7 @@ re_copy_act = re.compile(r"(ob<copy( suffix=s)?>)(?= (?:xq<|xo<it>))")
 #  preceded by 'be' or 'it', it is an action
 # 3. is: (see Kor Duelist) if a keyword has a suffix of 'ed' and is preceded by
 #  'is' it is a status
+#  TODO: unless preceded by be
 # 4. suffix=s: (see Sidis, Undead Vizier) a keyword with suffix 's' preceded by
 #  a Thing will be considered and action
 re_kicker_act = re.compile(r"(?<=was )kw<kicker suffix=ed>")
@@ -1300,7 +1301,6 @@ re_pt_chain = re.compile(
     r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)"
 )
 
-
 # chain two or more sequential tags of the same id having the form
 #   [tid 1, ..., tid n-2] tid n-1[,] conjunction op tid n
 # that can be combined into a single tag
@@ -1320,6 +1320,10 @@ def re_chain(tid):
         r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>)".format(tid)
     )
 
+# above not working for quantifiers TODO: why
+re_chain_quantifiers = re.compile(
+    r"xq<\w+> xq<\w+>( xq<\w+>)*"
+)
 
 # a subset of the conjunction_chain that matches only color chains
 re_clr_conjunction_chain = re.compile(
@@ -1521,12 +1525,13 @@ re_encl_punct = re.compile(r"([\.\,])(\'\"|\'|\")")
 
 # find status with suffix (these should all be (un)tap but catch
 # everything just in case
-re_status_suffix = re.compile(r"(st|xs)<(\w+) suffix=(ed)>")
+re_status_suffix = re.compile(r"(st|xs)<(\w+) suffix=(\w+)>")
 
 # tagging verb "to be" forms: 'is', 'are' and 'was', 'were' doing this after
 # other tagging to avoid rewriting a lot of patterns
 is_forms = {
-    'is':'xa<is>','are':'xa<is>','was':'xa<is suffix=ed>','were':'xa<is suffix=ed>'
+    'is':'xa<is>','are':'xa<is>','was':'xa<is suffix=ed>','were':'xa<is suffix=ed>',
+    'be':'xa<be>'
 }
 is_forms_tkns = '|'.join(list(is_forms.keys()))
 re_is2tag = re.compile(r"\b({})\b".format(is_forms_tkns))

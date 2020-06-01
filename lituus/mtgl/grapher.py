@@ -161,10 +161,12 @@ def graph_activated(t,pid,line):
     try:
         # TODO: should we be using graph_line or graph_phrase
         # split the line into cost and effect graph each separately
-        cost,effect = dd.re_act_line.search(line).groups()
+        cost,effect,instr = dd.re_act_line.search(line).groups()
         aaid = t.add_node(pid,'activated-ability')
         graph_line(t,t.add_node(aaid,'activated-cost'),cost)
         graph_line(t,t.add_node(aaid,'activated-effect'),effect)
+        if instr:
+            graph_line(t,t.add_node(aaid,'activated-instructions'),instr)
     except AttributeError:
         raise lts.LituusException(
             lts.EPTRN,"Not an activated ability ({})".format(line)
@@ -179,14 +181,13 @@ def graph_triggered(t,pid,line):
     """
     try:
         # TODO: should we be using graph_line or graph_phrase
-        # at a minimum will have tp, condition and effect. may have instructions
-        m = dd.re_tgr_line.search(line)
+        tp,cond,effect,instr = dd.re_tgr_line.search(line).groups()
         taid = t.add_node(pid,'triggered-ability')
-        t.add_node(taid,'triggered-preamble',value=m.group(1))
-        graph_line(t,t.add_node(taid,'triggered-condition'),m.group(2))
-        graph_line(t,t.add_node(taid,'triggered-effect'),m.group(3))
-        if m.group(4):
-            graph_line(t,t.add_node(taid,'triggered-instruction'),m.group(4))
+        t.add_node(taid,'triggered-preamble',value=tp)
+        graph_line(t,t.add_node(taid,'triggered-condition'),cond)
+        graph_line(t,t.add_node(taid,'triggered-effect'),effect)
+        if instr:
+            graph_line(t,t.add_node(taid,'triggered-instruction'),instr)
     except AttributeError:
         raise lts.LituusException(
             lts.EPTRN,"Not a triggered ability ({})".format(line)
@@ -208,9 +209,9 @@ def graph_phrase(t,pid,line):
     """
     if graph_replacement_effects(t,pid,line): return
     elif graph_apc_phrases(t,pid,line): return
-    elif graph_optional_phrases(t,pid,line): return
     elif graph_conditional_phrases(t,pid,line): return
     elif graph_stipulation_phrases(t,pid,line): return
+    elif graph_optional_phrases(t,pid,line): return
 
     # TODO: at this point how to continue: could take each sentence if more than
     #  one and graph them as phrase and if only sentence, graph each clause (i.e.
@@ -332,7 +333,7 @@ def graph_conditional_phrases(t,pid,line):
             t.add_edge(t.add_node(pid,'conditional',type='if'),nid)
             return nid
     elif 'cn<unless>' in line:
-        nid = graph_conditional_unless(t, line)
+        nid = graph_conditional_unless(t,line)
         if nid:
             t.add_edge(t.add_node(pid,'conditional',type='unless'),nid)
             return nid
@@ -347,16 +348,28 @@ def graph_stipulation_phrases(t,pid,line):
     :param line: text to graph
     :return: node id of conditional phrase root or None
     """
-    # start with only-if
-    if 'cn<only_if>' in line:
+    # start with only conjunctions
+    if len(dd.re_only_conj_check.findall(line)) == 2:
+        nid = graph_only_conjunction(t,line)
+        if nid:
+            t.add_edge(t.add_node(pid,'restriction',type='only-conjunction'),nid)
+            return nid
+        #t.add_node(pid,'restriction',type='conjunction',tograph=line)
+    elif 'cn<only_if>' in line:
         nid = graph_only_if(t,line)
         if nid:
             t.add_edge(t.add_node(pid,'restriction',type='only-if'),nid)
             return nid
-    elif 'cn<only> sq<during>' in line:
-        nid = graph_only_during(t,line)
+    elif 'cn<only>' in line:
+        if 'cn<can>' in line:
+            nid = graph_can_only(t,line)
+            if nid:
+                t.add_edge(t.add_node(pid,'restriction',type='can-only'),nid)
+                return nid
+
+        nid = graph_timing_restriction_only(t,line)
         if nid:
-            t.add_edge(t.add_node(pid,'restriction',type='only-during'),nid)
+            t.add_edge(t.add_node(pid,'restriction',type='timing'),nid)
             return nid
     elif 'cn<except>' in line:
         nid = graph_restriction_except(t,line)
@@ -808,6 +821,30 @@ def graph_conditional_unless(t,phrase):
 ## GRAPH STIPULATIONS
 ####
 
+def graph_only_conjunction(t,phrase):
+    """
+    graphs a conjunction of only restriction phrases
+    :param t: the tree
+    :param phrase: the text to graph
+    :return: node id of the rootless restrictions or None
+    """
+    try:
+        # have to look at the first restriction type to determine 'what' clause
+        # is. If rtype is only we have a conjunction of timing restrictions
+        # otherwise we have a condition and a timing restriction
+        act,rtype,clause,ts = dd.re_only_conjunction.search(phrase).groups()
+        rid = t.add_ur_node('only-conjunction')
+        graph_line(t,t.add_node(rid,'action'),act)
+        if rtype == 'only': graph_line(t,t.add_node(rid,'phase'),clause)
+        elif rtype == 'only_if': graph_line(t,t.add_node(rid,'condition'),clause)
+        graph_line(t,t.add_node(rid,'phase'),ts)
+        return rid
+    except AttributeError:
+        pass
+
+    return None
+
+
 def graph_only_if(t,phrase):
     """
     graphs restriction phrases containin only if
@@ -825,21 +862,61 @@ def graph_only_if(t,phrase):
     except AttributeError:
         return None
 
-def graph_only_during(t,phrase):
+def graph_can_only(t,phrase):
     """
-    (similar to above) graphs restriction phrases containin only during
+    graphs can only restriction phrase
     :param t: the tree
     :param phrase: the text to graph
     :return: node id of the rootless restriction or None
     """
     try:
-        act,ts = dd.re_only_during.search(phrase).groups()
-        rid = t.add_ur_node('only-during')
+        thing,act,restr = dd.re_can_only.search(phrase).groups()
+        rid = t.add_ur_node('can-only')
         graph_line(t,t.add_node(rid,'action'),act)
-        graph_line(t,t.add_node(rid,'phase'),ts)
+        graph_line(t,t.add_node(rid,'restriction'),restr)
         return rid
     except AttributeError:
         return None
+
+def graph_timing_restriction_only(t,phrase):
+    """
+    graphs restriction phrases related to timing
+    :param t: the tree
+    :param phrase: the text to graph
+    :return: node id of the rootless timing restriction or None
+    """
+    if 'sq<during>' in phrase:
+        try:
+            act,ts = dd.re_only_during.search(phrase).groups()
+            rid = t.add_ur_node('only-during')
+            graph_line(t,t.add_node(rid,'action'),act)
+            graph_line(t,t.add_node(rid,'phase'),ts)
+            return rid
+        except AttributeError:
+            pass
+    elif 'cn<could>' in phrase:
+        try:
+            ply1,opt,act1,tim,ply2,act2 = dd.re_only_could.search(phrase).groups()
+            # opt is an implied can
+            if not opt: opt = 'can'
+            rid = t.add_ur_node('only-could',type=opt)
+
+
+            # use player1 if present otherwise player2
+            if not ply1: ply1 = ply2
+            graph_player(t,rid,ply1)
+
+            # strip hanging but from action (present in some cases)
+            if act1.endswith(' but'): act1 = act1[:-4]
+
+            # graph the remaining
+            graph_line(t,t.add_node(rid,'action'),act1)
+            graph_line(t,t.add_node(rid,'timing'),tim)
+            graph_line(t,t.add_node(rid,'could'),act2)
+            return rid
+        except AttributeError:
+            pass
+    return None
 
 def graph_restriction_except(t,phrase):
     """
@@ -877,7 +954,7 @@ def graph_restriction_except(t,phrase):
 
     return None
 
-def graph_addition_except(t,pid,phrase):
+def graph_addition_except(t,phrase):
     """
     graphs restriction phrases containin except
     :param t: the tree
