@@ -24,6 +24,7 @@ import sys
 import pickle
 import json
 import requests
+import time
 from hashlib import md5
 import regex as re
 import lituus as lts
@@ -102,8 +103,14 @@ def multiverse(update=0):
 
     # parse the mverse
     print('Tagging the Multiverse')
+    start = time.time()
     import_cards(mv,tc,n2r,mverse)
-    print("Imported {} cards and {} transformed cards.".format(mv.qty(),len(tc)))
+    end = time.time()
+    print(
+        "Imported {} cards and {} transformed cards in {:.2f}s.".format(
+            mv.qty(),len(tc),end-start
+        )
+    )
     #TODO: add graphing here and do the progress bar
     print('Graphing the Multiverse')
 
