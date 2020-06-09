@@ -127,6 +127,4 @@ we can use list_util to splice [etb-continuous, ... ,effect, ..., status-unless]
 
 216. should we graph "then if" as if-then structure?
 
-217. relook at Breathstealer's crypt - should be a replacement
-
-218. Need to reorganize mtgl_dd, for example re_if_ply_does comes before replacement effects in definition but not in execution (in grapher)
+219. in Watery Grave the rest of the phrase following may has dissappeared

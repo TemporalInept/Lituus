@@ -262,34 +262,34 @@ def graph_replacement_effects(t,pid,line):
     if 'cn<instead>' in line: # 614.1a 'instead' replacements
         nid = graph_repl_instead(t,line)
         if nid:
-            t.add_edge(t.add_node(pid,'replacement-effect',type='instead'),nid)
+            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
             return nid
     elif 'xa<skip>' in line: # 614.1b 'skip' replacements
         nid = graph_repl_skip(t,line)
         if nid:
-            t.add_edge(t.add_node(pid,'replacement-effect',type='skip'),nid)
+            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
             return nid
     elif dd.re_etb_repl_check.search(line): # 614.1c and 614.1d ETB replacements
         # try 614.1c
         nid = graph_repl_etb1(t,line)
         if nid:
-            t.add_edge(t.add_node(pid,'replacement-effect',type='etb-1c'),nid)
+            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
             return nid
 
         # then 614.1d
         nid = graph_repl_etb2(t,line)
         if nid:
-            t.add_edge(t.add_node(pid,'replacement-effect',type='etb-1d'),nid)
+            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
             return nid
     elif dd.re_turn_up_check.search(line):
         nid = graph_repl_face_up(t,line)
         if nid:
-            t.add_edge(t.add_node(pid,'replacement-effect',type='face-up'),nid)
+            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
             return nid
     elif dd.re_repl_dmg_check.search(line):
         nid = graph_repl_damage(t,line)
         if nid:
-            t.add_edge(t.add_node(pid,'replacement-effect',type='damage'),nid)
+            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
             return nid
 
     return None
@@ -521,14 +521,28 @@ def graph_repl_etb2(t,phrase):
     :param phrase: the text to graph
     :return: node id of the rootless graph or None
     """
+    # see if we have a status etb first
+    try:
+        ety,sts,unless = dd.re_etb_status.search(phrase).groups()
+        rid = t.add_ur_node('etb-status')
+        graph_entity(t,rid,ety)
+        t.add_node(rid,'status',value=sts)
+        if unless:
+            graph_phrase(t,t.add_node(rid,'unless'),unless)
+        return rid
+    except AttributeError:
+        pass
+
     try:
         perm,effect = dd.re_etb_1d.search(phrase).groups()
         rid = t.add_ur_node('etb-continuous')
-        graph_line(t,t.add_node(rid,'permanent'),perm)
+        graph_entity(t,rid,perm)
         graph_line(t,t.add_node(rid,'effect'),effect)
         return rid
     except AttributeError: # no match
-        return None
+        pass
+
+    return None
 
 def graph_repl_face_up(t,phrase):
     """
@@ -680,6 +694,7 @@ def graph_condition_phrase(t,pid,line):
     :return: node id or None
     """
     if line.startswith('cn<if>'):
+        # if-player-does
         try:
             ply,neg,act = dd.re_if_ply_does.search(line).groups()
             cid = t.add_node(pid,'if')
@@ -690,6 +705,7 @@ def graph_condition_phrase(t,pid,line):
         except AttributeError:
             pass
 
+        # if-player-cannot
         try:
             ply,act = dd.re_if_ply_cant.search(line).groups()
             cid = t.add_node(pid,'if')
@@ -699,6 +715,7 @@ def graph_condition_phrase(t,pid,line):
         except AttributeError:
             pass
 
+        # if condition-action
         try:
             cond,act = dd.re_if_cond_act.search(line).groups()
             cid = t.add_node(pid,'if')
@@ -708,6 +725,7 @@ def graph_condition_phrase(t,pid,line):
         except AttributeError:
             pass
     elif 'cn<unless' in line:
+        # thing-cannot-unless
         try:
             ety,act,cond = dd.re_cannot_unless.search(line).groups()
             graph_entity(t,pid,ety)
@@ -717,6 +735,7 @@ def graph_condition_phrase(t,pid,line):
         except AttributeError:
             pass
 
+        # action-unless
         try:
             act,cond = dd.re_action_unless.search(line).groups()
             graph_phrase(t,pid,act)
@@ -799,11 +818,7 @@ def graph_action_clause(t,pid,phrase):
         else:
             m = dd.re_action_clause.search(phrase)
             if m: ety,neg,aw1,act1 = m.groups()
-            else:
-                return None
-                #raise lts.LituusException(
-                #    lts.EPTRN, "Not an action clause ({})".format(phrase)
-                #)
+            else: return None
 
         # insert an implied you if there is not entity
         if not ety: ety = 'xp<you>'

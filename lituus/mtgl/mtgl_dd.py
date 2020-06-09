@@ -110,65 +110,6 @@ re_grant_ability = re.compile(
 )
 
 ####
-## PHRASE TYPES
-####
-
-# seuquences - two types a) sequence i.e. then do something b) duration i.e
-# until end of turn
-re_sequence_phrase = re.compile(r"^sq<\w+>")
-re_sequence_seq = re.compile(r"^(sq<then>) (.+)\.?$")
-re_sequence_dur = re.compile(r"^sq<(\w+)> ([^,]+), (.+)\.?$")
-
-##
-# optionals and conditions
-
-# [player] may [action] as though [action] [if [condition]]?
-re_may_as_though = re.compile(
-    r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?)"
-    r"cn<may> ([^,]+) pr<as_though> ([^\.]+\.?$)"
-)
-
-# contains 'may' [player] may [action]
-re_optional_may = re.compile(
-    r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?) "
-    r"cn<may> ([x|k]a<\w+>(?:[^\.]+))\.?$"
-)
-
-# starts with if - 3 typess
-#  a) if-player-does has two formation
-#   i. if [player] does [not]? [action] i.e. Decree of Justice
-#   ii. if [player] does [trigger] i.e. Providence
-#  b) if [player] cannot, [action] i.e. Brain Pry
-#  c) if [condition], [action] i.e Ordeal of Thassa
-re_if_ply_does  = re.compile(
-    r"^cn<if> ([^,|^\.]+) xa<do(?: suffix=\w+)?>(?: (cn<not>))?, ([^\.]+)\.?$"
-)
-re_if_ply_cant = re.compile(r"^cn<if> ([^,|^\.]+) cn<cannot>, ([^\.]+)\.?$")
-re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
-#re_if_cond_act = re.compile(
-#    r"^cn<if> ([^,|^\.]+), ([^\.]+)(?: cn<unless> ([^\.]+))?\.?$"
-#)
-
-# contains unless
-# The rules only mention unless in 722.6 "[A] unless [B]" However going through
-# them while B always appears to always be a condition there are five flavors
-# regarding A, depending on the context.
-#  1. [thing] cannot [action] unless [condition] i.e. Okk
-#  2. [action] unless [condition] i.e. Bog Elemental
-#  3. [status] unless [condition] i.e. Bountiful Promenade
-#  4. [player] may [action] unless [condition] i.e Mystic Remora (only 5 of these)
-# NOTE: unless is generally part of a clause that is part of a phrase therefore
-#  we do not want to grab anything that extends to the left past a clause (",")
-#  or sentence (".") boundary
-re_cannot_unless = re.compile(
-    r"^([^,|\.]+) cn<cannot> (.+) cn<unless> ([^,]+)\.?$")
-re_action_unless = re.compile(
-    r"^((?:[^,|^\.]+ )?[kx]a<\w+(?: [^>]+)?>.+) cn<unless> ([^,]+)\.?$"
-)
-re_status_unless = re.compile(r"^st<(\w+)> cn<unless> ([^,]+)\.?$")
-re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,]+)\.?$")
-
-####
 ## KEYWORDS
 ####
 
@@ -641,6 +582,11 @@ re_etb_as = re.compile(
 # Permanent enters the battlefield ... i.e. Jungle Hollow
 # Objects enter the battlefield ...
 # NOTE: have to assume that after above, all remaining ETB fit this
+#  Because enters tapped is so predominant, we add a special case
+re_etb_status = re.compile(
+    r"^([^,|\.]+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> "
+     r"st<([^>]+)>(?: cn<unless> ([^\.]+))?\.?$"
+)
 re_etb_1d = re.compile(
     r"^([^,|\.]+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> ([^\.]+)\.?$"
 )
@@ -710,6 +656,63 @@ re_alt_action_apc = re.compile(
 re_rather_than_apc = re.compile(
     r"^cn<rather_than> xa<pay> ([^,]+), (.+) cn<may> ([^\.]+)\.?$"
 )
+
+####
+## LITUUS PHRASE TYPES
+####
+
+# seuquences - two types a) sequence i.e. then do something b) duration i.e
+# until end of turn
+re_sequence_phrase = re.compile(r"^sq<\w+>")
+re_sequence_seq = re.compile(r"^(sq<then>) (.+)\.?$")
+re_sequence_dur = re.compile(r"^sq<(\w+)> ([^,]+), (.+)\.?$")
+
+##
+# optionals and conditions
+
+# [player] may [action] as though [action] [if [condition]]?
+re_may_as_though = re.compile(
+    r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?)"
+    r"cn<may> ([^,]+) pr<as_though> ([^\.]+\.?$)"
+)
+
+# contains 'may' [player] may [action]
+re_optional_may = re.compile(
+    r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?) "
+    r"cn<may> ([x|k]a<\w+>(?:[^\.]+))\.?$"
+)
+
+# starts with if - 3 typess
+#  a) if-player-does has two formation
+#   i. if [player] does [not]? [action] i.e. Decree of Justice
+#   ii. if [player] does [trigger] i.e. Providence
+#  b) if [player] cannot, [action] i.e. Brain Pry
+#  c) if [condition], [action] i.e Ordeal of Thassa
+re_if_ply_does  = re.compile(
+    r"^cn<if> ([^,|^\.]+) xa<do(?: suffix=\w+)?>(?: (cn<not>))?, ([^\.]+)\.?$"
+)
+re_if_ply_cant = re.compile(r"^cn<if> ([^,|^\.]+) cn<cannot>, ([^\.]+)\.?$")
+re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
+
+# contains unless
+# The rules only mention unless in 722.6 "[A] unless [B]" However going through
+# them while B always appears to always be a condition there are five flavors
+# regarding A, depending on the context.
+#  1. [thing] cannot [action] unless [condition] i.e. Okk
+#  2. [action] unless [condition] i.e. Bog Elemental
+#  3. [status] unless [condition] i.e. Bountiful Promenade
+#  4. [player] may [action] unless [condition] i.e Mystic Remora (only 5 of these)
+# NOTE: unless is generally part of a clause that is part of a phrase therefore
+#  we do not want to grab anything that extends to the left past a clause (",")
+#  or sentence (".") boundary
+re_cannot_unless = re.compile(
+    r"^([^,|\.]+) cn<cannot> (.+) cn<unless> ([^,]+)\.?$")
+re_action_unless = re.compile(
+    r"^((?:[^,|^\.]+ )?[kx]a<\w+(?: [^>]+)?>.+) cn<unless> ([^,]+)\.?$"
+)
+re_status_unless = re.compile(r"^(?:st|xs])<(\w+)> cn<unless> ([^,]+)\.?$")
+re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,]+)\.?$")
+
 
 ####
 ## TEST SPACE

@@ -548,6 +548,9 @@ def third_pass(txt):
     :param txt: second pass tagged oracle txt
     :return: tagged oracle text
     """
+    # TODO: add loot, rummage? if so how to do if the # drawn is different then
+    #  the # discarded i.e. attunement and how would this affect the words
+    #  drawn & discard
     ntxt = mtgl.re_mill.sub(r"xa<mill\1> \2",txt)
     return ntxt
 
