@@ -125,9 +125,8 @@ class MTGTree:
     """ returns whether tree has node with id nid """
     def has_node(self,nid): return nid in self._t.node
 
-    #TODO
     """ returns whether node has attribute """
-    def has_attr(self,nid,attr): pass
+    def has_attr(self,nid,attr): return attr in self._t.node
 
     """ returns the data dict of the node with id nid """
     def node(self,nid):

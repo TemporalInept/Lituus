@@ -38,6 +38,7 @@ def tag(name,txt):
         ntxt = midprocess(ntxt)
         ntxt = second_pass(ntxt)
         ntxt = postprocess(ntxt)
+        ntxt = third_pass(ntxt)
     except (lts.LituusException,re.error) as e:
         raise lts.LituusException(
             lts.ETAGGING,"Tagging {} failed due to {}".format(name,e)
@@ -288,6 +289,12 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_at_prep.sub(r"pr<at>",ntxt)
     ntxt = mtgl.re_at_prep2.sub(r"pr<at>",ntxt)
 
+    # a few carsd (7) will have the phrase 'no nu<1>' - make this xp<no_one>
+    ntxt = mtgl.re_no_one.sub(r"xp<no_one>",ntxt)
+
+    # "as long as" will be tagged, pr<as> long pr<as>, make it a sequence
+    ntxt = mtgl.re_as_long_as.sub(r"sq<as_long_as>",ntxt)
+
     # Not a deconfliction perse but to avoid conflicts 'named' is listed as
     # an action, rewrite it here so it shows up xa<name suffix=ed> rather than
     # xa<named>
@@ -331,6 +338,7 @@ def pre_chain(txt):
       a. temporarily tag attributes as xr
       b. assign values where possible to temporary attributes including c.
         those without an operator
+      d. fix xr<color suffix=ed> to xr<color val=colored>
      3) add types to hanging subtypes
      4) modify anamolous characteristic action charactistic
      5) align supertypes and subtypes
@@ -341,6 +349,7 @@ def pre_chain(txt):
     ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)          # 2.a
     ntxt = mtgl.re_attr_val.sub(r"xr<\1 val=\2\3>",ntxt)                # 2.b
     ntxt = mtgl.re_attr_val_nop.sub(r"xr<\1 val=≡\2>",ntxt)             # 2.c
+    ntxt = mtgl.re_attr_colored.sub(r"xr<color val=\1ed>",ntxt)         # 2.d
     ntxt = mtgl.re_hanging_subtype.sub(lambda m: _insert_type_(m),ntxt) # 3
     ntxt = mtgl.re_disjoint_ch.sub(r"\2 \1 \3",ntxt)                    # 4
     ntxt = align_types(ntxt)                                            # 5
@@ -532,6 +541,16 @@ def postprocess(txt):
     #    lambda m: r"{}{}".format('+' if m.group(2) == 'more' else '-',m.group(1)),txt)
     return ntxt
 
+def third_pass(txt):
+    """
+    performs a third/final pass of the oracle txt, working on common phrases,
+    replacing them with defined keyword actions or common slang
+    :param txt: second pass tagged oracle txt
+    :return: tagged oracle text
+    """
+    ntxt = mtgl.re_mill.sub(r"xa<mill\1> \2",txt)
+    return ntxt
+
 ####
 ## PRIVATE FUNCTIONS
 ####
@@ -555,7 +574,7 @@ def _transpose_num_op_(m):
     # replace english with operator symbol, then transpose with preceding number
     op = m.group(2)
     if op in ['greater','more']: op = "op<{}>".format(mtgl.GE)
-    elif op == 'less': op = "op<{}>".format(mtgl.LE)
+    elif op in ['less','fewer']: op = "op<{}>".format(mtgl.LE)
     else:
         raise lts.LituusException(lts.EDATA,"invalid operator ({})".format(op))
     return "{} {}".format(op,m.group(1))

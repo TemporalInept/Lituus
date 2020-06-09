@@ -37,50 +37,57 @@ def graph(dcard):
     # create an empty tree & grab the parent. setup lines
     t = mtgt.MTGTree(dcard['name'])
     parent = t.root
-    lines = []
 
-    # three basic line types:
-    # 1) ability word line: (207.2c) have no definition in the comprehensive rules
-    #  but based on card texts, follow simple rules of the form:
-    #  AW — ABILITY DEFINITION.(ability word and ability definition are separated
-    #   by a long hyphen
-    # 2) keyword line: contains one or more comma seperated keyword clauses.
-    #    a) standard - does not end with a period or double quote
-    #    b) non-standard - contains non-standard 'cost' & ends w/ a period
-    # 3) ability line (not a keyword or ability word line) Four general types
-    #  112.3a Spell, 112.3b Activated, 112.3c Triggered & 112.3d static
-    # IOT to facilitate searching all keyword and ability words found will be
-    # rooted under a single node. The ability word definitions will be added
-    # back into the lines to be graphed further
-    kwid = t.add_node(parent,'keywords')
-    awid = t.add_node(parent,'ability-words')
-    for line in dcard['tag'].split('\n'):
-        if dd.re_kw_line.search(line):
-            for ktype,kw,param in dd.re_kw_clause.findall(line):
-                graph_keyword(t,kwid,kw,ktype,param)
-        elif dd.re_aw_line.search(line):
-            try:
-                aw,ad = dd.re_aw_line.search(line).groups()
-                t.add_node(awid,'ability-word',value=aw)
-                graph_line(t,t.add_node(awid,'definition'),ad)
-                lines.append(ad)
-            except AttributeError:
-                raise lts.LituusException(
-                    lts.EPTRN,"Failure matching aw line ({})".format(line)
-                )
-        else: lines.append(line)
+    # do we have a split card?
+    if '//' in dcard['name']:
+        pids = [t.add_node(parent,'side-a'),t.add_node(parent,'side-a')]
+    else: pids = [parent]
 
-    # Remove keyword and ability word nodes if empty & graph the lines
-    if t.is_leaf('keywords:0'): t.del_node('keywords:0')
-    if t.is_leaf('ability-words:0'): t.del_node('ability-words:0')
-    for line in lines: graph_line(t,parent,line,dcard['type'])
+    for i,side in enumerate(dcard['tag'].split(' // ')):
+        lines = []
+
+        # three basic line types:
+        # 1) ability word line: (207.2c) have no definition in the comprehensive
+        # rules but based on card texts, follow simple rules of the form:
+        #  AW — ABILITY DEFINITION.(ability word and ability definition are
+        #   separated by a long hyphen
+        # 2) keyword line: contains one or more comma seperated keyword clauses.
+        #    a) standard - does not end with a period or double quote
+        #    b) non-standard - contains non-standard 'cost' & ends w/ a period
+        # 3) ability line (not a keyword or ability word line) 4 general types
+        #  112.3a Spell, 112.3b Activated, 112.3c Triggered & 112.3d static
+        # IOT to facilitate searching keyword and ability words found will be
+        # rooted under a single node. The ability word definitions will be added
+        # back into the lines to be graphed further
+        kwid = t.add_node(pids[i],'keywords')
+        awid = t.add_node(pids[i],'ability-words')
+        for line in side.split('\n'):
+            if dd.re_kw_line.search(line):
+                for ktype,kw,param in dd.re_kw_clause.findall(line):
+                    graph_keyword(t,kwid,kw,ktype,param)
+            elif dd.re_aw_line.search(line):
+                try:
+                    aw,ad = dd.re_aw_line.search(line).groups()
+                    t.add_node(awid,'ability-word',value=aw)
+                    graph_line(t,t.add_node(awid,'definition'),ad)
+                    lines.append(ad)
+                except AttributeError:
+                    raise lts.LituusException(
+                        lts.EPTRN,"Failure matching aw line ({})".format(line)
+                    )
+            else: lines.append(line)
+
+        # Remove keyword and ability word nodes if empty & graph the lines
+        if t.is_leaf(kwid): t.del_node(kwid)
+        if t.is_leaf(awid): t.del_node(awid)
+        for line in lines: graph_line(t,pids[i],line,dcard['type'])
 
     # return the graph tree
     return t
 
 def graph_keyword(t,pid,kw,ktype,param):
     """
-    graphs the keyword as a new node in t under parent pid
+    graphs the keyword ability as a new node in t under parent pid
     :param t: the tree
     :param pid: parent id
     :param kw: keyword to graph
@@ -120,36 +127,25 @@ def graph_line(t,pid,line,ctype=None):
     :param line: line to graph
     :param ctype: the card type(s)
     """
-    # enclosed quotes will mess up graphing - for now lines with enclosed quotes
-    # will be extracted and left ungraphed
-    if dd.re_enclosed_quote.search(line):
-        ss = [x.strip()+'.' for x in dd.re_sentence.split(line) if x != '']
-        for s in ss:
-            if dd.re_enclosed_quote.search(s):
-                t.add_node(pid,'enclosed-quote',ungraphed=s)
-            else: graph_line(t,pid,s,ctype)
-        #if len(ss) > 1:
-        #    for s in ss:
-        #        if dd.re_grant_ability_check.search(s):
-        #            graph_granted_ability(t,pid,s)
-        #        else: graph_line(t,pid,s,ctype)
-        #else: graph_granted_ability(t,pid,ss[0])
+    # enclosed quotes will mess up graphing - find all enclosed quotes and graph
+    # them separately under an unrooted node
+    line = dd.re_enclosed_quote.sub(lambda m: _enclosed_quote_(t,m),line)
+
+    # Ability lines can be one of
+    #  112.3a Spell = instant or sorcery,
+    #  112.3b Activated = of the form cost:effect,instructions.
+    #  112.3c Triggered = of the form tgr condition, effect. instructions &
+    #  112.3d static = none of the above
+    if dd.re_act_check.search(line): graph_activated(t,pid,line)
+    elif dd.re_tgr_check.search(line): graph_triggered(t,pid,line)
     else:
-        # Ability lines can be one of
-        #  112.3a Spell = instant or sorcery,
-        #  112.3b Activated = of the form cost:effect,
-        #  112.3c Triggered = of the form tgr condition, effect. instructions &
-        #  112.3d static = none of the above
-        if dd.re_act_check.search(line): graph_activated(t,pid,line)
-        elif dd.re_tgr_check.search(line): graph_triggered(t,pid,line)
+        # only the first call from graph() will include a ctype. If there
+        # isn't one graph the line without a line-node
+        if not ctype: graph_phrase(t,pid,line)
         else:
-            # only the first call from graph() will include a ctype. If there
-            # isn't one graph the line without a line-node
-            if not ctype: graph_phrase(t,pid,line)
-            else:
-                if 'Instant' in ctype or 'Sorcery' in ctype:
-                    graph_phrase(t,t.add_node(pid,'spell-line'),line)
-                else: graph_phrase(t,t.add_node(pid,'static-line'),line)
+            if 'Instant' in ctype or 'Sorcery' in ctype:
+                graph_phrase(t,t.add_node(pid,'spell-line'),line)
+            else: graph_phrase(t,t.add_node(pid,'static-line'),line)
 
 def graph_activated(t,pid,line):
     """
@@ -159,14 +155,13 @@ def graph_activated(t,pid,line):
     :param line: the tagged text to graph
     """
     try:
-        # TODO: should we be using graph_line or graph_phrase
         # split the line into cost and effect graph each separately
         cost,effect,instr = dd.re_act_line.search(line).groups()
         aaid = t.add_node(pid,'activated-ability')
-        graph_line(t,t.add_node(aaid,'activated-cost'),cost)
+        graph_cost(t,t.add_node(aaid,'activated-cost'),cost)
         graph_line(t,t.add_node(aaid,'activated-effect'),effect)
         if instr:
-            graph_line(t,t.add_node(aaid,'activated-instructions'),instr)
+            graph_phrase(t,t.add_node(aaid,'activated-instructions'),instr)
     except AttributeError:
         raise lts.LituusException(
             lts.EPTRN,"Not an activated ability ({})".format(line)
@@ -180,47 +175,66 @@ def graph_triggered(t,pid,line):
     :param line: the tagged text to graph
     """
     try:
-        # TODO: should we be using graph_line or graph_phrase
         tp,cond,effect,instr = dd.re_tgr_line.search(line).groups()
         taid = t.add_node(pid,'triggered-ability')
         t.add_node(taid,'triggered-preamble',value=tp)
-        graph_line(t,t.add_node(taid,'triggered-condition'),cond)
-        graph_line(t,t.add_node(taid,'triggered-effect'),effect)
+        graph_phrase(t,t.add_node(taid,'triggered-condition'),cond)
+        graph_phrase(t,t.add_node(taid,'triggered-effect'),effect)
         if instr:
-            graph_line(t,t.add_node(taid,'triggered-instruction'),instr)
+            graph_phrase(t,t.add_node(taid,'triggered-instruction'),instr)
     except AttributeError:
         raise lts.LituusException(
             lts.EPTRN,"Not a triggered ability ({})".format(line)
         )
 
-def graph_phrase(t,pid,line):
+def graph_phrase(t,pid,line,i=0):
     """
-    Graphs phrase(s) in line looking at high level constructs which encompass one
-    or more sentences. After lines (i.e. keyword, ability word, spell, activated,
-    triggered, spell) the highest level constructs are phrases which include:
-     replacement effects (614.1,614.2)
-     alternate cost effects (118.9)
-     optionals: player may ...
-     conditionals
-     stipulations: restrictions and additions
+    Graphs phrases looking first at high-level consructs. Starting again with
+    triggered and activated abilities, then replacement effects (614.1,614.2),
+    and alternate cost (APC) effects (118.9)
     :param t: the tree
     :param pid: parent of the line
     :param line: the text to graph
+    :param i: iteration count to avoid infinite rcursion
     """
-    if graph_replacement_effects(t,pid,line): return
-    elif graph_apc_phrases(t,pid,line): return
-    elif graph_conditional_phrases(t,pid,line): return
-    elif graph_stipulation_phrases(t,pid,line): return
-    elif graph_optional_phrases(t,pid,line): return
+    # check for activated/triggered ability first
+    if dd.re_act_check.search(line): graph_activated(t,pid,line)
+    elif dd.re_tgr_check.search(line): graph_triggered(t,pid,line)
+    else:
+        # then check for replacement and apc before continuing
+        # TODO: can we make a check for these?
+        if graph_replacement_effects(t,pid,line): return
+        if graph_apc_phrases(t,pid,line): return
+        if graph_sequence_phrase(t,pid,line): return
+        if graph_condition_phrase(t,pid,line): return
+        if graph_option_phrase(t,pid,line): return
+        if graph_action_clause(t,pid,line): return
 
-    # TODO: at this point how to continue: could take each sentence if more than
-    #  one and graph them as phrase and if only sentence, graph each clause (i.e.
-    #  comma separated i.e. Goblin Bangchuckers
-    # if we get here start by breaking the line into sentences
-    ss = [x.strip() + '.' for x in dd.re_sentence.split(line) if x != '']
-    if len(ss) > 1:
-        for s in ss: graph_line(t,t.add_node(pid,'sentence'),s)
-    else: t.add_node(pid,'ungraphed-sentence',tograph=line)
+        # TODO: at this point how to continue: could take each sentence if more than
+        #  one and graph them as phrase and if only sentence, graph each clause (i.e.
+        #  comma separated i.e. Goblin Bangchuckers
+        # if we get here start by breaking the line into sentences
+        ss = [x.strip() + '.' for x in dd.re_sentence.split(line) if x != '']
+        if len(ss) > 1:
+            for s in ss: graph_phrase(t,pid,s,i+1)
+        else:
+            if i < 1: graph_phrase(t,t.add_node(pid,'sentence'),line,i+1)
+            else: t.add_node(pid,'ungraphed-sentence',tograph=line)
+
+def graph_clause(t,pid,clause):
+    """
+    Graphs a clause, a keyword action orientated chunk of words
+    :param t: the tree
+    :param pid: parent of the line
+    :param clause: the text to graph
+    """
+    #try:
+    #    pre,ka,post = dd.re_keyword_action_clause.search(clause).groups()
+    #    return
+    #except AttributeError:
+    #    pass
+    #if dd.re_ka_clause.search(clause): graph_action_clause(t,pid,clause)
+    t.add_attr(pid,'ungraphed',clause)
 
 def graph_replacement_effects(t,pid,line):
     """
@@ -291,97 +305,11 @@ def graph_apc_phrases(t,pid,line):
     # See 118.9 for some phrasing
 
     # start with 'you may' optional APCs
-    if 'xp<you> cn<may>':
+    if 'xp<you> cn<may>' in line or line.startswith('cn<rather_than> xa<pay>'):
         nid = graph_optional_apc(t,line)
         if nid:
             t.add_edge(t.add_node(pid,'apc',type='optional'),nid)
             return nid
-
-        #nid = graph_
-
-    return None
-
-def graph_optional_phrases(t,pid,line):
-    """
-    graphs optional phrase in line
-    :param t: the tree
-    :param pid: parent id to graph under
-    :param line: text to graph
-    :return: node id of optional phrase root or None
-    """
-    if 'cn<may>' in line:
-        nid = graph_player_may(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'optional',type='may'),nid)
-            return nid
-
-    return None
-
-def graph_conditional_phrases(t,pid,line):
-    """
-    graphs conditional phrase in line
-    :param t: the tree
-    :param pid: parent id to graph under
-    :param line: text to graph
-    :return: node id of conditional phrase root or None
-    """
-    # starting with conditional that contain 'if' (but not instead that are
-    # already graphed from above, then unless
-    if 'cn<if>' in line:
-        nid = graph_conditional_if(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'conditional',type='if'),nid)
-            return nid
-    elif 'cn<unless>' in line:
-        nid = graph_conditional_unless(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'conditional',type='unless'),nid)
-            return nid
-
-    return None
-
-def graph_stipulation_phrases(t,pid,line):
-    """
-    graphs stipulation phrase in line
-    :param t: the tree
-    :param pid: parent id to graph under
-    :param line: text to graph
-    :return: node id of conditional phrase root or None
-    """
-    # start with only conjunctions
-    if len(dd.re_only_conj_check.findall(line)) == 2:
-        nid = graph_only_conjunction(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'restriction',type='only-conjunction'),nid)
-            return nid
-        #t.add_node(pid,'restriction',type='conjunction',tograph=line)
-    elif 'cn<only_if>' in line:
-        nid = graph_only_if(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'restriction',type='only-if'),nid)
-            return nid
-    elif 'cn<only>' in line:
-        if 'cn<can>' in line:
-            nid = graph_can_only(t,line)
-            if nid:
-                t.add_edge(t.add_node(pid,'restriction',type='can-only'),nid)
-                return nid
-
-        nid = graph_timing_restriction_only(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'restriction',type='timing'),nid)
-            return nid
-    elif 'cn<except>' in line:
-        nid = graph_restriction_except(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'restriction',type='except'),nid)
-            return nid
-
-        nid = graph_addition_except(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'addition',type='except'),nid)
-            return nid
-
     return None
 
 ####
@@ -399,11 +327,22 @@ def graph_repl_instead(t,phrase):
     """
     # check for 'would' phrasing, 'of' phrasing and 'if' phrasing
     if 'cn<would>' in phrase:
-        # if-instead-would
+        # if-instead-would variants a
         try:
-            thing,would,instead = dd.re_if_would_instead.search(phrase).groups()
+            ety,would,instead = dd.re_if_would_instead1.search(phrase).groups()
             rid = t.add_ur_node('if-instead-would')
-            graph_line(t,t.add_node(rid,'thing'),thing)
+            graph_entity(t,rid,ety)
+            graph_line(t,t.add_node(rid,'would'),would)
+            graph_line(t,t.add_node(rid,'instead'),instead)
+            return rid
+        except AttributeError:
+            pass
+
+        # if-instead-would variants a
+        try:
+            ety,would,instead = dd.re_if_would_instead2.search(phrase).groups()
+            rid = t.add_ur_node('if-instead-would')
+            graph_entity(t,rid,ety)
             graph_line(t,t.add_node(rid,'would'),would)
             graph_line(t,t.add_node(rid,'instead'),instead)
             return rid
@@ -443,7 +382,7 @@ def graph_repl_instead(t,phrase):
             # could use the group(3) to confirm players ar3 the same
             ply,act1,_,act2 = dd.re_may_instead.search(phrase).groups()
             rid = t.add_ur_node('may-instead')
-            graph_player(t,rid,ply)
+            graph_entity(t,rid,ply)
             graph_line(t,t.add_node(rid,'action'),act1)
             graph_line(t,t.add_node(rid,'instead'),act2)
             return rid
@@ -529,7 +468,7 @@ def graph_repl_skip(t,phrase):
         ply,phase = dd.re_skip.search(phrase).groups()
         if not ply: ply = 'xp<you'
         rid = t.add_ur_node('skip')
-        graph_player(t,rid,ply)
+        graph_entity(t,rid,ply)
         graph_line(t,t.add_node(rid,'phase'),phase)
         return rid
     except AttributeError:
@@ -546,7 +485,7 @@ def graph_repl_etb1(t,phrase):
     try:
         perm,ctrs = dd.re_etb_with.search(phrase).groups()
         rid = t.add_ur_node('etb-with')
-        graph_line(t,t.add_node(rid,'permanent'),perm)
+        graph_entity(t,rid,perm)
         graph_line(t,t.add_node(rid,'counters'),ctrs)
         return rid
     except AttributeError:
@@ -556,7 +495,7 @@ def graph_repl_etb1(t,phrase):
     try:
         perm,action = dd.re_as_etb.search(phrase).groups()
         rid = t.add_ur_node('as-etb')
-        graph_line(t,t.add_node(rid,'permanent'),perm)
+        graph_entity(t,rid,perm)
         graph_line(t,t.add_node(rid,'action'),action)
         return rid
     except AttributeError: # no match
@@ -566,7 +505,7 @@ def graph_repl_etb1(t,phrase):
     try:
         perm,asa = dd.re_etb_as.search(phrase).groups()
         rid = t.add_ur_node('etb-as')
-        graph_line(t,t.add_node(rid,'permanent'),perm)
+        graph_entity(t,rid,perm)
         graph_line(t,t.add_node(rid,'as'),asa)
         return rid
     except AttributeError: # no match
@@ -648,377 +587,308 @@ def graph_optional_apc(t,phrase):
     :param phrase: the text to graph
     :return: node id of the rootless apc or None
     """
-    # TODO: group these under checks
-    # [condition]? [player] may [action] rather than pay [cost]
-    try:
-        cond,ply,act,cost = dd.re_action_apc.search(phrase).groups()
-        rid = t.add_ur_node('apc-optional-action')
-        if cond: graph_line(t,t.add_node(rid,'condition'),cond)
-        graph_player(t,rid,ply)
-        graph_line(t,t.add_node(rid,'action'),act)
-        graph_line(t,t.add_node(rid,'cost'),cost)
-        return rid
-    except AttributeError:
-        pass
-
-    # if [condition] you may cast ...
-    try:
-        cond = dd.re_cast_apc_nocast.search(phrase).groups()
-        rid = t.add_ur_node('apc-optional-nocost')
-        graph_line(t,t.add_node(rid,'condition'),cond)
-        return rid
-    except AttributeError:
-        pass
-
-    # alternate phrasing of action-apc
-    try:
-        cond,act = dd.re_if_cond_act_apc.search(phrase).groups()
-        rid = t.add_ur_node('apc-optional-action-alt')
-        graph_line(t,t.add_node(rid,'condition'),cond)
-        graph_line(t,t.add_node(rid,'action'),act)
-        return rid
-    except AttributeError:
-        pass
-
-    # alternate phrasing of action-apc (the reverse)
-    try:
-        cost,ply,act = dd.re_rather_than_apc.search(phrase).groups()
-        rid = t.add_ur_node('apc-optional-action-alt2')
-        graph_line(t,t.add_node(rid,'cost'),cost)
-        graph_player(t,rid,ply)
-        graph_line(t,t.add_node(rid,'action'),act)
-        return rid
-    except AttributeError:
-        pass
-
-    return None
-
-####
-## CONDITIONAL PHRASES
-####
-
-def graph_player_may(t,phrase):
-    """
-    graphs player may optional phrases
-    :param t: the tree
-    :param phrase: the text to graph
-    :return: the nod of the rootless player may node or None
-    """
-    try:
-        ply,act = dd.re_optional_may.search(phrase).groups()
-        rid = t.add_ur_node('player-may-action')
-        graph_player(t,rid,ply)
-        graph_line(t,t.add_node(rid,'action'),act)
-        return rid
-    except AttributeError:
-        pass
-
-    return None
-
-####
-## CONDITIONAL PHRASES
-####
-
-def graph_conditional_if(t,phrase):
-    """
-    graphs conditional phrases containing 'if'
-    :param t: the tree
-    :param phrase: the text to graph
-    :return: node id of the rootless conditional or None
-    """
-    # if a player does...
-    try:
-        ply,neg,act = dd.re_if_ply_does.search(phrase).groups()
-        rid = t.add_ur_node("if-player-does{}".format('-not' if neg else ''))
-        graph_player(t,rid,ply)
-        graph_line(t,t.add_node(rid,'action'),act)
-        return rid
-    except AttributeError:
-        pass
-
-    # if a player cannot...
-    try:
-        ply,act = dd.re_if_ply_cant.search(phrase).groups()
-        rid = t.add_ur_node('if-player-cannot')
-        graph_player(t,rid,ply)
-        graph_line(t,t.add_node(rid,'action'),act)
-        return rid
-    except AttributeError:
-        pass
-
-    # generic if condition, do not related to APC
-    try:
-        cond,act = dd.re_if_cond_act.search(phrase).groups()
-        rid = t.add_ur_node('if-cond-action')
-        graph_line(t,t.add_node(rid,'condition'),cond)
-        graph_line(t,t.add_node(rid,'action'),act)
-        return rid
-    except AttributeError:
-        pass
-
-    #raise lts.LituusException(lts.ETREE,"Ungraphed if condition {}".format(phrase))
-
-def graph_conditional_unless(t,phrase):
-    """
-    graphs conditional phrases containing 'unless
-    :param t: the tree
-    :param phrase: the text to graph
-    :return: node id of the rootless conditional or None
-    """
-    # five flavors
-    if 'cn<cannot>' in phrase:
+    if 'xp<you> cn<may>' in phrase:
+        # [condition]? [player] may [action] rather than pay [cost]
         try:
-            # TODO: this is really a restriction
-            thing,act,cond = dd.re_cannot_unless.search(phrase).groups()
-            rid = t.add_ur_node('cannot-unless')
-            graph_line(t,t.add_node(rid,'thing'),thing)
+            cond,ply,act,cost = dd.re_action_apc.search(phrase).groups()
+            rid = t.add_ur_node('apc-optional-action')
+            if cond: graph_line(t,t.add_node(rid,'condition'),cond)
+            graph_entity(t,rid,ply)
             graph_line(t,t.add_node(rid,'action'),act)
+            graph_line(t,t.add_node(rid,'cost'),cost)
+            return rid
+        except AttributeError:
+            pass
+
+        # if [condition] you may cast ...
+        try:
+            cond = dd.re_cast_apc_nocost.search(phrase).group(1)
+            rid = t.add_ur_node('apc-optional-nocost')
+            graph_entity(t,rid,'xp<you>')
             graph_line(t,t.add_node(rid,'condition'),cond)
             return rid
         except AttributeError:
             pass
-    elif phrase.startswith('ka') or phrase.startswith('xa'):
+
+        # alternate phrasing of action-apc
         try:
-            act,cond = dd.re_action_unless.search(phrase).groups()
-            rid = t.add_ur_node('action-unless')
-            graph_line(t,t.add_node(rid,'action'),act)
+            cond,act = dd.re_alt_action_apc.search(phrase).groups()
+            rid = t.add_ur_node('apc-optional-action-alt')
+            graph_entity(t,rid,'xp<you>')
             graph_line(t,t.add_node(rid,'condition'),cond)
-            return rid
-        except AttributeError:
-            pass
-    elif phrase.startswith('st'):
-        try:
-            stat,cond = dd.re_status_unless.search(phrase).groups()
-            rid = t.add_ur_node('status-unless')
-            t.add_node(rid,'status',value=stat)
-            graph_line(t,t.add_node(rid,'condition'),cond)
-            return rid
-        except AttributeError:
-            pass
-    elif 'cn<may>' in phrase:
-        try:
-            ply,act,cond = dd.re_may_unless.search(phrase).groups()
-            rid = t.add_ur_node('may-unless')
-            graph_player(t,rid,ply)
             graph_line(t,t.add_node(rid,'action'),act)
-            graph_line(t,t.add_node(rid,'condition'),cond)
             return rid
         except AttributeError:
             pass
-    else:
-        # TODO: currently not graphing these until we merge quantifiers and status
-        #  with players and objects
+    elif phrase.startswith('cn<rather_than> xa<pay>'):
         try:
-            _,_ = dd.re_ungraphed_unless.search(phrase).groups()
-            rid = t.add_urn_node('ungraphed-unles',tograph=phrase)
-            return rid
-        except AttributeError:
-            pass
-
-    return None
-
-####
-## GRAPH STIPULATIONS
-####
-
-def graph_only_conjunction(t,phrase):
-    """
-    graphs a conjunction of only restriction phrases
-    :param t: the tree
-    :param phrase: the text to graph
-    :return: node id of the rootless restrictions or None
-    """
-    try:
-        # have to look at the first restriction type to determine 'what' clause
-        # is. If rtype is only we have a conjunction of timing restrictions
-        # otherwise we have a condition and a timing restriction
-        act,ct1,cl1,ct2,cl2 = dd.re_only_conjunction.search(phrase).groups()
-        rid = t.add_ur_node('only-conjunction')
-        graph_line(t,t.add_node(rid,'action'),act)
-        if ct1 == 'only': graph_line(t,t.add_node(rid,'phase'),cl1)
-        elif ct1 == 'only_if': graph_line(t,t.add_node(rid,'condition'),cl1)
-        if ct2 == 'only': graph_line(t,t.add_node(rid,'phase'),cl2)
-        elif ct2 == 'only_if': graph_line(t,t.add_node(rid,'condition'),cl2)
-        return rid
-    except AttributeError:
-        pass
-
-    return None
-
-
-def graph_only_if(t,phrase):
-    """
-    graphs restriction phrases containin only if
-    :param t: the tree
-    :param phrase: the text to graph
-    :return: node id of the rootless restriction or None
-    """
-    # only-if are always action only-if condition
-    try:
-        act,cond = dd.re_only_if.search(phrase).groups()
-        rid = t.add_ur_node('only-if')
-        graph_line(t,t.add_node(rid,'action'),act)
-        graph_line(t,t.add_node(rid,'condition'),cond)
-        return rid
-    except AttributeError:
-        return None
-
-def graph_can_only(t,phrase):
-    """
-    graphs can only restriction phrase
-    :param t: the tree
-    :param phrase: the text to graph
-    :return: node id of the rootless restriction or None
-    """
-    try:
-        thing,act,restr = dd.re_can_only.search(phrase).groups()
-        rid = t.add_ur_node('can-only')
-        graph_line(t,t.add_node(rid,'action'),act)
-        graph_line(t,t.add_node(rid,'restriction'),restr)
-        return rid
-    except AttributeError:
-        return None
-
-def graph_timing_restriction_only(t,phrase):
-    """
-    graphs restriction phrases related to timing
-    :param t: the tree
-    :param phrase: the text to graph
-    :return: node id of the rootless timing restriction or None
-    """
-    if 'sq<during>' in phrase:
-        try:
-            act,ts = dd.re_only_during.search(phrase).groups()
-            rid = t.add_ur_node('only-during')
+            cost,ply,act = dd.re_rather_than_apc.search(phrase).groups()
+            rid = t.add_ur_node('apc-optional-action-alt2')
+            graph_line(t,t.add_node(rid,'cost'),cost)
+            graph_entity(t,rid,ply)
             graph_line(t,t.add_node(rid,'action'),act)
-            graph_line(t,t.add_node(rid,'phase'),ts)
             return rid
         except AttributeError:
             pass
-    elif 'cn<could>' in phrase:
-        try:
-            ply1,opt,act1,tim,ply2,act2 = dd.re_only_could.search(phrase).groups()
-            # opt is an implied can
-            if not opt: opt = 'can'
-            rid = t.add_ur_node('only-could',type=opt)
-
-
-            # use player1 if present otherwise player2
-            if not ply1: ply1 = ply2
-            graph_player(t,rid,ply1)
-
-            # strip hanging but from action (present in some cases)
-            if act1.endswith(' but'): act1 = act1[:-4]
-
-            # graph the remaining
-            graph_line(t,t.add_node(rid,'action'),act1)
-            graph_line(t,t.add_node(rid,'timing'),tim)
-            graph_line(t,t.add_node(rid,'could'),act2)
-            return rid
-        except AttributeError:
-            pass
-    return None
-
-def graph_restriction_except(t,phrase):
-    """
-    graphs restriction phrases containin except
-    :param t: the tree
-    :param phrase: the text to graph
-    :return: node id of the rootless restriction or None
-    """
-    if 'pr<for>' in phrase:
-        try:
-            act,obj1,obj2 = dd.re_except_for.search(phrase).groups()
-            rid = t.add_ur_node('exclusion')
-            graph_line(t,t.add_node(rid,'action'),act)
-            graph_line(t,t.add_node(rid,'object'),obj1)
-            graph_line(t,t.add_node(rid,'except-for'),obj2)
-            return rid
-        except AttributeError:
-            pass
-    elif 'pr<by>' in phrase:
-        try:
-            obj1,act,obj2 = dd.re_except_by.search(phrase).groups()
-            rid = t.add_ur_node('exception')
-            graph_line(t,t.add_node(rid,'object'),obj1)
-            graph_line(t,t.add_node(rid,'cannot'),act)
-            graph_line(t,t.add_node(rid,'except-by'),obj2)
-            return rid
-        except AttributeError:
-            pass
-
-    # TODO: Island Sanctuary, Flame Sweep, Akron Legionnaire, Keldon Firebombers,
-    #  Slinn Voda, the Rising Deep and Inspire Awe are exceptions to the except
-    #  for/by patterns. 'Ungraph' here until a solution can be found
-    if dd.re_except_prep.search(phrase):
-        return t.add_ur_node('except-prep',anamolie=phrase)
 
     return None
-
-def graph_addition_except(t,phrase):
-    """
-    graphs restriction phrases containin except
-    :param t: the tree
-    :param phrase: the text to graph
-    :return: node id of the rootless restriction or None
-    """
-    try:
-        act,add = dd.re_except_it.search(phrase).groups()
-        rid = t.add_ur_node('except-it')
-        graph_line(t,t.add_node(rid,'action'),act)
-        graph_line(t,t.add_node(rid,'except-it'),add)
-        return rid
-    except AttributeError:
-        pass
-    return None
-
-#def graph_granted_ability(t,pid,line):
-#    """
-#    graphs granted ability in line
-#    :param t: the tree
-#    :param pid: parent id
-#    :param line: line to graph
-#    """
-#    try:
-#        bdur,obj,gw,ab1,ab2,edur = dd.re_grant_ability.search(line).groups()
-#        gid = t.add_node(pid,'grant-ability',gw=mtgltag.tag_val(gw))
-#        dur = bdur if bdur else edur if edur else None
-#        if dur: graph_line(t,t.add_node(gid,'durartion'),dur)
-#        graph_line(t,t.add_node(gid,'object'),obj)
-#        graph_line(t,t.add_node(gid,'ability'),ab1)
-#        if ab2: graph_line(t,t.add_node(gid,'ability'),ab2)
-#    except AttributeError:
-#        raise lts.LituusException(
-#            lts.EPTRN, "Not a granted ability ({})".format(line)
-#        )
 
 ####
-## CLAUSES AND TOKENS
+## SEQUENCE PHRASES
 ####
 
-#graph_line(t,t.add_node(rid,'player'),ply)
-def graph_player(t,pid,ply):
+def graph_sequence_phrase(t,pid,line):
     """
-    Graphs the player clause ply under/in node pid
+    determines how to graph the sequence phrase in line
     :param t: the tree
     :param pid: the parent id
-    :param ply: the playe rclause
-    :return: the player node id
+    :param line: text to graph
+    :return: node id or None
     """
-    # TODO: this is a proof of concept and will extract singular player value
-    #  all else will be an ungraphed phrase
+    # check for then first
     try:
-        ply = dd.re_vanilla_player.search(ply).group(1)
-        return t.add_node(pid,'player',value=ply)
+        _,act = dd.re_sequence_seq.search(line).groups()
+        sid = t.add_node(pid,'then')
+        #graph_phrase(t,t.add_node(sid,'action'),act)
+        graph_phrase(t,sid,act)
+        return sid
     except AttributeError:
         pass
 
-    # default
-    return graph_line(t,t.add_node(pid,'player'),ply)
+    # then durations
+    try:
+        wd,dur,act = dd.re_sequence_dur.search(line).groups()
+        did = t.add_node(pid,'duration')
+        graph_clause(t,t.add_node(did,wd),dur)
+        graph_phrase(t,t.add_node(did,'action'),act)
+        return did
+    except AttributeError:
+        pass
+
+    return None
+
+####
+## CONDITION PHRASES
+####
+
+def graph_condition_phrase(t,pid,line):
+    """
+    determines how to graph the condition phrase in line
+    :param t: the tree
+    :param pid: the parent id
+    :param line: text to graph
+    :return: node id or None
+    """
+    if line.startswith('cn<if>'):
+        try:
+            ply,neg,act = dd.re_if_ply_does.search(line).groups()
+            cid = t.add_node(pid,'if')
+            graph_entity(t,cid,ply)
+            did = t.add_node(cid,"does{}".format('-not' if neg else ''))
+            graph_phrase(t,did,act)
+            return cid
+        except AttributeError:
+            pass
+
+        try:
+            ply,act = dd.re_if_ply_cant.search(line).groups()
+            cid = t.add_node(pid,'if')
+            graph_entity(t,cid,ply)
+            graph_phrase(t,t.add_node(cid,'cannot'),act)
+            return cid
+        except AttributeError:
+            pass
+
+        try:
+            cond,act = dd.re_if_cond_act.search(line).groups()
+            cid = t.add_node(pid,'if')
+            graph_phrase(t,cid,cond)
+            graph_phrase(t,cid,act)
+            return cid
+        except AttributeError:
+            pass
+    elif 'cn<unless' in line:
+        try:
+            ety,act,cond = dd.re_cannot_unless.search(line).groups()
+            graph_entity(t,pid,ety)
+            graph_phrase(t,t.add_node(pid,'cannot'),act)
+            graph_phrase(t,t.add_node(pid,'unless'),cond)
+            return pid
+        except AttributeError:
+            pass
+
+        try:
+            act,cond = dd.re_action_unless.search(line).groups()
+            graph_phrase(t,pid,act)
+            uid = t.add_node(pid,'unless')
+            graph_phrase(t,uid,cond)
+            return uid
+        except AttributeError:
+            pass
+
+    return None
+
+####
+## OPTIONAL PHRASES
+####
+
+def graph_option_phrase(t,pid,phrase):
+    """
+    determines how to graph the condition phrase in line
+    :param t: the tree
+    :param pid: the parent id
+    :param phrase: text to graph
+    :return: node id or None
+    """
+    # check may as-though first
+    try:
+        ply,act1,act2 = dd.re_may_as_though.search(phrase).groups()
+        mid = t.add_node(pid,'may')
+        graph_action_clause(t,mid,"{} {}".format(ply,act1))
+        aid = t.add_node(mid,'as-though')
+        graph_action_clause(t,aid,act2)
+        return mid
+    except AttributeError:
+        pass
+
+    try:
+        ply,act = dd.re_optional_may.search(phrase).groups()
+        mid = t.add_node(pid,'may')
+        graph_action_clause(t,mid,"{} {}".format(ply,act))
+        return mid
+    except AttributeError:
+        pass
+
+    return None
+
+####
+## CLAUSES, TOKENS
+####
+
+def graph_cost(t,pid,phrase):
+    """
+    graphs the cost(s) in phrase
+    :param t: the tree
+    :param pid: parent id to graph under
+    :param phrase: the cost phrase
+    :return: cost node id
+    """
+    # a cost is one or more comma separated subcosts
+    # graph_line(t,t.add_node(aaid,'activated-cost'),cost)
+    # i.e. Flooded Strand
+    #  └─activated-ability:0
+    #    ├─activated-cost:0
+    #    │ └─ungraphed-sentence:0 (tograph={t}, xa<pay> nu<1> xo<life>, ka<sacrifice> ob<card ref=self>)
+    # = ['{t}', 'xa<pay> nu<1> xo<life>', 'ka<sacrifice> ob<card ref=self>']
+    for subcost in [x for x in dd.re_comma.split(phrase) if x != '']:
+        _subcost_(t,pid,subcost)
+
+def graph_action_clause(t,pid,phrase):
+    """
+    graphs the keyword or lituus action clause in phrase under pid
+    :param t: the tree
+    :param pid: parent id
+    :param phrase: the text to graph
+    :return: the node id
+    """
+    try:
+        # determine if there is a conjunction of actions or a singleton action
+        ety = neg = aw1 = act1 = aw2 = act2 = None
+        m = dd.re_anded_action_clause.search(phrase)
+        if m: ety,aw1,act1,aw2,act2 = m.groups()
+        else:
+            m = dd.re_action_clause.search(phrase)
+            if m: ety,neg,aw1,act1 = m.groups()
+            else:
+                return None
+                #raise lts.LituusException(
+                #    lts.EPTRN, "Not an action clause ({})".format(phrase)
+                #)
+
+        # insert an implied you if there is not entity
+        if not ety: ety = 'xp<you>'
+
+        # now set up of singleton and adjust if conjunction
+        acs = [(aw1,act1)]
+        if neg:
+            nid = t.add_node(pid,'did-not')
+            aid = t.add_node(nid,'action')
+        else: aid = t.add_node(pid,'action')
+        if aw2:
+            aid = t.add_node(aid,'and')
+            acs.append((aw2,act2))
+
+        # graph the action(s)
+        for aw,act in acs:
+            awid = t.add_node(aid,mtgltag.tag_val(aw))
+            graph_entity(t,awid,ety)
+            t.add_node(awid,'action-params',tograph=act)
+
+        return aid
+    except AttributeError:
+        pass
+
+    return None
+
+def graph_entity(t,pid,ety,qclause=None):
+    """
+    Graphs the entity under node pid
+    :param t: the tree
+    :param pid: the parent id
+    :param ety: the entity clause
+    :param qclause: any trailing qualifying clause ie. "attacking you"
+    :return: the player node id
+    """
+    eid = t.add_node(pid,'entity')
+    try:
+        # 'unpack' the entity phrase and add nodes for quantifiers, status
+        # if present
+        xq,st,ety = dd.re_qse.search(ety).groups()
+        if xq: t.add_node(eid,'quantifier',value=xq)
+        if st: t.add_node(eid,'status',value=st)
+
+        # untag the entity tag
+        tid,val,attr = mtgltag.untag(ety)
+        vid=t.add_node(eid,mtgl.TID[tid],value=val)
+        for k in attr: t.add_node(vid,k,value=attr[k]) # TODO: define a order for these
+    except lts.LituusException:
+        t.add_node(eid,'failed-untag',ety)
+    except AttributeError:
+        t.add_attr(eid,'failed-tograph',ety)
 
 ####
 ## PRIVATE FUNCTIONS
 ####
+
+def _enclosed_quote_(t,m):
+    """
+    graphs the contents of an enclosed quote (in m) under an unrooted node and
+    returns a tag nd<node-id> to sub in for the quoted text
+    :param t: the tree
+    :param m: regex match object
+    :return: the tagged node-id of the graphed contents
+    """
+    # create a rootless node to graph the text under (stripping the quotation
+    # marks) and return the tagged node-id
+    eqid = t.add_ur_node('enclosed-quote')
+    graph_line(t,eqid,m.group()[1:-1])
+    return "nd<{} num={}>".format(*eqid.split(':'))
+
+def _subcost_(t,pid,sc):
+    """
+    graphs a subcost (sc) phrase under parent pid
+    :param t: the tree
+    :param pid: the parent id
+    :param sc: subcost phrase
+    :return:
+    """
+    # subcost could be a mtg symbol (a mana string, E, T or Q) or it could be
+    # an action clause i.e. a action word like sacrifice or pay and the parameters
+    # or a conjunction i.e. or of symbols
+    sid = t.add_node(pid,'subcost')
+    if mtgltag.tkn_type(sc) == mtgltag.MTGL_SYM: t.add_attr(sid,'value',sc)
+    elif dd.re_is_act_clause.search(sc): graph_clause(t,sid,sc)
+    else: t.add_attr(sid,'anamolie',sc)
 
 # find the stem of the action word
 _re_act_wd_ = re.compile(

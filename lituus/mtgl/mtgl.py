@@ -109,15 +109,23 @@ SNG = "'"  # single quote
 MIN = '−'  # not used yet (found in negative loyalty costs)
 
 ####
+# TAG ID CONSTANTS
+####
+TID = {
+    # entities
+    'ob':'mtg-object','xo':'lituus-object','xp':'player','zn':'zone',
+}
+
+####
 # REGEX AND STRING MANIP FOR PARSING
 ####
 
 # CATCHALLS
 # re_dbl_qte = r'".*?"'                            # double quoted string
-re_rem_txt = re.compile(r"\(.+?\)")  # reminder text
+re_rem_txt = re.compile(r"\(.+?\)")                # reminder text
 re_mana_remtxt = re.compile(r"\(({t}: add.+?)\)")  # find add mana inside ()
-re_non = re.compile(r"non(\w)")  # find 'non' without hyphen
-re_un = re.compile(r"un(\w)")  # find 'un'
+re_non = re.compile(r"non(\w)")                    # find 'non' without hyphen
+re_un = re.compile(r"un(\w)")                      # find 'un'
 
 # DELIMITERS
 
@@ -296,7 +304,7 @@ word_hacks = {
     "lost":"loseed","losing":"loseing",
     "its":"it's",
     "died":"dieed","dying":"dieing",
-    "choosing":"chooseing","chosen":"chooseed",
+    "choosing":"chooseing",#"chosen":"chooseed",
     "drawn":"drawed",
     "spent":"spended","unspent":"unspended",
     "proliferating":"proliferateing","proliferated":"proliferateed",
@@ -320,6 +328,7 @@ word_hacks = {
     "produced":"produceed","producing":"produceing",
     "resolved":"resolveed","resolving":"resolveing",
     "did":"doed","does":"do",
+    "controlled":"controled",
     # status related
     "tapping":"taping","tapped":"taped","untapping":"untaped","untapped":"untaped",
     "flipping":"fliping","flipped":"fliped",
@@ -366,7 +375,7 @@ lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that is',
     'that are','that','additional','those','these','their','the','extra','first',
     'second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth',
-    'half','twice','new','single','same','next','last','opening','which',
+    'half','twice','new','single','same','next','last','opening','which',"chosen",
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -378,7 +387,7 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 # Qualifying words
 # TODO: not sure if this is the best place for 'back' or not
 
-lituus_qualifiers = ['less','more','back','many','random']
+lituus_qualifiers = ['less','lesser','more','back','many','random']
 qualifier_tkns = '|'.join(lituus_qualifiers)
 re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 
@@ -410,8 +419,8 @@ re_obj = re.compile(
 # TODO: rest does not belong here
 lituus_objects = [  # lituus objects
     "city's blessing", 'game','mana pool','mana cost','commander','mana','attacker',
-    'blocker','itself','it','them','coin','choice','cost', "amount of", 'life total',
-    'life','symbol','rest','monarch','pile'
+    'blocker','itself','it','them','they','coin','choice','cost', "amount of",
+    'life total','life','symbol','rest','monarch','pile',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
@@ -420,7 +429,7 @@ re_lituus_obj = re.compile(
 
 # lituus players - keep suffix but check word boundary in beginning
 lituus_players = [
-    'you','opponent','teammate','player','owner','controller','they'
+    'you','opponent','teammate','player','owner','controller',
 ]
 lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
@@ -479,9 +488,17 @@ re_generic_turn = re.compile(r"\b({})".format('|'.join(generic_turns)))
 #   keys is provided. Since OrderedDict implementation varies across Python 3.x
 #   versions this is preferable to having non-portable code
 op = {
-    "less than or equal to": LE, "no more than": LE, "greater than or equal to": GE,
-    "less than": LT, "more than": GT, "greater than": GT, "equal to": EQ, "equal": EQ,
-    "at least": GE, "plus": '+', "minus": '-',
+    "less than or equal to":LE,
+    "no more than":LE,
+    "greater than or equal to":GE,
+    "less than":LT,
+    "more than":GT,
+    "greater than":GT,
+    "equal to":EQ,
+    "equal":EQ,
+    "at least":GE,
+    "plus":'+'
+    ,"minus":'-',
 }
 op_keys = [
     "less than or equal to","no more than","greater than or equal to","less than",
@@ -489,21 +506,21 @@ op_keys = [
 ]
 re_op = re.compile(r"\b({})\b".format('|'.join(list(op_keys))))
 
-# finds number or greater and number or less
-re_num_op = re.compile(r"(nu<(?:\d+|x|y|z)>) or (greater|less|more)")
+# finds number or greater, less, more or fewer
+re_num_op = re.compile(r"(nu<(?:\d+|x|y|z)>) or (greater|less|more|fewer)")
 
 # prepositions (check for ending tags)
 prepositions = [
     'on top of','up to','on bottom of','from','to','into','in','on','out','under',
     'onto','top of','top','bottom of','bottom','without','with','for','up','down',
-    'by',
+    'by','as though','as',
 ]
 re_prep = re.compile(r"\b(?<!<)({})\b(?!>)".format('|'.join(prepositions)))
 
 # conditional/requirement related
 conditionals = [
     'only if','if','would','could','unless','rather than','instead','may','except',
-    'not','only','cannot','can',
+    'did not','not','only','cannot','can','otherwise',
 ]
 re_cond = re.compile(r"\b({})\b".format('|'.join(conditionals)))
 
@@ -547,9 +564,9 @@ named_counters = [
     'omen','ore','page','pain','paralyzation','petal','petrification','phylactery',
     'pin','plague','poison','polyp','pressure','prey','pupa','quest','rust',
     'scream','shell','shield','silver','shred','sleep','sleight','slime','slumber',
-    'soot','spark','spore','storage','strife','study','task','theft','tide','time',
-    'tower','training','trap','treasure','velocity','verse','vitality','volatile',
-    'wage','winch','wind','wish',
+    'soot','soul','spark','spore','storage','strife','study','task','theft','tide',
+    'time','tower','training','trap','treasure','velocity','verse','vitality',
+    'volatile','wage','winch','wind','wish',
 
 ]
 named_ctr_tkns = '|'.join(named_counters)
@@ -863,6 +880,9 @@ re_attr_val = re.compile(
 # meta 'attribute' value see Repeal where no operator is present
 re_attr_val_nop = re.compile(r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)> nu<(\d+|x|y|z)>")
 
+# colored will be tagged as xr<color suffix=ed> need to switch this
+re_attr_colored = re.compile(r"xr<((?:mono)?color) suffix=ed>")
+
 # ... base power and toughness X/Y i.e. Godhead of Awe then power and toughness
 # i.e Transmutation
 re_base_pt = re.compile(
@@ -1047,7 +1067,8 @@ val_join = {
     "living weapon":"living_weapon","totem armor":"totem_armor",
     "color identity":"color_identity",  # "mana cost":"mana_cost",
     "amount of":"amount_of","that is":"that_is","that are":"that_are",
-    "life total":"life_total","rather than":"rather_than",
+    "life total":"life_total","rather than":"rather_than","as though":"as_though",
+    "did not":"did_not",
 }
 val_join_tkns = '|'.join(val_join.keys())
 re_val_join = re.compile(r"(?<=[<=])({})(?=>)".format(val_join_tkns))
@@ -1187,6 +1208,12 @@ re_at_prep = re.compile(r"(tp<at>)(?= xl<\w+>)")
 # 'at' is also a preposition if it is not followed by some number of tokens and
 # a comma
 re_at_prep2 = re.compile(r"(tp<at>)(?=[^,]+?\.)")
+
+# no nu<1> needs to be retagged
+re_no_one = re.compile(r"no nu<1>")
+
+# as long as should be a sequence
+re_as_long_as = re.compile(r"pr<as> long pr<as>")
 
 ####
 ## SUFFICES
@@ -1498,19 +1525,6 @@ re_ability_type = re.compile(
      r"(ob<ability(?: suffix=\w?)?>)"
 )
 
-# find phrases of the form [quantifier] [status] object IOT to merge the
-# quantifier and status in the object
-# TODO: this will find everything that has an object, caller will have to verify
-#  that at least the quantifier or status is present
-# re_qso = re.compile(
-#    r"(?:xq<(\w+?)> )?"
-#    r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
-#    # TODO: don't think we need the double wrapping
-#    r"(?:(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))"
-# )
-
 ####
 ## POST PROCESS
 ####
@@ -1539,6 +1553,14 @@ re_is2tag = re.compile(r"\b({})\b".format(is_forms_tkns))
 ####
 ## PHRASING
 ####
+
+# find common phrases that can be replaced by keyword actions or slang
+
+# mill as defined in Core 2021
+re_mill = re.compile(
+    r"xa<put( suffix=\w+)?> xq<the> pr<top> (nu<[^>]+>) ob<card suffix=s> of "
+     r"xq<their> zn<library> pr<into> xq<their> zn<graveyard>"
+)
 
 # Finds phrases of the form {n} more|less for cost increase/reduction one or more
 # mana symbols followed by a qualifier

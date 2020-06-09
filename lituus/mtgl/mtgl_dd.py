@@ -32,6 +32,16 @@ import regex as re
 # which finds any periods followed by an even number of quotes
 re_sentence = re.compile(r"\.(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")
 
+# use with spit to break a phrase into clauses by the comma (not enclosed in quotes)
+re_comma = re.compile(r", ")
+
+####
+## TYPE CHECKS
+####
+
+# an action clause will start with an action tag
+re_is_act_clause = re.compile(r"^[kx]a<\w+>")
+
 ####
 ## LINE TYPES
 ####
@@ -90,13 +100,73 @@ re_tgr_line = re.compile(
 #  granted via an optional check for an 'and' followed by an enclosed phrase
 # These have the form:
 #  [duration],? [object] has/gains "[ability]" [and "ability"]? [duration]?.
-re_enclosed_quote = re.compile(r'\"([^\"]+)\"\.')
+#re_enclosed_quote = re.compile(r'\"([^\"]+)\"\.')
+re_enclosed_quote = re.compile(r'\"([^\"]+)\"') # drop the last period
 re_grant_ability_check = re.compile(r"xa<(?:have|gain)(?: suffix=\w+)?> \"")
 re_grant_ability = re.compile(
     r"^(?:(sq<\w+> [^,]+), )?"
     r"(.+) (xa<(?:have|gain)(?: suffix=\w+)?>) \"([^\"]+)\""
     r"(?: and \"(.+)\")?(?: (sq<\w+> [^\.]+))?\.$"
 )
+
+####
+## PHRASE TYPES
+####
+
+# seuquences - two types a) sequence i.e. then do something b) duration i.e
+# until end of turn
+re_sequence_phrase = re.compile(r"^sq<\w+>")
+re_sequence_seq = re.compile(r"^(sq<then>) (.+)\.?$")
+re_sequence_dur = re.compile(r"^sq<(\w+)> ([^,]+), (.+)\.?$")
+
+##
+# optionals and conditions
+
+# [player] may [action] as though [action] [if [condition]]?
+re_may_as_though = re.compile(
+    r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?)"
+    r"cn<may> ([^,]+) pr<as_though> ([^\.]+\.?$)"
+)
+
+# contains 'may' [player] may [action]
+re_optional_may = re.compile(
+    r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?) "
+    r"cn<may> ([x|k]a<\w+>(?:[^\.]+))\.?$"
+)
+
+# starts with if - 3 typess
+#  a) if-player-does has two formation
+#   i. if [player] does [not]? [action] i.e. Decree of Justice
+#   ii. if [player] does [trigger] i.e. Providence
+#  b) if [player] cannot, [action] i.e. Brain Pry
+#  c) if [condition], [action] i.e Ordeal of Thassa
+re_if_ply_does  = re.compile(
+    r"^cn<if> ([^,|^\.]+) xa<do(?: suffix=\w+)?>(?: (cn<not>))?, ([^\.]+)\.?$"
+)
+re_if_ply_cant = re.compile(r"^cn<if> ([^,|^\.]+) cn<cannot>, ([^\.]+)\.?$")
+re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
+#re_if_cond_act = re.compile(
+#    r"^cn<if> ([^,|^\.]+), ([^\.]+)(?: cn<unless> ([^\.]+))?\.?$"
+#)
+
+# contains unless
+# The rules only mention unless in 722.6 "[A] unless [B]" However going through
+# them while B always appears to always be a condition there are five flavors
+# regarding A, depending on the context.
+#  1. [thing] cannot [action] unless [condition] i.e. Okk
+#  2. [action] unless [condition] i.e. Bog Elemental
+#  3. [status] unless [condition] i.e. Bountiful Promenade
+#  4. [player] may [action] unless [condition] i.e Mystic Remora (only 5 of these)
+# NOTE: unless is generally part of a clause that is part of a phrase therefore
+#  we do not want to grab anything that extends to the left past a clause (",")
+#  or sentence (".") boundary
+re_cannot_unless = re.compile(
+    r"^([^,|\.]+) cn<cannot> (.+) cn<unless> ([^,]+)\.?$")
+re_action_unless = re.compile(
+    r"^((?:[^,|^\.]+ )?[kx]a<\w+(?: [^>]+)?>.+) cn<unless> ([^,]+)\.?$"
+)
+re_status_unless = re.compile(r"^st<(\w+)> cn<unless> ([^,]+)\.?$")
+re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,]+)\.?$")
 
 ####
 ## KEYWORDS
@@ -446,16 +516,45 @@ kw_param_template = {
 }
 
 ####
+## KEYWORD ACTIONS (701.2 - 701/43)
+####
+
+# keyword or lituus action clause - starts with a keyword but may contain a
+# preceding thing clause [thing]? action word [parameters]
+re_anded_action_clause = re.compile(
+    r"^(?:([^,|^\.]+) )?"
+    r"([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))? and "
+    r"([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+)
+#re_action_clause = re.compile(
+#    r"^(?:([^,|^\.]+) )?([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+#)
+re_action_clause = re.compile(
+    r"^(?:([^,|^\.]+) (cn<did_not>)? )?([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+)
+
+# 701.2 activate [ability] [condition]?
+#  NOTE: ability may include quanitifiers
+re_ka_activate = re.compile(
+    r"^ka<(activate)> ((?:.+) ob<ability(?: .+)?>)(?: ([^\.]+))?\.?$"
+)
+
+####
 ## REPLACEMENT EFFECTS (614)
 ####
 
 ## INSTEAD CLAUSES (614.1a)
 # These must be done in the order below or false positives will occur
 
-# if would instead i.e. Abandoned Sarcophagus
-#  if [thing] would [a], [b] instead
-re_if_would_instead = re.compile(
-    r"^cn<if> (.+) cn<would> (.+), (.+) cn<instead>\.?$"
+# if would instead
+# two variants
+#  a. if [thing] would [action], [action] instead i.e. Abandoned Sarcophagus
+#  b. if [thing] would [action], instead [action] i.e. Breathstealer's Crypt
+re_if_would_instead1 = re.compile(
+    r"^cn<if> (.+) cn<would> ([^,]+), (.+) cn<instead>\.?$"
+)
+re_if_would_instead2 = re.compile(
+    r"^cn<if> (.+) cn<would> ([^,]+), cn<instead> ([^\.]+)\.?$"
 )
 
 # if instead i.e. Cleansing Medidation
@@ -529,13 +628,13 @@ re_etb_with = re.compile(
 # As permanent enters the battlefield ... i.e. Sewer Nemsis have the form
 #  as [permanent] enters the battlefield, [event]
 re_as_etb = re.compile(
-    r"^as (.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield>, ([^\.]+)\.?$"
+    r"^pr<as> (.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield>, ([^\.]+)\.?$"
 )
 
 # Permanent enters the battlefield as ... i.e. Clonne
 #  [Permanent] enters the battlefield as
 re_etb_as = re.compile(
-    r"^([^,|\.]+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> as ([^\.]+)\.?$"
+    r"^([^,|\.]+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> pr<as> ([^\.]+)\.?$"
 )
 
 ## ENTERS THE BATTLEFIELD CLAUSES (614.1d) - continuous effects
@@ -606,138 +705,27 @@ re_alt_action_apc = re.compile(
     r"xp<you> cn<may> (.+)\.?$"
 )
 
-# contains "rather than" - a reverse of re_action_apc i.e. Reverent Silence
+# contains "rather than" - a reverse of re_action_apc i.e. Dream Halls
 #  1. rather than pay [cost], [player] may [action]
 re_rather_than_apc = re.compile(
     r"^cn<rather_than> xa<pay> ([^,]+), (.+) cn<may> ([^\.]+)\.?$"
-)
-
-## OPTIONALS
-
-# optional may i.e. Oath of Scholars of the form
-# [player] may [action]
-re_optional_may = re.compile(
-    r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?) "
-     r"cn<may> ([x|k]a<\w+>(?:[^\.]+))\.?$"
-)
-
-## CONDITIONALS
-# start with an 'if'
-
-# if [player] do|does [not]?, [action] i.e. Decree of Justice
-re_if_ply_does = re.compile(
-    r"^cn<if> ([^,|^\.]+) xa<do(?: suffix=\w+)?>(?: (cn<not>))?, ([^\.]+)\.?$"
-)
-
-# if [player] cannot, [action] i.e. Brain Pry
-re_if_ply_cant = re.compile(r"^cn<if> ([^,|^\.]+) cn<cannot>, ([^\.]+)\.?$")
-
-# generic TODO: look at these for any additional patterns
-#  if [condition], [action]
-# We want to break on the first comma, see Mythos of Vadrok
-re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.$")
-
-# contains unless
-# The rules only mention unless in 722.6 "[A] unless [B]" However going through
-# them while B always appears to always be a condition there are five flavors
-# regarding A, depending on the context.
-#  1. [thing] cannot [action] unless [condition] i.e. Okk
-#  2. [action] unless [condition] i.e. Bog Elemental
-#  3. [status] unless [condition] i.e. Bountiful Promenade
-#  4. [player] may [action] unless [condition] i.e Mystic Remora (only 5 of these)
-#  5. [thing] [action] unless [condition] i.e. Erg Raider's and Minion of Tevesh Szat
-# NOTE: unless is generally part of a clause that is part of a phrase therefore
-#  we do not want to grab anything that extends to the left past a clause (",")
-#  or sentence (".") boundary
-re_cannot_unless = re.compile(
-    r"^([^,|\.]+) cn<cannot> (.+) cn<unless> ([^,]+)\.?$"
-)
-re_action_unless = re.compile(
-    r"^((?:[kx]a<\w+>) (?:.+)) cn<unless> ([^,]+)\.?$"
-)
-re_status_unless = re.compile(
-    r"^st<(\w+)> cn<unless> ([^,]+)\.?$"
-)
-re_may_unless = re.compile(
-    r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,]+)\.?$"
-)
-# TODO: before being able to graph these, we will have to combine quantifiers and
-#  or statuses with objects See Torment of Scarabs ("that player") and Heroic
-#  Defiance (that player) will also have to look for tag-ids of xp and ob
-re_ungraphed_unless = re.compile(r"^([^,|\.]+) cn<unless> ([^,]+)\.?$")
-
-## STIPULATIONS
-# either limit or add to
-
-# some have a conjunction of only restrictions with the basic form
-#  [action] only|only_if [clause] and only|only_if [clause]
-# for each of the clauses, have to look at the condition type. If it is only
-#  the clause is timing related. If it is only_if, the clause is a condition
-# TODO: Capricorn is an exception to the pattern and is of the form
-#  only [player] may [action] and only during [timing]
-re_only_conj_check = re.compile(r"cn<only(?:\w+)?>")
-re_only_conjunction = re.compile(
-    r"^(ka<\w+> (?:[^,|\.]+)) cn<(\w+)> (.+) and cn<(\w+)> ([^\.]+)\.?$"
-)
-
-
-# contains "only if" (Restrictions) having the form
-#  [action] only if [cond] see Mox Opal
-# NOTE: They all appear to be either activate or cast restrictions
-re_only_if = re.compile(r"^(ka<\w+> (?:[^,|\.]+)) cn<only_if> ([^\.]+)\.$")
-
-# contains "only during" (phase/step/time restrictions) having the form
-#  [action] only during [step/phase]
-# As above are cast or activate restrictions
-re_only_during = re.compile(
-    r"^(ka<\w+> (?:[^,|\.]+)) cn<only> sq<during> ([^\.]+)\.?$"
-)
-
-# contains only could i.e. Voracious Null
-#  ([player] optional)? [action] (but)? only [timing] [player] could [action]
-# NOTE: appears to be only in instrcutions of activated ability, if so, the
-#  last period will not be present
-re_only_could = re.compile(
-    r"^(?:([^,|\.]+) cn<(\w+)> )?"
-    r"(ka<\w+> (?:.+)) cn<only> (.+) (xp<\w+>) cn<could> ([^\.]+)\.?$"
-)
-
-# can-only i.e. Konda's Banner
-# [Thing] can [action] only [restriction]
-re_can_only = re.compile(
-    r"^([^,|\.]+) cn<can> (.+) cn<only> ([^\.]+)\.?$"
-)
-
-# contains except
-
-# With preposition 'for', an exclusion applied to an action i.e. Season of the
-# Witch, has the form:
-#  [action] [objects], except for [objects]
-re_except_for = re.compile(
-    r"^([xk]a<\w+>) ([^,]+),? cn<except> pr<for> ([^\.]+)\.?$"
-)
-
-# With preposition 'by', an exception applied to an action i.e. Noggle Bandit
-#  (so far all blocking related)
-#  [objects] cannot [action] except by [objects]
-# NOTE: the action clause may include a duration i.e. Dread Charge
-re_except_by = re.compile(
-    r"^([^,|\.]+) cn<cannot> (.+) cn<except> pr<by> ([^\.]+)\.?$"
-)
-
-# TODO: Island Sanctuary, Flame Sweep, Akron Legionnaire, Keldon Firebombers,
-#  Slinn Voda, the Rising Deep and Inspire Awe are exceptions to the except for/by
-#  patterns.
-re_except_prep = re.compile(r"^(.+)?cn<except> pr<(\w+)>([^\.]+)\.?$")
-
-# with object 'it' i.e. The Scarab God have the form
-#  [action] except it is a [quality]
-re_except_it = re.compile(
-    r"^([^,|\.]+),? cn<except> xo<it> ([^\.]+)\.?$"
 )
 
 ####
 ## TEST SPACE
 ####
 
-re_vanilla_player = re.compile(r"^xp<(\w+)>$")
+# TODO:
+#  1. need to determien where numbers would be located
+#  2. how to handle trailing phrases that apply to the object
+#  3. conjunctions of entities ie. xp<player> or ob<planeswalker)
+# find phrases of the form [quantifier] [status] object IOT to merge the
+# quantifier and status in the object
+re_qse = re.compile(
+    r"(?:xq<(\w+?)> )?"
+    r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
+    # TODO: don't think we need the double wrapping
+    r"(?:((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))"
+)

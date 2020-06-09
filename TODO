@@ -2,7 +2,7 @@
 
 16. Can we just standarize a regular expression to catch anamolies in function word_hacks?
 
-37. level ups and planeswalkers see Charming Prince
+37. level ups, modes and planeswalkers see Charming Prince
 
 40. Need to write save deck functionality
 
@@ -102,13 +102,7 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 195. Until a search function is implemented in the tree could we use list_utils to search in the list of nodes (tree.nodes)?
  For example in Seachrome coast the depth first order of nodes is 
 ['root', 'static-line:0', 'replacement-effect:0', 'etb-continuous:0', 'permanent:0', 'ungraphed-sentence:0', 'effect:0', 'conditional:0', 'status-unless:0', 'status:0', 'condition:0', 'ungraphed-sentence:1', 'activated-ability:0', 'activated-cost:0', 'ungraphed-sentence:2', 'activated-effect:0', 'ungraphed-sentence:3']
-we can use list_util to splice [etb-continuous, ... ,effect, ..., status-unless] and identifies cards that enter the battlefield tapped unless ... 
-
-196. combine "nu<X> or fewer>" as "<= nu<X>"   
-
-198. Where are the periods getting stripped
-
-200. How graph to be (doing it inside tagger processing leads to multiple errors) might be better to save it for post processing
+we can use list_util to splice [etb-continuous, ... ,effect, ..., status-unless] and identifies cards that enter the battlefield tapped unless ...  
 
 201. In Xenagos, God of Revels, xenagos is not being self-reffed  because xenagos is a planeswalker subtype because of Xenagos, the Reveler
 
@@ -118,4 +112,21 @@ we can use list_util to splice [etb-continuous, ... ,effect, ..., status-unless]
 
 205. except it are more clauses than full phrases
 
-207.
+207. Bound by Moonsilver has an example of a or chain for action words in first non keyword line and an example of a 'could' clause
+
+208. for modes see Atalya, Samite Master, need to break these up as clauses and graph each clause as a 'mode'
+
+210. add ability in mtgt to print from a given node as well
+
+211. Have to make sure we have all APC phrasing covered
+ - under APC need to specify the spell as well. in most cases it is the card but in others like Dream Halls the spell needs to be laid out
+
+212. action clause is too broad and will graph phrases that are not action clauses
+
+215. see Harbinger of Tides - has an 'if' mid clause (action clause) Saproling Symbiosis is the same
+
+216. should we graph "then if" as if-then structure?
+
+217. relook at Breathstealer's crypt - should be a replacement
+
+218. Need to reorganize mtgl_dd, for example re_if_ply_does comes before replacement effects in definition but not in execution (in grapher)
