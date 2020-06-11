@@ -468,20 +468,10 @@ re_anded_action_clause = re.compile(
     r"([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
 )
 re_action_clause = re.compile(
-    r"^(?:([^,|^\.]+) )?([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+    r"^(?:([^,|^\.]*?) )?(?:cn<([^.]+)> )?([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
 )
 re_ply_conditional = re.compile(
     r"^([^,|^\.]*?) ?(cn<[^.]+>)?$"
-)
-# TODO: none of the below work
-# these clauses are of the form
-# [thing]? [conditional]? [action word] [parameters]?
-#re_action_clause = re.compile(
-#    r"^(?:([^,|^\.]*)? (cn<[^.]+>)? )?([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
-#)
-re_action_clause = re.compile(
-    r"^(?:([^,|^\.]*?) )?(?:cn<([^.]+)> )?"
-    r"([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
 )
 
 # 701.2 activate [ability] [condition]?
