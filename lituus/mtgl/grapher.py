@@ -40,7 +40,11 @@ def graph(dcard):
 
     # do we have a split card?
     if '//' in dcard['name']:
-        pids = [t.add_node(parent,'side-a'),t.add_node(parent,'side-a')]
+        a,b = dcard['name'].split(' // ')
+        pids = [
+            t.add_node(parent,'side-a',name=a),
+            t.add_node(parent,'side-b',name=b)
+        ]
     else: pids = [parent]
 
     for i,side in enumerate(dcard['tag'].split(' // ')):

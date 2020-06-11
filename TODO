@@ -160,10 +160,8 @@ would the second be better?
 
 224. Implied you on actions is not going work as the object is sometimes referenced in the previous sibling node, do we really need it
 
-225. Add split names to the split roots of the graph tree
-
 226. rework replacement effects, avoid the use of creating rootless nodes
 
 227. Look into 'no' starting with "with no" can we make no nu<0> or a quantifier?
 
-228. .
+228. 
