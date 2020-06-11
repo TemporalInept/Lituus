@@ -654,9 +654,7 @@ re_cast_apc_nocost = re.compile(
 #  if [condition], rather than pay self's mana cost you may [action].
 # this is alternate phrasing of re_action_apc
 re_alt_action_apc = re.compile(
-    r"^cn<if> (.+), "
-    #r"cn<rather_than> xa<pay> ob<card ref=self suffix='s> xo<cost type=mana>, "
-    r"cn<rather_than> xa<pay> ([^,]+), xp<you> cn<may> (.+)\.?$"
+    r"^cn<if> (.+), cn<rather_than> xa<pay> ([^,]+), xp<you> cn<may> (.+)\.?$"
 )
 
 # contains "rather than" - a reverse of re_action_apc i.e. Dream Halls

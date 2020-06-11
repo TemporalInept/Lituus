@@ -391,8 +391,8 @@ def graph_repl_instead(t,phrase):
             ety,would,instead = dd.re_if_would_instead1.search(phrase).groups()
             rid = t.add_ur_node('if-instead-would')
             graph_thing(t,rid,ety)
-            graph_line(t,t.add_node(rid,'would'),would)
-            graph_line(t,t.add_node(rid,'instead'),instead)
+            graph_phrase(t,t.add_node(rid,'would'),would)
+            graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
@@ -404,8 +404,8 @@ def graph_repl_instead(t,phrase):
             ety,would,instead = dd.re_if_would_instead2.search(phrase).groups()
             rid = t.add_ur_node('if-instead-would')
             graph_thing(t,rid,ety)
-            graph_line(t,t.add_node(rid,'would'),would)
-            graph_line(t,t.add_node(rid,'instead'),instead)
+            graph_phrase(t,t.add_node(rid,'would'),would)
+            graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
@@ -422,9 +422,9 @@ def graph_repl_instead(t,phrase):
 
             # now graph it
             rid = t.add_ur_node('that-would-instead')
-            graph_line(t,t.add_node(rid,'effect'),effect)
-            graph_line(t,t.add_node(rid,'would'),would)
-            graph_line(t,t.add_node(rid,'instead'),instead)
+            graph_phrase(t,t.add_node(rid,'effect'),effect)
+            graph_phrase(t,t.add_node(rid,'would'),would)
+            graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
@@ -436,9 +436,9 @@ def graph_repl_instead(t,phrase):
         try:
             cond,would,instead = dd.re_would_instead.search(phrase).groups()
             rid = t.add_ur_node('would-instead')
-            graph_line(t,t.add_node(rid,'condition'),cond)
-            graph_line(t,t.add_node(rid,'would'),would)
-            graph_line(t,t.add_node(rid,'instead'),instead)
+            graph_phrase(t,t.add_node(rid,'condition'),cond)
+            graph_phrase(t,t.add_node(rid,'would'),would)
+            graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
@@ -452,8 +452,8 @@ def graph_repl_instead(t,phrase):
             ply,act1,_,act2 = dd.re_may_instead.search(phrase).groups()
             rid = t.add_ur_node('may-instead')
             graph_thing(t,rid,ply)
-            graph_line(t,t.add_node(rid,'action'),act1)
-            graph_line(t,t.add_node(rid,'instead'),act2)
+            graph_phrase(t,t.add_node(rid,'action'),act1)
+            graph_phrase(t,t.add_node(rid,'instead'),act2)
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
@@ -464,9 +464,9 @@ def graph_repl_instead(t,phrase):
         try:
             act,repl,iof = dd.re_if_instead_of.search(phrase).groups()
             rid = t.add_ur_node('if-instead-of')
-            graph_line(t,t.add_node(rid,'action'),act)
-            graph_line(t,t.add_node(rid,'replacement'),repl)
-            graph_line(t,t.add_node(rid,'instead-of'),iof)
+            graph_phrase(t,t.add_node(rid,'action'),act)
+            graph_phrase(t,t.add_node(rid,'replacement'),repl)
+            graph_phrase(t,t.add_node(rid,'instead-of'),iof)
             return rid
         except AttributeError:
             pass
@@ -475,9 +475,9 @@ def graph_repl_instead(t,phrase):
         try:
             repl,iof,cond = dd.re_instead_of_if.search(phrase).groups()
             rid = t.add_ur_node('instead-of-if')
-            graph_line(t,t.add_node(rid,'replacement'),repl)
-            graph_line(t,t.add_node(rid,'instead-of'),iof)
-            graph_line(t,t.add_node(rid,'condition'),cond)
+            graph_phrase(t,t.add_node(rid,'replacement'),repl)
+            graph_phrase(t,t.add_node(rid,'instead-of'),iof)
+            graph_phrase(t,t.add_node(rid,'condition'),cond)
             return rid
         except AttributeError:
             pass
@@ -486,8 +486,8 @@ def graph_repl_instead(t,phrase):
         try:
             repl,iof = dd.re_instead_of.search(phrase).groups()
             rid = t.add_ur_node('instead-of')
-            graph_line(t,t.add_node(rid,'replacement'),repl)
-            graph_line(t,t.add_node(rid,'instead-of'),iof)
+            graph_phrase(t,t.add_node(rid,'replacement'),repl)
+            graph_phrase(t,t.add_node(rid,'instead-of'),iof)
             return rid
         except AttributeError:
             pass
@@ -496,8 +496,8 @@ def graph_repl_instead(t,phrase):
         try:
             cond,instead = dd.re_if_instead.search(phrase).groups()
             rid = t.add_ur_node('if-instead')
-            graph_line(t,t.add_node(rid,'condition'),cond)
-            graph_line(t,t.add_node(rid,'instead'),instead)
+            graph_phrase(t,t.add_node(rid,'condition'),cond)
+            graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except AttributeError:
             pass
@@ -506,8 +506,8 @@ def graph_repl_instead(t,phrase):
         try:
             cond,instead = dd.re_if_instead_fence.search(phrase).groups()
             rid = t.add_ur_node('if-instead-fence')
-            graph_line(t,t.add_node(rid,'condition'),cond)
-            graph_line(t,t.add_node(rid,'instead'),instead)
+            graph_phrase(t,t.add_node(rid,'condition'),cond)
+            graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except AttributeError:
             pass
@@ -516,8 +516,8 @@ def graph_repl_instead(t,phrase):
         try:
             instead,cond = dd.re_instead_if.search(phrase).groups()
             rid = t.add_ur_node('instead-if')
-            graph_line(t,t.add_node(rid,'instead'),instead)
-            graph_line(t,t.add_node(rid,'condition'),cond)
+            graph_phrase(t,t.add_node(rid,'instead'),instead)
+            graph_phrase(t,t.add_node(rid,'condition'),cond)
             return rid
         except AttributeError:
             pass
@@ -541,7 +541,7 @@ def graph_repl_skip(t,phrase):
         if not ply: ply = 'xp<you'
         rid = t.add_ur_node('skip')
         graph_thing(t,rid,ply)
-        graph_line(t,t.add_node(rid,'phase'),phase)
+        graph_phrase(t,t.add_node(rid,'phase'),phase)
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
@@ -564,7 +564,7 @@ def graph_repl_etb1(t,phrase):
         perm,ctrs = dd.re_etb_with.search(phrase).groups()
         rid = t.add_ur_node('etb-with')
         graph_thing(t,rid,perm)
-        graph_line(t,t.add_node(rid,'counters'),ctrs)
+        graph_phrase(t,t.add_node(rid,'counters'),ctrs)
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
@@ -624,7 +624,7 @@ def graph_repl_etb2(t,phrase):
         perm,effect = dd.re_etb_1d.search(phrase).groups()
         rid = t.add_ur_node('etb-continuous')
         graph_thing(t,rid,perm)
-        graph_line(t,t.add_node(rid,'effect'),effect)
+        graph_phrase(t,t.add_node(rid,'effect'),effect)
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
@@ -644,8 +644,8 @@ def graph_repl_face_up(t,phrase):
     try:
         perm,act = dd.re_turn_up.search(phrase).groups()
         rid = t.add_ur_node('turned-up')
-        graph_line(t,t.add_node(rid,'permanent'),perm)
-        graph_line(t,t.add_node(rid,'action'),act)
+        graph_phrase(t,t.add_node(rid,'permanent'),perm)
+        graph_phrase(t,t.add_node(rid,'action'),act)
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
@@ -663,8 +663,8 @@ def graph_repl_damage(t,phrase):
     try:
         src,tgt = dd.re_repl_dmg.search(phrase).groups()
         iid = t.add_ur_node('prevent-damage-this-turn')
-        graph_line(t,t.add_node(iid,'source'),src)
-        graph_line(t,t.add_node(iid,'target'),tgt)
+        graph_phrase(t,t.add_node(iid,'source'),src)
+        graph_phrase(t,t.add_node(iid,'target'),tgt)
         return iid
     except AttributeError:
         pass
@@ -673,9 +673,9 @@ def graph_repl_damage(t,phrase):
     try:
         src,old,new = dd.re_if_would.search(phrase).groups()
         rid = t.add_ur_node('damage-repl-if-would')
-        graph_line(t,t.add_node(rid,'source'),src)
-        graph_line(t,t.add_node(rid,'damage'),old)
-        graph_line(t,t.add_node(rid,'prevention'),new)
+        graph_phrase(t,t.add_node(rid,'source'),src)
+        graph_phrase(t,t.add_node(rid,'damage'),old)
+        graph_phrase(t,t.add_node(rid,'prevention'),new)
         return rid
     except AttributeError:
         pass
