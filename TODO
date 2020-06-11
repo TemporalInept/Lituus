@@ -127,4 +127,39 @@ we can use list_util to splice [etb-continuous, ... ,effect, ..., status-unless]
 
 216. should we graph "then if" as if-then structure?
 
-219. in Watery Grave the rest of the phrase following may has dissappeared
+221. See Okk, will have to add suffix to the action words
+
+222. See Okk
+<Okk>
+ ├─static-line:0
+ │ └─cannot:0
+ │   ├─thing:0
+ │   │ └─mtg-object:0 (value=card)
+ │   │   └─ref:0 (value=self)
+ │   ├─action:0
+ │   │ └─attack:0
+ │   └─unless:0
+
+<Okk>
+ ├─static-line:0
+ │ └─cannot:0
+ │   ├─action:0
+ │   │ ├─attack:0
+ │   │ └─thing:0
+ │   │   └─mtg-object:0 (value=card)
+ │   │    └─ref:0 (value=self)
+ │   └─unless:0
+ ....
+
+would the second be better?
+
+223. Possessives
+ 1. your library i.e. Stormchaser Chimera
+ 2. object's controller i.e. Dream Halls
+ 3. creature you control i.e. Ulvenwald Tracker (need to do something controller=you)
+
+224. Implied you on actions is not going work as the object is sometimes referenced in the previous sibling node, do we really need it
+
+225. Add split names to the split roots of the graph tree
+
+226. rework replacement effects, APC to avoid the use of creating rootless nodes

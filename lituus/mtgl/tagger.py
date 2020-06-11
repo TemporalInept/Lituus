@@ -845,32 +845,29 @@ def _reify_singleton_(m):
 
 def _consecutive_obj_(m):
     """
-    joins two consecutive objects these can be possessive, aligned or the most
-    common, nontoken permanent
+    joins two consecutive objects these, the most common, nontoken permanent
     :param m:
     :return:
     """
     # unpack the objects
-    _,val1,attr1 = mtgltag.untag(m.group(1))
-    _,val2,attr2 = mtgltag.untag(m.group(2))
+    tid1,val1,attr1 = mtgltag.untag(m.group(1))
+    tid2,val2,attr2 = mtgltag.untag(m.group(2))
 
-    if val1 == 'copy':
-        # deconflict, copy here is an action
+    if val1 == 'copy': # deconflict, copy here is an action
         return "{} {}".format(mtgltag.retag('xa',val1,attr1),m.group(2))
-    elif val2 == 'copy':
-        # only 1 card I found, copy is an action
+    elif val2 == 'copy': # only 1 card I found, copy is an action
         return "{} {}".format(m.group(1),mtgltag.retag('xa',val2,attr2))
     elif mtgltag.strip(val1) == 'token' and mtgltag.strip(val2) == 'permanent':
         # nontoken permanent - chain them
         return _chain_(m,0)
     elif mtgltag.strip(val1) == 'permanent' and mtgltag.strip(val2) in ['card','spell']:
         # align permanent under val2
-        assert(mtgltag.complex_ops(val1) == [] and mtgltag.complex_ops(val2) == [])
         return mtgltag.retag(
             'ob',"{}→permanent".format(val2),mtgltag.merge_attrs([attr1,attr2])
         )
-    else:
-        return m.group()
+
+    # nothing found
+    return m.group()
 
 def _combat_status_chain_(m):
     """

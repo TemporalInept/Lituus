@@ -461,17 +461,27 @@ kw_param_template = {
 ####
 
 # keyword or lituus action clause - starts with a keyword but may contain a
-# preceding thing clause [thing]? action word [parameters]
+# preceding thing clause [thing]? [conditional] action word [parameters]
 re_anded_action_clause = re.compile(
     r"^(?:([^,|^\.]+) )?"
     r"([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))? and "
     r"([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
 )
+re_action_clause = re.compile(
+    r"^(?:([^,|^\.]+) )?([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+)
+re_ply_conditional = re.compile(
+    r"^([^,|^\.]*?) ?(cn<[^.]+>)?$"
+)
+# TODO: none of the below work
+# these clauses are of the form
+# [thing]? [conditional]? [action word] [parameters]?
 #re_action_clause = re.compile(
-#    r"^(?:([^,|^\.]+) )?([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+#    r"^(?:([^,|^\.]*)? (cn<[^.]+>)? )?([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
 #)
 re_action_clause = re.compile(
-    r"^(?:([^,|^\.]+) (cn<did_not>)? )?([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+    r"^(?:([^,|^\.]*?) )?(?:cn<([^.]+)> )?"
+    r"([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
 )
 
 # 701.2 activate [ability] [condition]?
@@ -572,7 +582,7 @@ re_as_etb = re.compile(
     r"^pr<as> (.+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield>, ([^\.]+)\.?$"
 )
 
-# Permanent enters the battlefield as ... i.e. Clonne
+# Permanent enters the battlefield as ... i.e. Clone
 #  [Permanent] enters the battlefield as
 re_etb_as = re.compile(
     r"^([^,|\.]+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> pr<as> ([^\.]+)\.?$"
@@ -636,9 +646,7 @@ re_action_apc = re.compile(
 # if [condition], you may cast [object] without paying its mana cost i.e. Massacre
 # these are all condition based
 re_cast_apc_nocost = re.compile(
-    r"^cn<if> (.+), "
-    r"xp<you> cn<may> ka<cast> ob<card ref=self> pr<without> xa<pay suffix=ing>"
-     r" xo<it suffix='s> xo<cost type=mana>\.?$"
+    r"^cn<if> (.+), xp<you> cn<may> ka<cast> ob<card ref=self> pr<without> ([^.]+)\.?$"
 )
 
 # alternate phrasing found in three cards (Skyshroud Cutter, Reverent Silence &
@@ -647,8 +655,8 @@ re_cast_apc_nocost = re.compile(
 # this is alternate phrasing of re_action_apc
 re_alt_action_apc = re.compile(
     r"^cn<if> (.+), "
-    r"cn<rather_than> xa<pay> ob<card ref=self suffix='s> xo<cost type=mana>, "
-    r"xp<you> cn<may> (.+)\.?$"
+    #r"cn<rather_than> xa<pay> ob<card ref=self suffix='s> xo<cost type=mana>, "
+    r"cn<rather_than> xa<pay> ([^,]+), xp<you> cn<may> (.+)\.?$"
 )
 
 # contains "rather than" - a reverse of re_action_apc i.e. Dream Halls
@@ -673,13 +681,19 @@ re_sequence_dur = re.compile(r"^sq<(\w+)> ([^,]+), (.+)\.?$")
 # [player] may [action] as though [action] [if [condition]]?
 re_may_as_though = re.compile(
     r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?)"
-    r"cn<may> ([^,]+) pr<as_though> ([^\.]+\.?$)"
+     r"cn<may> ([^,]+) pr<as_though> ([^\.]+\.?$)"
+)
+
+# [player] may have [clause]
+re_may_have = re.compile(
+    r"^((?:[^,|\.]+)?xp<\w+(?: suffix=[^>]+)?>) "
+     r"cn<may> xa<have(?: suffix=[^>]+)?> ([^\.]+)\.?$"
 )
 
 # contains 'may' [player] may [action]
 re_optional_may = re.compile(
     r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?) "
-    r"cn<may> ([x|k]a<\w+>(?:[^\.]+))\.?$"
+     r"cn<may> ([x|k]a<\w+>(?:[^\.]+))\.?$"
 )
 
 # starts with if - 3 typess
@@ -720,15 +734,23 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,]+)\.?$")
 
 # TODO:
 #  1. need to determien where numbers would be located
-#  2. how to handle trailing phrases that apply to the object
-#  3. conjunctions of entities ie. xp<player> or ob<planeswalker)
-# find phrases of the form [quantifier] [status] object IOT to merge the
-# quantifier and status in the object
-re_qse = re.compile(
-    r"(?:xq<(\w+?)> )?"
+#  2. how to handle trailing phrases that apply to the object i.e. with ...
+# find phrases of the form [quantifier] [status] [thing CONJ]? [thing] IOT to
+#  merge thequantifier and status in the thing
+re_qst = re.compile(
+    r"^(?:xq<(\w+?)> )?"
     r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
-    # TODO: don't think we need the double wrapping
-    r"(?:((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))"
+    r"(?:(.+) (and|or|and/or) )?"
+    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)$"
+)
+
+# TODO: have to add optional quantifier
+re_consecutive_things = re.compile(
+    r"^(?:xq<(\w+?)> )?"
+    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>) "
+    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)$"
 )

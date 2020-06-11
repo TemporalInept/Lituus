@@ -302,14 +302,72 @@ def graph_apc_phrases(t,pid,line):
     :param line: text to graph
     :return: node id of the APC phrase root or None
     """
-    # See 118.9 for some phrasing
+    aid = None
 
+    # See 118.9 for some phrasing
     # start with 'you may' optional APCs
-    if 'xp<you> cn<may>' in line or line.startswith('cn<rather_than> xa<pay>'):
-        nid = graph_optional_apc(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'apc',type='optional'),nid)
-            return nid
+    if 'xp<you> cn<may>' in line:
+        # [condition]? [player] may [action] rather than pay [cost]
+        try:
+            cond,ply,act,cost = dd.re_action_apc.search(line).groups()
+            aid = t.add_node(pid,'apc')
+            if cond: graph_phrase(t,t.add_node(aid,'if'),cond)
+            rid = t.add_node(aid,'rather-than')
+            graph_phrase(t,t.add_node(rid,'pay'),cost)
+            mid = t.add_node(aid,'may')
+            graph_thing(t,mid,ply)
+            graph_phrase(t,t.add_node(mid,'action'),act)
+            return aid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(aid)
+        except AttributeError:
+            pass
+
+        # if [condition] you may cast ...
+        try:
+            cond,wo = dd.re_cast_apc_nocost.search(line).groups()
+            aid = t.add_node(pid,'apc')
+            graph_phrase(t,t.add_node(aid,'if'),cond)
+            mid = t.add_node(aid,'may')
+            graph_thing(t,mid,'xp<you>')
+            graph_phrase(t,mid,"ka<cast> ob<card ref=self>")
+            graph_phrase(t,t.add_node(mid,'without'),wo)
+            return aid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(aid)
+        except AttributeError:
+            pass
+
+        # alternate phrasing of action-apc that always has a condition
+        try:
+            cond,cost,act = dd.re_alt_action_apc.search(line).groups()
+            aid = t.add_node(pid,'apc')
+            graph_phrase(t,t.add_node(aid,'if'),cond)
+            rid = t.add_node(aid,'rather-than')
+            graph_phrase(t,t.add_node(rid,'pay'),cost)
+            mid = t.add_node(aid,'may')
+            graph_thing(t,mid,'xp<you>')
+            graph_phrase(t,t.add_node(mid,'action'),act)
+            return aid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(aid)
+        except AttributeError:
+            pass
+    elif line.startswith('cn<rather_than> xa<pay>'):
+        try:
+            cost,ply,act = dd.re_rather_than_apc.search(line).groups()
+            aid = t.add_node(pid,'apc')
+            rid = t.add_node(aid,'rather-than')
+            graph_phrase(t,t.add_node(rid,'pay'),cost)
+            mid = t.add_node(rid,'may')
+            graph_thing(t,mid,ply)
+            graph_phrase(t,t.add_node(mid,'action'),act)
+            return rid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(aid)
+        except AttributeError:
+            pass
+
     return None
 
 ####
@@ -327,14 +385,17 @@ def graph_repl_instead(t,phrase):
     """
     # check for 'would' phrasing, 'of' phrasing and 'if' phrasing
     if 'cn<would>' in phrase:
+        rid = None
         # if-instead-would variants a
         try:
             ety,would,instead = dd.re_if_would_instead1.search(phrase).groups()
             rid = t.add_ur_node('if-instead-would')
-            graph_entity(t,rid,ety)
+            graph_thing(t,rid,ety)
             graph_line(t,t.add_node(rid,'would'),would)
             graph_line(t,t.add_node(rid,'instead'),instead)
             return rid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(rid)
         except AttributeError:
             pass
 
@@ -342,10 +403,12 @@ def graph_repl_instead(t,phrase):
         try:
             ety,would,instead = dd.re_if_would_instead2.search(phrase).groups()
             rid = t.add_ur_node('if-instead-would')
-            graph_entity(t,rid,ety)
+            graph_thing(t,rid,ety)
             graph_line(t,t.add_node(rid,'would'),would)
             graph_line(t,t.add_node(rid,'instead'),instead)
             return rid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(rid)
         except AttributeError:
             pass
 
@@ -363,6 +426,9 @@ def graph_repl_instead(t,phrase):
             graph_line(t,t.add_node(rid,'would'),would)
             graph_line(t,t.add_node(rid,'instead'),instead)
             return rid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(rid)
+            pass
         except (AttributeError,lts.LituusException):
             pass
 
@@ -374,6 +440,9 @@ def graph_repl_instead(t,phrase):
             graph_line(t,t.add_node(rid,'would'),would)
             graph_line(t,t.add_node(rid,'instead'),instead)
             return rid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(rid)
+            pass
         except AttributeError:
             pass
 
@@ -382,10 +451,12 @@ def graph_repl_instead(t,phrase):
             # could use the group(3) to confirm players ar3 the same
             ply,act1,_,act2 = dd.re_may_instead.search(phrase).groups()
             rid = t.add_ur_node('may-instead')
-            graph_entity(t,rid,ply)
+            graph_thing(t,rid,ply)
             graph_line(t,t.add_node(rid,'action'),act1)
             graph_line(t,t.add_node(rid,'instead'),act2)
             return rid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(rid)
         except AttributeError:
             pass
     elif 'cn<of>' in phrase:
@@ -464,15 +535,20 @@ def graph_repl_skip(t,phrase):
     :param phrase: the text to graph
     :return: node id of a rootless skip clause
     """
+    rid = None
     try:
         ply,phase = dd.re_skip.search(phrase).groups()
         if not ply: ply = 'xp<you'
         rid = t.add_ur_node('skip')
-        graph_entity(t,rid,ply)
+        graph_thing(t,rid,ply)
         graph_line(t,t.add_node(rid,'phase'),phase)
         return rid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(rid)
     except AttributeError:
-        return None
+        pass
+
+    return None
 
 def graph_repl_etb1(t,phrase):
     """
@@ -481,23 +557,30 @@ def graph_repl_etb1(t,phrase):
     :param phrase: the text to graph
     :return: node id of the rootless graph or None
     """
+    rid = None
+    # TODO: graph the below as line or phrase?
     # Permanent ETB with ...
     try:
         perm,ctrs = dd.re_etb_with.search(phrase).groups()
         rid = t.add_ur_node('etb-with')
-        graph_entity(t,rid,perm)
+        graph_thing(t,rid,perm)
         graph_line(t,t.add_node(rid,'counters'),ctrs)
         return rid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(rid)
     except AttributeError:
         pass
 
     # As Permanent ETB ...
     try:
+        rid = None
         perm,action = dd.re_as_etb.search(phrase).groups()
         rid = t.add_ur_node('as-etb')
-        graph_entity(t,rid,perm)
-        graph_line(t,t.add_node(rid,'action'),action)
+        graph_thing(t,rid,perm)
+        graph_phrase(t,rid,action)
         return rid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(rid)
     except AttributeError: # no match
         pass
 
@@ -505,9 +588,11 @@ def graph_repl_etb1(t,phrase):
     try:
         perm,asa = dd.re_etb_as.search(phrase).groups()
         rid = t.add_ur_node('etb-as')
-        graph_entity(t,rid,perm)
-        graph_line(t,t.add_node(rid,'as'),asa)
+        graph_thing(t,rid,perm)
+        graph_phrase(t,t.add_node(rid,'as'),asa)
         return rid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(rid)
     except AttributeError: # no match
         pass
 
@@ -521,24 +606,28 @@ def graph_repl_etb2(t,phrase):
     :param phrase: the text to graph
     :return: node id of the rootless graph or None
     """
+    rid = None
     # see if we have a status etb first
     try:
         ety,sts,unless = dd.re_etb_status.search(phrase).groups()
         rid = t.add_ur_node('etb-status')
-        graph_entity(t,rid,ety)
+        graph_thing(t,rid,ety)
         t.add_node(rid,'status',value=sts)
-        if unless:
-            graph_phrase(t,t.add_node(rid,'unless'),unless)
+        if unless: graph_phrase(t,t.add_node(rid,'unless'),unless)
         return rid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(rid)
     except AttributeError:
         pass
 
     try:
         perm,effect = dd.re_etb_1d.search(phrase).groups()
         rid = t.add_ur_node('etb-continuous')
-        graph_entity(t,rid,perm)
+        graph_thing(t,rid,perm)
         graph_line(t,t.add_node(rid,'effect'),effect)
         return rid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(rid)
     except AttributeError: # no match
         pass
 
@@ -551,12 +640,15 @@ def graph_repl_face_up(t,phrase):
     :param phrase: the clause to graph
     :return: node id of the graphed clause or None
     """
+    rid = None
     try:
         perm,act = dd.re_turn_up.search(phrase).groups()
         rid = t.add_ur_node('turned-up')
         graph_line(t,t.add_node(rid,'permanent'),perm)
         graph_line(t,t.add_node(rid,'action'),act)
         return rid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(rid)
     except AttributeError:
         return None
 
@@ -591,63 +683,6 @@ def graph_repl_damage(t,phrase):
     return None
 
 ####
-## APC PHRASES
-####
-
-def graph_optional_apc(t,phrase):
-    """
-    graphs optional APC (contains you may) related phrases containing
-    :param t: the tree
-    :param phrase: the text to graph
-    :return: node id of the rootless apc or None
-    """
-    if 'xp<you> cn<may>' in phrase:
-        # [condition]? [player] may [action] rather than pay [cost]
-        try:
-            cond,ply,act,cost = dd.re_action_apc.search(phrase).groups()
-            rid = t.add_ur_node('apc-optional-action')
-            if cond: graph_line(t,t.add_node(rid,'condition'),cond)
-            graph_entity(t,rid,ply)
-            graph_line(t,t.add_node(rid,'action'),act)
-            graph_line(t,t.add_node(rid,'cost'),cost)
-            return rid
-        except AttributeError:
-            pass
-
-        # if [condition] you may cast ...
-        try:
-            cond = dd.re_cast_apc_nocost.search(phrase).group(1)
-            rid = t.add_ur_node('apc-optional-nocost')
-            graph_entity(t,rid,'xp<you>')
-            graph_line(t,t.add_node(rid,'condition'),cond)
-            return rid
-        except AttributeError:
-            pass
-
-        # alternate phrasing of action-apc
-        try:
-            cond,act = dd.re_alt_action_apc.search(phrase).groups()
-            rid = t.add_ur_node('apc-optional-action-alt')
-            graph_entity(t,rid,'xp<you>')
-            graph_line(t,t.add_node(rid,'condition'),cond)
-            graph_line(t,t.add_node(rid,'action'),act)
-            return rid
-        except AttributeError:
-            pass
-    elif phrase.startswith('cn<rather_than> xa<pay>'):
-        try:
-            cost,ply,act = dd.re_rather_than_apc.search(phrase).groups()
-            rid = t.add_ur_node('apc-optional-action-alt2')
-            graph_line(t,t.add_node(rid,'cost'),cost)
-            graph_entity(t,rid,ply)
-            graph_line(t,t.add_node(rid,'action'),act)
-            return rid
-        except AttributeError:
-            pass
-
-    return None
-
-####
 ## SEQUENCE PHRASES
 ####
 
@@ -663,7 +698,6 @@ def graph_sequence_phrase(t,pid,line):
     try:
         _,act = dd.re_sequence_seq.search(line).groups()
         sid = t.add_node(pid,'then')
-        #graph_phrase(t,t.add_node(sid,'action'),act)
         graph_phrase(t,sid,act)
         return sid
     except AttributeError:
@@ -674,7 +708,7 @@ def graph_sequence_phrase(t,pid,line):
         wd,dur,act = dd.re_sequence_dur.search(line).groups()
         did = t.add_node(pid,'duration')
         graph_clause(t,t.add_node(did,wd),dur)
-        graph_phrase(t,t.add_node(did,'action'),act)
+        graph_phrase(t,did,act)
         return did
     except AttributeError:
         pass
@@ -693,15 +727,18 @@ def graph_condition_phrase(t,pid,line):
     :param line: text to graph
     :return: node id or None
     """
+    cid = None
     if line.startswith('cn<if>'):
         # if-player-does
         try:
             ply,neg,act = dd.re_if_ply_does.search(line).groups()
             cid = t.add_node(pid,'if')
-            graph_entity(t,cid,ply)
+            graph_thing(t,cid,ply)
             did = t.add_node(cid,"does{}".format('-not' if neg else ''))
             graph_phrase(t,did,act)
             return cid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(cid)
         except AttributeError:
             pass
 
@@ -709,9 +746,11 @@ def graph_condition_phrase(t,pid,line):
         try:
             ply,act = dd.re_if_ply_cant.search(line).groups()
             cid = t.add_node(pid,'if')
-            graph_entity(t,cid,ply)
+            graph_thing(t,cid,ply)
             graph_phrase(t,t.add_node(cid,'cannot'),act)
             return cid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(cid)
         except AttributeError:
             pass
 
@@ -727,11 +766,14 @@ def graph_condition_phrase(t,pid,line):
     elif 'cn<unless' in line:
         # thing-cannot-unless
         try:
-            ety,act,cond = dd.re_cannot_unless.search(line).groups()
-            graph_entity(t,pid,ety)
-            graph_phrase(t,t.add_node(pid,'cannot'),act)
-            graph_phrase(t,t.add_node(pid,'unless'),cond)
-            return pid
+            thing,act,cond = dd.re_cannot_unless.search(line).groups()
+            cid = t.add_node(pid,'cannot')
+            graph_thing(t,cid,thing)
+            graph_phrase(t,cid,act)
+            graph_phrase(t,t.add_node(cid,'unless'),cond)
+            return cid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(cid)
         except AttributeError:
             pass
 
@@ -739,9 +781,9 @@ def graph_condition_phrase(t,pid,line):
         try:
             act,cond = dd.re_action_unless.search(line).groups()
             graph_phrase(t,pid,act)
-            uid = t.add_node(pid,'unless')
-            graph_phrase(t,uid,cond)
-            return uid
+            cid = t.add_node(pid,'unless')
+            graph_phrase(t,cid,cond)
+            return cid
         except AttributeError:
             pass
 
@@ -759,22 +801,40 @@ def graph_option_phrase(t,pid,phrase):
     :param phrase: text to graph
     :return: node id or None
     """
+    mid = None
+
     # check may as-though first
     try:
         ply,act1,act2 = dd.re_may_as_though.search(phrase).groups()
         mid = t.add_node(pid,'may')
-        graph_action_clause(t,mid,"{} {}".format(ply,act1))
+        graph_phrase(t,mid,"{} {}".format(ply,act1))
         aid = t.add_node(mid,'as-though')
-        graph_action_clause(t,aid,act2)
+        graph_phrase(t,aid,act2)
         return mid
     except AttributeError:
         pass
 
+    # may have
+    try:
+        ply,phrase = dd.re_may_have.search(phrase).groups()
+        mid = t.add_node(pid,'may')
+        graph_thing(t,mid,ply)
+        graph_phrase(t,t.add_node(mid,'have'),phrase)
+        return mid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(mid)
+    except AttributeError:
+        pass
+
+    # then may only
     try:
         ply,act = dd.re_optional_may.search(phrase).groups()
         mid = t.add_node(pid,'may')
-        graph_action_clause(t,mid,"{} {}".format(ply,act))
+        graph_thing(t,mid,ply)
+        graph_phrase(t,mid,act)
         return mid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(mid)
     except AttributeError:
         pass
 
@@ -812,64 +872,103 @@ def graph_action_clause(t,pid,phrase):
     """
     try:
         # determine if there is a conjunction of actions or a singleton action
-        ety = neg = aw1 = act1 = aw2 = act2 = None
+        thing = cnd = aw1 = act1 = aw2 = act2 = None
         m = dd.re_anded_action_clause.search(phrase)
-        if m: ety,aw1,act1,aw2,act2 = m.groups()
+        if m: thing,aw1,act1,aw2,act2 = m.groups()
         else:
             m = dd.re_action_clause.search(phrase)
-            if m: ety,neg,aw1,act1 = m.groups()
-            else: return None
+            if m: thing,cnd,aw1,act1 = m.groups()
+            else:
+                # TODO: this covers up improperly passed phrases
+                return None
 
-        # insert an implied you if there is not entity
-        if not ety: ety = 'xp<you>'
+        # set up nid and aid as None
+        nid = aid = None
 
-        # now set up of singleton and adjust if conjunction
-        acs = [(aw1,act1)]
-        if neg:
-            nid = t.add_node(pid,'did-not')
-            aid = t.add_node(nid,'action')
-        else: aid = t.add_node(pid,'action')
-        if aw2:
-            aid = t.add_node(aid,'and')
-            acs.append((aw2,act2))
+        try:
+            # now set up of singleton and adjust if conjunction
+            acs = [(aw1,act1)]
+            if cnd:
+                nid = t.add_node(pid,cnd)
+                aid = t.add_node(nid,'action')
+            else: aid = t.add_node(pid,'action')
+            if aw2:
+                aid = t.add_node(aid,'and')
+                acs.append((aw2,act2))
 
-        # graph the action(s)
-        for aw,act in acs:
-            awid = t.add_node(aid,mtgltag.tag_val(aw))
-            graph_entity(t,awid,ety)
-            t.add_node(awid,'action-params',tograph=act)
-
-        return aid
+            # graph the action(s)
+            for aw,act in acs:
+                awid = t.add_node(aid,mtgltag.tag_val(aw))
+                if thing: graph_thing(t,awid,thing)
+                if act: t.add_node(awid,'action-params',tograph=act)
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN:
+                if nid: t.del_node(nid)
+                else: t.del_node(aid)
+            else:
+                raise
+            return None
+        else:
+            return aid
     except AttributeError:
         pass
 
     return None
 
-def graph_entity(t,pid,ety,qclause=None):
+def graph_thing(t,pid,clause,qclause=None):
     """
-    Graphs the entity under node pid
+    Graphs the thing under node pid
     :param t: the tree
     :param pid: the parent id
-    :param ety: the entity clause
+    :param clause: the clause
     :param qclause: any trailing qualifying clause ie. "attacking you"
     :return: the player node id
     """
-    eid = t.add_node(pid,'entity')
+    # TODO: if we have just a self ref, use self as the value
+    # could have a qst phrase or a possesive phrase have to check both
     try:
-        # 'unpack' the entity phrase and add nodes for quantifiers, status
-        # if present
-        xq,st,ety = dd.re_qse.search(ety).groups()
+        # 'unpack' the phrase, adding nodes for quantifiers, status if present
+        xq,st,thing1,conj,thing2 = dd.re_qst.search(clause).groups()
+        eid = t.add_node(pid,'thing')
         if xq: t.add_node(eid,'quantifier',value=xq)
         if st: t.add_node(eid,'status',value=st)
 
-        # untag the entity tag
-        tid,val,attr = mtgltag.untag(ety)
+        # untag the thing tag
+        tid,val,attr = mtgltag.untag(thing2)
         vid=t.add_node(eid,mtgl.TID[tid],value=val)
         for k in attr: t.add_node(vid,k,value=attr[k]) # TODO: define a order for these
-    except lts.LituusException:
-        t.add_node(eid,'failed-untag',ety)
+        return eid
     except AttributeError:
-        t.add_attr(eid,'failed-tograph',ety)
+        pass
+
+    # check for possessives which may be preceded by a quantifier
+    try:
+        # unpack the things then untag each thing
+        xq,thing1,thing2 = dd.re_consecutive_things.search(clause).groups()
+        tid1,val1,attr1 = mtgltag.untag(thing1)
+        tid2,val2,attr2 = mtgltag.untag(thing2)
+
+        # only continue if an r or "'s" possesive suffix exists
+        if 'suffix' in attr1 and attr1['suffix'] in ["r","'s"]:
+            # remove the suffix the first thing and retag
+            del attr1['suffix']
+            thing1 = mtgltag.retag(tid1,val1,attr1)
+
+            # the second thing is the primary node (readd quanitifier if present)
+            if xq: thing2 = "xq<{}> {}".format(xq,thing2)
+            eid = graph_thing(t,pid,thing2)
+
+            # the label of the intermeditary node depends on the two things
+            lbl = 'whose' if tid1 == 'xp' and tid2 == 'zn' else 'of'
+
+            # add the 1st thing under the intermeditary node of the 2nd thing
+            graph_thing(t,t.add_node(t.children(eid)[-1],lbl),thing1)
+            return eid
+    except AttributeError:
+        pass
+
+    raise lts.LituusException(lts.EPTRN,"Not a thing {}".format(clause))
+
 
 ####
 ## PRIVATE FUNCTIONS

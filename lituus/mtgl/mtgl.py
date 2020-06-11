@@ -387,7 +387,9 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 # Qualifying words
 # TODO: not sure if this is the best place for 'back' or not
 
-lituus_qualifiers = ['less','lesser','more','back','many','random']
+lituus_qualifiers = [
+    'less','greater','lesser','more','back','many','random','also'
+]
 qualifier_tkns = '|'.join(lituus_qualifiers)
 re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 
@@ -420,7 +422,7 @@ re_obj = re.compile(
 lituus_objects = [  # lituus objects
     "city's blessing", 'game','mana pool','mana cost','commander','mana','attacker',
     'blocker','itself','it','them','they','coin','choice','cost', "amount of",
-    'life total','life','symbol','rest','monarch','pile',
+    'life total','life','symbol','rest','monarch','pile','team',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
