@@ -722,12 +722,15 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,]+)\.?$")
 
 # TODO:
 #  1. need to determien where numbers would be located
-#  2. how to handle trailing phrases that apply to the object i.e. with ...
-#   it appears that if both you control and with are present 'you control' comes
-#   first
+#  2. for controller, do we need to check for 'owner' as well
 # find phrases of the form
-#  [quantifier] [status] [thing CONJ]? [thing] [with qualifier]?
+#  [quantifier] [status] [thing CONJ]? [thing] [possession-clause]? [with-clause]?
+# where:
+#  possession-clause has the form: [player] [owns|controls]
+#  with-clayse has the form with [qualifiers]
 # IOT to merge everything under the thing
+# NOTE: if possession-clause is present, the whole is returned and must further
+#  be 'parsed' with re_possessor_clause
 re_qst = re.compile(
     r"^(?:xq<(\w+?)> )?"
     r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
@@ -735,7 +738,12 @@ re_qst = re.compile(
     r"(?:(.+) (and|or|and/or) )?"
     r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
-    r"(?: pr<with> ([^\.]+))?\.?$"
+    r"(?: ((?:xq<\w+?> )?xp<\w+> xc<(?:own|control)(?: suffix=s)?>))?"
+    r"(?: pr<with> ([^\.]+))?"
+    r"\.?$"
+)
+re_possession_clause = re.compile(
+    r"((?:xq<\w*?> )?xp<\w+>) xc<(own|control)(?: suffix=s)?>"
 )
 
 # finds consecutive things to determine if they are possessive

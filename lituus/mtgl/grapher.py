@@ -924,10 +924,11 @@ def graph_thing(t,pid,clause):
     :return: the player node id
     """
     # TODO: if we have just a self ref, use self as the value
+    # TODO: should we combine suffix with the stem if present?
     # could have a qst phrase or a possesive phrase have to check both
     try:
         # 'unpack' the phrase, adding nodes for quantifiers, status if present
-        xq,st,thing1,conj,thing2,pr = dd.re_qst.search(clause).groups()
+        xq,st,thing1,conj,thing2,poss,pr = dd.re_qst.search(clause).groups()
         eid = t.add_node(pid,'thing')
         if xq: t.add_node(eid,'quantifier',value=xq)
         if st: t.add_node(eid,'status',value=st)
@@ -936,6 +937,13 @@ def graph_thing(t,pid,clause):
         tid,val,attr = mtgltag.untag(thing2)
         vid = t.add_node(eid,mtgl.TID[tid],value=val)
         for k in attr: t.add_node(vid,k,value=attr[k]) # TODO: define a order for these
+        if poss:
+            try:
+                ply,wd = dd.re_possession_clause.search(poss).groups()
+                lbl = 'owned-by' if wd == 'own' else 'controlled-by'
+                graph_thing(t,t.add_node(eid,lbl),ply)
+            except AttributeError:
+                raise lts.LituusException(lts.EPTRN,"{} is not a possession".format(ctlr))
         if pr: graph_phrase(t,t.add_node(eid,'with'),pr)
         return eid
     except AttributeError:

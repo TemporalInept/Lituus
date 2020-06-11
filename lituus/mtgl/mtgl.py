@@ -651,7 +651,7 @@ lituus_actions = [  # words not defined in the rules but important any way
     'die','spend','unspend','take','reduce','trigger','prevent','declare','have',
     'switch','assign','win','lose','tie','skip','flip','cycle','phase','become',
     'share','turn','produce','round','resolve','do','repeat','change','bid',
-    'select','reselect','begin',
+    'select','reselect','begin','separate',
     'copy',  # will have already been tagged?
     'named',  # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
