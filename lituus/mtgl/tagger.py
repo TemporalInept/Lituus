@@ -226,7 +226,8 @@ def midprocess(txt):
         b. replace "any number of" with nu<z>
         c. remove "are each" if followed by an operator
        6. replace 'mana cost' as xo<cost type=mana>
-       7. deconflict incorrectly tagged tokens
+       7. replace 'no' followed by a thing as nu<0>
+       8. deconflict incorrectly tagged tokens
     :param txt: tagged oracle txt
     :return: processed oracle txt
     """
@@ -239,7 +240,8 @@ def midprocess(txt):
     ntxt = mtgl.re_equal_z.sub(r"nu<z>",ntxt)                            # 5.b
     ntxt = mtgl.re_are_each.sub(r"",ntxt)                                # 5.c
     ntxt = mtgl.re_mana_cost.sub(r"xo<cost type=mana\1>",ntxt)           # 6
-    ntxt = deconflict_tags1(ntxt)                                        # 7
+    ntxt = mtgl.re_no_thing.sub(r"nu<0>",ntxt)                           # 7
+    ntxt = deconflict_tags1(ntxt)                                        # 8
     return ntxt
 
 re_empty_postfix = re.compile(r"\ssuffix=(?=)>")
