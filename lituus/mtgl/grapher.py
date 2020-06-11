@@ -448,7 +448,7 @@ def graph_repl_instead(t,phrase):
 
         # test for may instead (optional replacement value)
         try:
-            # could use the group(3) to confirm players ar3 the same
+            # could use the group(3) to confirm players are the same
             ply,act1,_,act2 = dd.re_may_instead.search(phrase).groups()
             rid = t.add_ur_node('may-instead')
             graph_thing(t,rid,ply)
@@ -878,9 +878,7 @@ def graph_action_clause(t,pid,phrase):
         else:
             m = dd.re_action_clause.search(phrase)
             if m: thing,cnd,aw1,act1 = m.groups()
-            else:
-                # TODO: this covers up improperly passed phrases
-                return None
+            else: return None # TODO: this covers up improperly passed phrases
 
         # set up nid and aid as None
         nid = aid = None
