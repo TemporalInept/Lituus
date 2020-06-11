@@ -723,18 +723,24 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,]+)\.?$")
 # TODO:
 #  1. need to determien where numbers would be located
 #  2. how to handle trailing phrases that apply to the object i.e. with ...
-# find phrases of the form [quantifier] [status] [thing CONJ]? [thing] IOT to
-#  merge thequantifier and status in the thing
+#   it appears that if both you control and with are present 'you control' comes
+#   first
+# find phrases of the form
+#  [quantifier] [status] [thing CONJ]? [thing] [with qualifier]?
+# IOT to merge everything under the thing
 re_qst = re.compile(
     r"^(?:xq<(\w+?)> )?"
     r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
     r"(?:(.+) (and|or|and/or) )?"
     r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)$"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+    r"(?: pr<with> ([^\.]+))?\.?$"
 )
 
-# TODO: have to add optional quantifier
+# finds consecutive things to determine if they are possessive
+#  TODO: need to determine if we only need to check for a suffix of "'s" or "r"
+#   in the first thing. If so, can clean up that pattern
 re_consecutive_things = re.compile(
     r"^(?:xq<(\w+?)> )?"
     r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"

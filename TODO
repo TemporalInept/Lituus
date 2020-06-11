@@ -163,3 +163,5 @@ would the second be better?
 225. Add split names to the split roots of the graph tree
 
 226. rework replacement effects, avoid the use of creating rootless nodes
+
+227. Look into 'no' starting with "with no" can we make no nu<0> or a quantifier?
