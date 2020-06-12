@@ -263,38 +263,44 @@ def graph_replacement_effects(t,pid,line):
     # NOTE: this is very inefficient as multiple patterns are applied to each
     #  line. IOT to decrease some of the inefficiency checks will be used to
     #  eliminate lines that do not meet the basic requirements to be graphed
-    if 'cn<instead>' in line: # 614.1a 'instead' replacements
-        nid = graph_repl_instead(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
-            return nid
+    if 'cn<instead>' in line: return graph_repl_instead(t,pid,line)
     elif 'xa<skip>' in line: # 614.1b 'skip' replacements
-        nid = graph_repl_skip(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
-            return nid
+        rid = None
+        try:
+            ply,phase = dd.re_skip.search(line).groups()
+            rid = t.add_node(pid,'replacement-effect')
+            if not ply: ply = 'xp<you>' # TODO: is this necessary
+            sid = t.add_node(rid,'skip')
+            graph_thing(t,sid,ply)
+            graph_phrase(t,sid,phase) # TOOD: dropping adding node 'phase' revisit
+            return rid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(rid)
+        except AttributeError:
+            pass
+        return None
     elif dd.re_etb_repl_check.search(line): # 614.1c and 614.1d ETB replacements
         # try 614.1c
-        nid = graph_repl_etb1(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
-            return nid
+        rid = graph_repl_etb1(t,pid,line)
+        if rid: return rid
 
-        # then 614.1d
-        nid = graph_repl_etb2(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
-            return nid
+        # try 614.1d
+        rid = graph_repl_etb2(t,pid,line)
+        if rid: return rid
     elif dd.re_turn_up_check.search(line):
-        nid = graph_repl_face_up(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
-            return nid
-    elif dd.re_repl_dmg_check.search(line):
-        nid = graph_repl_damage(t,line)
-        if nid:
-            t.add_edge(t.add_node(pid,'replacement-effect'),nid)
-            return nid
+        rid = None
+        try:
+            perm,act = dd.re_turn_up.search(line).groups()
+            rid = t.add_node(pid,'replacement-effect')
+            graph_phrase(t,t.add_node(rid,'as'),perm)
+            graph_phrase(t,t.add_node(rid,'is-turned-face-up'),act)
+            return rid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(rid)
+        except AttributeError:
+            pass
+        return None
+    elif dd.re_repl_dmg_check.search(line): return graph_repl_damage(t,pid,line)
 
     return None
 
@@ -380,21 +386,23 @@ def graph_apc_phrases(t,pid,line):
 
 ## INSTEAD (614.1a)
 
-def graph_repl_instead(t,phrase):
+def graph_repl_instead(t,pid,phrase):
     """
-    graphs a rootless 'instead' replacment effect (614.1a) in tree t
+    graphs a 'instead' replacment effect (614.1a) subtree in tree t
     :param t: the tree
+    :param pid: the parent id
     :param phrase: the text to graph
-    :return: a rootless tree of the graphed clause or None
+    :return: id of the replacement-effect node or None
     """
+    rid = None
+
     # check for 'would' phrasing, 'of' phrasing and 'if' phrasing
     if 'cn<would>' in phrase:
-        rid = None
         # if-instead-would variants a
         try:
-            ety,would,instead = dd.re_if_would_instead1.search(phrase).groups()
-            rid = t.add_ur_node('if-instead-would')
-            graph_thing(t,rid,ety)
+            thing,would,instead = dd.re_if_would_instead1.search(phrase).groups()
+            rid = t.add_node(pid,'replacement-effect')
+            graph_thing(t,t.add_node(rid,'if'),thing)
             graph_phrase(t,t.add_node(rid,'would'),would)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
@@ -405,9 +413,9 @@ def graph_repl_instead(t,phrase):
 
         # if-instead-would variants a
         try:
-            ety,would,instead = dd.re_if_would_instead2.search(phrase).groups()
-            rid = t.add_ur_node('if-instead-would')
-            graph_thing(t,rid,ety)
+            thing,would,instead = dd.re_if_would_instead2.search(phrase).groups()
+            rid = t.add_node(pid,'replacement-effect')
+            graph_thing(t,t.add_node(rid,'if'),thing)
             graph_phrase(t,t.add_node(rid,'would'),would)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
@@ -422,66 +430,64 @@ def graph_repl_instead(t,phrase):
             # get the effect and subphrase and split the subphrase. _twi_split_
             # will throw an exception if the phrase is not valid for this
             effect,subphrase = dd.re_that_would_instead.search(phrase).groups()
-            would, instead = _twi_split_(subphrase)
+            would,instead = _twi_split_(subphrase)
 
-            # now graph it
-            rid = t.add_ur_node('that-would-instead')
+            # and graph it
+            rid = t.add_node(pid,'replacement-effect')
             graph_phrase(t,t.add_node(rid,'effect'),effect)
-            graph_phrase(t,t.add_node(rid,'would'),would)
+            graph_phrase(t,t.add_node(rid,'that-would'),would)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
-        except lts.LituusException as e:
-            if e.errno == lts.EPTRN: t.del_node(rid)
-            pass
         except (AttributeError,lts.LituusException):
             pass
 
         # would-instead (timing related)
         try:
             cond,would,instead = dd.re_would_instead.search(phrase).groups()
-            rid = t.add_ur_node('would-instead')
-            graph_phrase(t,t.add_node(rid,'condition'),cond)
+            rid = t.add_node(pid,'replacement-effect')
+            graph_phrase(t,t.add_node(rid,'condition'),cond) # TODO: rename this to something time related
             graph_phrase(t,t.add_node(rid,'would'),would)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
-        except lts.LituusException as e:
-            if e.errno == lts.EPTRN: t.del_node(rid)
-            pass
         except AttributeError:
             pass
 
         # test for may instead (optional replacement value)
         try:
-            # could use the group(3) to confirm players are the same
-            ply,act1,_,act2 = dd.re_may_instead.search(phrase).groups()
-            rid = t.add_ur_node('may-instead')
-            graph_thing(t,rid,ply)
-            graph_phrase(t,t.add_node(rid,'action'),act1)
-            graph_phrase(t,t.add_node(rid,'instead'),act2)
+            # NOTE: thing1 and thing2 should be the same
+            thing1,act1,thing2,act2 = dd.re_may_instead.search(phrase).groups()
+            #assert(thing1 == thing2)
+            rid = t.add_node(pid,'replacement-effect')
+            graph_thing(t,t.add_node(rid,'if'),thing1)
+            graph_phrase(t,t.add_node(rid,'would'),act1)
+            graph_phrase(t,t.add_node(rid,'may-instead'),act2)
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
         except AttributeError:
             pass
-    elif 'cn<of>' in phrase:
+
+    if 'of' in phrase:
         # if-instead-of clause
         try:
             act,repl,iof = dd.re_if_instead_of.search(phrase).groups()
-            rid = t.add_ur_node('if-instead-of')
-            graph_phrase(t,t.add_node(rid,'action'),act)
-            graph_phrase(t,t.add_node(rid,'replacement'),repl)
+            rid = t.add_node(pid,'replacement-effect')
+            graph_phrase(t,t.add_node(rid,'if'),act)
+            graph_phrase(t,t.add_node(rid,'replacement'),repl) # TODO: need a better label (maybe 'instead')
             graph_phrase(t,t.add_node(rid,'instead-of'),iof)
             return rid
         except AttributeError:
             pass
 
         # test for instead-of-if clause
+        # TODO: for now we are rearranging the order of the phrases so that it
+        #  matches above but will it mess readers up
         try:
             repl,iof,cond = dd.re_instead_of_if.search(phrase).groups()
-            rid = t.add_ur_node('instead-of-if')
-            graph_phrase(t,t.add_node(rid,'replacement'),repl)
+            rid = t.add_node(pid,'replacement-effect')
+            graph_phrase(t,t.add_node(rid,'if'),cond)
+            graph_phrase(t,t.add_node(rid,'replacement'),repl) # TODO: need a better label
             graph_phrase(t,t.add_node(rid,'instead-of'),iof)
-            graph_phrase(t,t.add_node(rid,'condition'),cond)
             return rid
         except AttributeError:
             pass
@@ -489,18 +495,19 @@ def graph_repl_instead(t,phrase):
         # test for instead-of
         try:
             repl,iof = dd.re_instead_of.search(phrase).groups()
-            rid = t.add_ur_node('instead-of')
+            rid = t.add_node(pid,'replacement-effect')
             graph_phrase(t,t.add_node(rid,'replacement'),repl)
             graph_phrase(t,t.add_node(rid,'instead-of'),iof)
             return rid
         except AttributeError:
             pass
-    elif 'cn<if>' in phrase:
+
+    if 'cn<if>' in phrase:
         # test for if-instead
         try:
             cond,instead = dd.re_if_instead.search(phrase).groups()
-            rid = t.add_ur_node('if-instead')
-            graph_phrase(t,t.add_node(rid,'condition'),cond)
+            rid = t.add_node(pid,'replacement-effect')
+            graph_phrase(t,t.add_node(rid,'if'),cond)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except AttributeError:
@@ -509,8 +516,8 @@ def graph_repl_instead(t,phrase):
         # test for if-instead fenced
         try:
             cond,instead = dd.re_if_instead_fence.search(phrase).groups()
-            rid = t.add_ur_node('if-instead-fence')
-            graph_phrase(t,t.add_node(rid,'condition'),cond)
+            rid = t.add_node(pid,'replacement-effect')
+            graph_phrase(t,t.add_node(rid,'if'),cond)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except AttributeError:
@@ -519,56 +526,31 @@ def graph_repl_instead(t,phrase):
         # test for instead-if clause
         try:
             instead,cond = dd.re_instead_if.search(phrase).groups()
-            rid = t.add_ur_node('instead-if')
+            rid = t.add_node(pid,'replacement-of')
+            graph_phrase(t,t.add_node(rid,'if'), cond)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
-            graph_phrase(t,t.add_node(rid,'condition'),cond)
             return rid
         except AttributeError:
             pass
-    else:
-        pass
-        # TODO: should we do some debugging statement here to check for missed
-        #  phrasing
 
     return None
 
-def graph_repl_skip(t,phrase):
-    """
-    graphs a skip replacement effect in clause (614.1b)
-    :param t: the tree
-    :param phrase: the text to graph
-    :return: node id of a rootless skip clause
-    """
-    rid = None
-    try:
-        ply,phase = dd.re_skip.search(phrase).groups()
-        if not ply: ply = 'xp<you'
-        rid = t.add_ur_node('skip')
-        graph_thing(t,rid,ply)
-        graph_phrase(t,t.add_node(rid,'phase'),phase)
-        return rid
-    except lts.LituusException as e:
-        if e.errno == lts.EPTRN: t.del_node(rid)
-    except AttributeError:
-        pass
-
-    return None
-
-def graph_repl_etb1(t,phrase):
+def graph_repl_etb1(t,pid,phrase):
     """
     graphs ETB replacement clauses from (614.1c)
     :param t: the tree
+    :param pid: the parent id
     :param phrase: the text to graph
-    :return: node id of the rootless graph or None
+    :return: node id of the etb subtree or None
     """
     rid = None
-    # TODO: graph the below as line or phrase?
+
     # Permanent ETB with ...
     try:
         perm,ctrs = dd.re_etb_with.search(phrase).groups()
-        rid = t.add_ur_node('etb-with')
+        rid = t.add_node(pid,'etb')
         graph_thing(t,rid,perm)
-        graph_phrase(t,t.add_node(rid,'counters'),ctrs)
+        graph_phrase(t,t.add_node(rid,'with'),ctrs)
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
@@ -577,11 +559,11 @@ def graph_repl_etb1(t,phrase):
 
     # As Permanent ETB ...
     try:
-        rid = None
         perm,action = dd.re_as_etb.search(phrase).groups()
-        rid = t.add_ur_node('as-etb')
-        graph_thing(t,rid,perm)
-        graph_phrase(t,rid,action)
+        rid = t.add_node(pid,'as')
+        eid = t.add_node(rid,'etb')
+        graph_thing(t,eid,perm)
+        graph_phrase(t,eid,action)
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
@@ -591,7 +573,7 @@ def graph_repl_etb1(t,phrase):
     # Permanent ETB as
     try:
         perm,asa = dd.re_etb_as.search(phrase).groups()
-        rid = t.add_ur_node('etb-as')
+        rid = t.add_node(pid,'etb')
         graph_thing(t,rid,perm)
         graph_phrase(t,t.add_node(rid,'as'),asa)
         return rid
@@ -603,19 +585,21 @@ def graph_repl_etb1(t,phrase):
     # found nothing
     return None
 
-def graph_repl_etb2(t,phrase):
+def graph_repl_etb2(t,pid,phrase):
     """
     graphs ETB replacement clauses from (614.1d)
     :param t: the tree
+    :param pid: the parent id
     :param phrase: the text to graph
-    :return: node id of the rootless graph or None
+    :return: node id of the etb subtree  or None
     """
     rid = None
+
     # see if we have a status etb first
     try:
-        ety,sts,unless = dd.re_etb_status.search(phrase).groups()
-        rid = t.add_ur_node('etb-status')
-        graph_thing(t,rid,ety)
+        thing,sts,unless = dd.re_etb_status.search(phrase).groups()
+        rid = t.add_node(pid,'etb')
+        graph_thing(t,rid,thing)
         t.add_node(rid,'status',value=sts)
         if unless: graph_phrase(t,t.add_node(rid,'unless'),unless)
         return rid
@@ -626,7 +610,7 @@ def graph_repl_etb2(t,phrase):
 
     try:
         perm,effect = dd.re_etb_1d.search(phrase).groups()
-        rid = t.add_ur_node('etb-continuous')
+        rid = t.add_node(pid,'etb')
         graph_thing(t,rid,perm)
         graph_phrase(t,t.add_node(rid,'effect'),effect)
         return rid
@@ -637,50 +621,41 @@ def graph_repl_etb2(t,phrase):
 
     return None
 
-def graph_repl_face_up(t,phrase):
+def graph_repl_damage(t,pid,phrase):
     """
-    graphs as obj is turned face up (614.1e)
+    graphs as obj is turned face up (614.2)
     :param t: the tree
+    :param pid: parent id
     :param phrase: the clause to graph
-    :return: node id of the graphed clause or None
+    :return: node id of the replacement subtree or None
     """
-    rid = None
+    rid = did = None
+    # damage prevention if [object/source] would [old], [new]
     try:
-        perm,act = dd.re_turn_up.search(phrase).groups()
-        rid = t.add_ur_node('turned-up')
-        graph_phrase(t,t.add_node(rid,'permanent'),perm)
-        graph_phrase(t,t.add_node(rid,'action'),act)
+        src,old,new = dd.re_if_would.search(phrase).groups()
+        rid = t.add_node(pid,'replacement-effect')
+        graph_thing(t,t.add_node(rid,'if'),src)
+        graph_phrase(t,t.add_node(rid,'would'),old)
+        graph_phrase(t,rid,new) # TODO: removed intermeditary node
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
     except AttributeError:
-        return None
-
-def graph_repl_damage(t,phrase):
-    """
-    graphs as obj is turned face up (614.2)
-    :param t: the tree
-    :param phrase: the clause to graph
-    :return: node id of the graphed clause or None
-    """
-    # look for prevent damage
-    try:
-        src,tgt = dd.re_repl_dmg.search(phrase).groups()
-        iid = t.add_ur_node('prevent-damage-this-turn')
-        graph_phrase(t,t.add_node(iid,'source'),src)
-        graph_phrase(t,t.add_node(iid,'target'),tgt)
-        return iid
-    except AttributeError:
         pass
 
-    # damage prevention if [object/source] would [old], [new]
+    # look for prevent damage
     try:
-        src,old,new = dd.re_if_would.search(phrase).groups()
-        rid = t.add_ur_node('damage-repl-if-would')
-        graph_phrase(t,t.add_node(rid,'source'),src)
-        graph_phrase(t,t.add_node(rid,'damage'),old)
-        graph_phrase(t,t.add_node(rid,'prevention'),new)
-        return rid
+        time,src,act1,tgt,dur,act2 = dd.re_repl_dmg.search(phrase).groups()
+        did = t.add_node(pid,'duration',ungraphed=dur)
+        tid = t.add_node(did,'timing',ungraphed=time)
+        rid = t.add_node(tid,'replacement-effect')
+        graph_thing(t,rid,src)
+        graph_phrase(t,t.add_node(rid,'would'),act1)
+        if tgt: graph_thing(t,t.add_node(rid,'to'),tgt)
+        graph_phrase(t,rid,act2)
+        return did
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(did)
     except AttributeError:
         pass
 
@@ -711,11 +686,22 @@ def graph_sequence_phrase(t,pid,line):
     try:
         wd,dur,act = dd.re_sequence_dur.search(line).groups()
         did = t.add_node(pid,'duration')
-        graph_clause(t,t.add_node(did,wd),dur)
+        #graph_clause(t,t.add_node(did,wd),dur)
+        graph_phrase(t,t.add_node(did,wd),dur)
         graph_phrase(t,did,act)
         return did
     except AttributeError:
         pass
+
+    # then timing
+    #try:
+    #    time,phrase = dd.re_sequence_time.search(line).groups()
+    #    tid = t.add_node(pid,'timing')
+    #    graph_phrase(t,t.add_node(tid,'when'),time)
+    #    graph_phrase(t,tid,phrase)
+    #    return tid
+    #except AttributeError:
+    #    pass
 
     return None
 

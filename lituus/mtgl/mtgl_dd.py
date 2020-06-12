@@ -498,30 +498,6 @@ re_if_would_instead2 = re.compile(
     r"^cn<if> (.+) cn<would> ([^,]+), cn<instead> ([^\.]+)\.?$"
 )
 
-# if instead i.e. Cleansing Medidation
-#   if [event/condition] instead [replacement].
-# the instead comes between the condiction and the replacement
-re_if_instead = re.compile(r"^cn<if> (.+) cn<instead> (.+)\.?$")
-
-# if instead fence i.e. Nyxbloom Ancient
-#   if [event/condition], [replacement] instead
-# the instead comes last and the condition and replacment are found by splitting
-# on the last comma
-re_if_instead_fence = re.compile(r"^cn<if> (.+), (.+) cn<instead>\.?$")
-
-# if instead of i.e. Pale Moon
-#   if [action], [replacement] instead of [original]
-re_if_instead_of = re.compile(r"^cn<if> (.+), (.+) cn<instead> of (.+)\.?$")
-
-# instead if i.e. Crown of Empires
-#  [replacement] instead if [condition]
-# the condition and replacement are switched
-re_instead_if = re.compile(r"^([^,|\.]+) cn<instead> cn<if> (.+)\.?$")
-
-# instead of if i.e. Caravan Vigil
-#  [replacement] instead of [orginal] if [condition]
-re_instead_of_if = re.compile(r"^([^,|\.]+) cn<instead> of (.+) cn<if> (.+)\.?$")
-
 # that would instead i.e. Ali from Cairo
 #  [original] that would [(action) original] (action) [replacment] instead.
 # These cannot be handled by RegEx alone as the condition and replacement are
@@ -538,12 +514,35 @@ re_would_instead = re.compile(r"^([^,|\.]+) cn<would> (.+), (.+) cn<instead>\.?$
 # may instead (limited replacement - have only seen 2) i.e. Abundance
 # if [player] would [action], [player] may instead [action]
 re_may_instead = re.compile(
-    r"^cn<if> (.+) cn<would> ([^,]+), (.+) cn<may> cn<instead> (.+)\.?$"
+    r"^cn<if> (.+) cn<would> ([^,]+), (.+) cn<may> cn<instead> ([^\.]+)\.?$"
 )
 
+# if instead of i.e. Pale Moon
+#   if [action], [replacement] instead of [original]
+re_if_instead_of = re.compile(r"^cn<if> (.+), (.+) cn<instead> of (.+)\.?$")
+
+# instead of if i.e. Caravan Vigil
+#  [replacement] instead of [orginal] if [condition]
+re_instead_of_if = re.compile(r"^([^,|\.]+) cn<instead> of (.+) cn<if> (.+)\.?$")
+
 # instead of i.e. Feather, the Redeemed
+#  [replacement] instead of [original]
 # NOTE: these do not have a preceeding if/would
 re_instead_of = re.compile(r"^([^,|\.]+) cn<instead> of (.+)\.?$")
+
+# if instead i.e. Cleansing Medidation
+#   if [event/condition] instead [replacement].
+# the instead comes between the condiction and the replacement
+re_if_instead = re.compile(r"^cn<if> (.+) cn<instead> (.+)\.?$")
+
+# if instead fence i.e. Nyxbloom Ancient
+#   if [event/condition], [replacement] instead
+re_if_instead_fence = re.compile(r"^cn<if> (.+), (.+) cn<instead>\.?$")
+
+# instead if i.e. Crown of Empires
+#  [replacement] instead if [condition]
+# the condition and replacement are switched
+re_instead_if = re.compile(r"^([^,|\.]+) cn<instead> cn<if> (.+)\.?$")
 
 ## SKIP CLAUSES (614.1b)
 # These must be done in the order below or false positives will occur
@@ -579,7 +578,8 @@ re_etb_as = re.compile(
 )
 
 ## ENTERS THE BATTLEFIELD CLAUSES (614.1d) - continuous effects
-# Permanent enters the battlefield ... i.e. Jungle Hollow
+# Permanent enters the battlefield ... i.e. Jungle Hollow (tapped), and
+#  Gather Specimens (effect)
 # Objects enter the battlefield ...
 # NOTE: have to assume that after above, all remaining ETB fit this
 #  Because enters tapped is so predominant, we add a special case
@@ -595,10 +595,11 @@ re_etb_1d = re.compile(
 # As Permanent is turned face up i.e. Gift of Doom
 re_turn_up_check = re.compile(r"xa<turn suffix=ed> xm<face amplifier=up>")
 re_turn_up = re.compile(
-    r"^as (.+) xa<is> xa<turn suffix=ed> xm<face amplifier=up>, ([^\.]+)\.?$"
+    r"^pr<as> (.+) xa<is> xa<turn suffix=ed> xm<face amplifier=up>, ([^\.]+)\.?$"
 )
 
 ## (614.2) applying to damage from a source
+# NOTE: some of these have already been handled during graphing of would-instead
 
 # check for damage
 re_repl_dmg_check = re.compile(r"(?:ef<damage>|ka<regenerate>)")
@@ -608,11 +609,11 @@ re_repl_dmg_check = re.compile(r"(?:ef<damage>|ka<regenerate>)")
 # if [source] would [old], [new]
 re_if_would = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.?$")
 
-# the next time [source] would deal damage to [target] this turn, prevent that damage
+# the [time] [source] would [action] [to [target]]? [phase] [action] i.e.
+# Awe Strike
 re_repl_dmg = re.compile(
-    r"^xq<the> xq<next> sq<time>"
-    r"(.+) cn<would> xa<deal> ef<damage> pr<to> (.+)"
-    r" xq<this> ts<turn>, xa<prevent> xq<that> ef<damage>\.?$"
+    r"^([^,]+ sq<(?:\w+)>) "
+    r"(.+) cn<would> (.*?) (?:pr<to> (.+))?(xq<(?:[^>]+)> ts<\w+>), ([^\.]+)\.?$"
 )
 
 # alternate playing costs (APC) (118.9,113.6c)
@@ -662,6 +663,9 @@ re_rather_than_apc = re.compile(
 re_sequence_phrase = re.compile(r"^sq<\w+>")
 re_sequence_seq = re.compile(r"^(sq<then>) (.+)\.?$")
 re_sequence_dur = re.compile(r"^sq<(\w+)> ([^,]+), (.+)\.?$")
+re_sequence_time = re.compile(
+    r"^([^,]+ sq<(?:\w+)>) ([^\.]+)\.?$"
+)
 
 ##
 # optionals and conditions

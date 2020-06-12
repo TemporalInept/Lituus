@@ -74,11 +74,7 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 175. For partner with, after graphing do we want to replace id with actual Card Name
 
-178. Should we put all replcement effects under a replacement effect node?
-
 179. Should we move ability word definition into the 'main' body of the tree?
-
-180. Need to go through and standardize replacement-effect subnode names i.e. replacement, orginal, instead etc
 
 182. See Shimatsu the Bloodcloaked, how do we tie "that many +1/+1 counters in the second sentence back to the "any number of" in the first sentence
 
@@ -91,8 +87,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 190. Need a better way of labeling nodes related to APC. We want an easy way to search for alternate/reduced costs
 
 191. only during restrictions...
-
-192. why were graphing if conditionals in between replacements (have to remember to put these in to the conditional graphing and watch for negative impacts)
 
 193. move apc related to seperate function
 
@@ -160,8 +154,12 @@ would the second be better?
 
 224. Implied you on actions is not going work as the object is sometimes referenced in the previous sibling node, do we really need it
 
-226. rework replacement effects, avoid the use of creating rootless nodes
-
 227. Look into 'no' starting with "with no" can we make no nu<0> or a quantifier?
 
-228. 
+228. have to tag kind (it's sorta of a meta charactersitic)
+
+229. do we need a special case for etb when graphing action clauses under triggered-abilities see Abyssal Horror
+
+230. for sequences need to add a capture for stuff like "the next time"
+ o see Awe Strike - is it better to capture the sequence in the replacement effect or 
+  allow the line to fail until we can implement clauses and break into comma separated
