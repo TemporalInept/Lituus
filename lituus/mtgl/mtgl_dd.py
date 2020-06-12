@@ -654,11 +654,18 @@ re_rather_than_apc = re.compile(
     r"^cn<rather_than> xa<pay> ([^,]+), (.+) cn<may> ([^\.]+)\.?$"
 )
 
+## MODAL PHRASES
+# (700.2) modal phrases have two or more options in a bulleted list & have the form
+#  choose [number] —(•[choice])+
+re_modal_check = re.compile(r"xa<choose> nu<([^>]+)> —•")
+re_modal_phrase = re.compile(r"xa<choose> nu<([^>]+)> —([^\.]+\.?$)")
+re_opt_delim = re.compile(r" ?•")
+
 ####
 ## LITUUS PHRASE TYPES
 ####
 
-# seuquences - two types a) sequence i.e. then do something b) duration i.e
+# sequences - two types a) sequence i.e. then do something b) duration i.e
 # until end of turn
 re_sequence_phrase = re.compile(r"^sq<\w+>")
 re_sequence_seq = re.compile(r"^(sq<then>) (.+)\.?$")
@@ -735,6 +742,8 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,]+)\.?$")
 # IOT to merge everything under the thing
 # NOTE: if possession-clause is present, the whole is returned and must further
 #  be 'parsed' with re_possessor_clause
+# TODO: doesn't catch Blood Artist
+#  self or another creature
 re_qst = re.compile(
     r"^(?:xq<(\w+?)> )?"
     r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"

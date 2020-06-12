@@ -212,6 +212,7 @@ def graph_phrase(t,pid,line,i=0):
         # TODO: can we make a check for these?
         if graph_replacement_effects(t,pid,line): return
         if graph_apc_phrases(t,pid,line): return
+        if dd.re_modal_check.search(line): return graph_modal_phrase(t,pid,line)
         if graph_sequence_phrase(t,pid,line): return
         if graph_condition_phrase(t,pid,line): return
         if graph_option_phrase(t,pid,line): return
@@ -665,6 +666,32 @@ def graph_repl_damage(t,pid,phrase):
         pass
 
     return None
+
+####
+## MODAL PHRASES
+####
+
+def graph_modal_phrase(t,pid,line):
+    """
+    graphs the modal phrase in line
+    :param t: the tree
+    :param pid: the parent id
+    :param line: text to graph
+    :return: node id of the modal subtree or None
+    """
+    try:
+        # unpack the phrase
+        num,opts = dd.re_modal_phrase.search(line).groups()
+        #opts = [x for x in dd.re_opt_delim.split(opts) if x]
+
+        # add a modal node and nodes for each of the choices
+        mid = t.add_node(pid,'modal')
+        cid = t.add_node(mid,'choose',number=num)
+        for opt in [x for x in dd.re_opt_delim.split(opts) if x]:
+            graph_phrase(t,t.add_node(mid,'option'),opt)
+        return mid
+    except AttributeError:
+        return None
 
 ####
 ## SEQUENCE PHRASES

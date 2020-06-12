@@ -2,7 +2,7 @@
 
 16. Can we just standarize a regular expression to catch anamolies in function word_hacks?
 
-37. level ups, modes and planeswalkers see Charming Prince
+37. level ups, and planeswalkers
 
 40. Need to write save deck functionality
 
@@ -158,3 +158,5 @@ would the second be better?
   allow the line to fail until we can implement clauses and break into comma separated
 
 233. For APC, have to look at condition, this spells costs X less to cast see Discountinuity from Core 2021
+
+234. In Charming Prince, the triggered instruction only applies to the last mode/option. What can we do about this
