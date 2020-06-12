@@ -161,6 +161,4 @@ would the second be better?
  o see Awe Strike - is it better to capture the sequence in the replacement effect or 
   allow the line to fail until we can implement clauses and break into comma separated
 
-232. For ability words, only graph the definition once, use a reference (line node-id) in the ability word line
-
 233. For APC, have to look at condition, this spells costs X less to cast see Discountinuity from Core 2021

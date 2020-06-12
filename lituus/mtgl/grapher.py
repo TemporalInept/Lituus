@@ -71,20 +71,23 @@ def graph(dcard):
                     graph_keyword(t,kwid,kw,ktype,param)
             elif dd.re_aw_line.search(line):
                 try:
+                    # for ability words, don't want to graph the definition twice
+                    # so graph the line, then add the ability-word node with the
+                    # the word and a reference to the graphed definition
                     aw,ad = dd.re_aw_line.search(line).groups()
-                    t.add_node(awid,'ability-word',value=aw)
-                    graph_line(t,t.add_node(awid,'definition'),ad)
-                    lines.append(ad)
+                    graph_line(t,pids[i],ad)
+                    t.add_node(
+                        awid,'ability-word',value=aw,id=t.children(pids[i])[-1]
+                    )
                 except AttributeError:
                     raise lts.LituusException(
                         lts.EPTRN,"Failure matching aw line ({})".format(line)
                     )
-            else: lines.append(line)
+            else: graph_line(t,pids[i],line,dcard['type'])
 
         # Remove keyword and ability word nodes if empty & graph the lines
         if t.is_leaf(kwid): t.del_node(kwid)
         if t.is_leaf(awid): t.del_node(awid)
-        for line in lines: graph_line(t,pids[i],line,dcard['type'])
 
     # return the graph tree
     return t
