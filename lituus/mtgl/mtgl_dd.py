@@ -663,9 +663,9 @@ re_rather_than_apc = re.compile(
 re_sequence_phrase = re.compile(r"^sq<\w+>")
 re_sequence_seq = re.compile(r"^(sq<then>) (.+)\.?$")
 re_sequence_dur = re.compile(r"^sq<(\w+)> ([^,]+), (.+)\.?$")
-re_sequence_time = re.compile(
-    r"^([^,]+ sq<(?:\w+)>) ([^\.]+)\.?$"
-)
+#re_sequence_time = re.compile(
+#    r"^([^,]+ sq<(?:\w+)>) ([^\.]+)\.?$"
+#)
 
 ##
 # optionals and conditions
@@ -760,3 +760,7 @@ re_consecutive_things = re.compile(
     r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)$"
 )
+
+# duration/times/sequences
+# [sequence|quantifier] [phase]
+re_duration_ts = re.compile(r"^((?:sq|xq)<[^>]+>) ts<(\w+)>$")

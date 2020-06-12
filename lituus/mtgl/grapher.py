@@ -646,8 +646,9 @@ def graph_repl_damage(t,pid,phrase):
     # look for prevent damage
     try:
         time,src,act1,tgt,dur,act2 = dd.re_repl_dmg.search(phrase).groups()
-        did = t.add_node(pid,'duration',ungraphed=dur)
-        tid = t.add_node(did,'timing',ungraphed=time)
+        did = graph_duration(t,pid,dur)
+        tid = t.add_node(did,'when')
+        graph_phrase(t,tid,time) # TODO: revisit
         rid = t.add_node(tid,'replacement-effect')
         graph_thing(t,rid,src)
         graph_phrase(t,t.add_node(rid,'would'),act1)
@@ -874,12 +875,15 @@ def graph_action_clause(t,pid,phrase):
         nid = aid = None
 
         try:
-            # now set up of singleton and adjust if conjunction
+            # now set up of singleton and graph the thing if present
             acs = [(aw1,act1)]
             if cnd:
                 nid = t.add_node(pid,cnd)
                 aid = t.add_node(nid,'action')
             else: aid = t.add_node(pid,'action')
+            if thing: graph_thing(t, aid, thing)
+
+            # if there is a conjunction add a 'and' node and append the 2nd action
             if aw2:
                 aid = t.add_node(aid,'and')
                 acs.append((aw2,act2))
@@ -887,7 +891,6 @@ def graph_action_clause(t,pid,phrase):
             # graph the action(s)
             for aw,act in acs:
                 awid = t.add_node(aid,mtgltag.tag_val(aw))
-                if thing: graph_thing(t,awid,thing)
                 if act: t.add_node(awid,'action-params',tograph=act)
         except lts.LituusException as e:
             if e.errno == lts.EPTRN:
@@ -965,6 +968,35 @@ def graph_thing(t,pid,clause):
 
     raise lts.LituusException(lts.EPTRN,"Not a thing {}".format(clause))
 
+def graph_duration(t,pid,clause):
+    """
+    graphs a duration clause
+    :param t: the tree
+    :param pid: parent id
+    :param clause: the duration clause to graph
+    :return:  node id of the duration subtree or None
+    """
+    # there are two variations
+    #  a) [quantifier] [phase/step] and
+    #  b) [sequence] [phase/step)
+
+    try:
+        # unpack the tags and create the duration node
+        tkn,phase = dd.re_duration_ts.search(clause).groups()
+        did = t.add_node(pid,'duration')
+
+        # untag the first tag and get the value for the turn structure tag
+        tid,val,attr = mtgltag.untag(tkn)
+
+        # graph the clause based on the type of the first token
+        if tid == 'sq': t.add_node(did,val,value=phase)
+        elif tid == 'xq': t.add_node(did,phase,value=val)
+        else: assert(False)
+
+        return did
+    except AttributeError:
+        pass
+    return None
 
 ####
 ## PRIVATE FUNCTIONS

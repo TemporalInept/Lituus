@@ -149,9 +149,6 @@ ALTERNATE
 
 would the second be better?
 
-223. Possessives
- 3. creature you control i.e. Ulvenwald Tracker (need to do something controller=you)
-
 224. Implied you on actions is not going work as the object is sometimes referenced in the previous sibling node, do we really need it
 
 227. Look into 'no' starting with "with no" can we make no nu<0> or a quantifier?
@@ -163,3 +160,7 @@ would the second be better?
 230. for sequences need to add a capture for stuff like "the next time"
  o see Awe Strike - is it better to capture the sequence in the replacement effect or 
   allow the line to fail until we can implement clauses and break into comma separated
+
+232. For ability words, only graph the definition once, use a reference (line node-id) in the ability word line
+
+233. For APC, have to look at condition, this spells costs X less to cast see Discountinuity from Core 2021
