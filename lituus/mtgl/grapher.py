@@ -611,11 +611,12 @@ def graph_repl_etb2(t,pid,phrase):
     except AttributeError:
         pass
 
+    # continuous etb with an optional effect
     try:
         perm,effect = dd.re_etb_1d.search(phrase).groups()
         rid = t.add_node(pid,'etb')
         graph_thing(t,rid,perm)
-        graph_phrase(t,t.add_node(rid,'effect'),effect)
+        if effect: graph_phrase(t,t.add_node(rid,'effect'),effect)
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)

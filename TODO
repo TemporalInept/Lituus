@@ -149,10 +149,6 @@ ALTERNATE
 
 would the second be better?
 
-224. Implied you on actions is not going work as the object is sometimes referenced in the previous sibling node, do we really need it
-
-227. Look into 'no' starting with "with no" can we make no nu<0> or a quantifier?
-
 228. have to tag kind (it's sorta of a meta charactersitic)
 
 229. do we need a special case for etb when graphing action clauses under triggered-abilities see Abyssal Horror

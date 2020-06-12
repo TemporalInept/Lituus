@@ -588,7 +588,7 @@ re_etb_status = re.compile(
      r"st<([^>]+)>(?: cn<unless> ([^\.]+))?\.?$"
 )
 re_etb_1d = re.compile(
-    r"^([^,|\.]+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield> ([^\.]+)\.?$"
+    r"^([^,|\.]+) xa<enter(?: suffix=s)?> xq<the> zn<battlefield>(?: ([^\.]+))?\.?$"
 )
 
 ## TURNED FACE UP (614.1e)
