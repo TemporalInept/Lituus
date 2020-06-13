@@ -669,11 +669,17 @@ re_opt_delim = re.compile(r" ?•")
 ## LITUUS PHRASE TYPES
 ####
 
-# sequences - two types a) sequence i.e. then do something b) duration i.e
+# sequences - three types
+#  a) then then [action] i.e. Barishi
+#  b) duration [sequence] [phase/step], [action] i.e Abeyance
+#  c) condition [sequence] [condition], [action] i.e. Hungering Yetis
 # until end of turn
-re_sequence_phrase = re.compile(r"^sq<[^>]++>")
-re_sequence_seq = re.compile(r"^(sq<then>) ([^\.]+)\.?$")
-re_sequence_dur = re.compile(r"^(sq<[^>]+> [^,]+), ([^\.]+)\.?$")
+re_sequence_check = re.compile(r"^sq<[^>]++>")
+re_sequence_then = re.compile(r"^(sq<then>) ([^\.]+)\.?$")
+re_sequence_dur = re.compile(r"^(sq<[^>]+> ts<[^,]+>), ([^\.]+)\.?$")
+re_sequence_cond = re.compile(
+    r"^sq<([^>]+)> ([^,]+), ([^\.]+)\.?$"
+)
 #re_sequence_time = re.compile(
 #    r"^([^,]+ sq<(?:\w+)>) ([^\.]+)\.?$"
 #)
@@ -727,12 +733,12 @@ re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
 #  we do not want to grab anything that extends to the left past a clause (",")
 #  or sentence (".") boundary
 re_cannot_unless = re.compile(
-    r"^([^,|\.]+) cn<cannot> (.+) cn<unless> ([^,]+)\.?$")
+    r"^([^,|\.]+) cn<cannot> (.+) cn<unless> ([^,|\.]+)\.?$")
 re_action_unless = re.compile(
-    r"^((?:[^,|^\.]+ )?[kx]a<\w+(?: [^>]+)?>.+) cn<unless> ([^,]+)\.?$"
+    r"^((?:[^,|^\.]+ )?[kx]a<\w+(?: [^>]+)?>.+) cn<unless> ([^,|\.]+)\.?$"
 )
-re_status_unless = re.compile(r"^(?:st|xs])<(\w+)> cn<unless> ([^,]+)\.?$")
-re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,]+)\.?$")
+re_status_unless = re.compile(r"^(?:st|xs])<(\w+)> cn<unless> ([^,|\.]+)\.?$")
+re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$")
 
 
 ####

@@ -213,7 +213,7 @@ def graph_phrase(t,pid,line,i=0):
         if graph_replacement_effects(t,pid,line): return
         if graph_apc_phrases(t,pid,line): return
         if dd.re_modal_check.search(line): return graph_modal_phrase(t,pid,line)
-        if graph_sequence_phrase(t,pid,line): return
+        if dd.re_sequence_check.search(line): return graph_sequence_phrase(t,pid,line)
         if graph_condition_phrase(t,pid,line): return
         if graph_option_phrase(t,pid,line): return
         if graph_action_clause(t,pid,line): return
@@ -734,21 +734,31 @@ def graph_sequence_phrase(t,pid,line):
     :param line: text to graph
     :return: node id or None
     """
-    # check for then first
+    # check for then [action] first
     try:
-        _,act = dd.re_sequence_seq.search(line).groups()
+        _,act = dd.re_sequence_then.search(line).groups()
         sid = t.add_node(pid,'then')
         graph_phrase(t,sid,act)
         return sid
     except AttributeError:
         pass
 
-    # then durations
+    # then durations [sequence] [phase/step], [action]
     try:
         dur,act = dd.re_sequence_dur.search(line).groups()
         did = graph_duration(t,pid,dur)
         graph_phrase(t,did,act) # TODO: should this be under the 'until' node (see Pale Moon)
         return did
+    except AttributeError:
+        pass
+
+    # then other sequences of the form [sequence] [cond], [effect]
+    try:
+        seq,cond,act = dd.re_sequence_cond.search(line).groups()
+        sid = t.add_node(pid,seq.replace('_','-'))
+        graph_phrase(t,t.add_node(sid,'condition'),cond)
+        graph_phrase(t,sid,act)
+        return sid
     except AttributeError:
         pass
 
@@ -859,13 +869,15 @@ def graph_option_phrase(t,pid,phrase):
         mid = t.add_node(pid,'may')
         graph_thing(t,mid,ply)
         graph_phrase(t,mid,act1)
-        graph_phrase(t,t.add_node(pid,'as-though'),act2)
+        graph_phrase(t,t.add_node(mid,'as-though'),act2)
         #oid = t.add_node(pid,'option')
         #mid = t.add_node(oid,'may')
         #graph_thing(t,mid,ply)
         #graph_phrase(t,mid,act1)
         #graph_phrase(t,t.add_node(oid,'as-though'),act2)
-        return oid
+        return mid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(mid)
     except AttributeError:
         pass
 
