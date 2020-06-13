@@ -488,9 +488,13 @@ re_ka_activate = re.compile(
 # These must be done in the order below or false positives will occur
 
 # if would instead
-# two variants
-#  a. if [thing] would [action], [action] instead i.e. Abandoned Sarcophagus
-#  b. if [thing] would [action], instead [action] i.e. Breathstealer's Crypt
+# three variants
+#  a. if [thing] would [action] or [thing] would [action], [action] instead i.e Anafenza
+#  b. if [thing] would [action], [action] instead i.e. Abandoned Sarcophagus
+#  c. if [thing] would [action], instead [action] i.e. Breathstealer's Crypt
+re_if_would2_instead = re.compile(
+    r"^cn<if> (.+) cn<would> (.+) or (.+) cn<would> ([^,]+), (.+) cn<instead>\.?$"
+)
 re_if_would_instead1 = re.compile(
     r"^cn<if> (.+) cn<would> ([^,]+), (.+) cn<instead>\.?$"
 )
@@ -519,21 +523,21 @@ re_may_instead = re.compile(
 
 # if instead of i.e. Pale Moon
 #   if [action], [replacement] instead of [original]
-re_if_instead_of = re.compile(r"^cn<if> (.+), (.+) cn<instead> of (.+)\.?$")
+re_if_instead_of = re.compile(r"^cn<if> (.+), (.+) cn<instead> of ([^\.]+)\.?$")
 
 # instead of if i.e. Caravan Vigil
 #  [replacement] instead of [orginal] if [condition]
-re_instead_of_if = re.compile(r"^([^,|\.]+) cn<instead> of (.+) cn<if> (.+)\.?$")
+re_instead_of_if = re.compile(r"^([^,|\.]+) cn<instead> of (.+) cn<if> ([^\.]+)\.?$")
 
 # instead of i.e. Feather, the Redeemed
 #  [replacement] instead of [original]
 # NOTE: these do not have a preceeding if/would
-re_instead_of = re.compile(r"^([^,|\.]+) cn<instead> of (.+)\.?$")
+re_instead_of = re.compile(r"^([^,|\.]+) cn<instead> of ([^\.]+)\.?$")
 
 # if instead i.e. Cleansing Medidation
 #   if [event/condition] instead [replacement].
 # the instead comes between the condiction and the replacement
-re_if_instead = re.compile(r"^cn<if> (.+) cn<instead> (.+)\.?$")
+re_if_instead = re.compile(r"^cn<if> (.+) cn<instead> ([^\.]+)\.?$")
 
 # if instead fence i.e. Nyxbloom Ancient
 #   if [event/condition], [replacement] instead
@@ -542,7 +546,7 @@ re_if_instead_fence = re.compile(r"^cn<if> (.+), (.+) cn<instead>\.?$")
 # instead if i.e. Crown of Empires
 #  [replacement] instead if [condition]
 # the condition and replacement are switched
-re_instead_if = re.compile(r"^([^,|\.]+) cn<instead> cn<if> (.+)\.?$")
+re_instead_if = re.compile(r"^([^,|\.]+) cn<instead> cn<if> ([^\.]+)\.?$")
 
 ## SKIP CLAUSES (614.1b)
 # These must be done in the order below or false positives will occur
@@ -667,9 +671,9 @@ re_opt_delim = re.compile(r" ?•")
 
 # sequences - two types a) sequence i.e. then do something b) duration i.e
 # until end of turn
-re_sequence_phrase = re.compile(r"^sq<\w+>")
-re_sequence_seq = re.compile(r"^(sq<then>) (.+)\.?$")
-re_sequence_dur = re.compile(r"^sq<(\w+)> ([^,]+), (.+)\.?$")
+re_sequence_phrase = re.compile(r"^sq<[^>]++>")
+re_sequence_seq = re.compile(r"^(sq<then>) ([^\.]+)\.?$")
+re_sequence_dur = re.compile(r"^(sq<[^>]+> [^,]+), ([^\.]+)\.?$")
 #re_sequence_time = re.compile(
 #    r"^([^,]+ sq<(?:\w+)>) ([^\.]+)\.?$"
 #)
@@ -677,19 +681,23 @@ re_sequence_dur = re.compile(r"^sq<(\w+)> ([^,]+), (.+)\.?$")
 ##
 # optionals and conditions
 
-# [player] may [action] as though [action] [if [condition]]?
+# [player] may [action] as though [action] [if [condition]]? i.e. Lone Wolf
+#re_may_as_though = re.compile(
+#    r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?)"
+#     r"cn<may> ([^,]+) pr<as_though> ([^\.]+\.?$)"
+#)
+# TODO: why did the previous version check for hanging clause after the player
 re_may_as_though = re.compile(
-    r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?)"
-     r"cn<may> ([^,]+) pr<as_though> ([^\.]+\.?$)"
+    r"^((?:.+ )?xp<[^>]+>) cn<may> (.+) pr<as_though> ([^\.]+)\.?$"
 )
 
-# [player] may have [clause]
+# [player] may have [clause] i.e. Browbeat
 re_may_have = re.compile(
     r"^((?:[^,|\.]+)?xp<\w+(?: suffix=[^>]+)?>) "
      r"cn<may> xa<have(?: suffix=[^>]+)?> ([^\.]+)\.?$"
 )
 
-# contains 'may' [player] may [action]
+# contains 'may' [player] may [action] i.e. Ad Nauseam
 re_optional_may = re.compile(
     r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?) "
      r"cn<may> ([x|k]a<\w+>(?:[^\.]+))\.?$"
@@ -735,7 +743,8 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,]+)\.?$")
 #  1. need to determien where numbers would be located
 #  2. for controller, do we need to check for 'owner' as well
 # find phrases of the form
-#  [quantifier] [status] [thing CONJ]? [thing] [possession-clause]? [with-clause]?
+#  [quantifier] [status] [thing CONJ quantifier]? [thing] [possession-clause]?
+#   [with-clause]?
 # where:
 #  possession-clause has the form: [player] [owns|controls]
 #  with-clayse has the form with [qualifiers]
@@ -744,16 +753,35 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,]+)\.?$")
 #  be 'parsed' with re_possessor_clause
 # TODO: doesn't catch Blood Artist
 #  self or another creature
+#re_qst = re.compile(
+#    r"^(?:xq<(\w+?)> )?"
+#    r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
+#    r"(?:(.+) (and|or|and/or) )?"
+#    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+#    r"(?: ((?:xq<\w+?> )?xp<\w+> xc<(?:own|control)(?: suffix=s)?>))?"
+#    r"(?: pr<with> ([^\.]+))?"
+#    r"\.?$"
+#)
+#re_qst = re.compile(
+#    r"^(?:xq<([^>]+)> )?"
+#    r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
+#    r"(?:(.+) (and|or|and/or) (?:xq<([^>]+)> )?)?"
+#    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
+#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+#    r"(?: ((?:xq<\w+?> )?xp<\w+> xc<(?:own|control)(?: suffix=s)?>))?"
+#    r"(?: pr<with> ([^\.]+))?"
+#    r"\.?$"
+#)
 re_qst = re.compile(
-    r"^(?:xq<(\w+?)> )?"
-    r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
-    r"(?:(.+) (and|or|and/or) )?"
-    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
-    r"(?: ((?:xq<\w+?> )?xp<\w+> xc<(?:own|control)(?: suffix=s)?>))?"
-    r"(?: pr<with> ([^\.]+))?"
-    r"\.?$"
+    r"^(?:xq<([^>]+)> )?"
+    r"(?:(?:xs|st)<([^>]+)> )?"
+    r"(?:(.+) (and|or|and/or) (?:xq<([^>]+)> )?)?"
+    r"((?:ob|xp|xo|zn)<[^>]+>)"
+    r"(?: ((?:xq<[^>]+> )?xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>))?"
+    r"(?: pr<with> ([^\.]+))?\.?$"
 )
 re_possession_clause = re.compile(
     r"((?:xq<\w*?> )?xp<\w+>) xc<(own|control)(?: suffix=s)?>"

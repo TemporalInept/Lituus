@@ -399,15 +399,21 @@ def graph_repl_instead(t,pid,phrase):
     :return: id of the replacement-effect node or None
     """
     rid = None
-
     # check for 'would' phrasing, 'of' phrasing and 'if' phrasing
     if 'cn<would>' in phrase:
-        # if-instead-would variants a
+        # if-would-instead variant a
         try:
-            thing,would,instead = dd.re_if_would_instead1.search(phrase).groups()
+            # for this, we graph the two 'woulds' as separate if-would clauses
+            # under a 'or' conjunction
+            t1,w1,t2,w2,instead = dd.re_if_would2_instead.search(phrase).groups()
             rid = t.add_node(pid,'replacement-effect')
-            graph_thing(t,t.add_node(rid,'if'),thing)
-            graph_phrase(t,t.add_node(rid,'would'),would)
+            oid = t.add_node(rid,'or')
+            iid = t.add_node(oid,'if')
+            graph_thing(t,iid,t1)
+            graph_phrase(t,t.add_node(iid,'would'),w1)
+            iid = t.add_node(oid,'if')
+            graph_thing(t,iid,t2)
+            graph_phrase(t,t.add_node(iid,'would'),w2)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except lts.LituusException as e:
@@ -415,12 +421,27 @@ def graph_repl_instead(t,pid,phrase):
         except AttributeError:
             pass
 
-        # if-instead-would variants a
+        # if-would-instead variant b
+        try:
+            thing,would,instead = dd.re_if_would_instead1.search(phrase).groups()
+            rid = t.add_node(pid,'replacement-effect')
+            iid = t.add_node(rid,'if')
+            graph_thing(t,iid,thing)
+            graph_phrase(t,t.add_node(iid,'would'),would)
+            graph_phrase(t,t.add_node(rid,'instead'),instead)
+            return rid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(rid)
+        except AttributeError:
+            pass
+
+        # if-instead-would variant c
         try:
             thing,would,instead = dd.re_if_would_instead2.search(phrase).groups()
             rid = t.add_node(pid,'replacement-effect')
-            graph_thing(t,t.add_node(rid,'if'),thing)
-            graph_phrase(t,t.add_node(rid,'would'),would)
+            iid = t.add_node(rid,'if')
+            graph_thing(t,iid,thing)
+            graph_phrase(t,t.add_node(iid,'would'),would)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except lts.LituusException as e:
@@ -438,8 +459,9 @@ def graph_repl_instead(t,pid,phrase):
 
             # and graph it
             rid = t.add_node(pid,'replacement-effect')
-            graph_phrase(t,t.add_node(rid,'effect'),effect)
-            graph_phrase(t,t.add_node(rid,'that-would'),would)
+            eid = t.add_node(rid,'effect')
+            graph_phrase(t,eid,effect)
+            graph_phrase(t,t.add_node(eid,'that-would'),would)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except (AttributeError,lts.LituusException):
@@ -449,8 +471,9 @@ def graph_repl_instead(t,pid,phrase):
         try:
             cond,would,instead = dd.re_would_instead.search(phrase).groups()
             rid = t.add_node(pid,'replacement-effect')
-            graph_phrase(t,t.add_node(rid,'condition'),cond) # TODO: rename this to something time related
-            graph_phrase(t,t.add_node(rid,'would'),would)
+            cid = t.add_node(rid,'condition') # TODO: rename this to something time related
+            graph_phrase(t,cid,cond)
+            graph_phrase(t,t.add_node(cid,'would'),would)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except AttributeError:
@@ -460,11 +483,14 @@ def graph_repl_instead(t,pid,phrase):
         try:
             # NOTE: thing1 and thing2 should be the same
             thing1,act1,thing2,act2 = dd.re_may_instead.search(phrase).groups()
-            #assert(thing1 == thing2)
             rid = t.add_node(pid,'replacement-effect')
-            graph_thing(t,t.add_node(rid,'if'),thing1)
-            graph_phrase(t,t.add_node(rid,'would'),act1)
-            graph_phrase(t,t.add_node(rid,'may-instead'),act2)
+            iid = t.add_node(rid,'if')
+            graph_thing(t,iid,thing1)
+            graph_phrase(t,t.add_node(iid,'would'),act1)
+            iid = t.add_node(rid,'instead')
+            mid = t.add_node(iid,'may')
+            graph_thing(t,mid,thing2)
+            graph_phrase(t,mid,act2)
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
@@ -477,8 +503,9 @@ def graph_repl_instead(t,pid,phrase):
             act,repl,iof = dd.re_if_instead_of.search(phrase).groups()
             rid = t.add_node(pid,'replacement-effect')
             graph_phrase(t,t.add_node(rid,'if'),act)
-            graph_phrase(t,t.add_node(rid,'replacement'),repl) # TODO: need a better label (maybe 'instead')
-            graph_phrase(t,t.add_node(rid,'instead-of'),iof)
+            iid = t.add_node(rid,'instead-of')
+            graph_phrase(t,iid,iof)
+            graph_phrase(t,iid,repl)
             return rid
         except AttributeError:
             pass
@@ -490,8 +517,9 @@ def graph_repl_instead(t,pid,phrase):
             repl,iof,cond = dd.re_instead_of_if.search(phrase).groups()
             rid = t.add_node(pid,'replacement-effect')
             graph_phrase(t,t.add_node(rid,'if'),cond)
-            graph_phrase(t,t.add_node(rid,'replacement'),repl) # TODO: need a better label
-            graph_phrase(t,t.add_node(rid,'instead-of'),iof)
+            iid = t.add_node(rid,'instead-of')
+            graph_phrase(t,iid,iof)
+            graph_phrase(t,iid,repl)
             return rid
         except AttributeError:
             pass
@@ -500,8 +528,9 @@ def graph_repl_instead(t,pid,phrase):
         try:
             repl,iof = dd.re_instead_of.search(phrase).groups()
             rid = t.add_node(pid,'replacement-effect')
-            graph_phrase(t,t.add_node(rid,'replacement'),repl)
-            graph_phrase(t,t.add_node(rid,'instead-of'),iof)
+            iid = t.add_node(rid,'instead-of')
+            graph_phrase(t,iid,iof)
+            graph_phrase(t,iid,repl)
             return rid
         except AttributeError:
             pass
@@ -716,11 +745,9 @@ def graph_sequence_phrase(t,pid,line):
 
     # then durations
     try:
-        wd,dur,act = dd.re_sequence_dur.search(line).groups()
-        did = t.add_node(pid,'duration')
-        #graph_clause(t,t.add_node(did,wd),dur)
-        graph_phrase(t,t.add_node(did,wd),dur)
-        graph_phrase(t,did,act)
+        dur,act = dd.re_sequence_dur.search(line).groups()
+        did = graph_duration(t,pid,dur)
+        graph_phrase(t,did,act) # TODO: should this be under the 'until' node (see Pale Moon)
         return did
     except AttributeError:
         pass
@@ -827,12 +854,18 @@ def graph_option_phrase(t,pid,phrase):
 
     # check may as-though first
     try:
+        # TODO: should we graph these under an i-node 'option'
         ply,act1,act2 = dd.re_may_as_though.search(phrase).groups()
         mid = t.add_node(pid,'may')
-        graph_phrase(t,mid,"{} {}".format(ply,act1))
-        aid = t.add_node(mid,'as-though')
-        graph_phrase(t,aid,act2)
-        return mid
+        graph_thing(t,mid,ply)
+        graph_phrase(t,mid,act1)
+        graph_phrase(t,t.add_node(pid,'as-though'),act2)
+        #oid = t.add_node(pid,'option')
+        #mid = t.add_node(oid,'may')
+        #graph_thing(t,mid,ply)
+        #graph_phrase(t,mid,act1)
+        #graph_phrase(t,t.add_node(oid,'as-though'),act2)
+        return oid
     except AttributeError:
         pass
 
@@ -950,13 +983,17 @@ def graph_thing(t,pid,clause):
     # could have a qst phrase or a possesive phrase have to check both
     try:
         # 'unpack' the phrase, adding nodes for quantifiers, status if present
-        xq,st,thing1,conj,thing2,poss,pr = dd.re_qst.search(clause).groups()
+        xq,st,th1,conj,xq2,th2,poss,pr = dd.re_qst.search(clause).groups()
         eid = t.add_node(pid,'thing')
         if xq: t.add_node(eid,'quantifier',value=xq)
         if st: t.add_node(eid,'status',value=st)
 
         # untag the thing tag
-        tid,val,attr = mtgltag.untag(thing2)
+        # TODO: have to figure out how to add a conjoing pair
+        #  or
+        #   thing1
+        #   thing2
+        tid,val,attr = mtgltag.untag(th2)
         vid = t.add_node(eid,mtgl.TID[tid],value=val)
         for k in attr: t.add_node(vid,k,value=attr[k]) # TODO: define a order for these
         if poss:
