@@ -361,6 +361,11 @@ re_reminder = re.compile(r" ?\(.+?\)")
 # period is used by the grapher to delimit clauses
 re_modal_blt = re.compile(r"\.•")
 
+# modify level ups IOT facilitate graphing.
+re_lvl_up = re.compile(r"^(level up {[^\n]+})\n")
+re_lvl_blt = re.compile(r"\n(?=level)")
+
+
 ####
 ## BEGIN MTGL REG EX
 ####
@@ -402,7 +407,7 @@ re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 # that are preceded by whitespace, a '/','+','-' or start a line and that are
 # followed by whitespace '/' or '.' are matched.
 re_number = re.compile(
-    r"(?<=(?:^|[ \/+-]))(\d+|x|y|z])(?=(?:[—\s\/+-\.]|$))"
+    r"(?<=(?:^|[\s\/+-]))(\d+|x|y|z])(?=(?:[—\s\/+-\.]|$))"
 )
 
 ####
@@ -423,7 +428,7 @@ re_obj = re.compile(
 lituus_objects = [  # lituus objects
     "city's blessing", 'game','mana pool','mana cost','commander','mana','attacker',
     'blocker','itself','it','them','they','coin','choice','cost', "amount of",
-    'life total','life','symbol','rest','monarch','pile','team','mode',
+    'life total','life','symbol','rest','monarch','pile','team','mode','level',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
@@ -1195,6 +1200,7 @@ misstag = {
     "xq<first> strike":"kw<first_strike>",
     "cumulative ts<upkeep>":"kw<cumlative_upkeep>",
     "xo<commander> kw<ninjutsu>":"kw<commander ninjutsu",
+    "xo<level> pr<up>":"kw<level_up>",
 }
 misstag_tkns = '|'.join(misstag.keys())
 re_misstag = re.compile(r"({})".format(misstag_tkns))

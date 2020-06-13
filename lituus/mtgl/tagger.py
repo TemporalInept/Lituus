@@ -63,7 +63,9 @@ def preprocess(name,txt):
        5. english number words 0 - 10 are replacing with corresponding ints,
        6. Some reminder text is removed, some paraenthesis is removed
        7. replace any 'non' w/out hypen to 'non-' w/ hyphen
-       8. Replace occurrences of ".•" with " •"
+       8. Replace occurrences of ".•" with " •" in modal spells
+       9. Fix level ups removing newlines inside of the the level descriptions
+        and prefixing each level description with a bullet
     :param name: name of this card
     :param txt: the mtgl text
     :return: preprocessed oracle text
@@ -77,7 +79,8 @@ def preprocess(name,txt):
     ntxt = mtgl.re_mana_remtxt.sub(r"\1",ntxt)                               # 6
     ntxt = mtgl.re_reminder.sub("",ntxt)                                     # 6
     ntxt = mtgl.re_non.sub(r"non-\1",ntxt)                                   # 7
-    ntxt = mtgl.re_modal_blt.sub(r" •",ntxt)
+    ntxt = mtgl.re_modal_blt.sub(r" •",ntxt)                                 # 8
+    if mtgl.re_lvl_up.search(ntxt): ntxt = fix_lvl_up(ntxt)                  # 9
     return ntxt
 
 def tag_ref(name,txt):
@@ -120,6 +123,21 @@ def tag_ref(name,txt):
         lambda m: r"ob<token ref={}>".format(mtgl.NC2R[m.group(1)]),ntxt
     )
     return ntxt
+
+def fix_lvl_up(txt):
+    """
+    Performs two modifications:
+     1. splits the level up keyword line into the keyword clause(Level up [cost])
+      and level descriptions
+     2. inserts a bullet before each occurrence of level and replace all newlines
+      with a space
+     This will result in level up COST\nBLTlevel DESCRIPTION ... BLTlevel DESCRIPTION
+    :param txt: level up text to modify
+    :return: modified level up text
+    """
+    kw,line = mtgl.re_lvl_up.split(txt)[1:]                                # 1
+    line = mtgl.BLT + mtgl.re_lvl_blt.sub(mtgl.BLT,line).replace('\n',' ') # 2
+    return "{}\n{}".format(kw,line)
 
 ####
 # 1ST PASS
