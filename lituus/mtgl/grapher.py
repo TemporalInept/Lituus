@@ -994,20 +994,28 @@ def graph_thing(t,pid,clause):
     # TODO: should we combine suffix with the stem if present?
     # could have a qst phrase or a possesive phrase have to check both
     try:
-        # 'unpack' the phrase, adding nodes for quantifiers, status if present
-        xq,st,th1,conj,xq2,th2,poss,pr = dd.re_qst.search(clause).groups()
+        # 'unpack' the phrase
+        n,xq,st,th1,conj,xq2,th2,poss,pr = dd.re_qst.search(clause).groups()
         eid = t.add_node(pid,'thing')
+
+        # any preceding quantifier and/or status belong to the holistic thing
+        # while intermediate quantifiers belong only to the subsequent thing
+        if n: t.add_node(eid,'number',value=n)
         if xq: t.add_node(eid,'quantifier',value=xq)
         if st: t.add_node(eid,'status',value=st)
 
-        # untag the thing tag
-        # TODO: have to figure out how to add a conjoing pair
-        #  or
-        #   thing1
-        #   thing2
-        tid,val,attr = mtgltag.untag(th2)
-        vid = t.add_node(eid,mtgl.TID[tid],value=val)
-        for k in attr: t.add_node(vid,k,value=attr[k]) # TODO: define a order for these
+        # if there is a conjunction, graph the things as items under a conjunction
+        # node, adding the second quanitifier if present
+        if conj:
+            cid = t.add_node(eid,'conjunction',value=conj,itype='thing')
+            iid = t.add_node(cid,'item')
+            _graph_object_(t,iid,th1)
+            iid = t.add_node(cid, 'item')
+            if xq2: t.add_node(iid,'quantifier',value=xq2)
+            _graph_object_(t,iid,th2)
+        else: _graph_object_(t,eid,th2)
+
+        # graph any trailing posession clauses and.or prepositions
         if poss:
             try:
                 ply,wd = dd.re_possession_clause.search(poss).groups()
@@ -1016,7 +1024,12 @@ def graph_thing(t,pid,clause):
             except AttributeError:
                 raise lts.LituusException(lts.EPTRN,"{} is not a possession".format(ctlr))
         if pr: graph_phrase(t,t.add_node(eid,'with'),pr)
+
+        # and return the thing node id
         return eid
+    except KeyError:
+        print(clause)
+        raise
     except AttributeError:
         pass
 
@@ -1081,6 +1094,26 @@ def graph_duration(t,pid,clause):
 ####
 ## PRIVATE FUNCTIONS
 ####
+
+def _graph_object_(t,pid,obj):
+    """
+     graphs an object under pid
+    :param t: the tree
+    :param pid: the parent id
+    :param obj: the object to untag and graph
+    :return: ?
+    """
+    # untag the obj and create an object node using the tag value as the label
+    # if it is a non mtg object, add an attribute specifying the type, then
+    # pull any references out the attributes and put in the main node
+    tid,val,attr = mtgltag.untag(obj)
+    oid = t.add_node(pid,val)
+    if tid != 'ob': t.add_attr(oid,'type',mtgl.TID[tid])
+    if 'ref' in attr:
+        t.add_attr(oid,'ref-id',attr['ref'])
+        del attr['ref']
+    for k in attr: t.add_node(oid,k,value=attr[k])
+    return oid
 
 def _enclosed_quote_(t,m):
     """

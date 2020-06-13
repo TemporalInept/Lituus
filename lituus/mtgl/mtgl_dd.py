@@ -751,42 +751,17 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$"
 #  1. need to determien where numbers would be located
 #  2. for controller, do we need to check for 'owner' as well
 # find phrases of the form
-#  [quantifier] [status] [thing CONJ quantifier]? [thing] [possession-clause]?
-#   [with-clause]?
+#  [number]? [quantifier]? [status]? [thing CONJ quantifier]? [thing]
+#  [possession-clause]? [with-clause]?
 # where:
 #  possession-clause has the form: [player] [owns|controls]
 #  with-clayse has the form with [qualifiers]
 # IOT to merge everything under the thing
 # NOTE: if possession-clause is present, the whole is returned and must further
 #  be 'parsed' with re_possessor_clause
-# TODO: doesn't catch Blood Artist
-#  self or another creature
-#re_qst = re.compile(
-#    r"^(?:xq<(\w+?)> )?"
-#    r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
-#    r"(?:(.+) (and|or|and/or) )?"
-#    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
-#    r"(?: ((?:xq<\w+?> )?xp<\w+> xc<(?:own|control)(?: suffix=s)?>))?"
-#    r"(?: pr<with> ([^\.]+))?"
-#    r"\.?$"
-#)
-#re_qst = re.compile(
-#    r"^(?:xq<([^>]+)> )?"
-#    r"(?:((?:xs|st)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*>) )?"
-#    r"(?:(.+) (and|or|and/or) (?:xq<([^>]+)> )?)?"
-#    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
-#    r"(?: ((?:xq<\w+?> )?xp<\w+> xc<(?:own|control)(?: suffix=s)?>))?"
-#    r"(?: pr<with> ([^\.]+))?"
-#    r"\.?$"
-#)
 re_qst = re.compile(
-    r"^(?:xq<([^>]+)> )?"
-    r"(?:(?:xs|st)<([^>]+)> )?"
-    r"(?:(.+) (and|or|and/or) (?:xq<([^>]+)> )?)?"
+    r"^(?:nu<([^>]+)> )?(?:xq<([^>]+)> )?(?:(?:xs|st)<([^>]+)> )?"
+    r"(?:((?:ob|xp|xo|zn)<[^>]+>) (and|or|and/or) (?:xq<([^>]+)> )?)?"
     r"((?:ob|xp|xo|zn)<[^>]+>)"
     r"(?: ((?:xq<[^>]+> )?xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>))?"
     r"(?: pr<with> ([^\.]+))?\.?$"

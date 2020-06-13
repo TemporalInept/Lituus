@@ -166,4 +166,15 @@ would the second be better?
 
 236. Aluren has a hanging 'and' after graphing as 'may as-though'
 
-238.
+238. What to do about suffix in Things, should we append to the main tag or leave as a attribute i.e. 
+ 'creatures' = ob<permanent characteristics=creature>
+ we could graph as 
+ permanents
+  -characteristics value=creature
+ or
+ permanent
+  -characteristics value=creatures
+ or leave as is
+ permanent
+  -suffix value=s
+  -charateristics value=creature
