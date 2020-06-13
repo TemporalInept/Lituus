@@ -407,12 +407,22 @@ def graph_repl_instead(t,pid,phrase):
             # under a 'or' conjunction
             t1,w1,t2,w2,instead = dd.re_if_would2_instead.search(phrase).groups()
             rid = t.add_node(pid,'replacement-effect')
-            oid = t.add_node(rid,'or')
+            oid = t.add_node(rid,'conjunction',value='or',itype="if-woudd")
             iid = t.add_node(oid,'if')
-            graph_thing(t,iid,t1)
+            try:
+                graph_thing(t,iid,t1)
+            except lts.LituusException as e:
+                if e.errno == lts.EPTRN:
+                    t.add_node(iid,'ungraphed-thing',tograph=t1)
+                else: raise
             graph_phrase(t,t.add_node(iid,'would'),w1)
             iid = t.add_node(oid,'if')
-            graph_thing(t,iid,t2)
+            try:
+                graph_thing(t,iid,t2)
+            except lts.LituusException as e:
+                if e.errno == lts.EPTRN:
+                    t.add_node(iid,'ungraphed-thing',tograph=t2)
+                else: raise
             graph_phrase(t,t.add_node(iid,'would'),w2)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
@@ -708,10 +718,10 @@ def graph_modal_phrase(t,pid,line):
     :param line: text to graph
     :return: node id of the modal subtree or None
     """
+    # try 'normal' phrasing first (700.2)
     try:
         # unpack the phrase
         num,opts = dd.re_modal_phrase.search(line).groups()
-        #opts = [x for x in dd.re_opt_delim.split(opts) if x]
 
         # add a modal node and nodes for each of the choices
         mid = t.add_node(pid,'modal')
@@ -720,7 +730,24 @@ def graph_modal_phrase(t,pid,line):
             graph_phrase(t,t.add_node(mid,'option'),opt)
         return mid
     except AttributeError:
-        return None
+        pass
+
+    # then with instructions (700.2d)
+    try:
+        # unpack the phrase
+        op,num,instr,opts = dd.re_modal_phrase_instr.search(line).groups()
+
+        # add a modal node and nodes for each of the choices
+        mid = t.add_node(pid,'modal')
+        cid = t.add_node(mid,'choose',number=op+num if op else num)
+        graph_phrase(t,t.add_node(mid,'instructions'),instr)
+        for opt in [x for x in dd.re_opt_delim.split(opts) if x]:
+            graph_phrase(t,t.add_node(mid,'option'),opt)
+        return mid
+    except AttributeError:
+        pass
+
+    return None
 
 ####
 ## SEQUENCE PHRASES
@@ -961,7 +988,7 @@ def graph_action_clause(t,pid,phrase):
 
             # if there is a conjunction add a 'and' node and append the 2nd action
             if aw2:
-                aid = t.add_node(aid,'and')
+                aid = t.add_node(aid,'conjunction',value='and',itype="action")
                 acs.append((aw2,act2))
 
             # graph the action(s)

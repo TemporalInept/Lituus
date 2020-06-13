@@ -661,10 +661,20 @@ re_rather_than_apc = re.compile(
 )
 
 ## MODAL PHRASES
-# (700.2) modal phrases have two or more options in a bulleted list & have the form
+# (700.2) modal phrases i.e. Charming Prince have two or more options in a bulleted
+# list & have the form
 #  choose [number] —(•[choice])+
-re_modal_check = re.compile(r"xa<choose> nu<([^>]+)> —•")
-re_modal_phrase = re.compile(r"xa<choose> nu<([^>]+)> —([^\.]+\.?$)")
+# And, 700.2d defines modal spells allowing players to the same mode more than
+# once, these will have the phrase “You may choose the same mode more than once.”
+# See Mystic Confluence and have the form:
+# choose [operator]? [number]. [Instructions] (•[choice])+
+# Vindictive Lich is an exception where the instructions differ and the number
+# includes an operator
+re_modal_check = re.compile(r"xa<choose> nu<([^>]+)>.+•")
+re_modal_phrase = re.compile(r"^xa<choose> nu<([^>]+)> —([^\.]+)\.?$")
+re_modal_phrase_instr = re.compile(
+    r"^xa<choose> (?:op<(.)> )?nu<([^>]+)>\. ([^•]+) ([^\.]+)\.?$"
+)
 re_opt_delim = re.compile(r" ?•")
 
 ####

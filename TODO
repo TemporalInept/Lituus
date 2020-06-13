@@ -117,7 +117,14 @@ we can use list_util to splice [etb-continuous, ... ,effect, ..., status-unless]
 
 212. action clause is too broad and will graph phrases that are not action clauses
 
-215. see Harbinger of Tides - has an 'if' mid clause (action clause) Saproling Symbiosis is the same
+215. see Harbinger of the Tides - has an 'if' mid clause (action clause) Saproling Symbiosis is the same
+ │   └─as-though:0
+ │     └─action:1
+ │       ├─thing:1
+ │       │ └─it:0 (type=lituus-object)
+ │       └─have:0
+ │         └─action-params:1 (tograph=kw<flash> cn<if> xp<you> xa<pay> {2} xl<more> pr<to> ka<cast> xo<it>)
+
 
 216. should we graph "then if" as if-then structure?
 
@@ -178,3 +185,7 @@ would the second be better?
  permanent
   -suffix value=s
   -charateristics value=creature
+
+239. See Hanweir Garrison, do we need support for "that are" ... in graph_thing
+
+240. Vindictive Lich is being parsed as modal due to the way triggered-abilities are handled. "choose one or more." is graphed as the triggered effect and the remainder is graphed as the triggered instructions
