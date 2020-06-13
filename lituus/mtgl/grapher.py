@@ -13,8 +13,8 @@ In a top down manner graphs increasinly smaller 'chunks' of mtgl (markup text).
 
 #__name__ = 'grapher'
 __license__ = 'GPLv3'
-__version__ = '0.1.3'
-__date__ = 'May 2020'
+__version__ = '0.1.4'
+__date__ = 'June 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'

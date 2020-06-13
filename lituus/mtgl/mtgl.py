@@ -12,8 +12,8 @@ Defines regexes,strings and helper functions used in the mtgl format
 
 # __name__ = 'mtgl'
 __license__ = 'GPLv3'
-__version__ = '0.1.7'
-__date__ = 'May 2020'
+__version__ = '0.1.8'
+__date__ = 'June 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'

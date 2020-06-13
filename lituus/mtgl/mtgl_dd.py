@@ -75,6 +75,7 @@ re_kw_line = re.compile(
 #  [cost]: [effect]. [Instructions]?
 # NOTE: knowing where effect and instructions split is difficult. For now we
 #  are assuming the last sentence if present are instructions
+# TODO: have to add check for bullet for now have it in grapher
 re_act_check = re.compile(r"(?<!\"[^\"]+):")
 re_act_line = re.compile(r"^(.+?): (.+?)(?:\. ([^.]+))?\.?$")
 
