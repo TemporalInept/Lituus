@@ -677,6 +677,17 @@ re_modal_phrase_instr = re.compile(
 )
 re_opt_delim = re.compile(r" ?•")
 
+### LEVELER PHRASES
+# (710.2a) (NOTE: the form as specified in 710.2a has [Abilities] [P/T] whereas
+# the oracle text has [P/T] [Abilities]
+# Level lines consist of one or more level clauses each having the form:
+#  •[level symbol] [P/T]? [Abilities]
+re_lvl_up_check = re.compile(r"^•xo<level>")
+re_lvl_up_lvl = re.compile(
+    r"^xo<level> nu<([^>]+)>(\+|-)(?:nu<([^>]+)>)?"
+     r"(?: xr<p/t val=(\d+/\d+)>)?(?: (.+))?$"
+)
+
 ####
 ## LITUUS PHRASE TYPES
 ####

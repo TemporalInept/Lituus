@@ -365,7 +365,6 @@ re_modal_blt = re.compile(r"\.•")
 re_lvl_up = re.compile(r"^(level up {[^\n]+})\n")
 re_lvl_blt = re.compile(r"\n(?=level)")
 
-
 ####
 ## BEGIN MTGL REG EX
 ####

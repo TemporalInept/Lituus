@@ -143,7 +143,7 @@ def graph_line(t,pid,line,ctype=None):
     #  112.3b Activated = of the form cost:effect,instructions.
     #  112.3c Triggered = of the form tgr condition, effect. instructions &
     #  112.3d static = none of the above
-    if dd.re_act_check.search(line): graph_activated(t,pid,line)
+    if _activated_check_(line): graph_activated(t,pid,line)
     elif dd.re_tgr_check.search(line): graph_triggered(t,pid,line)
     else:
         # only the first call from graph() will include a ctype. If there
@@ -205,7 +205,7 @@ def graph_phrase(t,pid,line,i=0):
     :param i: iteration count to avoid infinite rcursion
     """
     # check for activated/triggered ability first
-    if dd.re_act_check.search(line): graph_activated(t,pid,line)
+    if _activated_check_(line): graph_activated(t,pid,line)
     elif dd.re_tgr_check.search(line): graph_triggered(t,pid,line)
     else:
         # then check for replacement and apc before continuing
@@ -213,6 +213,7 @@ def graph_phrase(t,pid,line,i=0):
         if graph_replacement_effects(t,pid,line): return
         if graph_apc_phrases(t,pid,line): return
         if dd.re_modal_check.search(line): return graph_modal_phrase(t,pid,line)
+        if dd.re_lvl_up_check.search(line): return graph_lvl_up_phrase(t,pid,line)
         if dd.re_sequence_check.search(line): return graph_sequence_phrase(t,pid,line)
         if graph_condition_phrase(t,pid,line): return
         if graph_option_phrase(t,pid,line): return
@@ -750,6 +751,33 @@ def graph_modal_phrase(t,pid,line):
     return None
 
 ####
+## LEVELER
+####
+
+def graph_lvl_up_phrase(t,pid,line):
+    """
+    graphs the leveler phrase in line
+    :param t: the tree
+    :param pid: the parent id
+    :param line: text to graph
+    :return: node id of the leveler subtree or None
+    """
+    lid = None
+    try:
+        lid = t.add_node(pid,'leveler')
+        for lvl in [x for x in dd.re_opt_delim.split(line) if x]:
+            ep1,_,ep2,pt,ab = dd.re_lvl_up_lvl.search(lvl).groups()
+            lvid=t.add_node(
+                lid,'level',symbol="{}{}".format(ep1,'+' if not ep2 else "-"+ep2)
+            )
+            if pt: t.add_node(lvid,'p/t',value=pt)
+            if ab: graph_phrase(t,t.add_node(lvid,'ability'),ab)
+        return lid
+    except AttributeError:
+        if lid: t.del_node(lid)
+        return None
+
+####
 ## SEQUENCE PHRASES
 ####
 
@@ -1203,3 +1231,6 @@ def _twi_split_(txt):
         return txt[:i-1],txt[i:]
     except AttributeError:
         raise lts.LituusException(lts.EPTRN,"Not a twi clause")
+
+def _activated_check_(line):
+    return dd.re_act_check.search(line) and not dd.re_lvl_up_check.search(line)
