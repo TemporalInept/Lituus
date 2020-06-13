@@ -462,13 +462,15 @@ kw_param_template = {
 
 # keyword or lituus action clause - starts with a keyword but may contain a
 # preceding thing clause [thing]? [conditional] action word [parameters]
+# TODO: added xc (lituus characteristics) to the action term(s) have to monitor
+#  for negative effects (only 'own' and 'control' should be considered
 re_anded_action_clause = re.compile(
     r"^(?:([^,|^\.]+) )?"
-    r"([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))? and "
-    r"([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+    r"([xk][ac]<\w+(?: [^>]+)?>)(?: ([^.]+))? and "
+    r"([xk][ac]<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
 )
 re_action_clause = re.compile(
-    r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+    r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?([xk][ac]<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
 )
 re_ply_conditional = re.compile(
     r"^([^,|^\.]*?) ?(cn<[^.]+>)?$"
