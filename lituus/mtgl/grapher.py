@@ -1002,17 +1002,13 @@ def graph_action_clause(t,pid,phrase):
     :param phrase: the text to graph
     :return: the node id
     """
+    # look for 'traditional' action claues first i.e. they have an action word
     try:
         # determine if there is a conjunction of actions or a singleton action
         thing = cnd = aw1 = act1 = aw2 = act2 = None
         m = dd.re_anded_action_clause.search(phrase)
         if m: thing,aw1,act1,aw2,act2 = m.groups()
-        else:
-            m = dd.re_action_clause.search(phrase)
-            if m: thing,cnd,aw1,act1 = m.groups()
-            else:
-                t.add_node(pid,'ungraphed-ac',tograph=phrase)
-                return None # TODO: this covers up improperly passed phrases
+        else: thing,cnd,aw1,act1 = dd.re_action_clause.search(phrase).groups()
 
         # set up nid and aid as None
         nid = aid = None
@@ -1024,7 +1020,7 @@ def graph_action_clause(t,pid,phrase):
                 nid = t.add_node(pid,cnd)
                 aid = t.add_node(nid,'action')
             else: aid = t.add_node(pid,'action')
-            if thing: graph_thing(t, aid, thing)
+            if thing: graph_thing(t,aid,thing)
 
             # if there is a conjunction add a 'and' node and append the 2nd action
             if aw2:
@@ -1044,6 +1040,20 @@ def graph_action_clause(t,pid,phrase):
             return None
         else:
             return aid
+    except AttributeError:
+        pass
+
+    # then check for player own/control
+    aid = None
+    try:
+        ply,poss,clause = dd.re_action_ply_poss.search(phrase).groups()
+        aid = t.add_node(pid,'action')
+        graph_thing(t,aid,ply)
+        awid = t.add_node(aid,poss)
+        graph_phrase(t,awid,clause)
+        return aid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(aid)
     except AttributeError:
         pass
 
