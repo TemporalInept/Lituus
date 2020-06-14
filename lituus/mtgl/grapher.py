@@ -38,6 +38,10 @@ def graph(dcard):
     t = mtgt.MTGTree(dcard['name'])
     parent = t.root
 
+    # check for empty oracle texts and return the empty tree
+    # TODO: what about split cards where one side has no text?
+    if dcard['tag'] == '': return t
+
     # do we have a split card?
     if '//' in dcard['name']:
         a,b = dcard['name'].split(' // ')
@@ -1006,7 +1010,9 @@ def graph_action_clause(t,pid,phrase):
         else:
             m = dd.re_action_clause.search(phrase)
             if m: thing,cnd,aw1,act1 = m.groups()
-            else: return None # TODO: this covers up improperly passed phrases
+            else:
+                t.add_node(pid,'ungraphed-ac',tograph=phrase)
+                return None # TODO: this covers up improperly passed phrases
 
         # set up nid and aid as None
         nid = aid = None

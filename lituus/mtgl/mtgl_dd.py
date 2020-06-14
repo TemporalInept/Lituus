@@ -465,13 +465,26 @@ kw_param_template = {
 # preceding thing clause [thing]? [conditional] action word [parameters]
 # TODO: added xc (lituus characteristics) to the action term(s) have to monitor
 #  for negative effects (only 'own' and 'control' should be considered
+#re_anded_action_clause = re.compile(
+#    r"^(?:([^,|^\.]+) )?"
+#    r"((?:xa|ka|xc)<\w+(?: [^>]+)?>)(?: ([^.]+))? and "
+#    r"((?:xa|ka|xc)<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+#)
+#re_action_clause = re.compile(
+#    r"^(?<!ka)(?:(.*?) )?(?:cn<([^>]*?)> )?"
+#    r"((?:xa|ka|xc)<[^>]+>)"
+#    r"(?: ([^.]+))?\.?$"
+#)
+# TODO: xc was having negative impacts
 re_anded_action_clause = re.compile(
     r"^(?:([^,|^\.]+) )?"
-    r"([xk][ac]<\w+(?: [^>]+)?>)(?: ([^.]+))? and "
-    r"([xk][ac]<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+    r"((?:xa|ka)<\w+(?: [^>]+)?>)(?: ([^.]+))? and "
+    r"((?:xa|ka)<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
 )
 re_action_clause = re.compile(
-    r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?([xk][ac]<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+    r"^(?:(.+) )?(?:cn<([^>]+)> )?"
+    r"((?:xa|ka)<[^>]+>)"
+    r"(?: ([^.]+))?\.?$"
 )
 re_ply_conditional = re.compile(
     r"^([^,|^\.]*?) ?(cn<[^.]+>)?$"
