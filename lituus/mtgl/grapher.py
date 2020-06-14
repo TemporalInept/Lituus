@@ -216,12 +216,16 @@ def graph_phrase(t,pid,line,i=0):
         # TODO: can we make a check for these?
         if graph_replacement_effects(t,pid,line): return
         if graph_apc_phrases(t,pid,line): return
-        if dd.re_modal_check.search(line): return graph_modal_phrase(t,pid,line)
-        if dd.re_lvl_up_check.search(line): return graph_lvl_up_phrase(t,pid,line)
-        if dd.re_sequence_check.search(line): return graph_sequence_phrase(t,pid,line)
+        if dd.re_modal_check.search(line):
+            if graph_modal_phrase(t,pid,line): return
+        if dd.re_lvl_up_check.search(line):
+            if graph_lvl_up_phrase(t,pid,line): return
+        if dd.re_sequence_check.search(line):
+            if graph_sequence_phrase(t,pid,line): return
         if graph_condition_phrase(t,pid,line): return
         if graph_option_phrase(t,pid,line): return
-        if dd.re_act_clause_check.search(line): return graph_action_clause(t,pid,line)
+        if dd.re_act_clause_check.search(line):
+            if graph_action_clause(t,pid,line): return
 
         # TODO: at this point how to continue: could take each sentence if more than
         #  one and graph them as phrase and if only sentence, graph each clause (i.e.
@@ -1030,7 +1034,8 @@ def graph_action_clause(t,pid,phrase):
             # graph the action(s)
             for aw,act in acs:
                 awid = t.add_node(aid,mtgltag.tag_val(aw))
-                if act: t.add_node(awid,'action-params',tograph=act)
+                #if act: t.add_node(awid,'action-params',tograph=act)
+                if act: graph_action(t,awid,mtgltag.tag_val(aw),act)
         except lts.LituusException as e:
             if e.errno == lts.EPTRN:
                 if nid: t.del_node(nid)
@@ -1104,9 +1109,6 @@ def graph_thing(t,pid,clause):
 
         # and return the thing node id
         return eid
-    except KeyError:
-        print(clause)
-        raise
     except AttributeError:
         pass
 
@@ -1167,6 +1169,19 @@ def graph_duration(t,pid,clause):
     except AttributeError:
         pass
     return None
+
+def graph_action(t,pid,aw,param):
+    """
+    graphs the action consisting of action word aw and its parameters
+    :param t: the tree
+    :param pid: parent id to graph under
+    :param aw: the action word
+    :param param: paremeters
+    :return: the graphed action node or None
+    """
+    # starting with mtg defined keyword actions
+    if aw == 'exile': return _graph_exile_(t,pid,param) # 701.11
+    return t.add_node(pid,'action-params',tograph=param)
 
 ####
 ## PRIVATE FUNCTIONS
@@ -1261,3 +1276,17 @@ def _twi_split_(txt):
 
 def _activated_check_(line):
     return dd.re_act_check.search(line) and mtgl.BLT not in line
+
+####
+## ACTIONS
+####
+
+## KEYWORD ACTIONS
+
+def _graph_exile_(t,pid,phrase):
+    # 701.11 "to exile an object" and (Rule 406)
+    # try to graph param as a Thing
+    try:
+        return graph_thing(t,pid,phrase)
+    except lts.LituusException:
+        return t.add_node(pid,'action-params',tograph=phrase)
