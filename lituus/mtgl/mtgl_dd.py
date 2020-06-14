@@ -470,7 +470,10 @@ kw_param_template = {
 #   [player] [own|control] [clause]
 #  will also be treated as action clause. NOTE: IOT not match "you control" and
 #  the like, requires at least one character following the own/control tag
-re_action_clause_check = re.compile(r"")
+# TODO: this is not a perfect check but will cut out most none action clauses
+re_act_clause_check = re.compile(
+    r"((?:xa|ka)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
+)
 re_anded_action_clause = re.compile(
     r"^(?:([^,|^\.]+) )?"
      r"((?:xa|ka)<[^>]+>)(?: ([^.]+))? and ((?:xa|ka)<[^>]+>)(?: ([^.]+))?\.?$"
@@ -481,10 +484,9 @@ re_action_clause = re.compile(
     r"(?: ([^.]+))?\.?$"
 )
 re_action_ply_poss = re.compile(
-    r"^((?:xq<[^>]+> )?xp<[^>]+>) "
+    r"^((?:xq<[^>]+> )?(?:xs<[^>]+> )?xp<[^>]+>) "
      r"xc<(own|control)(?: suffix=s)?>(?: ([^\.]+))\.?$"
 )
-#re_ply_conditional = re.compile(r"^([^,|^\.]*?) ?(cn<[^.]+>)?$")
 
 # 701.2 activate [ability] [condition]?
 #  NOTE: ability may include quanitifiers

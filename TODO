@@ -169,3 +169,5 @@ would the second be better?
 
 241. Need a path function in mtgt: find the path from s to t, determine if t is in a path
 from s
+
+242. Bronze Bombshell - thing clause consists of "a player other than Bronze Bombshell's owner" - won't be graphed as thing

@@ -221,7 +221,7 @@ def graph_phrase(t,pid,line,i=0):
         if dd.re_sequence_check.search(line): return graph_sequence_phrase(t,pid,line)
         if graph_condition_phrase(t,pid,line): return
         if graph_option_phrase(t,pid,line): return
-        if graph_action_clause(t,pid,line): return
+        if dd.re_act_clause_check.search(line): return graph_action_clause(t,pid,line)
 
         # TODO: at this point how to continue: could take each sentence if more than
         #  one and graph them as phrase and if only sentence, graph each clause (i.e.
