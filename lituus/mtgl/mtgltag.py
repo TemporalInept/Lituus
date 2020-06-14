@@ -12,8 +12,8 @@ Defines functions to work with mtgl tags
 
 #__name__ = 'mtgltag'
 __license__ = 'GPLv3'
-__version__ = '0.1.4'
-__date__ = 'April 2020'
+__version__ = '0.1.5'
+__date__ = 'June 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -50,6 +50,9 @@ re_mtg_sym = re.compile(r"^({[0-9wubrgscpxytqe\/]+})+$",flags=re.M|re.I)
 # TODO: allow for presence of '+' or '-'
 re_mtg_ms = re.compile(r"{([0-9wubrgscpxyz\/]+)}",flags=re.I)
 
+# lyoyalty symbol = [(+|-)?number]
+re_mtg_loy_sym = re.compile(r"^\[([\+|−]?)([0-9x]+)\]$")
+
 # match a mana string i.e. 1 or more mana symbols and nothing else
 re_mtg_mstring = re.compile(r"^({([0-9wubrgscpx\/]+)})+$",flags=re.M|re.I)
 
@@ -61,16 +64,6 @@ re_mtg_phy_ms = re.compile(r"{[wubrg]\/p}",flags=re.I)
 # one operator preceding the digit(s))
 # TODO: doesn't take into account mana 'objects' with other parameters
 re_mana_tag = re.compile(r"xo<mana( num=(≥?\d+|[xyz]))?>")
-
-# match a planeswalker loyalty cost
-# Note this will also match:
-#  a. invalid tokens with multiple x's i.e. nu<xxx>
-#  b. it will match p/t i.e nu<1>/nu<1>
-#  c. it will match singleton numbers i.e. 'where', 'nu<x>', 'is'
-# also Note:
-#  the negative is not a minus sign or long hyphen it is unicode 2212. Not sure
-#  if this is just mtgjson's format or not
-re_loy_cost = re.compile(r"[\+−]?nu<[\d|x]+>")
 
 #### TAGS
 
@@ -93,8 +86,9 @@ re_tag_attrs = re.compile(
 
 MTGL_TAG = 0 # tag
 MTGL_SYM = 1 # mtg symbol
-MTGL_WRD = 2 # a word
-MTGL_PUN = 3 # a punctutation
+MTGL_LOY = 2 # loyalty symbol (i.e [1+])
+MTGL_WRD = 3 # a word
+MTGL_PUN = 4 # a punctutation
 def tkn_type(tkn):
     """
      returns the type of token
@@ -103,6 +97,7 @@ def tkn_type(tkn):
     """
     if is_tag(tkn): return MTGL_TAG
     if is_mtg_symbol(tkn): return MTGL_SYM
+    if is_loyalty_symbol(tkn): return MTGL_LOY
     if tkn in [':',mtgl.CMA,mtgl.PER,mtgl.DBL,mtgl.SNG,mtgl.BLT,mtgl.HYP]:
         return MTGL_PUN
     return MTGL_WRD
@@ -112,6 +107,9 @@ def is_mtg_symbol(tkn): return re_mtg_sym.match(tkn) is not None
 
 # match a mtg mana string
 def is_mana_string(tkn): return re_mtg_mstring.match(tkn) is not None
+
+# match a loyalty symbol
+def is_loyalty_symbol(tkn): return re_mtg_loy_sym.match(tkn) is not None
 
 # match a generic mana tag
 def is_mana(tkn):

@@ -1192,11 +1192,16 @@ def _subcost_(t,pid,sc):
     :param sc: subcost phrase
     :return:
     """
-    # subcost could be a mtg symbol (a mana string, E, T or Q) or it could be
-    # an action clause i.e. a action word like sacrifice or pay and the parameters
-    # or a conjunction i.e. or of symbols
+    # subcost could be a loyality symbole ([+1]), a mtg symbol (a mana string, E,
+    # T or Q) or it could be an action clause i.e. a action word like sacrifice
+    # or pay and the parameters or a conjunction i.e. or of symbols
+    ttype = mtgltag.tkn_type(sc)
+
     sid = t.add_node(pid,'subcost')
-    if mtgltag.tkn_type(sc) == mtgltag.MTGL_SYM: t.add_attr(sid,'value',sc)
+    if ttype == mtgltag.MTGL_SYM: t.add_attr(sid,'value',sc)
+    elif ttype == mtgltag.MTGL_LOY:
+        op,num = mtgltag.re_mtg_loy_sym.search(sc).groups()
+        t.add_attr(sid,'value',"{}{}".format(op if op else '',num))
     elif dd.re_is_act_clause.search(sc): graph_clause(t,sid,sc)
     else: t.add_attr(sid,'anamolie',sc)
 
@@ -1233,4 +1238,4 @@ def _twi_split_(txt):
         raise lts.LituusException(lts.EPTRN,"Not a twi clause")
 
 def _activated_check_(line):
-    return dd.re_act_check.search(line) and not dd.re_lvl_up_check.search(line)
+    return dd.re_act_check.search(line) and mtgl.BLT not in line

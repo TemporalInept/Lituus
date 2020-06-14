@@ -21,7 +21,7 @@ __status__ = 'Development'
 
 import regex as re
 import lituus as lts
-import lituus.mtgl.mtgl as mtgl
+import lituus.mtgl.mtglMay as mtgl
 import lituus.mtgl.lexer as lexer
 import lituus.mtgl.mtgltag as mtgltag
 

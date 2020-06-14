@@ -181,4 +181,7 @@ would the second be better?
 
 239. See Hanweir Garrison, do we need support for "that are" ... in graph_thing
 
-240. Vindictive Lich is being parsed as modal due to the way triggered-abilities are handled. "choose one or more." is graphed as the triggered effect and the remainder is graphed as the triggered instructions
+240. Vindictive Lich is not being parsed as modal due to the way triggered-abilities are handled. "choose one or more." is graphed as the triggered effect and the remainder is graphed as the triggered instructions
+
+241. Need a path function in mtgt: find the path from s to t, determine if t is in a path
+from s
