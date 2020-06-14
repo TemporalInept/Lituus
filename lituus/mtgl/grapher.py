@@ -728,12 +728,18 @@ def graph_modal_phrase(t,pid,line):
         mid = t.add_node(pid,'modal')
         cid = t.add_node(mid,'choose',number=num)
         for opt in [x for x in dd.re_opt_delim.split(opts) if x]:
-            graph_phrase(t,t.add_node(mid,'option'),opt)
+            # have to split the opt on semi-colon to see if there are option
+            # instructions
+            oid = t.add_node(mid,'option')
+            opt = opt.split(" ; ")
+            graph_phrase(t,oid,opt[0])
+            if len(opt) > 1:
+                graph_phrase(t,t.add_node(oid,'option-instruction'),opt[1])
         return mid
     except AttributeError:
         pass
 
-    # then with instructions (700.2d)
+    # then with instructions (700.2d) on choices
     try:
         # unpack the phrase
         op,num,instr,opts = dd.re_modal_phrase_instr.search(line).groups()
@@ -1196,7 +1202,7 @@ def _subcost_(t,pid,sc):
     # T or Q) or it could be an action clause i.e. a action word like sacrifice
     # or pay and the parameters or a conjunction i.e. or of symbols
     ttype = mtgltag.tkn_type(sc)
-
+    #TODOL need to flesh out
     sid = t.add_node(pid,'subcost')
     if ttype == mtgltag.MTGL_SYM: t.add_attr(sid,'value',sc)
     elif ttype == mtgltag.MTGL_LOY:

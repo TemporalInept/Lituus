@@ -2,8 +2,6 @@
 
 16. Can we just standarize a regular expression to catch anamolies in function word_hacks?
 
-37. planeswalkers
-
 40. Need to write save deck functionality
 
 41. Have to see how Companion will be treated i.e. as one of the 100 or an extra
@@ -81,27 +79,16 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 191. only during restrictions...
 
-193. move apc related to seperate function
-
 194. Having issues no with Gobling Bangchuckers. The line itself has two conditionals
  and would require splitting the line in order to graph correctly
 
-195. Until a search function is implemented in the tree could we use list_utils to search in the list of nodes (tree.nodes)?
- For example in Seachrome coast the depth first order of nodes is 
-['root', 'static-line:0', 'replacement-effect:0', 'etb-continuous:0', 'permanent:0', 'ungraphed-sentence:0', 'effect:0', 'conditional:0', 'status-unless:0', 'status:0', 'condition:0', 'ungraphed-sentence:1', 'activated-ability:0', 'activated-cost:0', 'ungraphed-sentence:2', 'activated-effect:0', 'ungraphed-sentence:3']
-we can use list_util to splice [etb-continuous, ... ,effect, ..., status-unless] and identifies cards that enter the battlefield tapped unless ...  
-
 201. In Xenagos, God of Revels, xenagos is not being self-reffed  because xenagos is a planeswalker subtype because of Xenagos, the Reveler
-
-202. Finish rather-than clauses 
 
 203. Six except for/by exceptions (Flame Sweep, Akron Legionnaire, Keldon Firebombers, Inspire Awe)
 
 205. except it are more clauses than full phrases
 
 207. Bound by Moonsilver has an example of a or chain for action words in first non keyword line and an example of a 'could' clause
-
-208. for modes see Atalya, Samite Master, need to break these up as clauses and graph each clause as a 'mode'
 
 210. add ability in mtgt to print from a given node as well
 
@@ -117,7 +104,6 @@ we can use list_util to splice [etb-continuous, ... ,effect, ..., status-unless]
  │       │ └─it:0 (type=lituus-object)
  │       └─have:0
  │         └─action-params:1 (tograph=kw<flash> cn<if> xp<you> xa<pay> {2} xl<more> pr<to> ka<cast> xo<it>)
-
 
 216. should we graph "then if" as if-then structure?
 
@@ -158,8 +144,6 @@ would the second be better?
   allow the line to fail until we can implement clauses and break into comma separated
 
 233. For APC, have to look at condition, this spells costs X less to cast see Discountinuity from Core 2021
-
-234. In Charming Prince, the triggered instruction only applies to the last mode/option. What can we do about this
 
 235. Anafenza, the Foremost xq<a> ob<card characteristics=creature> cn<not> pr<on> xq<the> zn<battlefield>
  o have to figure out how to break down/separate the thing from the qualifying clause

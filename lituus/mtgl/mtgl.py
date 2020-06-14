@@ -357,9 +357,12 @@ re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
 # reminder text including the space preceding
 re_reminder = re.compile(r" ?\(.+?\)")
 
-# modify modal spells IOT facilitate graphing, find occurrences of ".•",
-# period is used by the grapher to delimit clauses
+# modify modal spells IOT facilitate graphing:
+#  1. find occurrences of ".•", as period is used by the grapher to delimit clauses
+#  2. Charming Prince as instructions that apply to the last mode but are treated
+#   as instructions to the triggered abiility
 re_modal_blt = re.compile(r"\.•")
+re_modal_lvl_instr_fix = re.compile(r"(?<=.+ •.+)(\. )")
 
 # modify level ups IOT facilitate graphing.
 re_lvl_up = re.compile(r"^(level up {[^\n]+})\n")
@@ -1512,12 +1515,15 @@ re_uninit_attr = re.compile(
 ####
 
 # phrases of the form OBJECT with ATTR
+# TODO: if there is an 'and' it screws everything up see Soul Separator
 re_obj_with_attr = re.compile(
     r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
     r" pr<with> "
     r"xr<(p/t|everything|text|name|mana cost|cmc|power|toughness|"
-    r"color_identity|color|type) val=(.)(\w*?)>"
+     r"color_identity|color|type) val=(.)(\w*?)>"
+    #r"xr<(p/t|everything|text|name|mana cost|cmc|power|toughness|"
+    # r"color_identity|color|type) val=(.)(\w*?)>"
 )
 
 # phrases of the form OBJECT with KEYWORD (assumes chained keywords)

@@ -21,7 +21,7 @@ __status__ = 'Development'
 
 import regex as re
 import lituus as lts
-import lituus.mtgl.mtglMay as mtgl
+import lituus.mtgl.mtgl as mtgl
 import lituus.mtgl.lexer as lexer
 import lituus.mtgl.mtgltag as mtgltag
 
@@ -63,7 +63,9 @@ def preprocess(name,txt):
        5. english number words 0 - 10 are replacing with corresponding ints,
        6. Some reminder text is removed, some paraenthesis is removed
        7. replace any 'non' w/out hypen to 'non-' w/ hyphen
-       8. Replace occurrences of ".•" with " •" in modal spells
+       8. Modify modal spells
+         a. Replace occurrences of ".•" with " •" in modal spells
+         b. if present, replace the last occurrence of ". " with a semi-colon
        9. Fix level ups removing newlines inside of the the level descriptions
         and prefixing each level description with a bullet
     :param name: name of this card
@@ -79,7 +81,9 @@ def preprocess(name,txt):
     ntxt = mtgl.re_mana_remtxt.sub(r"\1",ntxt)                               # 6
     ntxt = mtgl.re_reminder.sub("",ntxt)                                     # 6
     ntxt = mtgl.re_non.sub(r"non-\1",ntxt)                                   # 7
-    ntxt = mtgl.re_modal_blt.sub(r" •",ntxt)                                 # 8
+    if '•' in ntxt:                                                          # 8
+        ntxt = mtgl.re_modal_blt.sub(r" •",ntxt)
+        ntxt = mtgl.re_modal_lvl_instr_fix.sub(r" ; ",ntxt)
     if mtgl.re_lvl_up.search(ntxt): ntxt = fix_lvl_up(ntxt)                  # 9
     return ntxt
 
@@ -382,7 +386,7 @@ def powt(txt):
     :return: modified tagged txt with power and toughness and p/t chains tagged
     """
     ntxt = mtgl.re_base_pt.sub(r"\1",txt)                    # base power & toughness
-    ntxt = mtgl.re_single_pt.sub(r"ch<p/t>",ntxt)            # solitary power & toughness
+    #ntxt = mtgl.re_single_pt.sub(r"ch<p/t>",ntxt)            # solitary power & toughness
     ntxt = mtgl.re_pt_chain.sub(lambda m: _ptchain_(m),ntxt) # p/t or p/t chain
     return ntxt
 
@@ -525,8 +529,10 @@ def merge(txt):
     :param txt: tagged, chained and reified txt with deconflicted status
     :return: objects with following critieria merged
     """
-    ntxt = mtgl.re_obj_with_attr.sub(lambda m: _obj_with__(m),txt)
-    ntxt = mtgl.re_obj_with_kw.sub(lambda m: _obj_with__(m),ntxt)
+    # TODO: removing with attributes substitution check for negative effects
+    #  P.S. if readded, don't forget to replace with_kw txt to ntxt
+    #ntxt = mtgl.re_obj_with_attr.sub(lambda m: _obj_with__(m),txt)
+    ntxt = mtgl.re_obj_with_kw.sub(lambda m: _obj_with__(m),txt)
     return ntxt
 
 def postprocess(txt):
