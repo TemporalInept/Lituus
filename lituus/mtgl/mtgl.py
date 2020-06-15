@@ -508,12 +508,15 @@ op = {
     "equal to":EQ,
     "equal":EQ,
     "at least":GE,
-    "plus":'+'
-    ,"minus":'-',
+    "plus":'+',
+    "minus":'-',
+    "exactly":EEQ,
+
 }
 op_keys = [
     "less than or equal to","no more than","greater than or equal to","less than",
     "more than","greater than","equal to","equal","at least","plus","minus",
+    "exactly",
 ]
 re_op = re.compile(r"\b({})\b".format('|'.join(list(op_keys))))
 
