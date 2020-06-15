@@ -775,6 +775,15 @@ re_action_unless = re.compile(
 re_status_unless = re.compile(r"^(?:st|xs])<(\w+)> cn<unless> ([^,|\.]+)\.?$")
 re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$")
 
+####
+## CLAUSES
+####
+
+# prepositions
+
+# with/without can have one of the following forms
+#  1. with [keyword] - ability clause i.e. with flying
+re_prep_with_ability_check = re.compile(r"^kw<(\w+)>$")
 
 ####
 ## TEST SPACE
@@ -790,18 +799,17 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$"
 #  possession-clause has the form: [player] [owns|controls]
 #  with-clayse has the form with [qualifiers]
 # IOT to merge everything under the thing
-# NOTE: if possession-clause is present, the whole is returned and must further
-#  be 'parsed' with re_possessor_clause
+# NOTE: if possession-clause and/or preposition-clause are present, the whole is
+#  returned & must further be parsed w/ re_possessor_clause or re_preposition_clause
 re_qst = re.compile(
     r"^(?:nu<([^>]+)> )?(?:xq<([^>]+)> )?(?:(?:xs|st)<([^>]+)> )?"
     r"(?:((?:ob|xp|xo|zn)<[^>]+>) (and|or|and/or) (?:xq<([^>]+)> )?)?"
     r"((?:ob|xp|xo|zn)<[^>]+>)"
     r"(?: ((?:xq<[^>]+> )?xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>))?"
-    r"(?: pr<with> ([^\.]+))?\.?$"
+    r"(?: (pr<[^>]+> [^\.]+))?\.?$"
 )
-re_possession_clause = re.compile(
-    r"((?:xq<\w*?> )?xp<\w+>) xc<(own|control)(?: suffix=s)?>"
-)
+re_possession_clause = re.compile(r"((?:xq<\w*?> )?xp<\w+>) xc<(\w+)(?: suffix=s)?>")
+re_preposition_clause = re.compile(r"^pr<(\w+)> (.+)$")
 
 # finds consecutive things to determine if they are possessive
 #  TODO: need to determine if we only need to check for a suffix of "'s" or "r"

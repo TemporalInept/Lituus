@@ -284,7 +284,7 @@ word_hacks = {
     "nautiluses":"nautiluss","octopuses":"octopuss","sphinxes":"sphinxs",
     "thalakoses":"thalokoss",
     # acronyms
-    "end of turn":"eot","converted mana cost":"cmc",
+    "end of turn":"eot","converted mana cost":"cmc","converted mana costs":"cmcs",
     # suffixes/tense/possessive (ing,ed,s,'s)
     "activating":"activateing","activated":"activateed","activation":"activateion",
     "creating":"createing","created":"createed",

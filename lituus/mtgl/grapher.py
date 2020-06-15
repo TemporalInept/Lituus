@@ -240,18 +240,25 @@ def graph_phrase(t,pid,line,i=0):
 
 def graph_clause(t,pid,clause):
     """
-    Graphs a clause, a keyword action orientated chunk of words
+    Graphs a clause, a chunk of words
     :param t: the tree
     :param pid: parent of the line
     :param clause: the text to graph
     """
-    #try:
-    #    pre,ka,post = dd.re_keyword_action_clause.search(clause).groups()
-    #    return
-    #except AttributeError:
-    #    pass
-    #if dd.re_ka_clause.search(clause): graph_action_clause(t,pid,clause)
-    t.add_attr(pid,'ungraphed',clause)
+    # try preposition clauses first
+    try:
+        prep,clause = dd.re_preposition_clause.search(clause).groups()
+        if prep == 'with' or prep == 'without':
+            # with/without can be 1) keyword - ability related, 2) mete-characteristic
+            # i.e. color, name - attributes/characteactristics
+            prid = t.add_node(pid,prep)
+            if dd.re_prep_with_ability_check.match(clause):
+                return t.add_node(prid,'ability',value=mtgltag.tag_val(clause))
+
+    except AttributeError:
+        raise RuntimeError
+    return None
+    #t.add_attr(pid,'ungraphed',clause)
 
 def graph_replacement_effects(t,pid,line):
     """
@@ -1097,7 +1104,7 @@ def graph_thing(t,pid,clause):
             _graph_object_(t,iid,th2)
         else: _graph_object_(t,eid,th2)
 
-        # graph any trailing posession clauses and.or prepositions
+        # graph any trailing posession clauses
         if poss:
             try:
                 ply,wd = dd.re_possession_clause.search(poss).groups()
@@ -1105,7 +1112,14 @@ def graph_thing(t,pid,clause):
                 graph_thing(t,t.add_node(eid,lbl),ply)
             except AttributeError:
                 raise lts.LituusException(lts.EPTRN,"{} is not a possession".format(ctlr))
-        if pr: graph_phrase(t,t.add_node(eid,'with'),pr)
+
+        # graph any trailing preposition clauses
+        if pr:
+            # TODO: for testing only we pull out the word and clause
+            # before passing to graph_clause IOT tag the clause if it
+            # cannot be graphed as "tograph"
+            wd,clause = dd.re_preposition_clause.search(pr).groups()
+            if not graph_clause(t,eid,pr): t.add_node(eid,wd,tograph=pr)
 
         # and return the thing node id
         return eid
@@ -1195,15 +1209,23 @@ def _graph_object_(t,pid,obj):
     :param obj: the object to untag and graph
     :return: ?
     """
-    # untag the obj and create an object node using the tag value as the label
-    # if it is a non mtg object, add an attribute specifying the type, then
-    # pull any references out the attributes and put in the main node
+    # untag the obj
     tid,val,attr = mtgltag.untag(obj)
-    oid = t.add_node(pid,val)
-    if tid != 'ob': t.add_attr(oid,'type',mtgl.TID[tid])
-    if 'ref' in attr:
-        t.add_attr(oid,'ref-id',attr['ref'])
-        del attr['ref']
+    oid = None
+
+    # if we have an mtg object, label the object with the tag value (i.e. card)
+    # and add any references as attributes to the node. If we have a non-mtg object
+    # i.e. player
+    # TODO: what to do about plural suffixes
+    if tid == 'ob':
+        oid = t.add_node(pid,val)
+        if 'ref' in attr:
+            t.add_attr(oid,'ref-id',attr['ref'])
+            del attr['ref']
+    else:
+        oid = t.add_node(pid,mtgl.TID[tid],value=val)
+
+    # add any (remaining) attributes as subnodes
     for k in attr: t.add_node(oid,k,value=attr[k])
     return oid
 
@@ -1233,13 +1255,13 @@ def _subcost_(t,pid,sc):
     # T or Q) or it could be an action clause i.e. a action word like sacrifice
     # or pay and the parameters or a conjunction i.e. or of symbols
     ttype = mtgltag.tkn_type(sc)
-    #TODOL need to flesh out
+    #TODO need to flesh out
     sid = t.add_node(pid,'subcost')
     if ttype == mtgltag.MTGL_SYM: t.add_attr(sid,'value',sc)
     elif ttype == mtgltag.MTGL_LOY:
         op,num = mtgltag.re_mtg_loy_sym.search(sc).groups()
         t.add_attr(sid,'value',"{}{}".format(op if op else '',num))
-    elif dd.re_is_act_clause.search(sc): graph_clause(t,sid,sc)
+    elif dd.re_is_act_clause.search(sc): graph_phrase(t,sid,sc)#graph_clause(t,sid,sc)
     else: t.add_attr(sid,'anamolie',sc)
 
 # find the stem of the action word
