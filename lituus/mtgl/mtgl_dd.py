@@ -785,8 +785,15 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$"
 #  1. with [keyword] - ability clause i.e. with flying
 #  2. with [attribute] - instantiated attribute i.e. xr<cmc val=≥6>
 #   has the form x<attribute_name val=OPVALUE.
+#  3. with [a|number] [counter] on it/them
 re_prep_with_ability = re.compile(r"^kw<(\w+)>$")
 re_prep_with_attribute = re.compile(r"^xr<(\w+) val=(.)([^>]+)>$")
+re_prep_with_counters = re.compile(
+    r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>) pr<on> xo<[^>]+>$"
+)
+
+# from - applies to zones
+re_prep_from = re.compile(r"")
 
 ####
 ## TEST SPACE

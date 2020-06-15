@@ -264,8 +264,18 @@ def graph_clause(t,pid,clause):
                     t.add_node(prid,'attribute'),m.group(1),value=m.group(2)+m.group(3)
                 )
 
+            # check for counters
+            m = dd.re_prep_with_counters.search(clause)
+            if m:
+                # TODO: will throw error if there is not type attribute
+                return t.add_node(
+                    prid,
+                    'counter',
+                    quantity=m.group(1),
+                    type=mtgltag.tag_attr(m.group(2))['type']
+                )
     except AttributeError:
-        raise RuntimeError
+        pass
     return None
     #t.add_attr(pid,'ungraphed',clause)
 

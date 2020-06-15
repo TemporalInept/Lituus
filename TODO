@@ -172,4 +172,14 @@ from s
 
 242. Bronze Bombshell - thing clause consists of "a player other than Bronze Bombshell's owner" - won't be graphed as thing
 
-245.
+245. See Rimescale Dragon
+     │ ├─with:0
+     │ └─with:1 (tograph=pr<with> xo<ctr type=ice suffix=s> pr<on> xo<them>)
+     └─do:0
+       └─action-params:2 (tograph=cn<not> ka<untap> sq<during> xq<their> xp<controller suffix=s'> ts<untap suffix=s>)
+ where is the empty with coming from
+ 
+246. See Rimescale Dragon (see above) the dont is not being translated to a do-not node which highlights a bigger issuer where an action word is immediately followed by a conditional
+
+247. See Rally the Horde - the last exile is a status ("If the last card exiled isn't a land card, repeat this process"
+

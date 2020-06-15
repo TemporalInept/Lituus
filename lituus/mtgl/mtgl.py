@@ -397,7 +397,7 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 
 lituus_qualifiers = [
     'less','greater','lesser','highest','lowest','more','back','many','random',
-    'also','maximum',
+    'also','maximum','most',
 ]
 qualifier_tkns = '|'.join(lituus_qualifiers)
 re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
