@@ -1328,6 +1328,12 @@ def _graph_qualifying_clause_(t,pid,clause):
                 # TODO: will throw error if there is not type attribute
                 q,ct = m.group(1),m.mtgltag.tag_attr(m.group(2))['type']
                 t.add_node(t.add_node(pid,pw),'counter',quantity=q,type=ct)
+
+            # check with quantifier name
+            m = dd.re_prep_with_attribute2.search(pcls)
+            if m:
+                xq,attr = m.groups()
+                return t.add_node(pid,pw,quantifier=xq,attribute=attr)
         elif pw == 'from':
             return graph_thing(t,t.add_node(pid,pw),pcls) # always a zone
         elif pw == 'of':

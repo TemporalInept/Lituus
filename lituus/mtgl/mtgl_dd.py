@@ -823,11 +823,14 @@ re_consecutive_things = re.compile(
 #  2. with [attribute] - instantiated attribute i.e. xr<cmc val=≥6>
 #   has the form x<attribute_name val=OPVALUE.
 #  3. with [a|number] [counter] on it/them
+#  4. with [quantifier] [attribute] Isperia the Inscrutable attribute is name
+#   this is the same as of attribute
 re_prep_with_ability = re.compile(r"^kw<(\w+)>$")
 re_prep_with_attribute = re.compile(r"^xr<(\w+) val=(.)([^>]+)>$")
 re_prep_with_counters = re.compile(
     r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>) pr<on> xo<[^>]+>$"
 )
+re_prep_with_attribute2 = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")
 
 # from - applies to zones can take on multiple forms
 # from [quantifier] [zone]

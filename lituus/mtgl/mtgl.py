@@ -907,7 +907,7 @@ re_single_pt = re.compile(r"ch<power> and ch<toughness>")
 # lituus characteristics
 # TODO: keep control, own?
 lituus_characteristics = [
-    'life total','control','own','life','hand size','devotion'
+    'life total','control','own','life','hand size','devotion','odd','even',
 ]
 lituus_ch_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
