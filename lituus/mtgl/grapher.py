@@ -252,8 +252,17 @@ def graph_clause(t,pid,clause):
             # with/without can be 1) keyword - ability related, 2) mete-characteristic
             # i.e. color, name - attributes/characteactristics
             prid = t.add_node(pid,prep)
-            if dd.re_prep_with_ability_check.match(clause):
-                return t.add_node(prid,'ability',value=mtgltag.tag_val(clause))
+
+            # check for ability
+            m = dd.re_prep_with_ability.search(clause)
+            if m: return t.add_node(prid,'ability',value=m.group(1))
+
+            # check for attribute
+            m = dd.re_prep_with_attribute.search(clause)
+            if m:
+                return t.add_node(
+                    t.add_node(prid,'attribute'),m.group(1),value=m.group(2)+m.group(3)
+                )
 
     except AttributeError:
         raise RuntimeError

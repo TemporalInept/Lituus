@@ -822,7 +822,6 @@ TYPE_PLANESWALKER = 3
 TYPE_INSTANT_SORCERY = 4
 TYPE_CREATURE = 5
 
-
 def subtype(st):
     """
     given a subtype st returns the type
@@ -843,7 +842,6 @@ def subtype(st):
         return TYPE_CREATURE
     else:
         raise lts.LituusException(lts.EMTGL, "{} is not a subtype".format(st))
-
 
 def subtype_of(st, mt):
     """
@@ -879,7 +877,7 @@ char_tkns = '|'.join(
     sub_characteristics
 )
 re_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|\b)".format(char_tkns)
+    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|\b)".format(char_tkns)
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
@@ -912,7 +910,7 @@ lituus_characteristics = [
 ]
 lituus_ch_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(lituus_ch_tkns)
+    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(lituus_ch_tkns)
 )
 
 ####
@@ -925,7 +923,7 @@ zones = [
 ]
 zn_tkns = '|'.join(zones)
 re_zone = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(zn_tkns)
+    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(zn_tkns)
 )
 
 ####
