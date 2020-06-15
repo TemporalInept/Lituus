@@ -1013,7 +1013,6 @@ def graph_action_clause(t,pid,phrase):
     :param phrase: the text to graph
     :return: the node id
     """
-    print("GOT pid={} phrase={}".format(pid,phrase))
     # look for 'traditional' action claues first i.e. they have an action word
     try:
         # determine if there is a conjunction of actions or a singleton action

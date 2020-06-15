@@ -12,7 +12,7 @@ Defines functions to work with mtgl tags
 
 #__name__ = 'mtgltag'
 __license__ = 'GPLv3'
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 __date__ = 'June 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -72,15 +72,15 @@ re_mana_tag = re.compile(r"xo<mana( num=(≥?\d+|[xyz]))?>")
 re_tag = re.compile(
     r"(\w\w)"                             # 2 char tag-id       
     r"<"                                  # opening bracket
-    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬→'\(\)]+?)"  # tag value (w/ optional starting not)
-    r"( [\w\+/\-=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)*"  # 0 or more attributes delimited by space
+    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬⇔→'\(\)]+?)"  # tag value (w/ optional starting not)
+    r"( [\w\+/\-=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*"  # 0 or more attributes delimited by space
     r">"                                  # closing bracket
 )
 
 # extract the attribute pairs
 re_tag_attrs = re.compile(
     r"(\w+="                       # alphanumeric property and =
-    r"[\w\+/\-¬∧∨⊕⋖⋗≤≥≡→'\(\)]+)" # prop-value
+    r"[\w\+/\-¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+)" # prop-value
     r"[ >]"                        # followed by space or closing bracket
 )
 

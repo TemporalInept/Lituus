@@ -12,8 +12,8 @@ Defines a data dictionary (ala "templates") for mtg oracle text
 
 #__name__ = 'mtgl_dd'
 __license__ = 'GPLv3'
-__version__ = '0.0.2'
-__date__ = 'May 2020'
+__version__ = '0.0.3'
+__date__ = 'June 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -54,8 +54,8 @@ re_aw_line = re.compile(r"^aw<([\w-]+)> — (.+?)\.$")
 # one or more comma separated keyword claues
 re_kw_line = re.compile(
     r"^"
-    r"((?:ob|xr)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*> )?"
+    r"((?:ob|xr)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡v→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*> )?"
     r"(kw<[\w-]+>)"
 )
 
@@ -123,8 +123,8 @@ re_grant_ability = re.compile(
 # NOTE: some keywords have commas in their parameters - have to make sure we
 #  split the clauses only if the comma is followed by another keyword
 re_kw_clause = re.compile(
-    r"((?:xr|ob)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)? ?"
+    r"((?:xr|ob)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)? ?"
     r"kw<([\w-]+)>"
     r"(?: ?(.*?))"
     r"(?=(?:$|\.$|, (?:kw|ob)))"
@@ -148,7 +148,7 @@ re_kw_empty = re.compile('')
 re_kw_thing = re.compile(
     r"(?:pr<for>|sq<an?>)? ?"
     r"((?:ob|xp|xo)"
-    r"<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+    r"<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
 )
 
 # keywords of the form KEYWORD N
@@ -176,8 +176,8 @@ re_kw_cost2 = re.compile(
 
 # 702.6 Equip ([quality])? [cost] cost may be nonstandard
 re_kw_equip = re.compile(
-    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)? ?"
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)? ?"
     r"(?:((?:{[0-9wubrgscpx\/]+})+)|—(.+?)$)"
 )
 
@@ -193,22 +193,22 @@ re_kw_equip = re.compile(
 #  three qualities are captured as optional
 re_kw_from_qual = re.compile(
     r"(?:pr<from> "
-    r"((?:ob|xr)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))?"
+    r"((?:ob|xr)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>))?"
     r"(?:, pr<from> "
-    r"((?:ob|xr)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))?"
+    r"((?:ob|xr)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>))?"
     r"(?:,? and pr<from> "
-    r"((?:ob|xr)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>))?"
+    r"((?:ob|xr)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>))?"
 )
 
 # Partner (702.123) has no parameters but Partner with (702.123f) does
 # Partner with [NAME]
 re_kw_partner = re.compile(
     r"(?:pr<with> "
-    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
     r")?"
 )
 
@@ -217,8 +217,8 @@ re_kw_partner = re.compile(
 # TODO: cannot get rid of the 'hidden group' in the cost portion
 re_kw_splice = re.compile(
     r"pr<onto> "
-    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)"
+    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
     r"(?: ((?:{[0-9wubrgscpx\/]+})+)|—(.+?)$)"
 )
 
@@ -816,10 +816,10 @@ re_preposition_clause = re.compile(r"^pr<(\w+)> (.+)$")
 #   in the first thing. If so, can clean up that pattern
 re_consecutive_things = re.compile(
     r"^(?:xq<(\w+?)> )?"
-    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>) "
-    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡→'\('\)]+?)*>)$"
+    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>) "
+    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)$"
 )
 
 # duration/times/sequences
