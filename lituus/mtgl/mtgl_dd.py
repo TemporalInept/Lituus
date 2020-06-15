@@ -792,8 +792,11 @@ re_prep_with_counters = re.compile(
     r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>) pr<on> xo<[^>]+>$"
 )
 
-# from - applies to zones
-re_prep_from = re.compile(r"")
+# from - applies to zones can take on multiple forms
+# from [quantifier] [zone]
+# from [quanitifer]? player['s]? zone
+# may be followed by a modifier i.e. xm<face amplifier=down>
+#re_prep_from = re.compile(r"")
 
 ####
 ## TEST SPACE

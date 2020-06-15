@@ -248,10 +248,10 @@ def graph_clause(t,pid,clause):
     # try preposition clauses first
     try:
         prep,clause = dd.re_preposition_clause.search(clause).groups()
+        prid = t.add_node(pid,prep)
         if prep == 'with' or prep == 'without':
             # with/without can be 1) keyword - ability related, 2) mete-characteristic
             # i.e. color, name - attributes/characteactristics
-            prid = t.add_node(pid,prep)
 
             # check for ability
             m = dd.re_prep_with_ability.search(clause)
@@ -274,6 +274,9 @@ def graph_clause(t,pid,clause):
                     quantity=m.group(1),
                     type=mtgltag.tag_attr(m.group(2))['type']
                 )
+        elif prep == 'from':
+            # a zone
+            return graph_thing(t,prid,clause)
     except AttributeError:
         pass
     return None

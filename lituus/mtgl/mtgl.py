@@ -1200,7 +1200,7 @@ re_cost_except = re.compile(  # Drought and Brutal Suppresion and Valiant Change
 # tags are incorrectly tagged i.e. Cumulative Upkeep which is tagged as
 # cummulative ts<upkeep>
 misstag = {
-    "ch<will> of xq<the> council":"aw<will_of_the_council>",
+    "ch<will> pr<of> xq<the> council":"aw<will_of_the_council>",
     "xq<first> strike":"kw<first_strike>",
     "cumulative ts<upkeep>":"kw<cumlative_upkeep>",
     "xo<commander> kw<ninjutsu>":"kw<commander ninjutsu>",
