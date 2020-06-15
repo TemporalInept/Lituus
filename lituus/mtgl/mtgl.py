@@ -585,6 +585,7 @@ named_counters = [
 ]
 named_ctr_tkns = '|'.join(named_counters)
 re_named_ctr = re.compile(r"\b({}) counter(s)?\b".format(named_ctr_tkns))
+re_coin_ctr = re.compile(r"\bxo<(coin)> counter(s)?\b") # TODO quick hack
 iko_counters = [
     'deathtouch','double strike','first strike','flying','hexproof',
     'indestructible','lifelink','menace','reach','trample','vigilance',

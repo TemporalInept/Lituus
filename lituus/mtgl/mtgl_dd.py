@@ -781,25 +781,8 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$"
 
 # prepositions
 
-# with/without can have one of the following forms
-#  1. with [keyword] - ability clause i.e. with flying
-#  2. with [attribute] - instantiated attribute i.e. xr<cmc val=≥6>
-#   has the form x<attribute_name val=OPVALUE.
-#  3. with [a|number] [counter] on it/them
-re_prep_with_ability = re.compile(r"^kw<(\w+)>$")
-re_prep_with_attribute = re.compile(r"^xr<(\w+) val=(.)([^>]+)>$")
-re_prep_with_counters = re.compile(
-    r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>) pr<on> xo<[^>]+>$"
-)
-
-# from - applies to zones can take on multiple forms
-# from [quantifier] [zone]
-# from [quanitifer]? player['s]? zone
-# may be followed by a modifier i.e. xm<face amplifier=down>
-#re_prep_from = re.compile(r"")
-
 ####
-## TEST SPACE
+## THINGS
 ####
 
 # TODO:
@@ -819,10 +802,10 @@ re_qst = re.compile(
     r"(?:((?:ob|xp|xo|zn)<[^>]+>) (and|or|and/or) (?:xq<([^>]+)> )?)?"
     r"((?:ob|xp|xo|zn)<[^>]+>)"
     r"(?: ((?:xq<[^>]+> )?xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>))?"
-    r"(?: (pr<[^>]+> [^\.]+))?\.?$"
+    r"(?: (pr<(?:with|without|from|of)> [^\.]+))?\.?$"
 )
 re_possession_clause = re.compile(r"((?:xq<\w*?> )?xp<\w+>) xc<(\w+)(?: suffix=s)?>")
-re_preposition_clause = re.compile(r"^pr<(\w+)> (.+)$")
+re_preposition_clause = re.compile(r"^pr<(with|without|from|of)> (.+)$")
 
 # finds consecutive things to determine if they are possessive
 #  TODO: need to determine if we only need to check for a suffix of "'s" or "r"
@@ -834,6 +817,33 @@ re_consecutive_things = re.compile(
     r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
      r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)$"
 )
+
+# with/without can have one of the following forms
+#  1. with [keyword] - ability clause i.e. with flying
+#  2. with [attribute] - instantiated attribute i.e. xr<cmc val=≥6>
+#   has the form x<attribute_name val=OPVALUE.
+#  3. with [a|number] [counter] on it/them
+re_prep_with_ability = re.compile(r"^kw<(\w+)>$")
+re_prep_with_attribute = re.compile(r"^xr<(\w+) val=(.)([^>]+)>$")
+re_prep_with_counters = re.compile(
+    r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>) pr<on> xo<[^>]+>$"
+)
+
+# from - applies to zones can take on multiple forms
+# from [quantifier] [zone]
+# from [quanitifer]? player['s]? zone
+# may be followed by a modifier i.e. xm<face amplifier=down>
+#re_prep_from = re.compile(r"")
+
+# of - two forms
+#  1. [quanitifier] [attribute]
+#  2. objects i.e. Heartstone
+re_prep_of_attribute = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")
+re_prep_of_object = re.compile(r"^((?:ob|zn|xp|xo)<[^>]+>)$")
+
+####
+## TEST SPACE
+####
 
 # duration/times/sequences
 # [sequence|quantifier] [phase]

@@ -240,47 +240,18 @@ def graph_phrase(t,pid,line,i=0):
 
 def graph_clause(t,pid,clause):
     """
-    Graphs a clause, a chunk of words
+    Graphs a clause, a keyword action orientated chunk of words
     :param t: the tree
     :param pid: parent of the line
     :param clause: the text to graph
     """
-    # try preposition clauses first
-    try:
-        prep,clause = dd.re_preposition_clause.search(clause).groups()
-        prid = t.add_node(pid,prep)
-        if prep == 'with' or prep == 'without':
-            # with/without can be 1) keyword - ability related, 2) mete-characteristic
-            # i.e. color, name - attributes/characteactristics
-
-            # check for ability
-            m = dd.re_prep_with_ability.search(clause)
-            if m: return t.add_node(prid,'ability',value=m.group(1))
-
-            # check for attribute
-            m = dd.re_prep_with_attribute.search(clause)
-            if m:
-                return t.add_node(
-                    t.add_node(prid,'attribute'),m.group(1),value=m.group(2)+m.group(3)
-                )
-
-            # check for counters
-            m = dd.re_prep_with_counters.search(clause)
-            if m:
-                # TODO: will throw error if there is not type attribute
-                return t.add_node(
-                    prid,
-                    'counter',
-                    quantity=m.group(1),
-                    type=mtgltag.tag_attr(m.group(2))['type']
-                )
-        elif prep == 'from':
-            # a zone
-            return graph_thing(t,prid,clause)
-    except AttributeError:
-        pass
-    return None
-    #t.add_attr(pid,'ungraphed',clause)
+    #try:
+    #    pre,ka,post = dd.re_keyword_action_clause.search(clause).groups()
+    #    return
+    #except AttributeError:
+    #    pass
+    #if dd.re_ka_clause.search(clause): graph_action_clause(t,pid,clause)
+    t.add_attr(pid,'ungraphed',clause)
 
 def graph_replacement_effects(t,pid,line):
     """
@@ -1102,7 +1073,6 @@ def graph_thing(t,pid,clause):
     :param clause: the clause
     :return: the player node id
     """
-    # TODO: if we have just a self ref, use self as the value
     # TODO: should we combine suffix with the stem if present?
     # could have a qst phrase or a possesive phrase have to check both
     try:
@@ -1138,11 +1108,16 @@ def graph_thing(t,pid,clause):
 
         # graph any trailing preposition clauses
         if pr:
-            # TODO: for testing only we pull out the word and clause
-            # before passing to graph_clause IOT tag the clause if it
-            # cannot be graphed as "tograph"
-            wd,clause = dd.re_preposition_clause.search(pr).groups()
-            if not graph_clause(t,eid,pr): t.add_node(eid,wd,tograph=pr)
+            # TODO: Still under testting - we will have cases here that are not
+            #  part of a larger thing
+            quid = None
+            try:
+                quid = t.add_node(eid,'qualifying-clause')
+                _graph_qualifying_clause_(t,quid,pr)
+            except lts.LituusException:
+                # on error, deleting the qualifying clause node before raising
+                t.del_node(quid)
+                raise
 
         # and return the thing node id
         return eid
@@ -1321,6 +1296,57 @@ def _twi_split_(txt):
 
 def _activated_check_(line):
     return dd.re_act_check.search(line) and mtgl.BLT not in line
+
+def _graph_qualifying_clause_(t,pid,clause):
+    """
+    Graphs a qualifying clause (as part of a thing)
+    :param t: the tree
+    :param pid: parent of the line
+    :param clause: the text to graph
+    """
+    try:
+        pw,pcls = dd.re_preposition_clause.search(clause).groups()
+        if pw == 'with' or pw == 'without':
+            # check for ability
+            m = dd.re_prep_with_ability.search(pcls)
+            if m:
+                return t.add_node(t.add_node(pid,pw),'ability',value=m.group(1))
+
+            # check for attribute
+            m = dd.re_prep_with_attribute.search(pcls)
+            if m:
+                # TODO: for now just recombining the op and the value, but
+                #  maybe do something else later
+                name,op,val = m.groups()
+                return t.add_node(
+                    t.add_node(t.add_node(pid,pw),'attribute'),name,value=op+val
+                )
+
+            # check for counters
+            m = dd.re_prep_with_counters.search(pcls)
+            if m:
+                # TODO: will throw error if there is not type attribute
+                q,ct = m.group(1),m.mtgltag.tag_attr(m.group(2))['type']
+                t.add_node(t.add_node(pid,pw),'counter',quantity=q,type=ct)
+        elif pw == 'from':
+            return graph_thing(t,t.add_node(pid,pw),pcls) # always a zone
+        elif pw == 'of':
+            # attributes
+            m = dd.re_prep_of_attribute.search(pcls)
+            if m:
+                xq,attr = m.groups()
+                return t.add_node(pid,pw,quantifier=xq,attribute=attr)
+
+            # objects
+            m = dd.re_prep_of_object.search(pcls)
+            if m:
+                return graph_thing(t,t.add_node(pid,pw),m.group(1))
+        #else:
+        #    return t.add_node(pid,pw,tograph=pcls)
+        #raise lts.LituusException(lts.EPTRN,"Not a qualifying clause {}".format(clause))
+        return t.add_node(pid,pw,tograph=pcls)
+    except AttributeError:
+        raise lts.LituusException(lts.EPTRN,"Not a qualifying clause {}".format(clause))
 
 ####
 ## ACTIONS

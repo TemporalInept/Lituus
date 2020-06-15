@@ -208,6 +208,7 @@ def tag_counters(txt):
     """ tags counters (markers) in txt returning tagged txt """
     ntxt = mtgl.re_pt_ctr.sub(r"xo<ctr type=\1\2/\3\4>",txt)    # tag p/t counters
     ntxt = mtgl.re_named_ctr.sub(lambda m: _named_ctr_(m),ntxt) # named counters
+    ntxt = mtgl.re_coin_ctr.sub(lambda m: _named_ctr_(m),ntxt)  # coin counter TODO
     ntxt = mtgl.re_iko_ctr.sub(r"xo<ctr type=\1>",ntxt)         # & IKO counters
     return ntxt
 
