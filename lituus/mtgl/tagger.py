@@ -12,7 +12,7 @@ Tags MTG oracle text in the mtgl format
 
 #__name__ = 'tagger'
 __license__ = 'GPLv3'
-__version__ = '0.1.6'
+__version__ = '0.1.7'
 __date__ = 'June 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'

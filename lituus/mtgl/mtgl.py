@@ -12,7 +12,7 @@ Defines regexes,strings and helper functions used in the mtgl format
 
 # __name__ = 'mtgl'
 __license__ = 'GPLv3'
-__version__ = '0.1.8'
+__version__ = '0.1.9'
 __date__ = 'June 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -900,9 +900,7 @@ re_op_num_lo = re.compile(r"op<(.)> nu<([^>]+)> xo<(\w+)>")
 
 # exception cases for three cards Void Winnower, Gyruda and Isperia
 # TODO: could we add 'different' here as well, perhaps some other quantifiers
-re_attr_val_wd = re.compile(
-    r"(?:xq<a> )?xc<(odd|even)> xr<([^>]+)( suffix=s)?>"
-)
+re_attr_val_wd = re.compile(r"(?:xq<a> )?xc<(odd|even)> xr<([^>]+)( suffix=s)?>")
 
 # meta 'attribute' value see Repeal where no operator is present
 re_attr_val_nop = re.compile(r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)> nu<(\d+|x|y|z)>")
