@@ -373,6 +373,7 @@ def pre_chain(txt):
     ntxt = powt(txt)                                                    # 1
     ntxt = mtgl.re_meta_attr.sub(lambda m: _metachar_(m),ntxt)          # 2.a
     ntxt = mtgl.re_attr_val.sub(r"xr<\1 val=\2\3>",ntxt)                # 2.b
+    ntxt = mtgl.re_attr_val_wd.sub(r"xr<\2 val=≡\1>",ntxt)              # 2.b
     ntxt = mtgl.re_attr_val_nop.sub(r"xr<\1 val=≡\2>",ntxt)             # 2.c
     ntxt = mtgl.re_attr_colored.sub(r"xr<color val=\1ed>",ntxt)         # 2.d
     ntxt = mtgl.re_hanging_subtype.sub(lambda m: _insert_type_(m),ntxt) # 3
