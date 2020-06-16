@@ -1218,6 +1218,7 @@ misstag = {
     "cumulative ts<upkeep>":"kw<cumlative_upkeep>",
     "xo<commander> kw<ninjutsu>":"kw<commander ninjutsu>",
     "xo<level> pr<up>":"kw<level_up>","split xq<second>":"kw<split_second>",
+    "pr<as> long pr<as>":"sq<as_long_as>",
 }
 misstag_tkns = '|'.join(misstag.keys())
 re_misstag = re.compile(r"({})".format(misstag_tkns))
@@ -1241,8 +1242,8 @@ re_at_prep2 = re.compile(r"(tp<at>)(?=[^,]+?\.)")
 # no nu<1> needs to be retagged
 re_no_one = re.compile(r"no nu<1>")
 
-# as long as should be a sequence
-re_as_long_as = re.compile(r"pr<as> long pr<as>")
+# pw<with> nu<0> needs to be retagged (only 2 Hindervines & Muraganda Petroglyphs)
+re_with_null = re.compile(r"pr<with> nu<0>")
 
 ####
 ## SUFFICES

@@ -314,15 +314,14 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_at_prep.sub(r"pr<at>",ntxt)
     ntxt = mtgl.re_at_prep2.sub(r"pr<at>",ntxt)
 
-    # a few carsd (7) will have the phrase 'no nu<1>' - make this xp<no_one>
+    # a few cards (7) will have the phrase 'no nu<1>' - make this xp<no_one>
+    # and (2) will have the phrase "with no" - make these pr<without>
     ntxt = mtgl.re_no_one.sub(r"xp<no_one>",ntxt)
+    ntxt = mtgl.re_with_null.sub(r"pr<without>",ntxt)
 
-    # "as long as" will be tagged, pr<as> long pr<as>, make it a sequence
-    ntxt = mtgl.re_as_long_as.sub(r"sq<as_long_as>",ntxt)
-
-    # Not a deconfliction perse but to avoid conflicts 'named' is listed as
-    # an action, rewrite it here so it shows up xa<name suffix=ed> rather than
-    # xa<named>
+    # Not deconflictions perse:
+    #  to avoid conflicts 'named' is listed as an action, rewrite it here so
+    #  it shows up xa<name suffix=ed> rather than xa<named>
     ntxt = ntxt.replace("xa<named>","xa<name suffix=ed>")
 
     return ntxt
