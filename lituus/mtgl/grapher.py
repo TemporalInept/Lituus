@@ -339,7 +339,7 @@ def graph_apc_phrases(t,pid,line):
             graph_phrase(t,t.add_node(rid,'pay'),cost)
             mid = t.add_node(aid,'may')
             graph_thing(t,mid,ply)
-            graph_phrase(t,t.add_node(mid,'action'),act)
+            graph_phrase(t,t.add_node(mid,'apc-cost'),act)
             return aid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(aid)
@@ -370,7 +370,7 @@ def graph_apc_phrases(t,pid,line):
             graph_phrase(t,t.add_node(rid,'pay'),cost)
             mid = t.add_node(aid,'may')
             graph_thing(t,mid,'xp<you>')
-            graph_phrase(t,t.add_node(mid,'action'),act)
+            graph_phrase(t,t.add_node(mid,'apc-cost'),act)
             return aid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(aid)
@@ -384,7 +384,7 @@ def graph_apc_phrases(t,pid,line):
             graph_phrase(t,t.add_node(rid,'pay'),cost)
             mid = t.add_node(rid,'may')
             graph_thing(t,mid,ply)
-            graph_phrase(t,t.add_node(mid,'action'),act)
+            graph_phrase(t,t.add_node(mid,'apc-cost'),act)
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(aid)
@@ -1304,16 +1304,27 @@ def _graph_qualifying_clause_(t,pid,clause):
     :param pid: parent of the line
     :param clause: the text to graph
     """
+    # check for duals first
+    cid = None
     try:
-        pw,pcls = dd.re_preposition_clause.search(clause).groups()
+        q1,q2 = dd.re_dual_qualifying_clause.search(clause).groups()
+        cid = t.add_node(pid,'conjunction',value='and',itype='qualifying-clause')
+        _graph_qualifying_clause_(t,cid,q1)
+        _graph_qualifying_clause_(t,cid,q2)
+        return cid
+    except AttributeError:
+        if cid: t.del_node(cid)
+
+    try:
+        pw,pcls = dd.re_qualifying_clause.search(clause).groups()
         if pw == 'with' or pw == 'without':
             # check for ability
-            m = dd.re_prep_with_ability.search(pcls)
+            m = dd.re_qual_with_ability.search(pcls)
             if m:
                 return t.add_node(t.add_node(pid,pw),'ability',value=m.group(1))
 
             # check for attribute
-            m = dd.re_prep_with_attribute.search(pcls)
+            m = dd.re_qual_with_attribute.search(pcls)
             if m:
                 # TODO: for now just recombining the op and the value, but
                 #  maybe do something else later
@@ -1323,14 +1334,14 @@ def _graph_qualifying_clause_(t,pid,clause):
                 )
 
             # check for counters
-            m = dd.re_prep_with_counters.search(pcls)
+            m = dd.re_qual_with_counters.search(pcls)
             if m:
                 # TODO: will throw error if there is not type attribute
                 q,ct = m.group(1),m.mtgltag.tag_attr(m.group(2))['type']
                 t.add_node(t.add_node(pid,pw),'counter',quantity=q,type=ct)
 
             # check with quantifier name
-            m = dd.re_prep_with_attribute2.search(pcls)
+            m = dd.re_qual_with_attribute2.search(pcls)
             if m:
                 xq,attr = m.groups()
                 return t.add_node(pid,pw,quantifier=xq,attribute=attr)
@@ -1338,13 +1349,13 @@ def _graph_qualifying_clause_(t,pid,clause):
             return graph_thing(t,t.add_node(pid,pw),pcls) # always a zone
         elif pw == 'of':
             # attributes
-            m = dd.re_prep_of_attribute.search(pcls)
+            m = dd.re_qual_of_attribute.search(pcls)
             if m:
                 xq,attr = m.groups()
                 return t.add_node(pid,pw,quantifier=xq,attribute=attr)
 
             # objects
-            m = dd.re_prep_of_object.search(pcls)
+            m = dd.re_qual_of_object.search(pcls)
             if m:
                 return graph_thing(t,t.add_node(pid,pw),m.group(1))
         #else:

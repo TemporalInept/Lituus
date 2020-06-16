@@ -383,7 +383,8 @@ lituus_quantifiers = [
     'a','target','each','all','any','every','another','other','this','that is',
     'that are','that','additional','those','these','their','the','extra','first',
     'second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth',
-    'half','twice','new','single','same','next','last','opening','which',"chosen",
+    'half','twice','new','single','same','different','next','last','opening',
+    'which',"chosen",
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -890,7 +891,15 @@ re_attr_val = re.compile(
     r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)> op<([⊕⋖⋗≤≥≡])> nu<(\d+|x|y|z)>"
 )
 
+# meta 'attribute' values see Triskaidekaphobia where a lituus object preceded
+# by a number can be instantiated as an attribute. We only want vanilla lituus
+# objects, that is, they do not have an attribute list
+# NOTE: this should only be life or mana
+# TODO: may need to relook 'mana'
+re_op_num_lo = re.compile(r"op<(.)> nu<([^>]+)> xo<(\w+)>")
+
 # exception cases for three cards Void Winnower, Gyruda and Isperia
+# TODO: could we add 'different' here as well, perhaps some other quantifiers
 re_attr_val_wd = re.compile(
     r"(?:xq<a> )?xc<(odd|even)> xr<([^>]+)( suffix=s)?>"
 )

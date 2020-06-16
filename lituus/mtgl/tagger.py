@@ -364,9 +364,11 @@ def pre_chain(txt):
       b. assign values where possible to temporary attributes including c.
         those without an operator
       d. fix xr<color suffix=ed> to xr<color val=colored>
-     3) add types to hanging subtypes
-     4) modify anamolous characteristic action charactistic
-     5) align supertypes and subtypes
+     3) attributes part 2 - (stand alone lituus objects like life)
+      a. assign values where possible (Triskaidekaphobia)
+     4) add types to hanging subtypes
+     5) modify anamolous characteristic action charactistic
+     6) align supertypes and subtypes
     :param txt: txt to prechain
     :return: prechainned text
     """
@@ -376,9 +378,10 @@ def pre_chain(txt):
     ntxt = mtgl.re_attr_val_wd.sub(r"xr<\2 val=≡\1>",ntxt)              # 2.b
     ntxt = mtgl.re_attr_val_nop.sub(r"xr<\1 val=≡\2>",ntxt)             # 2.c
     ntxt = mtgl.re_attr_colored.sub(r"xr<color val=\1ed>",ntxt)         # 2.d
-    ntxt = mtgl.re_hanging_subtype.sub(lambda m: _insert_type_(m),ntxt) # 3
-    ntxt = mtgl.re_disjoint_ch.sub(r"\2 \1 \3",ntxt)                    # 4
-    ntxt = align_types(ntxt)                                            # 5
+    ntxt = mtgl.re_op_num_lo.sub(r"xr<\3 val=\1\2>",ntxt)               # 3
+    ntxt = mtgl.re_hanging_subtype.sub(lambda m: _insert_type_(m),ntxt) # 4
+    ntxt = mtgl.re_disjoint_ch.sub(r"\2 \1 \3",ntxt)                    # 5
+    ntxt = align_types(ntxt)                                            # 6
     return ntxt
 
 def powt(txt):
