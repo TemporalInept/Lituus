@@ -424,7 +424,7 @@ objects = [  # objects 109.1 NOTE target can also be an object (115.1)
 ]
 obj_tkns = '|'.join(objects)
 re_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(obj_tkns)
+    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(obj_tkns)
 )
 
 # keep suffix but check word boundary in beginning
@@ -436,7 +436,7 @@ lituus_objects = [  # lituus objects
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(lituus_obj_tkns)
+    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(lituus_obj_tkns)
 )
 
 # lituus players - keep suffix but check word boundary in beginning
@@ -445,7 +445,7 @@ lituus_players = [
 ]
 lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(lituus_ply_tkns)
+    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(lituus_ply_tkns)
 )
 
 ####
@@ -546,7 +546,7 @@ sequences = [
 ]
 seq_tkns = '|'.join(sequences)
 re_seq = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(seq_tkns)
+    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(seq_tkns)
 )
 
 ####
@@ -586,13 +586,14 @@ named_counters = [
 ]
 named_ctr_tkns = '|'.join(named_counters)
 re_named_ctr = re.compile(r"\b({}) counter(s)?\b".format(named_ctr_tkns))
-re_coin_ctr = re.compile(r"\bxo<(coin)> counter(s)?\b") # TODO quick hack
 iko_counters = [
     'deathtouch','double strike','first strike','flying','hexproof',
     'indestructible','lifelink','menace','reach','trample','vigilance',
 ]
 iko_ctr_tkns = '|'.join(iko_counters)
 re_iko_ctr = re.compile(r"\b({}) counter\b".format(iko_ctr_tkns))
+
+# two of these coin and time will have already been misstagged as xo<coin>
 
 ####
 ## ABILITY WORDS, KEYWORDS, KEYWORD ACTIONS
@@ -609,8 +610,7 @@ ability_words = [  # ability words 207.2c Updated 25-May-20 with IKO
 ]
 aw_tkns = '|'.join(ability_words)
 re_aw = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→=\w ]*)"
-    r"({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(aw_tkns)
+    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(aw_tkns)
 )
 
 keyword_actions = [  # (legal) Keyword actions 701.2 - 701.43 Updated IKO 25-May-20
@@ -623,8 +623,7 @@ keyword_actions = [  # (legal) Keyword actions 701.2 - 701.43 Updated IKO 25-May
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→=\w ]*)"
-    r"({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(kw_act_tkns)
+    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(kw_act_tkns)
 )
 
 keywords = [  # (legal) Keyword Abilties 702.2 - 702,139 Updated IKO 25-May-20
@@ -654,8 +653,7 @@ kw_tkns = '|'.join(keywords)
 re_kw = re.compile(
     # NOTE: we have to add checks for the long hyphen and end of string to
     # ensure we tag all keywords
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→=\w ]*)"
-    r"({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(kw_tkns)
+    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(kw_tkns)
 )
 
 lituus_actions = [  # words not defined in the rules but important any way
@@ -664,14 +662,14 @@ lituus_actions = [  # words not defined in the rules but important any way
     'die','spend','unspend','take','reduce','trigger','prevent','declare','have',
     'switch','assign','win','lose','tie','skip','flip','cycle','phase','become',
     'share','turn','produce','round','resolve','do','repeat','change','bid',
-    'select','reselect','begin','separate',
+    'select','reselect','begin','separate','note',
     'copy',  # will have already been tagged?
     'named',  # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→=\w ]*)({})(?=s|ing|ed|ion|:|\.|,|\s)".format(la_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|:|\.|,|\s)".format(la_tkns)
 )
 
 # because target is primarily a quantifier we will only tag the verb version
@@ -687,7 +685,7 @@ re_lituus_target_verb = re.compile(r'\btarget(s|ing|ed)\b')
 effects = ["combat damage","damage","effect"]
 eff_tkns = '|'.join(effects)
 re_effect = re.compile(
-    r"\b(?<!<[¬∧∨⊕⋖⋗≤≥≡→=\w ]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(eff_tkns)
+    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(eff_tkns)
 )
 
 ####
@@ -1204,6 +1202,14 @@ re_cost_aa = re.compile(
 re_cost_except = re.compile(  # Drought and Brutal Suppresion and Valiant Changeling
     r"xo<cost( suffix=s)?>(?= (?:xq<a> xq<additional>|by more than))"
 )
+
+# 'counters' as action vs lituus object
+# two cards Baral and Lullmage mentor have counters that is an action all others
+# are counters that put on a permanent
+# in the case of ka<counter> if it is preceded by xq<a> or a preposition (Soul
+# Diviner, Vorel) it as an object counter
+re_counters_obj = re.compile(r"ka<counter suffix=s>(?! xq<(?:target|a))")
+re_counter_obj = re.compile(r"(?<=(xq<a>|pr<[^>]+>) )(ka<counter>)")
 
 ####
 ## MISC DECONFLICTION

@@ -1321,6 +1321,14 @@ def _graph_qualifying_clause_(t,pid,clause):
             # check for ability
             m = dd.re_qual_with_ability.search(pcls)
             if m:
+                ob,kw = m.groups()
+                if ob:
+                    assert(kw == 'landwalk')
+                    attr = mtgltag.tag_attr(ob)
+                    assert('characteristics' in attr)
+                    kw = "landwalk→{}".format(
+                        mtgltag.split_align(attr['characteristics'])[1]
+                    )
                 return t.add_node(t.add_node(pid,pw),'ability',value=m.group(1))
 
             # check for attribute

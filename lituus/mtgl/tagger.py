@@ -158,13 +158,13 @@ def first_pass(txt):
       below will negatively effect the results
     """
     ntxt = mtgl.re_quantifier.sub(r"xq<\1>",txt) # tag quantifiers
-    ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)    # then nubmers
+    ntxt = mtgl.re_number.sub(r"nu<\1>",ntxt)    # then numbers
+    ntxt = tag_counters(ntxt)                    # markers
     ntxt = tag_entities(ntxt)                    # entities
     ntxt = tag_turn_structure(ntxt)              # phases & steps
     ntxt = tag_operators(ntxt)                   # operators
     ntxt = tag_english(ntxt)                     # english words
     ntxt = mtgl.re_trigger.sub(r"tp<\1>",ntxt)   # trigger preambles
-    ntxt = tag_counters(ntxt)                    # markers
     ntxt = tag_awkws(ntxt)                       # ability words, keywords & actions
     ntxt = mtgl.re_effect.sub(r"ef<\1>",ntxt)    # effects
     ntxt = tag_characteristics(ntxt)             # chars. - done after #s
@@ -208,7 +208,8 @@ def tag_counters(txt):
     """ tags counters (markers) in txt returning tagged txt """
     ntxt = mtgl.re_pt_ctr.sub(r"xo<ctr type=\1\2/\3\4>",txt)    # tag p/t counters
     ntxt = mtgl.re_named_ctr.sub(lambda m: _named_ctr_(m),ntxt) # named counters
-    ntxt = mtgl.re_coin_ctr.sub(lambda m: _named_ctr_(m),ntxt)  # coin counter TODO
+    #ntxt = mtgl.re_misstag_named_ctr
+    #ntxt = mtgl.re_coin_ctr.sub(lambda m: _named_ctr_(m),ntxt)  # coin counter TODO
     ntxt = mtgl.re_iko_ctr.sub(r"xo<ctr type=\1>",ntxt)         # & IKO counters
     return ntxt
 
@@ -300,6 +301,13 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_cost_num.sub(r"xa<cost\1>",ntxt)
     ntxt = mtgl.re_cost_aa.sub(r"xa<cost\1>",ntxt)
     ntxt = mtgl.re_cost_except.sub(r"xa<cost\1>",ntxt)
+
+    # deconflict counters as object or action (only 2 cards have counters where
+    # it is an action Baral and Lullmage Mentor)
+    # TODO: xq<a> ka<counter>
+    # TODO: pr<> ka<counter>
+    ntxt = mtgl.re_counters_obj.sub(r"xo<ctr suffix=s>",ntxt)
+    ntxt = mtgl.re_counter_obj.sub(r"xo<ctr>",ntxt)
 
     # take care of misstagged
     ntxt = mtgl.re_misstag.sub(lambda m: mtgl.misstag[m.group(1)],ntxt)

@@ -825,13 +825,16 @@ re_consecutive_things = re.compile(
 # Qualifying clauses for exapmple with flying
 
 # with/without can have one of the following forms
-#  1. with [keyword] - ability clause i.e. with flying
+#  1. with [keyword] - ability clause i.e. with flying (have to check for a
+#   preceding object to catch landwalks)
+#  TODO: this won't catch nonbasic landwalks like Livonya Silone
 #  2. with [attribute] - instantiated attribute i.e. xr<cmc val=≥6>
 #   has the form x<attribute_name val=OPVALUE.
 #  3. with [a|number] [counter] on it/them
 #  4. with [quantifier] [attribute] Isperia the Inscrutable attribute is name
 #   this is the same as of attribute
-re_qual_with_ability = re.compile(r"^kw<(\w+)>$")
+#re_qual_with_ability = re.compile(r"^kw<(\w+)>$")
+re_qual_with_ability = re.compile(r"^(?:(ob<[^>]+>) )?kw<(\w+)>$")
 re_qual_with_attribute = re.compile(r"^xr<(\w+) val=(.)([^>]+)>$")
 re_qual_with_counters = re.compile(
     r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>) pr<on> xo<[^>]+>$"
