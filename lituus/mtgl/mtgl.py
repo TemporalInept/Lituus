@@ -513,7 +513,6 @@ op = {
     "plus":'+',
     "minus":'-',
     "exactly":EEQ,
-
 }
 op_keys = [
     "less than or equal to","no more than","greater than or equal to","less than",
@@ -521,6 +520,7 @@ op_keys = [
     "exactly",
 ]
 re_op = re.compile(r"\b({})\b".format('|'.join(list(op_keys))))
+re_upto_op = re.compile(r"pr<up_to>(?= nu<[^>]+>)")
 
 # finds number or greater, less, more or fewer
 re_num_op = re.compile(r"(nu<(?:\d+|x|y|z)>) or (greater|less|more|fewer)")
@@ -1606,6 +1606,9 @@ is_forms = {
 }
 is_forms_tkns = '|'.join(list(is_forms.keys()))
 re_is2tag = re.compile(r"\b({})\b".format(is_forms_tkns))
+
+# OPERATOR NUMBER
+re_op_num = re.compile(r"op<(.)> nu<([^>]+)>")
 
 ####
 ## PHRASING

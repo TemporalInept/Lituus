@@ -790,8 +790,10 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$"
 # NOTE:
 #  quantifier should always be the
 #  thing will always be card
+# quanitifier may be after the number see Scarab Feast
 re_qtz = re.compile(
     r"^xq<([^>]+)> pr<(\w+)> (?:nu<([^>]+)> )?(ob<[^>]+>) ([^,|^\.]+zn<[^>]+>)$"
+    #r"^(xq<([^>]+)> )?pr<(\w+)> (?:nu<([^>]+)> )?(xq<([^>]+)> )?(ob<[^>]+>) ([^,|^\.]+zn<[^>]+>)$"
 )
 
 # find phrases of the form
@@ -811,11 +813,12 @@ re_qst = re.compile(
     r"(?:((?:ob|xp|xo|zn)<[^>]+>) (and|or|and/or) (?:xq<([^>]+)> )?)?"
     r"((?:ob|xp|xo|zn)<[^>]+>)"
     r"(?: ((?:xq<[^>]+> )?xp<[^>]+> xc<[^>]+>))?" # TODO: will this grab invalid xc values
-    r"(?: ((?:pr|xq)<(?:with|without|from|of|that_is|that_are)> [^\.|^,]+))?\.?$"
+    r"(?: ((?:pr|xq)<(?:with|without|from|of|that_is|that_are|other_than)> "
+     r"[^\.|^,]+))?\.?$"
 )
 re_possession_clause = re.compile(r"((?:xq<\w*?> )?xp<[^>]+>) xc<([^>]+)(?: suffix=s)?>")
 re_qualifying_clause = re.compile(
-    r"^(?:pr|xq)<(with|without|from|of|in|that_is|that_are)> (.+)$"
+    r"^(?:pr|xq)<(with|without|from|of|in|that_is|that_are|other_than)> (.+)$"
 )
 re_dual_qualifying_clause = re.compile(
     r"^(pr<(?:with|without|of)> .+) "
@@ -897,6 +900,10 @@ re_qual_thatis_attribute = re.compile(r"^(cn<not> )?xr<([^>]+) val=([^>]+)>$")
 re_qual_thatis_zone = re.compile(
     r"^(?:(cn<not>) )?pr<on> (xq<[^>]+> zn<[^>]+>)$"
 )
+
+# other_than - should be an object primarily self i.e. Wormfang Drake but could
+#  be other i.e. Haunting Echos
+re_qual_otherthan_thing = re.compile(r"^(ob<[^>]+>)$")
 
 ####
 ## TEST SPACE

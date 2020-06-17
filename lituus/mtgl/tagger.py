@@ -208,8 +208,6 @@ def tag_counters(txt):
     """ tags counters (markers) in txt returning tagged txt """
     ntxt = mtgl.re_pt_ctr.sub(r"xo<ctr type=\1\2/\3\4>",txt)    # tag p/t counters
     ntxt = mtgl.re_named_ctr.sub(lambda m: _named_ctr_(m),ntxt) # named counters
-    #ntxt = mtgl.re_misstag_named_ctr
-    #ntxt = mtgl.re_coin_ctr.sub(lambda m: _named_ctr_(m),ntxt)  # coin counter TODO
     ntxt = mtgl.re_iko_ctr.sub(r"xo<ctr type=\1>",ntxt)         # & IKO counters
     return ntxt
 
@@ -326,9 +324,11 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_with_null.sub(r"pr<without>",ntxt)
 
     # Not deconflictions perse:
-    #  to avoid conflicts 'named' is listed as an action, rewrite it here so
+    #  1. to avoid conflicts 'named' is listed as an action, rewrite it here so
     #  it shows up xa<name suffix=ed> rather than xa<named>
+    #  2. occurrences of pr<up_to> nu<NUMBER> should be replaced by LE nu<NUMBER>
     ntxt = ntxt.replace("xa<named>","xa<name suffix=ed>")
+    ntxt = mtgl.re_upto_op.sub(r"op<{}>".format(mtgl.LE),ntxt)
 
     return ntxt
 
@@ -545,9 +545,6 @@ def merge(txt):
     :param txt: tagged, chained and reified txt with deconflicted status
     :return: objects with following critieria merged
     """
-    # TODO: removing with attributes substitution check for negative effects
-    #  P.S. if readded, don't forget to replace with_kw txt to ntxt
-    #ntxt = mtgl.re_obj_with_attr.sub(lambda m: _obj_with__(m),txt)
     ntxt = mtgl.re_obj_with_kw.sub(lambda m: _obj_with__(m),txt)
     return ntxt
 
@@ -576,6 +573,9 @@ def postprocess(txt):
 
     # reify turns (has to be done here after chaining of quanitifiers)
     ntxt = mtgl.re_turn_object.sub(r"\1 xo<\2>",ntxt)
+
+    # combine occurrences of OP NUMBER with OPNUMBER inside number tag
+    ntxt = mtgl.re_op_num.sub(r"nu<\1\2>",ntxt)
 
     # TODO: should we put
     #  in any order

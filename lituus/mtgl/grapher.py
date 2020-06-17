@@ -1125,7 +1125,7 @@ def graph_thing(t,pid,clause):
         if qual:
             quid = t.add_node(eid,'qualifying-clause')
             if not _graph_qualifying_clause_(t,quid,qual):
-                t.del_node(quid)
+                t.del_node(eid)
                 raise lts.LituusException(lts.EPTRN,"{} is not a qualifying".format(qual))
 
         # and return the thing node id
@@ -1334,7 +1334,9 @@ def _graph_qualifying_clause_(t,pid,clause):
     try:
         pw,pcls = dd.re_qualifying_clause.search(clause).groups()
         qid = t.add_node(pid,pw)
-        if pw == 'with' or pw == 'without':
+        if pw == 'from' or pw == 'in': return graph_thing(t,qid,pcls) # a zone
+        elif pw == 'other_than': return graph_thing(t,qid,pcls)       # an object
+        elif pw == 'with' or pw == 'without':
             # check for ability
             m = dd.re_qual_with_ability.search(pcls)
             if m:
@@ -1388,8 +1390,6 @@ def _graph_qualifying_clause_(t,pid,clause):
             # check for object (should be abilities)
             m = dd.re_qual_with_object.search(pcls)
             if m: return graph_thing(t,qid,m.group(1))
-        elif pw == 'from' or pw == 'in':
-            return graph_thing(t,qid,pcls) # always a zone
         elif pw == 'of':
             # attributes
             m = dd.re_qual_of_attribute.search(pcls)
@@ -1429,7 +1429,6 @@ def _graph_qualifying_clause_(t,pid,clause):
             m = dd.re_qual_thatis_zone.search(pcls)
             if m:
                 neg,zn = m.groups()
-                #tiid = t.add_node(pid,pw)
                 cid = None
                 if neg: cid = t.add_node(t.add_node(qid,'not'),'on')
                 else: cid = t.add_node(qid,'on')
