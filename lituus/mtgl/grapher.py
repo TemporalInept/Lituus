@@ -1316,6 +1316,8 @@ def _graph_qualifying_clause_(t,pid,clause):
         if cid: t.del_node(cid)
 
     # TODO: instead of adding the 'word' for each check, add once in beginning?
+    # TODO: have to handle cases where graph_thing fails or a hanging node will
+    #  be left behind
     try:
         pw,pcls = dd.re_qualifying_clause.search(clause).groups()
         if pw == 'with' or pw == 'without':
@@ -1400,9 +1402,7 @@ def _graph_qualifying_clause_(t,pid,clause):
 
             # player own/control
             m = dd.re_qual_of_possessive2.search(pcls)
-            if m:
-                print("Graphing {}".format(m.group(1)))
-                return graph_thing(t,t.add_node(pid,pw),m.group(1))
+            if m: return graph_thing(t,t.add_node(pid,pw),m.group(1))
         elif pw == 'that_is' or pw == 'that_are':
             # check for status
             m = dd.re_qual_thatis_status.search(pcls)
