@@ -466,7 +466,7 @@ kw_param_template = {
 #    [thing] [action-word] [parameters] and [action-word] [parameters]
 #  2. singular (may have optional thing and/or conditional
 #   [thing]? [conditional]? [action word] [parameters]
-#  3. an exceptions is control/own phrases of the form
+#  3. an exceptions is control/own phrases of the form i.e. Synod Centurion
 #   [player] [own|control] [clause]
 #  will also be treated as action clause. NOTE: IOT not match "you control" and
 #  the like, requires at least one character following the own/control tag
@@ -479,7 +479,7 @@ re_anded_action_clause = re.compile(
      r"((?:xa|ka)<[^>]+>)(?: ([^.]+))? and ((?:xa|ka)<[^>]+>)(?: ([^.]+))?\.?$"
 )
 re_action_clause = re.compile(
-    r"^(?:(.+?) )?(?:cn<([^>]+)> )?"
+    r"^(?:([^\.]+?) )?(?:cn<([^>]+)> )?"
     r"((?:xa|ka)<[^>]+>)"
     r"(?: ([^.]+))?\.?$"
 )
@@ -793,7 +793,9 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$"
 #  [possession-clause]? [qualifying-clause]?
 # where:
 #  possession-clause has the form: [player] [owns|controls]
-#  with-clayse has the form with [qualifiers]
+#  qualifying-clause has the form:
+#   [preposition] [qualifiers] and/or
+#   that_is/are [qualifiers]
 # IOT to merge everything under the thing
 # NOTE: if possession-clause and/or preposition-clause are present, the whole is
 #  returned & must further be parsed w/ re_possessor_clause, re_qualifying_clause
@@ -803,12 +805,15 @@ re_qst = re.compile(
     r"(?:((?:ob|xp|xo|zn)<[^>]+>) (and|or|and/or) (?:xq<([^>]+)> )?)?"
     r"((?:ob|xp|xo|zn)<[^>]+>)"
     r"(?: ((?:xq<[^>]+> )?xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>))?"
-    r"(?: (pr<(?:with|without|from|of)> [^\.]+))?\.?$"
+    r"(?: ((?:pr|xq)<(?:with|without|from|of|that_is|that_are)> [^\.|^,]+))?\.?$"
 )
 re_possession_clause = re.compile(r"((?:xq<\w*?> )?xp<\w+>) xc<(\w+)(?: suffix=s)?>")
-re_qualifying_clause = re.compile(r"^pr<(with|without|from|of)> (.+)$")
+re_qualifying_clause = re.compile(
+    r"^(?:pr|xq)<(with|without|from|of|in|that_is|that_are)> (.+)$"
+)
 re_dual_qualifying_clause = re.compile(
-    r"^(pr<(?:with|of)> .+) (pr<(?:from|with|without|on|of|as)> .+)$"
+    r"^(pr<(?:with|without|of)> .+) "
+     r"((?:pr|xq)<(?:from|with|without|on|of|as|in|that_is|that_are)> .+)$"
 )
 
 # finds consecutive things to determine if they are possessive
@@ -833,25 +838,46 @@ re_consecutive_things = re.compile(
 #  3. with [a|number] [counter] on it/them
 #  4. with [quantifier] [attribute] Isperia the Inscrutable attribute is name
 #   this is the same as of attribute
-#re_qual_with_ability = re.compile(r"^kw<(\w+)>$")
+#  5 a variation of above
+#   with the [qualifier] [lituus object] i.e. Ghazban Ogre
 re_qual_with_ability = re.compile(r"^(?:(ob<[^>]+>) )?kw<(\w+)>$")
-re_qual_with_attribute = re.compile(r"^xr<(\w+) val=(.)([^>]+)>$")
-re_qual_with_counters = re.compile(
+# TODO: see (.) is meant to catch operator signs but will catch the first letter
+#  if a sign is not present
+re_qual_with_attribute = re.compile(r"^xr<([^>]+) val=(.)([^>]+)>$")
+re_qual_with_ctrs = re.compile(
     r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>) pr<on> xo<[^>]+>$"
 )
-re_qual_with_attribute2 = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")
+re_qual_with_attribute_xq = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")
+re_qual_with_attribute_lo = re.compile(r"^xq<the> xl<(\w+)> (?:xo|xr)<(\w+)>$")
 
-# from - applies to zones can take on multiple forms
+# from and in - applies to zones can take on multiple forms
 # from [quantifier] [zone]
 # from [quanitifer]? player['s]? zone
 # may be followed by a modifier i.e. xm<face amplifier=down>
 #re_qual_from = re.compile(r"")
 
-# of - two forms
-#  1. [quanitifier] [attribute]
-#  2. objects i.e. Heartstone
-re_qual_of_attribute = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")
-re_qual_of_object = re.compile(r"^((?:ob|zn|xp|xo)<[^>]+>)$")
+# of - multiple forms
+#  1. [quanitifier] [attribute] (includes xo like value, life etc)
+#  2. objects i.e. Heartstone (have to check for preceding quantifiers, status)
+#  3. possesive i.e. Pilgrim of Virtue
+#  4. possessive i.e. Biomancer's Familiar
+#re_qual_of_attribute = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")
+re_qual_of_attribute = re.compile(r"^xq<([^>]+)> (?:xr|xo)<([^>]+)>$")
+re_qual_of_object = re.compile(
+    r"^^((?:xq<\w+> )?(?:(?:xs|st)<\w+> )?(?:ob|zn|xp|xo)<[^>]+>)$"
+)
+re_qual_of_possessive = re.compile(
+    r"^((?:xq<[^>]+> )?xp<\w+ suffix=(?:r|'s)> (?:(?:ob|zn|xp|xo)<[^>]+>))$"
+)
+re_qual_of_possessive2 = re.compile(
+    r"^(ob<[^>]+> (?:.+? )?xp<[^>]+> xc<(?:own|control)>)$"
+)
+
+# that_is/that_are
+#  1. that_is [keyword] (with suffix)
+#  2. that_is [attribute] (same as with_attribute)
+re_qual_thatis_status = re.compile(r"^xs<([^>]+)>$")
+re_qual_thatis_attribute = re.compile(r"^(cn<not> )?xr<([^>]+) val=([^>]+)>$")
 
 ####
 ## TEST SPACE

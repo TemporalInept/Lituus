@@ -144,10 +144,9 @@ re_param_delim_wop = re.compile(r"([∧∨⊕⋖⋗≤≥≡→\(\)])")  # w\ op
 re_param_prefix = re.compile(r"[\+\-¬]")
 
 # conjunction operators
-conj_op = {'and': AND, 'or': OR, 'and/or': AOR}
+conj_op = {'and':AND,'or':OR,'and/or':AOR}
 conj_op_tkns = '|'.join(conj_op)
 re_conj_op = re.compile(r"\b({})\b".format(conj_op_tkns))
-
 
 ####
 ## CARD REFERENCES
@@ -398,7 +397,7 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 
 lituus_qualifiers = [
     'less','greater','lesser','highest','lowest','more','back','many','random',
-    'also','maximum','most',
+    'also','maximum','most','much',
 ]
 qualifier_tkns = '|'.join(lituus_qualifiers)
 re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
@@ -433,6 +432,7 @@ lituus_objects = [  # lituus objects
     "city's blessing", 'game','mana pool','mana cost','commander','mana','attacker',
     'blocker','itself','it','them','they','coin','choice','cost', "amount of",
     'life total','life','symbol','rest','monarch','pile','team','mode','level',
+    'value','number',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
@@ -912,7 +912,12 @@ re_base_pt = re.compile(
     r"base ch<power> and ch<toughness> "
     r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
 )
-re_single_pt = re.compile(r"ch<power> and ch<toughness>")
+#re_single_pt = re.compile(r"ch<power> and ch<toughness>")
+
+# if after instantiatiating attributes we want to 'chain' cases of
+#  power and/or toughness where toughness has a value i.e. Tetsuko Umezawa,
+#  Fugitive
+re_combine_pt = re.compile(r"xr<power> (and|or|and/or) xr<toughness val=([^>]+)>")
 
 # lituus characteristics
 # TODO: keep control, own?
@@ -1236,7 +1241,12 @@ re_from_combat = re.compile(r"(?<=pr<from> )combat")
 # re_tna = re.compile(r"(?<=st<tapped> and )(xa)(?=<attack>ing)")
 
 # discarded is a status if it is preceded by the and followed by card
-re_discard_act = re.compile(r"(?<=xq<the> )ka<discard suffix=ed>(?= ob<)")
+re_discard_stat = re.compile(r"(?<=xq<the> )ka<discard suffix=ed>(?= ob<)")
+
+# enchated is a status if it is preceded by that_is/that_are
+re_enchant_stat = re.compile(
+    r"(?<=xq<(?:that_is|that_are)> )kw<enchant suffix=ed>"
+)
 
 # 'at' is a preposition if followed by a qualifier (random) i.e. Black Cat
 re_at_prep = re.compile(r"(tp<at>)(?= xl<\w+>)")
@@ -1600,6 +1610,9 @@ re_mill = re.compile(
     r"xa<put( suffix=\w+)?> xq<the> pr<top> (nu<[^>]+>) ob<card suffix=s> of "
      r"xq<their> zn<library> pr<into> xq<their> zn<graveyard>"
 )
+
+# your opponents can be combined
+re_your_opponents = re.compile(r"xp<you suffix=r> xp<opponent suffix=s>")
 
 # Finds phrases of the form {n} more|less for cost increase/reduction one or more
 # mana symbols followed by a qualifier

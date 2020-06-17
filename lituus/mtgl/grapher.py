@@ -1035,7 +1035,6 @@ def graph_action_clause(t,pid,phrase):
             # graph the action(s)
             for aw,act in acs:
                 awid = t.add_node(aid,mtgltag.tag_val(aw))
-                #if act: t.add_node(awid,'action-params',tograph=act)
                 if act: graph_action(t,awid,mtgltag.tag_val(aw),act)
         except lts.LituusException as e:
             if e.errno == lts.EPTRN:
@@ -1077,7 +1076,7 @@ def graph_thing(t,pid,clause):
     # could have a qst phrase or a possesive phrase have to check both
     try:
         # 'unpack' the phrase
-        n,xq,st,th1,conj,xq2,th2,poss,pr = dd.re_qst.search(clause).groups()
+        n,xq,st,th1,conj,xq2,th2,poss,qual = dd.re_qst.search(clause).groups()
         eid = t.add_node(pid,'thing')
 
         # any preceding quantifier and/or status belong to the holistic thing
@@ -1106,14 +1105,14 @@ def graph_thing(t,pid,clause):
             except AttributeError:
                 raise lts.LituusException(lts.EPTRN,"{} is not a possession".format(ctlr))
 
-        # graph any trailing preposition clauses
-        if pr:
-            # TODO: Still under testting - we will have cases here that are not
+        # graph any trailing qualifying clauses
+        if qual:
+            # TODO: Still under testing - we will have cases here that are not
             #  part of a larger thing
             quid = None
             try:
                 quid = t.add_node(eid,'qualifying-clause')
-                _graph_qualifying_clause_(t,quid,pr)
+                _graph_qualifying_clause_(t,quid,qual)
             except lts.LituusException:
                 # on error, deleting the qualifying clause node before raising
                 t.del_node(quid)
@@ -1305,6 +1304,7 @@ def _graph_qualifying_clause_(t,pid,clause):
     :param clause: the text to graph
     """
     # check for duals first
+    # TODO: for the below we should add an itermediary node with the qualying word first
     cid = None
     try:
         q1,q2 = dd.re_dual_qualifying_clause.search(clause).groups()
@@ -1338,39 +1338,78 @@ def _graph_qualifying_clause_(t,pid,clause):
                 #  maybe do something else later
                 name,op,val = m.groups()
                 return t.add_node(
-                    t.add_node(t.add_node(pid,pw),'attribute'),name,value=op+val
+                    t.add_node(pid,pw),'attribute',name=name,value=op+val
+                )
+
+            # check with quantifier name attributes
+            m = dd.re_qual_with_attribute_xq.search(pcls)
+            if m:
+                xq,attr = m.groups()
+                return t.add_node(
+                    t.add_node(pid,pw),'attribute',quantifier=xq,value=attr
+                )
+
+            # check for lituus object attributes
+            m = dd.re_qual_with_attribute_lo.search(pcls)
+            if m:
+                qual,attr = m.groups()
+                return t.add_node(
+                    t.add_node(pid,pw),'attribute',qualifier=qual,value=attr
                 )
 
             # check for counters
-            m = dd.re_qual_with_counters.search(pcls)
+            m = dd.re_qual_with_ctrs.search(pcls)
             if m:
                 # TODO: will throw error if there is not type attribute
                 q,ct = m.group(1),m.mtgltag.tag_attr(m.group(2))['type']
                 t.add_node(t.add_node(pid,pw),'counter',quantity=q,type=ct)
-
-            # check with quantifier name
-            m = dd.re_qual_with_attribute2.search(pcls)
-            if m:
-                xq,attr = m.groups()
-                return t.add_node(pid,pw,quantifier=xq,attribute=attr)
-        elif pw == 'from':
+        elif pw == 'from' or pw == 'in':
             return graph_thing(t,t.add_node(pid,pw),pcls) # always a zone
         elif pw == 'of':
             # attributes
             m = dd.re_qual_of_attribute.search(pcls)
             if m:
                 xq,attr = m.groups()
-                return t.add_node(pid,pw,quantifier=xq,attribute=attr)
+                return t.add_node(
+                    t.add_node(pid,pw),'attribute',quantifier=xq,value=attr
+                )
 
             # objects
             m = dd.re_qual_of_object.search(pcls)
+            if m: return graph_thing(t,t.add_node(pid,pw),m.group(1))
+
+            # possessives
+            m = dd.re_qual_of_possessive.search(pcls)
+            if m: return graph_thing(t,t.add_node(pid,pw),m.group(1))
+
+            m = dd.re_qual_of_possessive2.search(pcls)
             if m:
-                return graph_thing(t,t.add_node(pid,pw),m.group(1))
+                try:
+                    return graph_thing(t,t.add_node(pid,pw),m.group(1))
+                except:
+                    # for linvala and the like
+                    pass
+                    #print(pcls)
+        elif pw == 'that_is' or pw == 'that_are':
+            # check for status
+            m = dd.re_qual_thatis_status.search(pcls)
+            if m: return t.add_node(t.add_node(pid,pw),'status',value=m.group(1))
+
+            # check for attribute
+            m = dd.re_qual_thatis_attribute.search(pcls)
+            if m:
+                # TODO: for now just recombining the op and the value, but
+                #  maybe do something else later
+                neg,name,val = m.groups()
+                if neg: val = "{}{}".format(mtgl.NOT,val)
+                return t.add_node(
+                    t.add_node(pid,pw),'attribute',name=name,value=val
+                )
         #else:
         #    return t.add_node(pid,pw,tograph=pcls)
         #raise lts.LituusException(lts.EPTRN,"Not a qualifying clause {}".format(clause))
         return t.add_node(pid,pw,tograph=pcls)
-    except AttributeError:
+    except AttributeError as e:
         raise lts.LituusException(lts.EPTRN,"Not a qualifying clause {}".format(clause))
 
 ####

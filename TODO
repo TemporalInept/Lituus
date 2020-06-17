@@ -204,8 +204,27 @@ from s
 
 255. Have to redo landwalks see Livonya Silone. xr<super-type val=legendary> kw<landwalk> need to standarize this so landwalks are the same: ob<permanent characteristics=land→plains> kw<landwalk> (Great Wall)
 
-256. Hazordous Conditions due to misstagged of 'counters'
+259. See Chakram Retriever - incorrectly self-tagged kw<partner> pr<with> ob<card ref=self> slinger
 
-257. some counters (that are put on objects) do not have a suffix
+260. Have to redo graph_action clause. Need to grab all players such as Oblation 
+ xq<the> xp<owner> pr<of> xq<target> ob<permanent characteristics=¬land> ka<shuffle suffix=s>
+the phrase upto shuffle is a thing (player)
+ - however, if we can graph the of clause we would have:
+   └─action:0
+     ├─thing:0
+     │ ├─quantifier:0 (value=the)
+     │ ├─player:0 (value=owner)
+     │ └─qualifying-clause:0
+     │   └─of:0 
+     │    └─thing:1
+     │      ├─quantifier:0 (value=target)
+     │      └─ob<permanent characteristics=¬land>)
+     └─shuffle:0
 
-258. how to tag 'number'
+264. Should 'number' be object, quantifier or both?  
+
+265. Giant Trap Door Spider the qualifying clause only applies to the second item and not to the conjunction
+
+266. See Spark Double cn<not> xr<super-type val=legendary> we should negate the legendary
+
+267.

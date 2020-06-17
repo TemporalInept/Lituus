@@ -302,10 +302,7 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_cost_aa.sub(r"xa<cost\1>",ntxt)
     ntxt = mtgl.re_cost_except.sub(r"xa<cost\1>",ntxt)
 
-    # deconflict counters as object or action (only 2 cards have counters where
-    # it is an action Baral and Lullmage Mentor)
-    # TODO: xq<a> ka<counter>
-    # TODO: pr<> ka<counter>
+    # deconflict counters as object or action
     ntxt = mtgl.re_counters_obj.sub(r"xo<ctr suffix=s>",ntxt)
     ntxt = mtgl.re_counter_obj.sub(r"xo<ctr>",ntxt)
 
@@ -315,8 +312,9 @@ def deconflict_tags1(txt):
     # Tag combat preceded by from as an object
     ntxt = mtgl.re_from_combat.sub(r"xo<combat>",ntxt)
 
-    # retag discarded as status where necessary
-    ntxt = mtgl.re_discard_act.sub(r"xs<discard suffix=ed>",ntxt)
+    # retag discarded as status where necessary, retag enchanted
+    ntxt = mtgl.re_discard_stat.sub(r"xs<discard suffix=ed>",ntxt)
+    ntxt = mtgl.re_enchant_stat.sub(r"xs<enchant suffix=ed>",ntxt)
 
     # deconflict 'at' making it a preposition when followed by a qualifier
     ntxt = mtgl.re_at_prep.sub(r"pr<at>",ntxt)
@@ -371,11 +369,13 @@ def pre_chain(txt):
       b. assign values where possible to temporary attributes including c.
         those without an operator
       d. fix xr<color suffix=ed> to xr<color val=colored>
+      e. chain cases of power and/pr toughness where toughness has a value
      3) attributes part 2 - (stand alone lituus objects like life)
       a. assign values where possible (Triskaidekaphobia)
      4) add types to hanging subtypes
      5) modify anamolous characteristic action charactistic
      6) align supertypes and subtypes
+
     :param txt: txt to prechain
     :return: prechainned text
     """
@@ -385,6 +385,10 @@ def pre_chain(txt):
     ntxt = mtgl.re_attr_val_wd.sub(r"xr<\2 val=≡\1>",ntxt)              # 2.b
     ntxt = mtgl.re_attr_val_nop.sub(r"xr<\1 val=≡\2>",ntxt)             # 2.c
     ntxt = mtgl.re_attr_colored.sub(r"xr<color val=\1ed>",ntxt)         # 2.d
+    ntxt = mtgl.re_combine_pt.sub(                                      # 2.e
+        lambda m: r"xr<power{}toughness val={}>".format(
+            mtgl.conj_op[m.group(1)],m.group(2)),ntxt
+    )
     ntxt = mtgl.re_op_num_lo.sub(r"xr<\3 val=\1\2>",ntxt)               # 3
     ntxt = mtgl.re_hanging_subtype.sub(lambda m: _insert_type_(m),ntxt) # 4
     ntxt = mtgl.re_disjoint_ch.sub(r"\2 \1 \3",ntxt)                    # 5
@@ -582,7 +586,8 @@ def postprocess(txt):
 def third_pass(txt):
     """
     performs a third/final pass of the oracle txt, working on common phrases,
-    replacing them with defined keyword actions or common slang
+    replacing them with defined keyword actions or common slang or easier to process
+    forms
     :param txt: second pass tagged oracle txt
     :return: tagged oracle text
     """
@@ -590,6 +595,7 @@ def third_pass(txt):
     #  the # discarded i.e. attunement and how would this affect the words
     #  drawn & discard
     ntxt = mtgl.re_mill.sub(r"xa<mill\1> \2",txt)
+    ntxt = mtgl.re_your_opponents.sub(r"xp<opponent suffix=s>",ntxt) # for grapher
     return ntxt
 
 ####
