@@ -290,7 +290,7 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_status_face.sub(r"st<face amplifier=\1>",ntxt)
     ntxt = mtgl.re_mod_face.sub(r"xm<face amplifier=\1>",ntxt)
 
-    # turn could be a lituus action
+    # turn could be a lituus action and is some cases an object
     ntxt = mtgl.re_turn_action.sub("xa",ntxt)
 
     # exile is a zone if preceded by a preposition
@@ -573,6 +573,9 @@ def postprocess(txt):
     # lazy tagging of 'is' verbs as a lituus action to avoid rewriting regex
     # patterns using 'is' versus a tagged version
     ntxt = mtgl.re_is2tag.sub(lambda m: mtgl.is_forms[m.group(1)],ntxt)
+
+    # reify turns (has to be done here after chaining of quanitifiers)
+    ntxt = mtgl.re_turn_object.sub(r"\1 xo<\2>",ntxt)
 
     # TODO: should we put
     #  in any order

@@ -1315,6 +1315,7 @@ def _graph_qualifying_clause_(t,pid,clause):
     except AttributeError:
         if cid: t.del_node(cid)
 
+    # TODO: instead of adding the 'word' for each check, add once in beginning?
     try:
         pw,pcls = dd.re_qualifying_clause.search(clause).groups()
         if pw == 'with' or pw == 'without':
@@ -1329,7 +1330,7 @@ def _graph_qualifying_clause_(t,pid,clause):
                     kw = "landwalk→{}".format(
                         mtgltag.split_align(attr['characteristics'])[1]
                     )
-                return t.add_node(t.add_node(pid,pw),'ability',value=m.group(1))
+                return t.add_node(t.add_node(pid,pw),'ability',value=kw)
 
             # check for attribute
             m = dd.re_qual_with_attribute.search(pcls)
@@ -1339,6 +1340,17 @@ def _graph_qualifying_clause_(t,pid,clause):
                 name,op,val = m.groups()
                 return t.add_node(
                     t.add_node(pid,pw),'attribute',name=name,value=op+val
+                )
+
+            # attribute2
+            # TODO: I don't like this whol approach
+            m = dd.re_qual_with_attribute2.search(pcls)
+            if m:
+                op,num,xq,attr = m.groups()
+                name = mtgltag.tag_val(attr)
+                return t.add_node(
+                    t.add_node(pid,pw),
+                    'attribute',name=name,value=op+num,qualifier=xq
                 )
 
             # check with quantifier name attributes
@@ -1362,7 +1374,11 @@ def _graph_qualifying_clause_(t,pid,clause):
             if m:
                 # TODO: will throw error if there is not type attribute
                 q,ct = m.group(1),m.mtgltag.tag_attr(m.group(2))['type']
-                t.add_node(t.add_node(pid,pw),'counter',quantity=q,type=ct)
+                return t.add_node(t.add_node(pid,pw),'counter',quantity=q,type=ct)
+
+            # check for object (should be abilities)
+            m = dd.re_qual_with_object.search(pcls)
+            if m: return graph_thing(t,t.add_node(pid,pw),m.group(1))
         elif pw == 'from' or pw == 'in':
             return graph_thing(t,t.add_node(pid,pw),pcls) # always a zone
         elif pw == 'of':
@@ -1378,18 +1394,15 @@ def _graph_qualifying_clause_(t,pid,clause):
             m = dd.re_qual_of_object.search(pcls)
             if m: return graph_thing(t,t.add_node(pid,pw),m.group(1))
 
-            # possessives
+            # possessives (possessive suffix)
             m = dd.re_qual_of_possessive.search(pcls)
             if m: return graph_thing(t,t.add_node(pid,pw),m.group(1))
 
+            # player own/control
             m = dd.re_qual_of_possessive2.search(pcls)
             if m:
-                try:
-                    return graph_thing(t,t.add_node(pid,pw),m.group(1))
-                except:
-                    # for linvala and the like
-                    pass
-                    #print(pcls)
+                print("Graphing {}".format(m.group(1)))
+                return graph_thing(t,t.add_node(pid,pw),m.group(1))
         elif pw == 'that_is' or pw == 'that_are':
             # check for status
             m = dd.re_qual_thatis_status.search(pcls)
@@ -1405,6 +1418,23 @@ def _graph_qualifying_clause_(t,pid,clause):
                 return t.add_node(
                     t.add_node(pid,pw),'attribute',name=name,value=val
                 )
+
+            # check for location
+            # TODO: only finds [quantifier] [zone] i.e. does expand to meet
+            #  zones with preceding players etc
+            m = dd.re_qual_thatis_zone.search(pcls)
+            if m:
+                neg,zn = m.groups()
+                tiid = t.add_node(pid,pw)
+                cid = None
+                if neg: cid = t.add_node(t.add_node(tiid,'not'),'on')
+                else: cid = t.add_node(tiid,'on')
+                try:
+                    graph_thing(t,cid,zn)  # always a zone
+                    return tiid
+                except lts.LituusException:
+                    t.del_node(tiid)
+                    pass
         #else:
         #    return t.add_node(pid,pw,tograph=pcls)
         #raise lts.LituusException(lts.EPTRN,"Not a qualifying clause {}".format(clause))

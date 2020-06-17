@@ -804,10 +804,10 @@ re_qst = re.compile(
     r"^(?:nu<([^>]+)> )?(?:xq<([^>]+)> )?(?:(?:xs|st)<([^>]+)> )?"
     r"(?:((?:ob|xp|xo|zn)<[^>]+>) (and|or|and/or) (?:xq<([^>]+)> )?)?"
     r"((?:ob|xp|xo|zn)<[^>]+>)"
-    r"(?: ((?:xq<[^>]+> )?xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>))?"
+    r"(?: ((?:xq<[^>]+> )?xp<[^>]+> xc<[^>]+>))?" # TODO: will this grab invalid xc values
     r"(?: ((?:pr|xq)<(?:with|without|from|of|that_is|that_are)> [^\.|^,]+))?\.?$"
 )
-re_possession_clause = re.compile(r"((?:xq<\w*?> )?xp<\w+>) xc<(\w+)(?: suffix=s)?>")
+re_possession_clause = re.compile(r"((?:xq<\w*?> )?xp<[^>]+>) xc<([^>]+)(?: suffix=s)?>")
 re_qualifying_clause = re.compile(
     r"^(?:pr|xq)<(with|without|from|of|in|that_is|that_are)> (.+)$"
 )
@@ -831,24 +831,29 @@ re_consecutive_things = re.compile(
 
 # with/without can have one of the following forms
 #  1. with [keyword] - ability clause i.e. with flying (have to check for a
-#   preceding object to catch landwalks)
+#   preceding object to catch landwalks) i.e. Sidar Kondo
 #  TODO: this won't catch nonbasic landwalks like Livonya Silone
 #  2. with [attribute] - instantiated attribute i.e. xr<cmc val=≥6>
 #   has the form x<attribute_name val=OPVALUE.
+#   2.a variant (Azor's Gateway) [op] [num] [quantifier] [attribute]
 #  3. with [a|number] [counter] on it/them
 #  4. with [quantifier] [attribute] Isperia the Inscrutable attribute is name
 #   this is the same as of attribute
 #  5 a variation of above
 #   with the [qualifier] [lituus object] i.e. Ghazban Ogre
-re_qual_with_ability = re.compile(r"^(?:(ob<[^>]+>) )?kw<(\w+)>$")
-# TODO: see (.) is meant to catch operator signs but will catch the first letter
-#  if a sign is not present
-re_qual_with_attribute = re.compile(r"^xr<([^>]+) val=(.)([^>]+)>$")
+re_qual_with_ability = re.compile(r"^(?:(ob<[^>]+>) )?kw<([^>]+)>$")
+re_qual_with_attribute = re.compile(r"^xr<([^>]+) val=([¬⋖⋗≤≥≡⇔])?([^>]+)>$")
+re_qual_with_attribute2 = re.compile(
+    r"^op<(.)> nu<([^>]+)> xq<([^>]+)> (xr<[^>]+>)$"
+)
 re_qual_with_ctrs = re.compile(
     r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>) pr<on> xo<[^>]+>$"
 )
 re_qual_with_attribute_xq = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")
 re_qual_with_attribute_lo = re.compile(r"^xq<the> xl<(\w+)> (?:xo|xr)<(\w+)>$")
+re_qual_with_object = re.compile(
+    r"^((?:xq<[^>]+> )?ob<[^>]+>)$"
+)
 
 # from and in - applies to zones can take on multiple forms
 # from [quantifier] [zone]
@@ -861,7 +866,6 @@ re_qual_with_attribute_lo = re.compile(r"^xq<the> xl<(\w+)> (?:xo|xr)<(\w+)>$")
 #  2. objects i.e. Heartstone (have to check for preceding quantifiers, status)
 #  3. possesive i.e. Pilgrim of Virtue
 #  4. possessive i.e. Biomancer's Familiar
-#re_qual_of_attribute = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")
 re_qual_of_attribute = re.compile(r"^xq<([^>]+)> (?:xr|xo)<([^>]+)>$")
 re_qual_of_object = re.compile(
     r"^^((?:xq<\w+> )?(?:(?:xs|st)<\w+> )?(?:ob|zn|xp|xo)<[^>]+>)$"
@@ -870,14 +874,20 @@ re_qual_of_possessive = re.compile(
     r"^((?:xq<[^>]+> )?xp<\w+ suffix=(?:r|'s)> (?:(?:ob|zn|xp|xo)<[^>]+>))$"
 )
 re_qual_of_possessive2 = re.compile(
-    r"^(ob<[^>]+> (?:.+? )?xp<[^>]+> xc<(?:own|control)>)$"
+    r"^((?:xq<[^>]+> )?ob<[^>]+> (?:.+? )?xp<[^>]+> xc<[^>]+>)$"
 )
 
 # that_is/that_are
 #  1. that_is [keyword] (with suffix)
 #  2. that_is [attribute] (same as with_attribute)
+#  3. that_is [not]? on [quantifier] [zone]
+#   TODO: looking at Teferi, Mage of Zhalfir] are there different phrasings
+#    i.e. in target player's hand
 re_qual_thatis_status = re.compile(r"^xs<([^>]+)>$")
 re_qual_thatis_attribute = re.compile(r"^(cn<not> )?xr<([^>]+) val=([^>]+)>$")
+re_qual_thatis_zone = re.compile(
+    r"^(?:(cn<not>) )?pr<on> (xq<[^>]+> zn<[^>]+>)$"
+)
 
 ####
 ## TEST SPACE

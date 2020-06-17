@@ -84,10 +84,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 201. In Xenagos, God of Revels, xenagos is not being self-reffed  because xenagos is a planeswalker subtype because of Xenagos, the Reveler
 
-203. Six except for/by exceptions (Flame Sweep, Akron Legionnaire, Keldon Firebombers, Inspire Awe)
-
-205. except it are more clauses than full phrases
-
 207. Bound by Moonsilver has an example of a or chain for action words in first non keyword line and an example of a 'could' clause
 
 210. add ability in mtgt to print from a given node as well
@@ -227,4 +223,10 @@ the phrase upto shuffle is a thing (player)
 
 266. See Spark Double cn<not> xr<super-type val=legendary> we should negate the legendary
 
-267.
+267. r"xq<(a(?:[∧∨⊕][^>]+))> (ts<\w+>)" gives 60 results, these turn structures might be better tagged as objects (or treated as such)
+
+268. Combine "to be" with subsequent action word?
+
+269. Have to tag monstrous
+
+270. See Stoneshock Giant. Has possessive clause last (as does Plague Engineer)

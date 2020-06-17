@@ -1162,7 +1162,7 @@ re_status_face = re.compile(r"face-pr<(up|down)>")
 re_mod_face = re.compile(r"face pr<(up|down)>")
 
 ####
-## TURN (ACTION) DECONFLICTION
+## TURN (ACTION|OBJECT) DECONFLICTION
 ####
 
 # turn is an action if it is followed by a 'xm' (modifier) or 'xq' (quantifier)
@@ -1173,6 +1173,13 @@ re_turn_action = re.compile(
     r"(?=<turn(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>(?:r|s|ing|ed|ion|'s|s')? "
     r"x[m|q]<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
 )
+
+# turn can be considered an object if preceded by a
+#  [a][conjoined quantifiers] [turn structure]
+# TODO: need to consider other quantifiers possibley this|that
+# TODO: need to consider possessive turn structure see Gisa and Geralf "your turn"
+# TODO: do we want to retag the turn strucutre i.e. turn-phase
+re_turn_object = re.compile(r"(xq<(?:a(?:[∧∨⊕][^>]+))>) ts<([^>]+)>")
 
 ####
 ## ZONE DECONFLICTION
