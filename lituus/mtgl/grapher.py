@@ -750,11 +750,11 @@ def graph_modal_phrase(t,pid,line):
     # then with instructions (700.2d) on choices
     try:
         # unpack the phrase
-        op,num,instr,opts = dd.re_modal_phrase_instr.search(line).groups()
+        num,instr,opts = dd.re_modal_phrase_instr.search(line).groups()
 
         # add a modal node and nodes for each of the choices
         mid = t.add_node(pid,'modal')
-        cid = t.add_node(mid,'choose',number=op+num if op else num)
+        cid = t.add_node(mid,'choose',quantity=num)
         graph_phrase(t,t.add_node(mid,'instructions'),instr)
         for opt in [x for x in dd.re_opt_delim.split(opts) if x]:
             graph_phrase(t,t.add_node(mid,'option'),opt)
@@ -1075,11 +1075,23 @@ def graph_thing(t,pid,clause):
     # TODO: should we combine suffix with the stem if present?
     # could have a qst phrase, a qtz phrase or a possesive phrase - check all
     try:
-        xq,loc,num,thing,zn = dd.re_qtz.search(clause).groups()
+        xq,loc,num,thing,zn,amp = dd.re_qtz.search(clause).groups()
         eid = t.add_node(pid,'thing')
         sid = t.add_node(eid,'specifying-clause')
-        t.add_node(sid,'quantifier',value=xq)
-        t.add_node(sid,'which',value=loc,quanitity=num if num else 1)
+
+        # two formats
+        #  1. the [top|bottom] [num]? [card] [zone] [amp]?
+        #  2. [quantifier] [card] [zone] [amp]?
+        # the specifying claues differs depending on the format
+        #t.add_node(sid,'quantifier',value=xq)
+        #if loc: t.add_node(sid,'which',value=loc,quanitity=num if num else 1)
+        if loc:
+            if xq: t.add_node(sid,'quantifier',value=xq)
+            t.add_node(sid,'which',value=loc,quanitity=num if num else 1)
+        else:
+            assert(num is None)
+            t.add_node(sid,'which',quantifier=xq)
+        if amp: t.add_node(sid,'how',value='face-'+amp)
         _graph_object_(t,eid,thing)
         quid = t.add_node(eid, 'qualifying-clause')
         if not _graph_qualifying_clause_(t,quid,zn):
@@ -1362,10 +1374,10 @@ def _graph_qualifying_clause_(t,pid,clause):
             # TODO: I don't like this whol approach
             m = dd.re_qual_with_attribute2.search(pcls)
             if m:
-                op,num,xq,attr = m.groups()
+                num,xq,attr = m.groups()
                 name = mtgltag.tag_val(attr)
                 return t.add_node(
-                    qid,'attribute',name=name,value=op+num,qualifier=xq
+                    qid,'attribute',name=name,quantity=num,qualifier=xq
                 )
 
             # check with quantifier name attributes
@@ -1451,6 +1463,7 @@ def _graph_ap_thing_(t,pid,phrase):
         return graph_thing(t,pid,phrase)
     except lts.LituusException:
         return t.add_node(pid,'action-params',tograph=phrase)
+
 #def _graph_destroy_(t,pid,phrase):
     # 701.7 "to destroy a permanent"
     # try to graph param as a Thing

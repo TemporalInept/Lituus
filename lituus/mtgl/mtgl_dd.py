@@ -685,7 +685,7 @@ re_rather_than_apc = re.compile(
 re_modal_check = re.compile(r"xa<choose> nu<([^>]+)>.+•")
 re_modal_phrase = re.compile(r"^xa<choose> nu<([^>]+)> —([^\.]+)\.?$")
 re_modal_phrase_instr = re.compile(
-    r"^xa<choose> (?:op<(.)> )?nu<([^>]+)>\. ([^•]+) ([^\.]+)\.?$"
+    r"^xa<choose> nu<([^>]+)>\. ([^•]+) ([^\.]+)\.?$"
 )
 re_opt_delim = re.compile(r" ?•")
 
@@ -705,11 +705,13 @@ re_lvl_up_lvl = re.compile(
 ####
 
 # sequences - three types
-#  a) then then [action] i.e. Barishi
+#  a) then [action] i.e. Barishi
 #  b) duration [sequence] [phase/step], [action] i.e Abeyance
 #  c) condition [sequence] [condition], [action] i.e. Hungering Yetis
+#  d) trailing sequence [sequence] ... [turn structure]
 # until end of turn
-re_sequence_check = re.compile(r"^sq<[^>]++>")
+re_sequence_check = re.compile(r"^sq<[^>]+>")
+#re_sequence_check2 = re.compile(r"sq<[^>]+>[^,|^\.]ts<[^>]+>$")
 re_sequence_then = re.compile(r"^(sq<then>) ([^\.]+)\.?$")
 re_sequence_dur = re.compile(r"^(sq<[^>]+> ts<[^,]+>), ([^\.]+)\.?$")
 re_sequence_cond = re.compile(
@@ -786,14 +788,18 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$"
 ####
 
 # find phrases of the form i.e. Ethereal Ambush (top) Phyrexian Furnace (bottom)
-# [quantifier] [top|bottom] [number]? [thing] [zone-clause]
+# [quantifier] [top|bottom] [number]? [thing] [zone-clause] [amplifier]?
 # NOTE:
 #  quantifier should always be the
 #  thing will always be card
 # quanitifier may be after the number see Scarab Feast
+#re_qtz = re.compile(
+#    r"^xq<([^>]+)> pr<(\w+)> (?:nu<([^>]+)> )?"
+#     r"(ob<[^>]+>) ([^,|^\.]+zn<[^>]+>)(?: xm<face amplifier=(up|down)>)?$"
+#)
 re_qtz = re.compile(
-    r"^xq<([^>]+)> pr<(\w+)> (?:nu<([^>]+)> )?(ob<[^>]+>) ([^,|^\.]+zn<[^>]+>)$"
-    #r"^(xq<([^>]+)> )?pr<(\w+)> (?:nu<([^>]+)> )?(xq<([^>]+)> )?(ob<[^>]+>) ([^,|^\.]+zn<[^>]+>)$"
+    r"^xq<([^>]+)> (?:pr<(\w+)> )?(?:nu<([^>]+)> )?"
+     r"(ob<[^>]+>) ([^,|^\.]+zn<[^>]+>)(?: xm<face amplifier=(up|down)>)?$"
 )
 
 # find phrases of the form
@@ -844,7 +850,7 @@ re_consecutive_things = re.compile(
 #  TODO: this won't catch nonbasic landwalks like Livonya Silone
 #  2. with [attribute] - instantiated attribute i.e. xr<cmc val=≥6>
 #   has the form x<attribute_name val=OPVALUE.
-#   2.a variant (Azor's Gateway) [op] [num] [quantifier] [attribute]
+#   2.a variant (Azor's Gateway) [num] [quantifier] [attribute]
 #  3. with [a|number] [counter] on it/them
 #  4. with [quantifier] [attribute] Isperia the Inscrutable attribute is name
 #   this is the same as of attribute
@@ -853,16 +859,14 @@ re_consecutive_things = re.compile(
 re_qual_with_ability = re.compile(r"^(?:(ob<[^>]+>) )?kw<([^>]+)>$")
 re_qual_with_attribute = re.compile(r"^xr<([^>]+) val=([¬⋖⋗≤≥≡⇔])?([^>]+)>$")
 re_qual_with_attribute2 = re.compile(
-    r"^op<(.)> nu<([^>]+)> xq<([^>]+)> (xr<[^>]+>)$"
+    r"^nu<([^>]+)> xq<([^>]+)> (xr<[^>]+>)$"
 )
 re_qual_with_ctrs = re.compile(
     r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>) pr<on> xo<[^>]+>$"
 )
 re_qual_with_attribute_xq = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")
 re_qual_with_attribute_lo = re.compile(r"^xq<the> xl<(\w+)> (?:xo|xr)<(\w+)>$")
-re_qual_with_object = re.compile(
-    r"^((?:xq<[^>]+> )?ob<[^>]+>)$"
-)
+re_qual_with_object = re.compile(r"^((?:xq<[^>]+> )?ob<[^>]+>)$")
 
 # from and in - applies to zones can take on multiple forms
 # from [quantifier] [zone]
@@ -886,7 +890,6 @@ re_qual_of_possessive = re.compile(
 )
 re_qual_of_possessive2 = re.compile(
     r"^((?:xq<[^>]+> )?ob<[^>]+> (?:.+? )?xp<[^>]+> xc<[^>]+>)$"
-    #r"^((?:xq<[^>]+> )?(?:ob|xr)<[^>]+> (?:.+? )?xp<[^>]+> xc<[^>]+>)$"
 )
 
 # that_is/that_are

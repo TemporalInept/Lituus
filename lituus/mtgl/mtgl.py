@@ -531,7 +531,7 @@ prepositions = [
     'onto','top of','top','bottom of','bottom','without','with','for','up','down',
     'by','as though','as','of',
 ]
-re_prep = re.compile(r"\b(?<!<)({})\b(?!>)".format('|'.join(prepositions)))
+re_prep = re.compile(r"\b(?<!<[^>]*)({})\b(?!>)".format('|'.join(prepositions)))
 
 # conditional/requirement related
 conditionals = [
