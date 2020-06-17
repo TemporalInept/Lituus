@@ -1179,10 +1179,7 @@ re_turn_action = re.compile(
 # TODO: need to consider other quantifiers possibley this|that
 # TODO: need to consider possessive turn structure see Gisa and Geralf "your turn"
 # TODO: do we want to retag the turn strucutre i.e. turn-phase
-re_turn_object = re.compile(
-    #r"(xq<(?:a(?:[∧∨⊕][^>]+))>) ts<([^>]+)>"
-    r"(xq<(?:a(?:[∧∨⊕][^>]+)?)>) ts<([^>]+)>"
-)
+re_turn_object = re.compile(r"(xq<(?:a(?:[∧∨⊕][^>]+)?)>) ts<([^>]+)>")
 
 ####
 ## ZONE DECONFLICTION
