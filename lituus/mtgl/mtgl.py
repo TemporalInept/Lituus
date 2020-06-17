@@ -342,10 +342,11 @@ re_word_hack = re.compile(r"\b({})\b".format(word_hack_tkns))
 ## EHGLISH WORD NUMBERS
 ####
 
-E2I = {
+E2I = { # twenty is Ulamog
     'one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7',
     'eight':'8','nine':'9','ten':'10','eleven':'11','twelve':'12','thirteen':'13',
-    'fourteen':'14','fifteen':'15',
+    'fourteen':'14','fifteen':'15','sixteen':'16','seventeen':'17','eighteen':'18',
+    'nineteen':'19','twenty':'20',
 }
 e2i_tkns = '|'.join(list(E2I.keys()))
 re_wd2int = re.compile(r"\b({})\b".format(e2i_tkns))
@@ -379,11 +380,11 @@ re_lvl_blt = re.compile(r"\n(?=level)")
 # Quantifying words
 # TODO:  combine "that is" and "that are" as a  single  quantifier?
 lituus_quantifiers = [
-    'a','target','each','all','any','every','another','other','this','that is',
-    'that are','that','additional','those','these','their','the','extra','first',
-    'second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth',
-    'half','twice','new','single','same','different','next','last','opening',
-    'which',"chosen",
+    'a','target','each','all','any','every','another','other than','other','this',
+    'that is','that are','that','additional','those','these','their','the','extra',
+    'first','second','third','fourth','fifth','sixth','seventh','eighth','ninth',
+    'tenth','half','twice','new','single','same','different','next','last',
+    'opening','which',"chosen",
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -1096,7 +1097,7 @@ val_join = {
     "color identity":"color_identity",  # "mana cost":"mana_cost",
     "amount of":"amount_of","that is":"that_is","that are":"that_are",
     "life total":"life_total","rather than":"rather_than","as though":"as_though",
-    "did not":"did_not",
+    "did not":"did_not","other than":"other_than"
 }
 val_join_tkns = '|'.join(val_join.keys())
 re_val_join = re.compile(r"(?<=[<=])({})(?=>)".format(val_join_tkns))

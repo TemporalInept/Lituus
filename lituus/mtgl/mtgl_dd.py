@@ -785,9 +785,15 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$"
 ## THINGS
 ####
 
-# TODO:
-#  1. need to determien where numbers would be located
-#  2. for controller, do we need to check for 'owner' as well
+# find phrases of the form i.e. Ethereal Ambush (top) Phyrexian Furnace (bottom)
+# [quantifier] [top|bottom] [number]? [thing] [zone-clause]
+# NOTE:
+#  quantifier should always be the
+#  thing will always be card
+re_qtz = re.compile(
+    r"^xq<([^>]+)> pr<(\w+)> (?:nu<([^>]+)> )?(ob<[^>]+>) ([^,|^\.]+zn<[^>]+>)$"
+)
+
 # find phrases of the form
 #  [number]? [quantifier]? [status]? [thing CONJ quantifier]? [thing]
 #  [possession-clause]? [qualifying-clause]?
@@ -866,7 +872,9 @@ re_qual_with_object = re.compile(
 #  2. objects i.e. Heartstone (have to check for preceding quantifiers, status)
 #  3. possesive i.e. Pilgrim of Virtue
 #  4. possessive i.e. Biomancer's Familiar
-re_qual_of_attribute = re.compile(r"^xq<([^>]+)> (?:xr|xo)<([^>]+)>$")
+re_qual_of_attribute = re.compile(
+    r"^xq<([^>]+)> (?:xr<([^>]+)>|xo<(life_total|life|mana_cost|mana|value)>)$"
+)
 re_qual_of_object = re.compile(
     r"^^((?:xq<\w+> )?(?:(?:xs|st)<\w+> )?(?:ob|zn|xp|xo)<[^>]+>)$"
 )
@@ -875,6 +883,7 @@ re_qual_of_possessive = re.compile(
 )
 re_qual_of_possessive2 = re.compile(
     r"^((?:xq<[^>]+> )?ob<[^>]+> (?:.+? )?xp<[^>]+> xc<[^>]+>)$"
+    #r"^((?:xq<[^>]+> )?(?:ob|xr)<[^>]+> (?:.+? )?xp<[^>]+> xc<[^>]+>)$"
 )
 
 # that_is/that_are
