@@ -236,7 +236,10 @@ def graph_phrase(t,pid,line,i=0):
             for s in ss: graph_phrase(t,pid,s,i+1)
         else:
             if i < 1: graph_phrase(t,t.add_node(pid,'sentence'),line,i+1)
-            else: t.add_node(pid,'ungraphed-sentence',tograph=line)
+            else:
+                # TODO: FOR TESTING ONLY
+                #if dd.re_time_check.search(line): return graph_phase(t,pid,line)
+                t.add_node(pid,'ungraphed-sentence',tograph=line)
 
 def graph_clause(t,pid,clause):
     """
@@ -806,9 +809,6 @@ def graph_sequence_phrase(t,pid,line):
     # start with time (ending with a turn structure
     if dd.re_time_check.search(line):
         try:
-            # NOTE: the start of these appear to always be "the beginning"
-            # there are simple phrases namely the beginning of [quantifier] [phase]
-            # and more complex phrasings
             _,when,cls,xq,ts = dd.re_sequence_time.search(line).groups()
             tid = tid = t.add_node(pid,'timing') # TODO: don't like this label
             t.add_node(tid,'when',value=when)  # ignore the first quantifier
@@ -1229,9 +1229,17 @@ def graph_thing(t,pid,clause):
         # graph any trailing posession clauses
         if poss:
             try:
-                ply,wd = dd.re_possession_clause.search(poss).groups()
+                nid = None
+                ply,neg,wd = dd.re_possession_clause.search(poss).groups()
                 lbl = 'owned-by' if wd == 'own' else 'controlled-by'
-                graph_thing(t,t.add_node(eid,lbl),ply)
+                if not neg: cid = t.add_node(nid,lbl)
+                else:
+                    nid = t.add_node(eid,'not')
+                    cid = t.add_node(nid,lbl)
+                graph_thing(t,cid,ply)
+            except lts.LituusException:
+                if nid: t.del_node(nid)
+                raise lts.LituusException(lts.EPTRN, "{} is not a possession".format(ctlr))
             except AttributeError:
                 raise lts.LituusException(lts.EPTRN,"{} is not a possession".format(ctlr))
 
@@ -1315,11 +1323,19 @@ def graph_action_param(t,pid,aw,param):
     :return: the graphed action node or None
     """
     # starting with mtg defined keyword actions
+    # TODO: double, exchange
     if aw == 'activate': return _graph_ap_thing_(t,pid,param) # 701.2
     elif aw == 'attach': return _graph_ap_attach_(t,pid,param) # 701.3
     elif aw == 'unattach': return _graph_ap_thing_(t,pid,param) # 701.3d
+    elif aw == 'cast': return _graph_ap_thing_(t,pid,param) # 701.4
+    elif aw == 'counter': return _graph_ap_thing_(t,pid,param) # 701.5
+    elif aw == 'create': return _graph_ap_thing_test_(t,pid,param)  # 701.6
     elif aw == 'destroy': return _graph_ap_thing_(t,pid,param) # 701.7
+    elif aw == 'discard': return _graph_ap_thing_test_(t,pid,param) # 701.8
+    elif aw == 'double': return t.add_node(pid,'action-params',tograph=param) # 701.9
+    elif aw == 'exchange': return t.add_node(pid, 'action-params', tograph=param)  # 701.10
     elif aw == 'exile': return _graph_ap_thing_(t,pid,param) # 701.11
+    elif aw == 'fight': return _graph_ap_thing_test_(t,pid,param) # 701.12
     #return t.add_node(pid,'action-params',tograph=param)
     return None
 

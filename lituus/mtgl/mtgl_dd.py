@@ -76,9 +76,7 @@ re_kw_line = re.compile(
 #  [cost]: [effect]. [Instructions]?
 # NOTE: knowing where effect and instructions split is difficult. For now we
 #  are assuming the last sentence if present are instructions
-# TODO: bullet check is technically redudant now. for now have it in grapher
 re_act_check = re.compile(r"(?<!\"[^\"]+):")
-#re_act_line = re.compile(r"^(.+?): (.+?)(?:\. ([^.|^•]+))?\.?$")
 re_act_line = re.compile(r"^(.+?): (.+?)(?:\. ([^.]+))?\.?$")
 
 # Triggered (603.1) lines starts with a trigger preamble
@@ -863,11 +861,14 @@ re_qst = re.compile(
     r"^(?:nu<([^>]+)> )?(?:xq<([^>]+)> )?(?:(?:xs|st)<([^>]+)> )?"
     r"(?:((?:ob|xp|xo|zn)<[^>]+>) (and|or|and/or) (?:xq<([^>]+)> )?)?"
     r"((?:ob|xp|xo|zn)<[^>]+>)"
-    r"(?: ((?:xq<[^>]+> )?xp<[^>]+> xc<[^>]+>))?" # TODO: will this grab invalid xc values
+    r"(?: ((?:xq<[^>]+> )?xp<[^>]+> (?:xa<do> cn<not> )?xc<[^>]+>))?"
     r"(?: ((?:pr|xq)<(?:with|without|from|of|that_is|that_are|other_than)> "
      r"[^\.|^,]+))?\.?$"
 )
-re_possession_clause = re.compile(r"((?:xq<\w*?> )?xp<[^>]+>) xc<([^>]+)(?: suffix=s)?>")
+#re_possession_clause = re.compile(r"((?:xq<\w*?> )?xp<[^>]+>) xc<([^>]+)(?: suffix=s)?>")
+re_possession_clause = re.compile(
+    r"((?:xq<\w*?> )?xp<[^>]+>) (?:(xa<do> cn<not>) )?xc<([^>]+)(?: suffix=s)?>"
+)
 re_qualifying_clause = re.compile(
     r"^(?:pr|xq)<(with|without|from|of|in|that_is|that_are|other_than)> (.+)$"
 )
