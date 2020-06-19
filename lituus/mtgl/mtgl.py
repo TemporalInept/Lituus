@@ -271,8 +271,8 @@ word_hacks = {
     "can't":"cannot","don't":"do not","didn't":"did not","it's":"it is",
     "isn't":"is not","haven't":"have not","hasn't":"has not","aren't":"are not",
     "you're":"you are","couldn't":"could not","they're":"they are",
-    "doesn't":"does not","you've":"you have",
-    "that's":"that is","wasn't":"was not","weren't":"were not",
+    "doesn't":"dos not","you've":"you have","that's":"that is","wasn't":"was not",
+    "weren't":"were not",
     # special
     'an': "a",
     # plural
@@ -304,7 +304,7 @@ word_hacks = {
     "lost":"loseed","losing":"loseing",
     "its":"it's",
     "died":"dieed","dying":"dieing",
-    "choosing":"chooseing",#"chosen":"chooseed",
+    "choosing":"chooseing","chose":"chooseed",
     "drawn":"drawed",
     "spent":"spended","unspent":"unspended",
     "proliferating":"proliferateing","proliferated":"proliferateed",
@@ -320,6 +320,7 @@ word_hacks = {
     "paid":"payed",
     "taking":"takeing","took":"takeed",
     "cycled":"cyclinged",  # IOT to match it as the past tense of a keyword
+    "monstrous":"monstrosityed",
     "reducing":"reduceing","reduced":"reduceed",
     "declaring":"declareing","declared":"declareed",
     "has":"haves","had":"haveed","having":"haveing",
@@ -327,8 +328,9 @@ word_hacks = {
     "skipped": '"skiped', "skipping":"skiping",
     "produced":"produceed","producing":"produceing",
     "resolved":"resolveed","resolving":"resolveing",
-    "did":"doed","does":"do",
+    "did":"doed","does":"dos",
     "controlled":"controled",
+    "once":"1 time",
     # status related
     "tapping":"taping","tapped":"taped","untapping":"untaped","untapped":"untaped",
     "flipping":"fliping","flipped":"fliped",
@@ -360,10 +362,10 @@ re_reminder = re.compile(r" ?\(.+?\)")
 
 # modify modal spells IOT facilitate graphing:
 #  1. find occurrences of ".•", as period is used by the grapher to delimit clauses
-#  2. Charming Prince as instructions that apply to the last mode but are treated
-#   as instructions to the triggered abiility
+#  2. periods inside modal lines signify instructions to that option, find all
+#   periods that are the last one
 re_modal_blt = re.compile(r"\.•")
-re_modal_lvl_instr_fix = re.compile(r"(?<=.+ •.+)(\. )")
+re_modal_lvl_instr_fix = re.compile(r"\.(?= )")
 
 # modify level ups IOT facilitate graphing.
 re_lvl_up = re.compile(r"^(level up {[^\n]+})\n")
@@ -431,9 +433,8 @@ re_obj = re.compile(
 # TODO: rest does not belong here
 lituus_objects = [  # lituus objects
     "city's blessing", 'game','mana pool','mana cost','commander','mana','attacker',
-    'blocker','itself','it','them','they','coin','choice','cost', "amount of",
-    'life total','life','symbol','rest','monarch','pile','team','mode','level',
-    'value','number',
+    'blocker','itself','it','them','coin','choice','cost', "amount of",'life total',
+    'life','symbol','rest','monarch','pile','team','mode','level','value','number',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
@@ -442,7 +443,7 @@ re_lituus_obj = re.compile(
 
 # lituus players - keep suffix but check word boundary in beginning
 lituus_players = [
-    'you','opponent','teammate','player','owner','controller',
+    'you','opponent','teammate','player','owner','controller','they',
 ]
 lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
@@ -521,6 +522,7 @@ op_keys = [
 ]
 re_op = re.compile(r"\b({})\b".format('|'.join(list(op_keys))))
 re_upto_op = re.compile(r"pr<up_to>(?= nu<[^>]+>)")
+re_only_upto = re.compile(r"(op<≤> nu<([^>]+)> sq<time suffix=s>)")
 
 # finds number or greater, less, more or fewer
 re_num_op = re.compile(r"(nu<(?:\d+|x|y|z)>) or (greater|less|more|fewer)")
@@ -1261,7 +1263,9 @@ re_at_prep = re.compile(r"(tp<at>)(?= xl<\w+>)")
 
 # 'at' is also a preposition if it is not followed by some number of tokens and
 # a comma
-re_at_prep2 = re.compile(r"(tp<at>)(?=[^,]+?\.)")
+# TODO: this screwing delayed trigger preambles up - see Prized Amalgam, hiding
+#  for now
+#re_at_prep2 = re.compile(r"(tp<at>)(?=[^,]+?\.)")
 
 # no nu<1> needs to be retagged
 re_no_one = re.compile(r"no nu<1>")
@@ -1416,16 +1420,9 @@ re_clr_conjunction_chain = re.compile(
 
 # currently only 1 card I found with this pattern, Seize the Soul, Destroy target
 # nonwhite, nonblack creature.
-# TODO:
-#  1. Could handjam this in multivere hack_cards but it could turn up again in
-#   future releases
-#  2. Could jerry rig above to have 0 or 1 of conjunction operators but that
-#   could lead to future issues
 re_clr_conjunction_chain_special = re.compile(
-    r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>, )*"
-    r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>)"
-    r","
-    r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>)"
+    r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>), "
+     r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>)"
 )
 
 # search for color conjunction type only 2, Soldevi Adnate and Tezzeret's

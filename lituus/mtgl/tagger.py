@@ -316,7 +316,7 @@ def deconflict_tags1(txt):
 
     # deconflict 'at' making it a preposition when followed by a qualifier
     ntxt = mtgl.re_at_prep.sub(r"pr<at>",ntxt)
-    ntxt = mtgl.re_at_prep2.sub(r"pr<at>",ntxt)
+    #ntxt = mtgl.re_at_prep2.sub(r"pr<at>",ntxt)
 
     # a few cards (7) will have the phrase 'no nu<1>' - make this xp<no_one>
     # and (2) will have the phrase "with no" - make these pr<without>
@@ -327,8 +327,11 @@ def deconflict_tags1(txt):
     #  1. to avoid conflicts 'named' is listed as an action, rewrite it here so
     #  it shows up xa<name suffix=ed> rather than xa<named>
     #  2. occurrences of pr<up_to> nu<NUMBER> should be replaced by LE nu<NUMBER>
+    #  3. (three cases i.e. Sewer Rats) are tage LE NUMBER sq<time> standarize
+    #   these to only LE NUMBER times
     ntxt = ntxt.replace("xa<named>","xa<name suffix=ed>")
     ntxt = mtgl.re_upto_op.sub(r"op<{}>".format(mtgl.LE),ntxt)
+    ntxt = mtgl.re_only_upto.sub(r"cn<only> \1",ntxt)
 
     return ntxt
 
@@ -1131,9 +1134,10 @@ def _join_suffix_(m):
     """
     # TODO: needs to handle all anamolies, not just stems ending with 'p'
     tid,stem,suffix = m.groups()
-    joined = stem+suffix
-    if stem.endswith('p') and suffix in ['ed','ing']: joined = stem+'p'+suffix
-    if stem.endswith('e') and suffix in ['ed','ing']: joined = stem[:-1]+suffix
+    if stem == 'monstrosity': joined = "monstrous"
+    elif stem.endswith('p') and suffix in ['ed','ing']: joined = stem+'p'+suffix
+    elif stem.endswith('e') and suffix in ['ed','ing']: joined = stem[:-1]+suffix
+    else: joined = stem+suffix
     return "{}<{}>".format(tid,joined)
 
 def _join_ability_(m):

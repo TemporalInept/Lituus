@@ -67,7 +67,8 @@ re_kw_line = re.compile(
 # four subtypes:
 #  113.3a Spell - an instant or sorcery
 #  113.3b Activated - of the form cost : effect
-#  113.3c Triggered - of the form TRIGGER
+#  113.3c Triggered - of the form TRIGGER PREAMBLE condition, effect [instrunctions]?
+#   A delayed trigger (603.7) a result of replacement effects
 #  113.3d static - none of the above
 
 # Activated (602.1, 113.3b) contains a ':' which splits the cost and effect (cannot
@@ -75,8 +76,9 @@ re_kw_line = re.compile(
 #  [cost]: [effect]. [Instructions]?
 # NOTE: knowing where effect and instructions split is difficult. For now we
 #  are assuming the last sentence if present are instructions
-# TODO: have to add check for bullet for now have it in grapher
+# TODO: bullet check is technically redudant now. for now have it in grapher
 re_act_check = re.compile(r"(?<!\"[^\"]+):")
+#re_act_line = re.compile(r"^(.+?): (.+?)(?:\. ([^.|^•]+))?\.?$")
 re_act_line = re.compile(r"^(.+?): (.+?)(?:\. ([^.]+))?\.?$")
 
 # Triggered (603.1) lines starts with a trigger preamble
@@ -86,11 +88,18 @@ re_act_line = re.compile(r"^(.+?): (.+?)(?:\. ([^.]+))?\.?$")
 #  have to build in checks for periods that are inclosed in double parenthesis
 #  and single, double parenthesis (Reef Worm)
 re_tgr_check = re.compile(r"^(tp<\w+>)")
-re_tgr_line = re.compile(
-    r"^tp<(at|whenever|when)> "
-    r"([^,]+), "
-    r"([^\.]+)"
-    r"(?:\. (.+))?\.?$"
+re_tgr_line = re.compile(r"^tp<(\w+)> ([^,]+), ([^\.]+)(?:\. (.+))?\.?$")
+
+# Delayed Triggered (603.7) "do something at a later time - contains a trigger
+# preamble but not usually at the beginning of the ability and end with a turn
+# structure. See Prized Amalgam
+# For now, look for lines having the form
+#  [effect] [when/whenever/at] [condition]
+#  where the condition ends with a turn structure
+# NOTE: we ensure effect does not cross sentence/clause boundaries
+re_delayed_tgr_check = re.compile(r"tp<\w+> (?:.+ )?ts<[^>]+>\.?$")
+re_delayed_tgr_clause = re.compile(
+    r"([^,|^\.]+) tp<(\w+)> ((?:[^\.]+ )?ts<[^>]+>)\.?$"
 )
 
 # the following is not a defined line but needs to be handled carefully
@@ -109,6 +118,7 @@ re_grant_ability = re.compile(
     r"(.+) (xa<(?:have|gain)(?: suffix=\w+)?>) \"([^\"]+)\""
     r"(?: and \"(.+)\")?(?: (sq<\w+> [^\.]+))?\.$"
 )
+# TODO: currently not using grant ability??
 
 ####
 ## KEYWORDS
@@ -682,7 +692,7 @@ re_rather_than_apc = re.compile(
 # choose [operator]? [number]. [Instructions] (•[choice])+
 # Vindictive Lich is an exception where the instructions differ and the number
 # includes an operator
-re_modal_check = re.compile(r"xa<choose> nu<([^>]+)>.+•")
+re_modal_check = re.compile(r"^xa<choose> nu<([^>]+)>.+•")
 re_modal_phrase = re.compile(r"^xa<choose> nu<([^>]+)> —([^\.]+)\.?$")
 re_modal_phrase_instr = re.compile(
     r"^xa<choose> nu<([^>]+)>\. ([^•]+) ([^\.]+)\.?$"
@@ -708,21 +718,19 @@ re_lvl_up_lvl = re.compile(
 #  a) then [action] i.e. Barishi
 #  b) duration [sequence] [phase/step], [action] i.e Abeyance
 #  c) condition [sequence] [condition], [action] i.e. Hungering Yetis
-#  d) trailing sequence [sequence] ... [turn structure]
-# until end of turn
+#  d) trailing sequence from delayed triggers i.e. Prized Amalgam
+#   [quanitifer] [sequence] of [clause]? [quanitifier] [turn structure]
 re_sequence_check = re.compile(r"^sq<[^>]+>")
-#re_sequence_check2 = re.compile(r"sq<[^>]+>[^,|^\.]ts<[^>]+>$")
+re_time_check = re.compile(r"ts<([^>]+)>$")
 re_sequence_then = re.compile(r"^(sq<then>) ([^\.]+)\.?$")
 re_sequence_dur = re.compile(r"^(sq<[^>]+> ts<[^,]+>), ([^\.]+)\.?$")
-re_sequence_cond = re.compile(
-    r"^sq<([^>]+)> ([^,]+), ([^\.]+)\.?$"
+re_sequence_cond = re.compile(r"^sq<([^>]+)> ([^,]+), ([^\.]+)\.?$")
+re_sequence_time = re.compile(
+    r"^xq<([^>]+)> sq<([^>]+)> pr<of> (?:([^,|^\.]+) )?xq<([^>]+)> ts<([^>]+)>\.?$"
 )
-#re_sequence_time = re.compile(
-#    r"^([^,]+ sq<(?:\w+)>) ([^\.]+)\.?$"
-#)
 
 ##
-# optionals and conditions
+# optionals, conditions and restrictions
 
 # [player] may [action] as though [action] [if [condition]]? i.e. Lone Wolf
 #re_may_as_though = re.compile(
@@ -777,11 +785,52 @@ re_action_unless = re.compile(
 re_status_unless = re.compile(r"^(?:st|xs])<(\w+)> cn<unless> ([^,|\.]+)\.?$")
 re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$")
 
+# some restrictions have a conjunction of only restrictions with the basic form
+#  [action] only|only_if [clause] and only|only_if [clause]
+# for each of the clauses, have to look at the condition type. If it is only
+#  the clause is timing related. If it is only_if, the clause is a condition
+# TODO: Capricorn is an exception to the pattern and is of the form
+#  only [player] may [action] and only during [timing]
+# I think only ands are present but just case check for 'or' and 'and/or'
+re_only_conjunction = re.compile(
+    r"^([^,|\.]+) (cn<\w+> [^,|\.]+) (and|or|and/or) (cn<\w+> [^,|\.]+)\.?$"
+)
+
+# timing restrictions only during ...
+# 1. [action] only during [phase/step]
+# 2. [action] only [number] times [phase/step]
+#  2.a variant due to tagging comes from no more than as an operator (translates
+#  to only up to x times
+#  TODO: see Sewer Rats no more
+re_restriction_timing = re.compile(
+    r"^(?:([^,|\.]+) )?cn<only> sq<(\w+)> ((?:[^,|\.]+ )?ts<[^>]+>)\.?$"
+)
+re_restriction_number = re.compile(
+    "^(?:([^,|\.]+) )?cn<only> nu<([^>]+)> sq<time(?:[^>]+)?>"
+     "(?: ((?:[^,|\.]+ )?ts<[^>]+>))?\.?$"
+)
+
+# condition restrictions only_if
+re_only_if = re.compile(r"^(?:([^,|\.]+) )?cn<only_if> ([^,|\.]+)\.?$")
+
 ####
 ## CLAUSES
 ####
 
-# prepositions
+# TBD
+
+####
+## PHASES/STEPS
+####
+
+# NOTE: these are very similar to the graphing of things and we could consider the
+# phases/steps graphed here as 'things' i.e. your turn.
+# TODO: push graphing of all phases/steps here (the beginning of your end step etc)
+# has the form
+#  [player-possessive] [phase/step]
+re_phase = re.compile(
+    r"^(?:xq<([^>]+)> )?(?:xp<([^>]+) suffix=(?:r|'s)> )?ts<([^>]+)>$"
+)
 
 ####
 ## THINGS
@@ -793,10 +842,6 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$"
 #  quantifier should always be the
 #  thing will always be card
 # quanitifier may be after the number see Scarab Feast
-#re_qtz = re.compile(
-#    r"^xq<([^>]+)> pr<(\w+)> (?:nu<([^>]+)> )?"
-#     r"(ob<[^>]+>) ([^,|^\.]+zn<[^>]+>)(?: xm<face amplifier=(up|down)>)?$"
-#)
 re_qtz = re.compile(
     r"^xq<([^>]+)> (?:pr<(\w+)> )?(?:nu<([^>]+)> )?"
      r"(ob<[^>]+>) ([^,|^\.]+zn<[^>]+>)(?: xm<face amplifier=(up|down)>)?$"
@@ -909,9 +954,12 @@ re_qual_thatis_zone = re.compile(
 re_qual_otherthan_thing = re.compile(r"^(ob<[^>]+>)$")
 
 ####
-## TEST SPACE
+## KEYWORD/LITUUS ACTION
 ####
 
-# duration/times/sequences
-# [sequence|quantifier] [phase]
-re_duration_ts = re.compile(r"^((?:sq|xq)<[^>]+>) ts<(\w+)>$")
+# attach 701.3 attach [object] to [object] where the first object is self
+re_attach_clause = re.compile(r"^([^\.]+) pr<to> ([^\.]+)$")
+
+####
+## TEST SPACE
+####

@@ -147,6 +147,9 @@ def graph_line(t,pid,line,ctype=None):
     #  112.3b Activated = of the form cost:effect,instructions.
     #  112.3c Triggered = of the form tgr condition, effect. instructions &
     #  112.3d static = none of the above
+    # A special case is the delayed trigger (603.7) as these may generally be
+    # part of a larger line (Prized Amalgam), they are not checked for here but
+    # in graph_phrase when phrases are checked
     if _activated_check_(line): graph_activated(t,pid,line)
     elif dd.re_tgr_check.search(line): graph_triggered(t,pid,line)
     else:
@@ -170,9 +173,8 @@ def graph_activated(t,pid,line):
         cost,effect,instr = dd.re_act_line.search(line).groups()
         aaid = t.add_node(pid,'activated-ability')
         graph_cost(t,t.add_node(aaid,'activated-cost'),cost)
-        graph_line(t,t.add_node(aaid,'activated-effect'),effect)
-        if instr:
-            graph_phrase(t,t.add_node(aaid,'activated-instructions'),instr)
+        graph_phrase(t,t.add_node(aaid,'activated-effect'),effect)
+        if instr: graph_phrase(t,t.add_node(aaid,'activated-instructions'),instr)
     except AttributeError:
         raise lts.LituusException(
             lts.EPTRN,"Not an activated ability ({})".format(line)
@@ -213,19 +215,17 @@ def graph_phrase(t,pid,line,i=0):
     elif dd.re_tgr_check.search(line): graph_triggered(t,pid,line)
     else:
         # then check for replacement and apc before continuing
-        # TODO: can we make a check for these?
+        # TODO: can we make a check for all of these?
         if graph_replacement_effects(t,pid,line): return
         if graph_apc_phrases(t,pid,line): return
-        if dd.re_modal_check.search(line):
-            if graph_modal_phrase(t,pid,line): return
-        if dd.re_lvl_up_check.search(line):
-            if graph_lvl_up_phrase(t,pid,line): return
-        if dd.re_sequence_check.search(line):
-            if graph_sequence_phrase(t,pid,line): return
-        if graph_condition_phrase(t,pid,line): return
+        if dd.re_modal_check.search(line) and graph_modal_phrase(t,pid,line): return
+        if dd.re_lvl_up_check.search(line) and graph_lvl_up_phrase(t,pid,line): return
+        if _sequence_check_(line) and graph_sequence_phrase(t,pid,line): return
+        if graph_optional_phrase(t,pid,line): return
+        if graph_restriction_phrase(t,pid,line): return
         if graph_option_phrase(t,pid,line): return
-        if dd.re_act_clause_check.search(line):
-            if graph_action_clause(t,pid,line): return
+        if dd.re_delayed_tgr_check.search(line) and graph_delayed_tgr(t,pid,line): return
+        if dd.re_act_clause_check.search(line) and graph_action_clause(t,pid,line): return
 
         # TODO: at this point how to continue: could take each sentence if more than
         #  one and graph them as phrase and if only sentence, graph each clause (i.e.
@@ -803,43 +803,54 @@ def graph_sequence_phrase(t,pid,line):
     :param line: text to graph
     :return: node id or None
     """
-    # check for then [action] first
-    try:
-        _,act = dd.re_sequence_then.search(line).groups()
-        sid = t.add_node(pid,'then')
-        graph_phrase(t,sid,act)
-        return sid
-    except AttributeError:
-        pass
+    # start with time (ending with a turn structure
+    if dd.re_time_check.search(line):
+        try:
+            # NOTE: the start of these appear to always be "the beginning"
+            # there are simple phrases namely the beginning of [quantifier] [phase]
+            # and more complex phrasings
+            _,when,cls,xq,ts = dd.re_sequence_time.search(line).groups()
+            tid = tid = t.add_node(pid,'timing') # TODO: don't like this label
+            t.add_node(tid,'when',value=when)  # ignore the first quantifier
+            if ts in mtgl.steps1: ts = ts + "-step"
+            if cls:
+                # TODO: have to graph the complex phrases
+                t.add_node(tid,'timing-clause',tograph=cls)
+            t.add_node(tid,'phase',quantifier=xq,value=ts)
+            return tid
+        except AttributeError:
+            pass
+    elif dd.re_sequence_check.search(line):
+        # check for then [action] first
+        try:
+            _,act = dd.re_sequence_then.search(line).groups()
+            sid = t.add_node(pid,'then')
+            graph_phrase(t,sid,act)
+            return sid
+        except AttributeError:
+            pass
 
-    # then durations [sequence] [phase/step], [action]
-    try:
-        dur,act = dd.re_sequence_dur.search(line).groups()
-        did = graph_duration(t,pid,dur)
-        graph_phrase(t,did,act) # TODO: should this be under the 'until' node (see Pale Moon)
-        return did
-    except AttributeError:
-        pass
+        # then durations [sequence] [phase/step], [action]
+        try:
+            dur,act = dd.re_sequence_dur.search(line).groups()
+            did = graph_duration(t,pid,dur)
+            graph_phrase(t,did,act) # TODO: should this be under the 'until' node (see Pale Moon)
+            return did
+        except AttributeError:
+            pass
 
-    # then other sequences of the form [sequence] [cond], [effect]
-    try:
-        seq,cond,act = dd.re_sequence_cond.search(line).groups()
-        sid = t.add_node(pid,seq.replace('_','-'))
-        graph_phrase(t,t.add_node(sid,'condition'),cond)
-        graph_phrase(t,sid,act)
-        return sid
-    except AttributeError:
-        pass
-
-    # then timing
-    #try:
-    #    time,phrase = dd.re_sequence_time.search(line).groups()
-    #    tid = t.add_node(pid,'timing')
-    #    graph_phrase(t,t.add_node(tid,'when'),time)
-    #    graph_phrase(t,tid,phrase)
-    #    return tid
-    #except AttributeError:
-    #    pass
+        # then other sequences of the form [sequence] [cond], [effect]
+        try:
+            seq,cond,act = dd.re_sequence_cond.search(line).groups()
+            sid = t.add_node(pid,seq.replace('_','-'))
+            graph_phrase(t,t.add_node(sid,'condition'),cond)
+            graph_phrase(t,sid,act)
+            return sid
+        except AttributeError:
+            pass
+    else:
+        # should never get here
+        raise lts.LituusException(lts.EPTRN,"{} not a sequence".format(line))
 
     return None
 
@@ -847,7 +858,7 @@ def graph_sequence_phrase(t,pid,line):
 ## CONDITION PHRASES
 ####
 
-def graph_condition_phrase(t,pid,line):
+def graph_optional_phrase(t,pid,line):
     """
     determines how to graph the condition phrase in line
     :param t: the tree
@@ -917,13 +928,84 @@ def graph_condition_phrase(t,pid,line):
 
     return None
 
+def graph_restriction_phrase(t,pid,phrase):
+    """
+    graphs restriction phases
+    :param t: the tree
+    :param pid: the parent id
+    :param phrase: text to graph
+    :return: node id or None on failure
+    """
+    # TODO: do we need to add intermediate restriction node
+    # need to check conjunctions first
+    try:
+        act,rstr1,conj,rstr2 = dd.re_only_conjunction.search(phrase).groups()
+        oid = t.add_node(pid,'only')
+        graph_phrase(t,oid,act)
+        cid = t.add_node(oid,'conjunction',value=conj,itype='only')
+        graph_restriction_phrase(t,cid,rstr1)
+        graph_restriction_phrase(t,cid,rstr2)
+        return oid
+    except AttributeError:
+        pass
+
+    # The below may be part of a recursive call due to a conjunction. Check the
+    # parent type first. If conjunction, only the restriction will be present,
+    # do not add a new 'only' node, merely graphing the restriciton
+
+    # only-ifs
+    if 'cn<only_if>' in phrase:
+        try:
+            effect,cond = dd.re_only_if.search(phrase).groups()
+            if mtgt.node_type(pid) == 'conjunction':
+                return graph_phrase(t,t.add_node(pid,'if'),cond)
+            else:
+                oid = t.add_node(pid,'only')
+                graph_phrase(t,oid,effect)
+                graph_phrase(t,t.add_node(oid,'if'),cond)
+                return oid
+        except AttributeError:
+            pass
+
+    if 'cn<only>' in phrase:
+        # start with only-[sequence]
+        try:
+            act,seq,phase = dd.re_restriction_timing.search(phrase).groups()
+            if mtgt.node_type(pid) == 'conjunction':
+                return graph_phase(t,t.add_node(pid,seq),phase)
+            else:
+                oid = t.add_node(pid,'only')
+                graph_phrase(t,oid,act)
+                graph_phase(t,t.add_node(oid,seq),phase)
+                return oid
+        except AttributeError:
+            pass
+
+        # only-number per turn
+        try:
+            act,num,phase = dd.re_restriction_number.search(phrase).groups()
+            if mtgt.node_type(pid) == 'conjunction':
+                nid = t.add_node(pid,'times',value=num)
+                if phase: graph_phase(t,nid,phase)
+                return nid
+            else:
+                oid = t.add_node(pid,'only')
+                graph_phrase(t,oid,act)
+                nid = t.add_node(oid,'times',value=num)
+                if phase: graph_phase(t,nid,phase)
+                return oid
+        except AttributeError:
+            pass
+
+    return None
+
 ####
 ## OPTIONAL PHRASES
 ####
 
 def graph_option_phrase(t,pid,phrase):
     """
-    determines how to graph the condition phrase in line
+    determines how to graph the optional phrase in line
     :param t: the tree
     :param pid: the parent id
     :param phrase: text to graph
@@ -939,11 +1021,6 @@ def graph_option_phrase(t,pid,phrase):
         graph_thing(t,mid,ply)
         graph_phrase(t,mid,act1)
         graph_phrase(t,t.add_node(mid,'as-though'),act2)
-        #oid = t.add_node(pid,'option')
-        #mid = t.add_node(oid,'may')
-        #graph_thing(t,mid,ply)
-        #graph_phrase(t,mid,act1)
-        #graph_phrase(t,t.add_node(oid,'as-though'),act2)
         return mid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(mid)
@@ -975,6 +1052,28 @@ def graph_option_phrase(t,pid,phrase):
         pass
 
     return None
+
+####
+## DELAYED TRIGGERED ABILITIES
+####
+
+def graph_delayed_tgr(t,pid,clause):
+    """
+    graphs the delayed trigger in line
+    :param t: the tree
+    :param pid: the parent id
+    :param clause: text to graph
+    :return: node id or None on failure
+    """
+    try:
+        effect,tp,cond = dd.re_delayed_tgr_clause.search(clause).groups()
+        dtid = t.add_node(pid,'delayed-trigger-ability')
+        t.add_node(dtid,'triggered-preamble',value=tp)
+        graph_phrase(t,t.add_node(dtid,'triggered-condition'),cond)
+        graph_phrase(t,t.add_node(dtid,'triggered-effect'),effect)
+        return dtid
+    except AttributeError:
+        return None
 
 ####
 ## CLAUSES, TOKENS
@@ -1035,7 +1134,10 @@ def graph_action_clause(t,pid,phrase):
             # graph the action params
             for aw,act in acs:
                 awid = t.add_node(aid,mtgltag.tag_val(aw))
-                if act: graph_action_param(t,awid,mtgltag.tag_val(aw),act)
+                if act:
+                    if not graph_action_param(t,awid,mtgltag.tag_val(aw),act):
+                        graph_phrase(t,awid,act)
+
         except lts.LituusException as e:
             if e.errno == lts.EPTRN:
                 if nid: t.del_node(nid)
@@ -1070,7 +1172,7 @@ def graph_thing(t,pid,clause):
     :param t: the tree
     :param pid: the parent id
     :param clause: the clause
-    :return: the player node id
+    :return: the thing node id
     """
     # TODO: should we combine suffix with the stem if present?
     # could have a qst phrase, a qtz phrase or a possesive phrase - check all
@@ -1213,10 +1315,34 @@ def graph_action_param(t,pid,aw,param):
     :return: the graphed action node or None
     """
     # starting with mtg defined keyword actions
-    #if aw == 'activate': return _graph_ap_thing_(t,pid,param) # 701.1
-    #elif aw == 'destroy': return _graph_ap_thing_(t,pid,param) # 701.7
-    if aw == 'exile': return _graph_ap_thing_(t,pid,param) # 701.11
-    return t.add_node(pid,'action-params',tograph=param)
+    if aw == 'activate': return _graph_ap_thing_(t,pid,param) # 701.2
+    elif aw == 'attach': return _graph_ap_attach_(t,pid,param) # 701.3
+    elif aw == 'unattach': return _graph_ap_thing_(t,pid,param) # 701.3d
+    elif aw == 'destroy': return _graph_ap_thing_(t,pid,param) # 701.7
+    elif aw == 'exile': return _graph_ap_thing_(t,pid,param) # 701.11
+    #return t.add_node(pid,'action-params',tograph=param)
+    return None
+
+def graph_phase(t,pid,clause):
+    """
+    Graphs the phase under node pid
+    :param t: the tree
+    :param pid: the parent id
+    :param clause: the clause
+    :return: the phase node id
+    """
+    # TODO: combine graph_duration and this
+    try:
+        xq,ply,phase = dd.re_phase.search(clause).groups()
+        phid = t.add_node(pid,'phase-clause')
+        if xq: t.add_node(phid,'quantifier',value=xq)
+        t.add_node(phid,'phase',value=phase)
+        if ply: t.add_node(phid,'whose',value=ply)
+        return phid
+    except AttributeError:
+        pass
+
+    return None
 
 ####
 ## PRIVATE FUNCTIONS
@@ -1318,7 +1444,11 @@ def _twi_split_(txt):
         raise lts.LituusException(lts.EPTRN,"Not a twi clause")
 
 def _activated_check_(line):
-    return dd.re_act_check.search(line) and mtgl.BLT not in line
+    return dd.re_act_check.search(line) and not dd.re_modal_check.search(line)
+    #return dd.re_act_check.search(line) and mtgl.BLT not in line
+
+def _sequence_check_(line):
+    return dd.re_sequence_check.search(line) or dd.re_time_check.search(line)
 
 def _graph_qualifying_clause_(t,pid,clause):
     """
@@ -1457,25 +1587,31 @@ def _graph_qualifying_clause_(t,pid,clause):
 
 ## KEYWORD ACTIONS
 
-def _graph_ap_thing_(t,pid,phrase):
+def _graph_ap_thing_test_(t,pid,phrase):
     # attempt to graph parameters as a thing
     try:
         return graph_thing(t,pid,phrase)
     except lts.LituusException:
         return t.add_node(pid,'action-params',tograph=phrase)
 
-#def _graph_destroy_(t,pid,phrase):
-    # 701.7 "to destroy a permanent"
-    # try to graph param as a Thing
-    #try:
-    #    return graph_thing(t,pid,phrase)
-    #except lts.LituusException:
-    #    return t.add_node(pid,'action-params',tograph=phrase)
-
-def _graph_exile_(t,pid,phrase):
-    # 701.11 "to exile an object" and (Rule 406)
-    # try to graph param as a Thing
+def _graph_ap_thing_(t,pid,phrase):
+    # attempt to graph parameters as a thing
     try:
         return graph_thing(t,pid,phrase)
     except lts.LituusException:
-        return t.add_node(pid,'action-params',tograph=phrase)
+        return None
+
+def _graph_ap_attach_(t,pid,phrase):
+    # attach 701.3 has the form attach [self] to [thing]
+    tid = None
+    try:
+        ob1,ob2 = dd.re_attach_clause.search(phrase).groups()
+        tid=graph_thing(t,pid,ob1)
+        graph_thing(t,t.add_node(tid,'to'),ob2)
+        return tid
+    except lts.LituusException:
+        # have to check if the first object was graphed but the second failed
+        if tid: t.del_node(tid)
+    except AttributeError:
+        pass
+    return None
