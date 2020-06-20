@@ -980,6 +980,10 @@ re_mana_trailing = re.compile(r"^((?:xq<[^>]+> )?{[^t|^e|^]+}+) ([^\.]+)\.?$")
 re_amount_of_mana = re.compile(
     r"^xq<a> xo<amount_of> ({[^t|^e|^]+}+) ([^\.]+)\.?$"
 )
+re_that_much_mana = re.compile(
+    # TODO: Grand Warlord Radha is very similar
+    r"^xq<that> xl<much> ({[^t|^e|^]+}+)(?: ([^\.]+))?\.?$"
+)
 
 ####
 ## TEST SPACE

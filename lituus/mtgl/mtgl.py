@@ -1070,6 +1070,13 @@ re_kw_action = re.compile(
     r"kw<([\w-]+?) suffix=s>"
 )
 
+# action words that are statuses
+# action words with a suffix of 'ed' that are preceded by a quantifier and
+# followed by an object are statuses i.e. Xathrid Demon
+re_action_status = re.compile(
+    r"(?<=xq<[^>]+> )(?:ka|xa)<([^ ]+ suffix=ed)>(?= ob<[^>]+>)"
+)
+
 ####
 ## MID-PASS CLEANUP
 ####

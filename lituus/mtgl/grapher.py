@@ -1328,10 +1328,12 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'create': return _graph_ap_thing_(t,pid,param)  # 701.6
     elif aw == 'destroy': return _graph_ap_thing_(t,pid,param) # 701.7
     elif aw == 'discard': return _graph_ap_thing_test_(t,pid,param) # 701.8
-    elif aw == 'double': return t.add_node(pid,'action-params',tograph=param) # 701.9
-    elif aw == 'exchange': return t.add_node(pid, 'action-params', tograph=param)  # 701.10
+    # TODO: elif aw == 'double': # 701.9
+    # TODO: elif aw == 'exchange': # 701.10
     elif aw == 'exile': return _graph_ap_thing_(t,pid,param) # 701.11
     elif aw == 'fight': return _graph_ap_thing_(t,pid,param) # 701.12
+    # TODO: elif aw == 'play': # 701.13
+    elif aw == 'regenerate': return _graph_ap_thing_test_(t,pid,param) # 710.14
 
     # then lituus actions
     if aw == 'add': return _graph_ap_add_(t,pid,param)
@@ -1697,4 +1699,14 @@ def _graph_ap_add_(t,pid,phrase):
     except AttributeError:
         pass
 
-    return t.add_node(pid,'action-params',tograph=phrase)
+    # that much {x}
+    try:
+        ms,cls = dd.re_that_much_mana.search(phrase).groups()
+        mid = t.add_node(pid,'that-much')
+        _graph_mana_string_(t,mid,ms)
+        if cls: t.add_node(mid,'mana-qualifier',tograph=cls)
+        return mid
+    except AttributeError:
+        pass
+
+    return None

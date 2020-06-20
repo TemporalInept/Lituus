@@ -520,6 +520,9 @@ def deconflict_tags2(txt):
     ntxt = mtgl.re_kw_status.sub(r"xs<\1 suffix=ed>",ntxt)
     ntxt = mtgl.re_kw_action.sub(r"xa<\1 suffix=s>",ntxt)
 
+    # action words that can be converted to status' i.e. sacrificed
+    ntxt = mtgl.re_action_status.sub(r"xs<\1>",ntxt)
+
     return ntxt
 
 def chain_other(txt):
