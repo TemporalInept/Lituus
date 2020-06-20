@@ -1406,9 +1406,7 @@ def re_chain(tid):
     )
 
 # above not working for quantifiers TODO: why
-re_chain_quantifiers = re.compile(
-    r"xq<\w+> xq<\w+>( xq<\w+>)*"
-)
+re_chain_quantifiers = re.compile(r"xq<\w+> xq<\w+>( xq<\w+>)*")
 
 # a subset of the conjunction_chain that matches only color chains
 re_clr_conjunction_chain = re.compile(

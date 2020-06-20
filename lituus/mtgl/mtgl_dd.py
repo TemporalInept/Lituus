@@ -946,9 +946,7 @@ re_qual_of_possessive2 = re.compile(
 #    i.e. in target player's hand
 re_qual_thatis_status = re.compile(r"^xs<([^>]+)>$")
 re_qual_thatis_attribute = re.compile(r"^(cn<not> )?xr<([^>]+) val=([^>]+)>$")
-re_qual_thatis_zone = re.compile(
-    r"^(?:(cn<not>) )?pr<on> (xq<[^>]+> zn<[^>]+>)$"
-)
+re_qual_thatis_zone = re.compile(r"^(?:(cn<not>) )?pr<on> (xq<[^>]+> zn<[^>]+>)$")
 
 # other_than - should be an object primarily self i.e. Wormfang Drake but could
 #  be other i.e. Haunting Echos
@@ -960,6 +958,28 @@ re_qual_otherthan_thing = re.compile(r"^(ob<[^>]+>)$")
 
 # attach 701.3 attach [object] to [object] where the first object is self
 re_attach_clause = re.compile(r"^([^\.]+) pr<to> ([^\.]+)$")
+
+# related to 'add' mana
+
+# same as chains but for mana (for add)
+# matches forms of {X} (and {X}{Y}), {X} or {Y} and {X}, {Y}, or {Z}
+re_mana_check = re.compile(r"{[^t|^e|^]+}$")
+re_mana_chain = re.compile(
+    r"^(?:(xq<[^>]+>) )?"
+     r"(?:({[^t|^e|^]+}), )?(?:({[^t|^e|^}]+}),? or )?({[^t|^e|^]+}+)$"
+)
+
+# mana phrases of the form
+# 1. [quanitifer]? [number] mana [qualifying info]
+# 2. [mana] [specifying-clause] - always for each
+# 3. an amount of [mana] [clause]
+re_nadditional_mana = re.compile(
+    r"^(?:(xq<[^>]+>) )?nu<([^>]+)> xo<mana> (pr<(?:of|in)> [^,|\.]+)$"
+)
+re_mana_trailing = re.compile(r"^((?:xq<[^>]+> )?{[^t|^e|^]+}+) ([^\.]+)\.?$")
+re_amount_of_mana = re.compile(
+    r"^xq<a> xo<amount_of> ({[^t|^e|^]+}+) ([^\.]+)\.?$"
+)
 
 ####
 ## TEST SPACE

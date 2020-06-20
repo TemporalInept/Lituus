@@ -419,7 +419,7 @@ def graph_repl_instead(t,pid,phrase):
             # under a 'or' conjunction
             t1,w1,t2,w2,instead = dd.re_if_would2_instead.search(phrase).groups()
             rid = t.add_node(pid,'replacement-effect')
-            oid = t.add_node(rid,'conjunction',value='or',itype="if-woudd")
+            oid = t.add_node(rid,'conjunction',value='or',itype="if-would")
             iid = t.add_node(oid,'if')
             try:
                 graph_thing(t,iid,t1)
@@ -1137,7 +1137,7 @@ def graph_action_clause(t,pid,phrase):
                 if act:
                     if not graph_action_param(t,awid,mtgltag.tag_val(aw),act):
                         graph_phrase(t,awid,act)
-
+            return aid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN:
                 if nid: t.del_node(nid)
@@ -1145,8 +1145,6 @@ def graph_action_clause(t,pid,phrase):
             else:
                 raise
             return None
-        else:
-            return aid
     except AttributeError:
         pass
 
@@ -1185,8 +1183,6 @@ def graph_thing(t,pid,clause):
         #  1. the [top|bottom] [num]? [card] [zone] [amp]?
         #  2. [quantifier] [card] [zone] [amp]?
         # the specifying claues differs depending on the format
-        #t.add_node(sid,'quantifier',value=xq)
-        #if loc: t.add_node(sid,'which',value=loc,quanitity=num if num else 1)
         if loc:
             if xq: t.add_node(sid,'quantifier',value=xq)
             t.add_node(sid,'which',value=loc,quanitity=num if num else 1)
@@ -1228,8 +1224,8 @@ def graph_thing(t,pid,clause):
 
         # graph any trailing posession clauses
         if poss:
+            nid = None
             try:
-                nid = None
                 ply,neg,wd = dd.re_possession_clause.search(poss).groups()
                 lbl = 'owned-by' if wd == 'own' else 'controlled-by'
                 if not neg: cid = t.add_node(nid,lbl)
@@ -1329,15 +1325,19 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'unattach': return _graph_ap_thing_(t,pid,param) # 701.3d
     elif aw == 'cast': return _graph_ap_thing_(t,pid,param) # 701.4
     elif aw == 'counter': return _graph_ap_thing_(t,pid,param) # 701.5
-    elif aw == 'create': return _graph_ap_thing_test_(t,pid,param)  # 701.6
+    elif aw == 'create': return _graph_ap_thing_(t,pid,param)  # 701.6
     elif aw == 'destroy': return _graph_ap_thing_(t,pid,param) # 701.7
     elif aw == 'discard': return _graph_ap_thing_test_(t,pid,param) # 701.8
     elif aw == 'double': return t.add_node(pid,'action-params',tograph=param) # 701.9
     elif aw == 'exchange': return t.add_node(pid, 'action-params', tograph=param)  # 701.10
     elif aw == 'exile': return _graph_ap_thing_(t,pid,param) # 701.11
-    elif aw == 'fight': return _graph_ap_thing_test_(t,pid,param) # 701.12
-    #return t.add_node(pid,'action-params',tograph=param)
-    return None
+    elif aw == 'fight': return _graph_ap_thing_(t,pid,param) # 701.12
+
+    # then lituus actions
+    if aw == 'add': return _graph_ap_add_(t,pid,param)
+
+    # nothing found
+    return t.add_node(pid,'action-params',tograph=param)
 
 def graph_phase(t,pid,clause):
     """
@@ -1419,13 +1419,22 @@ def _subcost_(t,pid,sc):
     # or pay and the parameters or a conjunction i.e. or of symbols
     ttype = mtgltag.tkn_type(sc)
     #TODO need to flesh out
-    sid = t.add_node(pid,'subcost')
-    if ttype == mtgltag.MTGL_SYM: t.add_attr(sid,'value',sc)
+    if ttype == mtgltag.MTGL_SYM:
+        if dd.re_mana_check.search(sc):
+            return _graph_mana_string_(t,t.add_node(pid,'subcost',type='mana'),sc)
+        else:
+            # have a non mana symbol
+            return t.add_node(pid,'subcost',type='symbol',value=sc)
+        #return t.add_node(pid,'subcost',type='mana',value=sc)
     elif ttype == mtgltag.MTGL_LOY:
         op,num = mtgltag.re_mtg_loy_sym.search(sc).groups()
-        t.add_attr(sid,'value',"{}{}".format(op if op else '',num))
-    elif dd.re_is_act_clause.search(sc): graph_phrase(t,sid,sc)#graph_clause(t,sid,sc)
-    else: t.add_attr(sid,'anamolie',sc)
+        return t.add_node(
+            pid,'subcost',type='loyalty',value="{}{}".format(op if op else '',num)
+        )
+    elif dd.re_is_act_clause.search(sc):
+        return graph_phrase(t,t.add_node(pid,'sub-cost',type='action'),sc)
+    else:
+        return t.add_node(pid,'subcost',tograph=sc)
 
 # find the stem of the action word
 _re_act_wd_ = re.compile(
@@ -1631,3 +1640,61 @@ def _graph_ap_attach_(t,pid,phrase):
     except AttributeError:
         pass
     return None
+
+def _graph_mana_string_(t,pid,phrase):
+    try:
+        # get the mana symbols and recursively call for conjuctions
+        xq,m1,m2,m3 = dd.re_mana_chain.search(phrase).groups()
+        if m1 or m2:
+            oid = t.add_node(pid,'conjunction',value='or',itype="mana")
+            for ms in [m1,m2,m3]:
+                if not ms: continue
+                _graph_mana_string_(t,oid,ms)
+            return oid
+
+        ms = mtgltag.re_mtg_ms.findall(m3)
+        mid = t.add_node(pid,'mana',quantity=len(ms),value=m3)
+        if xq: t.add_node(mid,'quantifier',value=xq)
+        return mid
+    except AttributeError:
+        return None
+
+## Lituus Actions
+
+def _graph_ap_add_(t,pid,phrase):
+    # the simplest is a mana string or mana string conjunction
+    if dd.re_mana_check.search(phrase):
+        mid = _graph_mana_string_(t,pid,phrase)
+        if mid: return mid
+
+    # now have to check for complex phrasing
+    # additional number of mana
+    try:
+        xq,num,cls = dd.re_nadditional_mana.search(phrase).groups()
+        mid = t.add_node(pid,'mana',quantity=num)
+        t.add_node(mid,'quantifier',value=xq)
+        t.add_node(mid,'mana-qualifier',tograph=cls) # TODO
+        return mid
+    except AttributeError:
+        pass
+
+    # {X} clause
+    try:
+        ms,cls = dd.re_mana_trailing.search(phrase).groups()
+        mid = _graph_mana_string_(t,pid,ms)
+        t.add_node(mid,'mana-qualifier',tograph=cls) # TODO
+        return mid
+    except AttributeError:
+        pass
+
+    # amount of {X} clause
+    try:
+        ms,cls = dd.re_amount_of_mana.search(phrase).groups()
+        mid = t.add_node(pid,'amount-of')
+        _graph_mana_string_(t,mid,ms)
+        t.add_node(mid,'mana-qualifier',tograph=cls)
+        return mid
+    except AttributeError:
+        pass
+
+    return t.add_node(pid,'action-params',tograph=phrase)

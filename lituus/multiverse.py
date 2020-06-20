@@ -344,6 +344,20 @@ def _hack_cards_(jv):
                 "Cloud Sprite can block",
                 "ob<card ref=self> can block"
             )
+        elif cname == 'Castle Garenbrig':
+            # TODO: there are only 2 like this see also Irencrag Feat so we
+            # standarize here where it more efficient - monitor for new cards
+            # replace 6 {g} with {g}...{g}
+            jv[cname]['text'] = jv[cname]['text'].replace(
+                "six {G}","{G}{G}{G}{G}{G}{G}"
+            )
+        elif cname == 'Irencrag Feat':
+            # TODO: see above
+            # standarize here where it more efficient - monitor for new cards
+            # replace 7 {r} with {r}...{r}
+            jv[cname]['text'] = jv[cname]['text'].replace(
+                "seven {R}","{R}{R}{R}{R}{R}{R}{R}"
+            )
 
         """
          bugs in mtgjson for Start // Finish related to side A, Start
