@@ -59,8 +59,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 170. see Raging River, left pile was translated to xa<leave suffix=ed> pile
 
-171. Losing the suffix on +n/+n counters
-
 172. What to do about "color or colors". do we lose meaning if condense to just colors
 
 175. For partner with, after graphing do we want to replace id with actual Card Name
@@ -146,19 +144,6 @@ would the second be better?
 
 236. Aluren has a hanging 'and' after graphing as 'may as-though'
 
-238. What to do about suffix in Things, should we append to the main tag or leave as a attribute i.e. 
- 'creatures' = ob<permanent characteristics=creature>
- we could graph as 
- permanents
-  -characteristics value=creature
- or
- permanent
-  -characteristics value=creatures
- or leave as is
- permanent
-  -suffix value=s
-  -charateristics value=creature
-
 239. See Hanweir Garrison, do we need support for "that are" ... in graph_thing
 
 240. Vindictive Lich is not being parsed as modal due to the way triggered-abilities are handled. "choose one or more." is graphed as the triggered effect and the remainder is graphed as the triggered instructions
@@ -236,8 +221,6 @@ the phrase upto shuffle is a thing (player)
 
 276. Nafs Asp is tricky wording
 
-277. From Portal of Sanctuary - have to add back only during (cn<only> sq<during> xp<you suffix=r> ts<turn>)
-
 238. Deadlock Trap, Interdict, have "activate this turn", will have to go back and make sure "this turn" is being graphed
 
 240. Do we want to continue combining "end of combat" Vebulid and "beginning of combat" Blood Mist?
@@ -247,3 +230,21 @@ the phrase upto shuffle is a thing (player)
 242. Find phrase x plus one and make them nu<x+1> see Kyren Toy
 
 243. "this way" (see also 238) look at keyword actions (lituus too) that have suffixes like 's' and 'ed' how many of these end with 'this way' versus an object etc
+
+244. phrases of the form OPERATOR THING'S ATTRIBUTE
+
+245. When removing reminder text, meld text is also removed see Midnight Scavengers
+
+246. Finish graphing keyword actions
+ double, exchange, play, reveal, search populate, vote, meld
+
+247. Start graphing lituus actions:
+    'put','remove','distribute','get','return','draw','move','look','pay','deal',
+    'gain','attack','defend','unblock','block','enter','leave','choose',
+    'die','spend','unspend','take','reduce','trigger','prevent','declare','have',
+    'switch','assign','win','lose','tie','skip','flip','cycle','phase','become',
+    'share','turn','produce','round','resolve','do','repeat','change','bid',
+    'select','reselect','begin','separate','note',
+    'copy',  # will have already been tagged?
+    'named',  # Special case we only want this specific conjugation
+    'cost',  # will have already been tagged as an object

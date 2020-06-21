@@ -841,8 +841,10 @@ re_phase = re.compile(
 #  thing will always be card
 # quanitifier may be after the number see Scarab Feast
 re_qtz = re.compile(
+    #r"^xq<([^>]+)> (?:pr<(\w+)> )?(?:nu<([^>]+)> )?"
+    # r"(ob<[^>]+>) ([^,|^\.]+zn<[^>]+>)(?: xm<face amplifier=(up|down)>)?$"
     r"^xq<([^>]+)> (?:pr<(\w+)> )?(?:nu<([^>]+)> )?"
-     r"(ob<[^>]+>) ([^,|^\.]+zn<[^>]+>)(?: xm<face amplifier=(up|down)>)?$"
+     r"(ob<[^>]+>) pr<(\w+)> ([^,|^\.]+zn<[^>]+>)(?: xm<face amplifier=(up|down)>)?$"
 )
 
 # find phrases of the form
@@ -861,16 +863,17 @@ re_qst = re.compile(
     r"^(?:nu<([^>]+)> )?(?:xq<([^>]+)> )?(?:(?:xs|st)<([^>]+)> )?"
     r"(?:((?:ob|xp|xo|zn)<[^>]+>) (and|or|and/or) (?:xq<([^>]+)> )?)?"
     r"((?:ob|xp|xo|zn)<[^>]+>)"
-    r"(?: ((?:xq<[^>]+> )?xp<[^>]+> (?:xa<do> cn<not> )?xc<[^>]+>))?"
+    r"(?: ((?:xq<[^>]+> )?(?:(?:st|xs)<[^>]+> )?"
+     r"xp<[^>]+> (?:xa<do> cn<not> )?xc<[^>]+>))?"
     r"(?: ((?:pr|xq)<(?:with|without|from|of|that_is|that_are|other_than)> "
      r"[^\.|^,]+))?\.?$"
 )
-#re_possession_clause = re.compile(r"((?:xq<\w*?> )?xp<[^>]+>) xc<([^>]+)(?: suffix=s)?>")
 re_possession_clause = re.compile(
-    r"((?:xq<\w*?> )?xp<[^>]+>) (?:(xa<do> cn<not>) )?xc<([^>]+)(?: suffix=s)?>"
+    r"((?:xq<\w*?> )?(?:(?:st|xs)<[^>]+> )?"
+     r"xp<[^>]+>) (?:(xa<do> cn<not>) )?xc<([^>]+)(?: suffix=s)?>"
 )
 re_qualifying_clause = re.compile(
-    r"^(?:pr|xq)<(with|without|from|of|in|that_is|that_are|other_than)> (.+)$"
+    r"^(?:pr|xq)<(with|without|from|of|in|that_is|that_are|other_than|on)> (.+)$"
 )
 re_dual_qualifying_clause = re.compile(
     r"^(pr<(?:with|without|of)> .+) "
@@ -904,12 +907,8 @@ re_consecutive_things = re.compile(
 #   with the [qualifier] [lituus object] i.e. Ghazban Ogre
 re_qual_with_ability = re.compile(r"^(?:(ob<[^>]+>) )?kw<([^>]+)>$")
 re_qual_with_attribute = re.compile(r"^xr<([^>]+) val=([¬⋖⋗≤≥≡⇔])?([^>]+)>$")
-re_qual_with_attribute2 = re.compile(
-    r"^nu<([^>]+)> xq<([^>]+)> (xr<[^>]+>)$"
-)
-re_qual_with_ctrs = re.compile(
-    r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>) pr<on> xo<[^>]+>$"
-)
+re_qual_with_attribute2 = re.compile(r"^nu<([^>]+)> xq<([^>]+)> (xr<[^>]+>)$")
+re_qual_with_ctrs = re.compile(r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>)")
 re_qual_with_attribute_xq = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")
 re_qual_with_attribute_lo = re.compile(r"^xq<the> xl<(\w+)> (?:xo|xr)<(\w+)>$")
 re_qual_with_object = re.compile(r"^((?:xq<[^>]+> )?ob<[^>]+>)$")
@@ -956,8 +955,21 @@ re_qual_otherthan_thing = re.compile(r"^(ob<[^>]+>)$")
 ## KEYWORD/LITUUS ACTION
 ####
 
+# numbers
+re_number = re.compile(r"^nu<([^>]+)>$")
+re_number_vanilla = re.compile(r"^nu<([0-9xyz]+)>$")
+
 # attach 701.3 attach [object] to [object] where the first object is self
 re_attach_clause = re.compile(r"^([^\.]+) pr<to> ([^\.]+)$")
+
+# reveal 701.15
+# has multiple forms commonly
+#  1. their hand
+#  2.
+# TODO
+
+# clash 701.22 has the form with [player] (always an opponennt)
+re_clash_clause = re.compile(r"^pr<with> ([^\.]+)$")
 
 # related to 'add' mana
 

@@ -421,20 +421,10 @@ def graph_repl_instead(t,pid,phrase):
             rid = t.add_node(pid,'replacement-effect')
             oid = t.add_node(rid,'conjunction',value='or',itype="if-would")
             iid = t.add_node(oid,'if')
-            try:
-                graph_thing(t,iid,t1)
-            except lts.LituusException as e:
-                if e.errno == lts.EPTRN:
-                    t.add_node(iid,'ungraphed-thing',tograph=t1)
-                else: raise
+            graph_thing(t,iid,t1)
             graph_phrase(t,t.add_node(iid,'would'),w1)
             iid = t.add_node(oid,'if')
-            try:
-                graph_thing(t,iid,t2)
-            except lts.LituusException as e:
-                if e.errno == lts.EPTRN:
-                    t.add_node(iid,'ungraphed-thing',tograph=t2)
-                else: raise
+            graph_thing(t,iid,t2)
             graph_phrase(t,t.add_node(iid,'would'),w2)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
@@ -898,7 +888,7 @@ def graph_optional_phrase(t,pid,line):
             cond,act = dd.re_if_cond_act.search(line).groups()
             cid = t.add_node(pid,'if')
             graph_phrase(t,cid,cond)
-            graph_phrase(t,cid,act)
+            graph_phrase(t,t.add_node(cid,'then'),act)
             return cid
         except AttributeError:
             pass
@@ -1174,29 +1164,22 @@ def graph_thing(t,pid,clause):
     """
     # TODO: should we combine suffix with the stem if present?
     # could have a qst phrase, a qtz phrase or a possesive phrase - check all
+
+    # first cards in zones
+    eid = None
     try:
-        xq,loc,num,thing,zn,amp = dd.re_qtz.search(clause).groups()
+        xq,loc,num,thing,prep,zn,amp = dd.re_qtz.search(clause).groups()
         eid = t.add_node(pid,'thing')
-        sid = t.add_node(eid,'specifying-clause')
-
-        # two formats
-        #  1. the [top|bottom] [num]? [card] [zone] [amp]?
-        #  2. [quantifier] [card] [zone] [amp]?
-        # the specifying claues differs depending on the format
-        if loc:
-            if xq: t.add_node(sid,'quantifier',value=xq)
-            t.add_node(sid,'which',value=loc,quanitity=num if num else 1)
-        else:
-            assert(num is None)
-            t.add_node(sid,'which',quantifier=xq)
-        if amp: t.add_node(sid,'how',value='face-'+amp)
+        if xq: t.add_node(eid,'quantifier',value=xq)
+        if loc: t.add_node(eid,'which',value=loc) # TODO: don't like label
+        if num: t.add_node(eid,'quantity',value=num)
         _graph_object_(t,eid,thing)
-        quid = t.add_node(eid, 'qualifying-clause')
-        if not _graph_qualifying_clause_(t,quid,zn):
-            t.del_node(quid)
-            raise lts.LituusException(lts.EPTRN,"{} is not a thing".format(clause))
-
+        prid = t.add_node(eid,prep)
+        zid = graph_thing(t,prid,zn)
+        if amp: t.add_node(zid,'how',value=amp)
         return eid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(eid)
     except AttributeError:
         pass
 
@@ -1228,7 +1211,7 @@ def graph_thing(t,pid,clause):
             try:
                 ply,neg,wd = dd.re_possession_clause.search(poss).groups()
                 lbl = 'owned-by' if wd == 'own' else 'controlled-by'
-                if not neg: cid = t.add_node(nid,lbl)
+                if not neg: cid = t.add_node(eid,lbl)
                 else:
                     nid = t.add_node(eid,'not')
                     cid = t.add_node(nid,lbl)
@@ -1241,9 +1224,7 @@ def graph_thing(t,pid,clause):
 
         # graph any trailing qualifying clauses
         if qual:
-            quid = t.add_node(eid,'qualifying-clause')
-            if not _graph_qualifying_clause_(t,quid,qual):
-                t.del_node(eid)
+            if not _graph_qualifying_clause_(t,eid,qual):
                 raise lts.LituusException(lts.EPTRN,"{} is not a qualifying".format(qual))
 
         # and return the thing node id
@@ -1318,8 +1299,13 @@ def graph_action_param(t,pid,aw,param):
     :param param: paremeters
     :return: the graphed action node or None
     """
+    # before graphing the parameters, extract common trailing clauses like
+    #  (NUMBER times)
+
     # starting with mtg defined keyword actions
-    # TODO: double, exchange
+    # The following do not have parameters (proliferate,populate,investigate,
+    #  explore)
+    # The following are not considered (Planeswalk, Set in Motion, Abandon,Assemble)
     if aw == 'activate': return _graph_ap_thing_(t,pid,param) # 701.2
     elif aw == 'attach': return _graph_ap_attach_(t,pid,param) # 701.3
     elif aw == 'unattach': return _graph_ap_thing_(t,pid,param) # 701.3d
@@ -1333,7 +1319,29 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'exile': return _graph_ap_thing_(t,pid,param) # 701.11
     elif aw == 'fight': return _graph_ap_thing_(t,pid,param) # 701.12
     # TODO: elif aw == 'play': # 701.13
-    elif aw == 'regenerate': return _graph_ap_thing_test_(t,pid,param) # 710.14
+    elif aw == 'regenerate': return _graph_ap_thing_(t,pid,param) # 701.14
+    # TODO: elif aw == 'reveal': # 701.15
+    elif aw == 'sacrifice': return _graph_ap_thing_(t,pid,param) # 701.16
+    elif aw == 'scry': return _graph_ap_n_(t,pid,param) # 701.17
+    # TODO elif aw == 'search': # 701.18
+    elif aw == 'shuffle': return _graph_ap_thing_(t,pid,param) # 701.19
+    elif aw == 'tap' or aw == 'untap': return _graph_ap_thing_(t,pid,param) # 701.20
+    elif aw == 'fateseal': return _graph_ap_n_(t,pid,param)  # 701.21
+    elif aw == 'clash': return _graph_ap_clash_(t,pid,param) # 701.22
+    elif aw == 'transform': return _graph_ap_thing_(t,pid,param) # 701.27
+    elif aw == 'detain': return _graph_ap_thing_(t,pid,param) # 701.28
+    # TODO: populate 701.29 has no parameters but one card Full Flowering has populate X times
+    elif aw == 'monstrosity': return _graph_ap_n_(t,pid,param)  # 701.30
+    # TODO: vote 701.31 have to return to this one, has interesting phrasing not yet graphed
+    elif aw == 'bolster': return _graph_ap_n_(t,pid,param)  # 701.32
+    elif aw == 'manifest': return _graph_ap_thing_(t,pid,param) # 701.33
+    elif aw == 'support': return _graph_ap_n_(t,pid,param)  # 701.34
+    # TODO: meld 701.36
+    elif aw == 'goad': return _graph_ap_thing_(t,pid,param) # 701.37
+    elif aw == 'exert': return _graph_ap_thing_(t,pid,param) # 701.38
+    elif aw == 'surveil': return _graph_ap_n_(t,pid,param)  # 701.41
+    elif aw == 'adapt': return _graph_ap_n_(t,pid,param)  # 701.42
+    elif aw == 'amass': return _graph_ap_n_(t,pid,param)  # 701.43
 
     # then lituus actions
     if aw == 'add': return _graph_ap_add_(t,pid,param)
@@ -1389,6 +1397,9 @@ def _graph_object_(t,pid,obj):
             del attr['ref']
     else:
         oid = t.add_node(pid,mtgl.TID[tid],value=val)
+
+    # remove any plural suffixes
+    if 'suffix' in attr and attr['suffix'] == 's': del attr['suffix']
 
     # add any (remaining) attributes as subnodes
     for k in attr: t.add_node(oid,k,value=attr[k])
@@ -1472,7 +1483,6 @@ def _twi_split_(txt):
 
 def _activated_check_(line):
     return dd.re_act_check.search(line) and not dd.re_modal_check.search(line)
-    #return dd.re_act_check.search(line) and mtgl.BLT not in line
 
 def _sequence_check_(line):
     return dd.re_sequence_check.search(line) or dd.re_time_check.search(line)
@@ -1485,7 +1495,6 @@ def _graph_qualifying_clause_(t,pid,clause):
     :param clause: the text to graph
     """
     # check for duals first
-    # TODO: for the below we should add an itermediary node with the qualying word first
     cid = None
     try:
         q1,q2 = dd.re_dual_qualifying_clause.search(clause).groups()
@@ -1505,6 +1514,7 @@ def _graph_qualifying_clause_(t,pid,clause):
         qid = t.add_node(pid,pw)
         if pw == 'from' or pw == 'in': return graph_thing(t,qid,pcls) # a zone
         elif pw == 'other_than': return graph_thing(t,qid,pcls)       # an object
+        elif pw == 'on': return graph_thing(t,qid,pcls)               # an object
         elif pw == 'with' or pw == 'without':
             # check for ability
             m = dd.re_qual_with_ability.search(pcls)
@@ -1552,9 +1562,13 @@ def _graph_qualifying_clause_(t,pid,clause):
             # check for counters
             m = dd.re_qual_with_ctrs.search(pcls)
             if m:
-                # TODO: will throw error if there is not type attribute
-                q,ct = m.group(1),m.mtgltag.tag_attr(m.group(2))['type']
-                return t.add_node(qid,'counter',quantity=q,type=ct)
+                q,ct = m.group(1),mtgltag.tag_attr(m.group(2))['type']
+                cid = t.add_node(qid,'counter',type=ct)
+                try:
+                    t.add_attr(cid,'quantity',int(q))
+                except ValueError:
+                    t.add_attr(cid,'quanitifier',q)
+                return cid
 
             # check for object (should be abilities)
             m = dd.re_qual_with_object.search(pcls)
@@ -1622,10 +1636,19 @@ def _graph_ap_thing_test_(t,pid,phrase):
         return t.add_node(pid,'action-params',tograph=phrase)
 
 def _graph_ap_thing_(t,pid,phrase):
-    # attempt to graph parameters as a thing
+    # graph parameters as a thing
     try:
         return graph_thing(t,pid,phrase)
     except lts.LituusException:
+        return None
+
+def _graph_ap_n_(t,pid,phrase):
+    # graph parameters as number
+    try:
+        return t.add_node(
+            pid,'quantity',value=dd.re_number_vanilla.search(phrase).group(1)
+        )
+    except AttributeError:
         return None
 
 def _graph_ap_attach_(t,pid,phrase):
@@ -1639,6 +1662,20 @@ def _graph_ap_attach_(t,pid,phrase):
     except lts.LituusException:
         # have to check if the first object was graphed but the second failed
         if tid: t.del_node(tid)
+    except AttributeError:
+        return None
+
+def _graph_ap_clash_(t,pid,phrase):
+    # clash - ATT all clash cards have phrase "pr<with> xq<a> xp<opponent>"
+    # but just in case will confirm
+    wid = None
+    try:
+        ply = dd.re_clash_clause.search(phrase).group(1)
+        wid = t.add_node(pid,'with')
+        graph_thing(t,wid,ply)
+        return wid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(wid)
     except AttributeError:
         pass
     return None
@@ -1660,6 +1697,10 @@ def _graph_mana_string_(t,pid,phrase):
         return mid
     except AttributeError:
         return None
+
+#_graph_ap_reveal_(t,pid,phrase):
+#    # reveal 701.15
+
 
 ## Lituus Actions
 
