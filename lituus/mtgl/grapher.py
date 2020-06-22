@@ -83,10 +83,12 @@ def graph(dcard):
                     t.add_node(
                         awid,'ability-word',value=aw,id=t.children(pids[i])[-1]
                     )
-                except AttributeError:
-                    raise lts.LituusException(
-                        lts.EPTRN,"Failure matching aw line ({})".format(line)
-                    )
+                except AttributeError as e:
+                    if e.__str__().startswith("'NoneType'"):
+                        raise lts.LituusException(
+                            lts.EPTRN,"Failure matching aw line ({})".format(line)
+                        )
+                    else: raise
             else: graph_line(t,pids[i],line,dcard['type'])
 
         # Remove keyword and ability word nodes if empty & graph the lines
@@ -175,10 +177,12 @@ def graph_activated(t,pid,line):
         graph_cost(t,t.add_node(aaid,'activated-cost'),cost)
         graph_phrase(t,t.add_node(aaid,'activated-effect'),effect)
         if instr: graph_phrase(t,t.add_node(aaid,'activated-instructions'),instr)
-    except AttributeError:
-        raise lts.LituusException(
-            lts.EPTRN,"Not an activated ability ({})".format(line)
-        )
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"):
+            raise lts.LituusException(
+                lts.EPTRN,"Not an activated ability ({})".format(line)
+            )
+        else: raise
 
 def graph_triggered(t,pid,line):
     """
@@ -195,10 +199,12 @@ def graph_triggered(t,pid,line):
         graph_phrase(t,t.add_node(taid,'triggered-effect'),effect)
         if instr:
             graph_phrase(t,t.add_node(taid,'triggered-instruction'),instr)
-    except AttributeError:
-        raise lts.LituusException(
-            lts.EPTRN,"Not a triggered ability ({})".format(line)
-        )
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"):
+            raise lts.LituusException(
+                lts.EPTRN,"Not an activated ability ({})".format(line)
+            )
+        else: raise
 
 def graph_phrase(t,pid,line,i=0):
     """
@@ -292,8 +298,9 @@ def graph_replacement_effects(t,pid,line):
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
         return None
     elif dd.re_etb_repl_check.search(line): # 614.1c and 614.1d ETB replacements
         # try 614.1c
@@ -313,8 +320,9 @@ def graph_replacement_effects(t,pid,line):
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
         return None
     elif dd.re_repl_dmg_check.search(line): return graph_repl_damage(t,pid,line)
 
@@ -346,8 +354,9 @@ def graph_apc_phrases(t,pid,line):
             return aid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(aid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # if [condition] you may cast ...
         try:
@@ -361,8 +370,9 @@ def graph_apc_phrases(t,pid,line):
             return aid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(aid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # alternate phrasing of action-apc that always has a condition
         try:
@@ -377,8 +387,9 @@ def graph_apc_phrases(t,pid,line):
             return aid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(aid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
     elif line.startswith('cn<rather_than> xa<pay>'):
         try:
             cost,ply,act = dd.re_rather_than_apc.search(line).groups()
@@ -391,8 +402,9 @@ def graph_apc_phrases(t,pid,line):
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(aid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
     return None
 
@@ -430,8 +442,9 @@ def graph_repl_instead(t,pid,phrase):
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # if-would-instead variant b
         try:
@@ -444,8 +457,9 @@ def graph_repl_instead(t,pid,phrase):
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # if-instead-would variant c
         try:
@@ -458,8 +472,9 @@ def graph_repl_instead(t,pid,phrase):
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # that-would-instead - have to deal with these differently due to
         # how the condition & replacement are separated/identified
@@ -476,8 +491,10 @@ def graph_repl_instead(t,pid,phrase):
             graph_phrase(t,t.add_node(eid,'that-would'),would)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
-        except (AttributeError,lts.LituusException):
-            pass
+        except lts.LituusException: pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # would-instead (timing related)
         try:
@@ -488,8 +505,9 @@ def graph_repl_instead(t,pid,phrase):
             graph_phrase(t,t.add_node(cid,'would'),would)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # test for may instead (optional replacement value)
         try:
@@ -506,8 +524,9 @@ def graph_repl_instead(t,pid,phrase):
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(rid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
     if 'of' in phrase:
         # if-instead-of clause
@@ -519,8 +538,9 @@ def graph_repl_instead(t,pid,phrase):
             graph_phrase(t,iid,iof)
             graph_phrase(t,iid,repl)
             return rid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # test for instead-of-if clause
         # TODO: for now we are rearranging the order of the phrases so that it
@@ -533,8 +553,9 @@ def graph_repl_instead(t,pid,phrase):
             graph_phrase(t,iid,iof)
             graph_phrase(t,iid,repl)
             return rid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # test for instead-of
         try:
@@ -544,8 +565,9 @@ def graph_repl_instead(t,pid,phrase):
             graph_phrase(t,iid,iof)
             graph_phrase(t,iid,repl)
             return rid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
     if 'cn<if>' in phrase:
         # test for if-instead
@@ -555,8 +577,9 @@ def graph_repl_instead(t,pid,phrase):
             graph_phrase(t,t.add_node(rid,'if'),cond)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # test for if-instead fenced
         try:
@@ -565,8 +588,9 @@ def graph_repl_instead(t,pid,phrase):
             graph_phrase(t,t.add_node(rid,'if'),cond)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # test for instead-if clause
         try:
@@ -575,8 +599,9 @@ def graph_repl_instead(t,pid,phrase):
             graph_phrase(t,t.add_node(rid,'if'), cond)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
     return None
 
@@ -599,8 +624,9 @@ def graph_repl_etb1(t,pid,phrase):
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # As Permanent ETB ...
     try:
@@ -612,8 +638,9 @@ def graph_repl_etb1(t,pid,phrase):
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
-    except AttributeError: # no match
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # Permanent ETB as
     try:
@@ -624,8 +651,9 @@ def graph_repl_etb1(t,pid,phrase):
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
-    except AttributeError: # no match
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # found nothing
     return None
@@ -650,8 +678,9 @@ def graph_repl_etb2(t,pid,phrase):
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # continuous etb with an optional effect
     try:
@@ -662,8 +691,9 @@ def graph_repl_etb2(t,pid,phrase):
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
-    except AttributeError: # no match
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     return None
 
@@ -682,12 +712,13 @@ def graph_repl_damage(t,pid,phrase):
         rid = t.add_node(pid,'replacement-effect')
         graph_thing(t,t.add_node(rid,'if'),src)
         graph_phrase(t,t.add_node(rid,'would'),old)
-        graph_phrase(t,rid,new) # TODO: removed intermeditary node
+        graph_phrase(t,rid,new)
         return rid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(rid)
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # look for prevent damage
     try:
@@ -703,8 +734,9 @@ def graph_repl_damage(t,pid,phrase):
         return did
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(did)
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     return None
 
@@ -737,8 +769,9 @@ def graph_modal_phrase(t,pid,line):
             if len(opt) > 1:
                 graph_phrase(t,t.add_node(oid,'option-instruction'),opt[1])
         return mid
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # then with instructions (700.2d) on choices
     try:
@@ -752,8 +785,9 @@ def graph_modal_phrase(t,pid,line):
         for opt in [x for x in dd.re_opt_delim.split(opts) if x]:
             graph_phrase(t,t.add_node(mid,'option'),opt)
         return mid
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     return None
 
@@ -780,9 +814,11 @@ def graph_lvl_up_phrase(t,pid,line):
             if pt: t.add_node(lvid,'p/t',value=pt)
             if ab: graph_phrase(t,t.add_node(lvid,'ability'),ab)
         return lid
-    except AttributeError:
-        if lid: t.del_node(lid)
-        return None
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"):
+            if lid: t.del_node(lid)
+            return None
+        else: raise
 
 ####
 ## SEQUENCE PHRASES
@@ -803,13 +839,13 @@ def graph_sequence_phrase(t,pid,line):
             tid = tid = t.add_node(pid,'timing') # TODO: don't like this label
             t.add_node(tid,'when',value=when)  # ignore the first quantifier
             if ts in mtgl.steps1: ts = ts + "-step"
-            if cls:
-                # TODO: have to graph the complex phrases
+            if cls: # TODO: have to graph the complex phrases
                 t.add_node(tid,'timing-clause',tograph=cls)
             t.add_node(tid,'phase',quantifier=xq,value=ts)
             return tid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
     elif dd.re_sequence_check.search(line):
         # check for then [action] first
         try:
@@ -817,8 +853,9 @@ def graph_sequence_phrase(t,pid,line):
             sid = t.add_node(pid,'then')
             graph_phrase(t,sid,act)
             return sid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # then durations [sequence] [phase/step], [action]
         try:
@@ -826,8 +863,9 @@ def graph_sequence_phrase(t,pid,line):
             did = graph_duration(t,pid,dur)
             graph_phrase(t,did,act) # TODO: should this be under the 'until' node (see Pale Moon)
             return did
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # then other sequences of the form [sequence] [cond], [effect]
         try:
@@ -836,8 +874,9 @@ def graph_sequence_phrase(t,pid,line):
             graph_phrase(t,t.add_node(sid,'condition'),cond)
             graph_phrase(t,sid,act)
             return sid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
     else:
         # should never get here
         raise lts.LituusException(lts.EPTRN,"{} not a sequence".format(line))
@@ -868,8 +907,9 @@ def graph_optional_phrase(t,pid,line):
             return cid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(cid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # if-player-cannot
         try:
@@ -880,8 +920,9 @@ def graph_optional_phrase(t,pid,line):
             return cid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(cid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # if condition-action
         try:
@@ -890,8 +931,9 @@ def graph_optional_phrase(t,pid,line):
             graph_phrase(t,cid,cond)
             graph_phrase(t,t.add_node(cid,'then'),act)
             return cid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
     elif 'cn<unless' in line:
         # thing-cannot-unless
         try:
@@ -903,8 +945,9 @@ def graph_optional_phrase(t,pid,line):
             return cid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(cid)
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # action-unless
         try:
@@ -913,8 +956,9 @@ def graph_optional_phrase(t,pid,line):
             cid = t.add_node(pid,'unless')
             graph_phrase(t,cid,cond)
             return cid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
     return None
 
@@ -936,8 +980,9 @@ def graph_restriction_phrase(t,pid,phrase):
         graph_restriction_phrase(t,cid,rstr1)
         graph_restriction_phrase(t,cid,rstr2)
         return oid
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # The below may be part of a recursive call due to a conjunction. Check the
     # parent type first. If conjunction, only the restriction will be present,
@@ -954,8 +999,9 @@ def graph_restriction_phrase(t,pid,phrase):
                 graph_phrase(t,oid,effect)
                 graph_phrase(t,t.add_node(oid,'if'),cond)
                 return oid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
     if 'cn<only>' in phrase:
         # start with only-[sequence]
@@ -968,8 +1014,9 @@ def graph_restriction_phrase(t,pid,phrase):
                 graph_phrase(t,oid,act)
                 graph_phase(t,t.add_node(oid,seq),phase)
                 return oid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # only-number per turn
         try:
@@ -984,8 +1031,9 @@ def graph_restriction_phrase(t,pid,phrase):
                 nid = t.add_node(oid,'times',value=num)
                 if phase: graph_phase(t,nid,phase)
                 return oid
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
     return None
 
@@ -1014,8 +1062,9 @@ def graph_option_phrase(t,pid,phrase):
         return mid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(mid)
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # may have
     try:
@@ -1026,8 +1075,9 @@ def graph_option_phrase(t,pid,phrase):
         return mid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(mid)
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # then may only
     try:
@@ -1038,8 +1088,9 @@ def graph_option_phrase(t,pid,phrase):
         return mid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(mid)
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     return None
 
@@ -1062,7 +1113,9 @@ def graph_delayed_tgr(t,pid,clause):
         graph_phrase(t,t.add_node(dtid,'triggered-condition'),cond)
         graph_phrase(t,t.add_node(dtid,'triggered-effect'),effect)
         return dtid
-    except AttributeError:
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
         return None
 
 ####
@@ -1135,8 +1188,9 @@ def graph_action_clause(t,pid,phrase):
             else:
                 raise
             return None
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # then check for player own/control
     aid = None
@@ -1149,8 +1203,9 @@ def graph_action_clause(t,pid,phrase):
         return aid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(aid)
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     return None
 
@@ -1180,8 +1235,9 @@ def graph_thing(t,pid,clause):
         return eid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(eid)
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     try:
         # 'unpack' the phrase
@@ -1219,8 +1275,13 @@ def graph_thing(t,pid,clause):
             except lts.LituusException:
                 if nid: t.del_node(nid)
                 raise lts.LituusException(lts.EPTRN, "{} is not a possession".format(ctlr))
-            except AttributeError:
-                raise lts.LituusException(lts.EPTRN,"{} is not a possession".format(ctlr))
+            except AttributeError as e:
+                if e.__str__().startswith("'NoneType'"):
+                    raise lts.LituusException(
+                        lts.EPTRN, "{} is not a possession".format(ctlr)
+                    )
+                else: raise
+
 
         # graph any trailing qualifying clauses
         if qual:
@@ -1229,8 +1290,9 @@ def graph_thing(t,pid,clause):
 
         # and return the thing node id
         return eid
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # check for possessives which may be preceded by a quantifier
     try:
@@ -1255,8 +1317,9 @@ def graph_thing(t,pid,clause):
             # add the 1st thing under the intermeditary node of the 2nd thing
             graph_thing(t,t.add_node(t.children(eid)[-1],lbl),thing1)
             return eid
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     raise lts.LituusException(lts.EPTRN,"Not a thing {}".format(clause))
 
@@ -1269,9 +1332,8 @@ def graph_duration(t,pid,clause):
     :return:  node id of the duration subtree or None
     """
     # there are two variations
-    #  a) [quantifier] [phase/step] and
-    #  b) [sequence] [phase/step)
-
+    #  b) [quantifier] [phase/step] and
+    #  c) [sequence] [phase/step) (Abeyance)
     try:
         # unpack the tags and create the duration node
         tkn,phase = dd.re_duration_ts.search(clause).groups()
@@ -1286,8 +1348,10 @@ def graph_duration(t,pid,clause):
         else: assert(False)
 
         return did
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
     return None
 
 def graph_action_param(t,pid,aw,param):
@@ -1365,8 +1429,9 @@ def graph_phase(t,pid,clause):
         t.add_node(phid,'phase',value=phase)
         if ply: t.add_node(phid,'whose',value=ply)
         return phid
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     return None
 
@@ -1478,8 +1543,11 @@ def _twi_split_(txt):
         m = _re_2nd_act_(wd,tobe).search(txt)
         i = m.span()[1] - len(m.group(1))
         return txt[:i-1],txt[i:]
-    except AttributeError:
-        raise lts.LituusException(lts.EPTRN,"Not a twi clause")
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"):
+            raise lts.LituusException(lts.EPTRN,"Not a twi clause")
+        else: raise
+
 
 def _activated_check_(line):
     return dd.re_act_check.search(line) and not dd.re_modal_check.search(line)
@@ -1502,8 +1570,10 @@ def _graph_qualifying_clause_(t,pid,clause):
         _graph_qualifying_clause_(t,cid,q1)
         _graph_qualifying_clause_(t,cid,q2)
         return cid
-    except AttributeError:
-        if cid: t.del_node(cid)
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"):
+            if cid: t.del_node(cid)
+        else: raise
 
     # TODO: instead of adding the 'word' for each check, add once in beginning?
     # TODO: have to handle cases where graph_thing fails or a hanging node will
@@ -1618,8 +1688,10 @@ def _graph_qualifying_clause_(t,pid,clause):
                 return graph_thing(t,cid,zn)  # always a zone
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(qid)
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
     return None
 
 ####
@@ -1648,8 +1720,9 @@ def _graph_ap_n_(t,pid,phrase):
         return t.add_node(
             pid,'quantity',value=dd.re_number_vanilla.search(phrase).group(1)
         )
-    except AttributeError:
-        return None
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): return None
+        else: raise
 
 def _graph_ap_attach_(t,pid,phrase):
     # attach 701.3 has the form attach [self] to [thing]
@@ -1662,8 +1735,9 @@ def _graph_ap_attach_(t,pid,phrase):
     except lts.LituusException:
         # have to check if the first object was graphed but the second failed
         if tid: t.del_node(tid)
-    except AttributeError:
-        return None
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): return None
+        else: raise
 
 def _graph_ap_clash_(t,pid,phrase):
     # clash - ATT all clash cards have phrase "pr<with> xq<a> xp<opponent>"
@@ -1676,8 +1750,9 @@ def _graph_ap_clash_(t,pid,phrase):
         return wid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(wid)
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
     return None
 
 def _graph_mana_string_(t,pid,phrase):
@@ -1695,8 +1770,9 @@ def _graph_mana_string_(t,pid,phrase):
         mid = t.add_node(pid,'mana',quantity=len(ms),value=m3)
         if xq: t.add_node(mid,'quantifier',value=xq)
         return mid
-    except AttributeError:
-        return None
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): return None
+        else: raise
 
 #_graph_ap_reveal_(t,pid,phrase):
 #    # reveal 701.15
@@ -1718,8 +1794,9 @@ def _graph_ap_add_(t,pid,phrase):
         t.add_node(mid,'quantifier',value=xq)
         t.add_node(mid,'mana-qualifier',tograph=cls) # TODO
         return mid
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # {X} clause
     try:
@@ -1727,8 +1804,9 @@ def _graph_ap_add_(t,pid,phrase):
         mid = _graph_mana_string_(t,pid,ms)
         t.add_node(mid,'mana-qualifier',tograph=cls) # TODO
         return mid
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # amount of {X} clause
     try:
@@ -1737,8 +1815,9 @@ def _graph_ap_add_(t,pid,phrase):
         _graph_mana_string_(t,mid,ms)
         t.add_node(mid,'mana-qualifier',tograph=cls)
         return mid
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     # that much {x}
     try:
@@ -1747,7 +1826,8 @@ def _graph_ap_add_(t,pid,phrase):
         _graph_mana_string_(t,mid,ms)
         if cls: t.add_node(mid,'mana-qualifier',tograph=cls)
         return mid
-    except AttributeError:
-        pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     return None

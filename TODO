@@ -173,14 +173,6 @@ from s
 
 251. Made a handjam hack for coin counters (Athereos) since coins are tagged first as lituus objects
 
-252. the AttributeError catch masks a lot of errors where we are only concerned with NoneType related, should we check for these?
->>> try:
-...     x.test()
-... except AttributeError as e:
-...     print(e.args)
-... 
-("'NoneType' object has no attribute 'test'",)
-
 254. Might have to relook etb-with and allow the with to pass into successive graphing see Academy elite
 
 255. Have to redo landwalks see Livonya Silone. xr<super-type val=legendary> kw<landwalk> need to standarize this so landwalks are the same: ob<permanent characteristics=land→plains> kw<landwalk> (Great Wall)

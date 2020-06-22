@@ -639,7 +639,7 @@ re_if_would = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.?$")
 # Awe Strike
 re_repl_dmg = re.compile(
     r"^([^,]+ sq<(?:\w+)>) "
-    r"(.+) cn<would> (.*?) (?:pr<to> (.+))?(xq<(?:[^>]+)> ts<\w+>), ([^\.]+)\.?$"
+    r"(.+) cn<would> (.*?) (?:pr<to> (.+) )?(xq<(?:[^>]+)> ts<\w+>), ([^\.]+)\.?$"
 )
 
 # alternate playing costs (APC) (118.9,113.6c)
@@ -726,6 +726,10 @@ re_sequence_cond = re.compile(r"^sq<([^>]+)> ([^,]+), ([^\.]+)\.?$")
 re_sequence_time = re.compile(
     r"^xq<([^>]+)> sq<([^>]+)> pr<of> (?:([^,|^\.]+) )?xq<([^>]+)> ts<([^>]+)>\.?$"
 )
+
+# duration/times/sequences
+# [sequence|quantifier] [phase]
+re_duration_ts = re.compile(r"^((?:sq|xq)<[^>]+>) ts<(\w+)>$")
 
 ##
 # optionals, conditions and restrictions
