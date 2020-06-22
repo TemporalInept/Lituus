@@ -725,7 +725,7 @@ def graph_repl_damage(t,pid,phrase):
         time,src,act1,tgt,dur,act2 = dd.re_repl_dmg.search(phrase).groups()
         did = graph_duration(t,pid,dur)
         tid = t.add_node(did,'when')
-        graph_phrase(t,tid,time) # TODO: revisit
+        graph_phrase(t,tid,time) # TODO: revisit move to graph clause once complete
         rid = t.add_node(tid,'replacement-effect')
         graph_thing(t,rid,src)
         graph_phrase(t,t.add_node(rid,'would'),act1)
@@ -1004,7 +1004,22 @@ def graph_restriction_phrase(t,pid,phrase):
             else: raise
 
     if 'cn<only>' in phrase:
-        # start with only-[sequence]
+        # only - any time you could cast a sorcery
+        try:
+            act,time = dd.re_restriction_time.search(phrase).groups()
+            if mtgt.node_type(pid) == 'conjunction':
+                return graph_phrase(t,t.add_node(pid,'when'),time)
+            else:
+                oid = t.add_node(pid,'only')
+                graph_phrase(t,oid,act)
+                graph_phrase(t,t.add_node(oid,'when'),time)
+                return oid
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
+
+
+        # only-[sequence]
         try:
             act,seq,phase = dd.re_restriction_timing.search(phrase).groups()
             if mtgt.node_type(pid) == 'conjunction':
@@ -1175,11 +1190,22 @@ def graph_action_clause(t,pid,phrase):
                 acs.append((aw2,act2))
 
             # graph the action params
-            for aw,act in acs:
+            for aw,ap in acs:
+                # graph the action word
                 awid = t.add_node(aid,mtgltag.tag_val(aw))
-                if act:
-                    if not graph_action_param(t,awid,mtgltag.tag_val(aw),act):
-                        graph_phrase(t,awid,act)
+
+                # and now action parameters
+                if ap:
+                    # check for trailing clauses
+                    ap,tr = _split_action_params_(ap)
+
+                    # graph any trailing clauses
+                    if tr: trid = graph_ap_trailing_clause(t,awid,tr)
+
+                    # graph action-parameters if present
+                    if ap:
+                        if not graph_action_param(t,awid,mtgltag.tag_val(aw),ap):
+                            graph_phrase(t,awid,ap)
             return aid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN:
@@ -1219,7 +1245,6 @@ def graph_thing(t,pid,clause):
     """
     # TODO: should we combine suffix with the stem if present?
     # could have a qst phrase, a qtz phrase or a possesive phrase - check all
-
     # first cards in zones
     eid = None
     try:
@@ -1241,29 +1266,56 @@ def graph_thing(t,pid,clause):
 
     try:
         # 'unpack' the phrase
-        n,xq,st,th1,conj,xq2,th2,poss,qual = dd.re_qst.search(clause).groups()
-        eid = t.add_node(pid,'thing')
+        # TODO: ATT re_qst can grab and match invalid phrasings, before adding
+        #  any nodes, have to determine if thing is valid and what type it is
+        n,xq,st,thing,poss,qual = dd.re_qst.search(clause).groups()
+        m,ttype = _check_thing_clause_(thing)
+        if not m: raise AttributeError("'NoneType' object has no attribute 'groups'")
 
-        # any preceding quantifier and/or status belong to the holistic thing
-        # while intermediate quantifiers belong only to the subsequent thing
+        # add the thing node and any numbers, quantifiers and/or statuses
+        eid = t.add_node(pid,'thing')
         if n: t.add_node(eid,'number',value=n)
         if xq: t.add_node(eid,'quantifier',value=xq)
         if st: t.add_node(eid,'status',value=st)
 
+        # based on the thing_clause type, graph the actual thing
+        if ttype == 'single': _graph_object_(t,eid,m.group(1))
+        elif ttype == 'dual':
+            thing1,cop,xq,thing2 = m.groups()
+            cid = t.add_node(eid,'conjunction',value=cop,itype='thing')
+            _graph_object_(t,t.add_node(cid,'item'),thing1)
+            iid = t.add_node(cid, 'item')
+            if xq: t.add_node(iid,'quantifier',value=xq)
+            _graph_object_(t,iid,thing2)
+        else:
+            ts,cop,tn = m.groups()
+            cid = t.add_node(eid,'conjunction',value=cop,itype='thing')
+            for th in (ts+tn).split(", "):
+                _graph_object_(t,t.add_node(cid,'item'),th)
+
+        #n,xq,st,th1,conj,xq2,th2,poss,qual = dd.re_qst.search(clause).groups()
+        #eid = t.add_node(pid,'thing')
+
+        # any preceding quantifier and/or status belong to the holistic thing
+        # while intermediate quantifiers belong only to the subsequent thing
+        #if n: t.add_node(eid,'number',value=n)
+        #if xq: t.add_node(eid,'quantifier',value=xq)
+        #if st: t.add_node(eid,'status',value=st)
+
         # if there is a conjunction, graph the things as items under a conjunction
         # node, adding the second quanitifier if present
-        if conj:
-            cid = t.add_node(eid,'conjunction',value=conj,itype='thing')
-            iid = t.add_node(cid,'item')
-            _graph_object_(t,iid,th1)
-            iid = t.add_node(cid, 'item')
-            if xq2: t.add_node(iid,'quantifier',value=xq2)
-            _graph_object_(t,iid,th2)
-        else: _graph_object_(t,eid,th2)
+        #if conj:
+        #    cid = t.add_node(eid,'conjunction',value=conj,itype='thing')
+        #    iid = t.add_node(cid,'item')
+        #    _graph_object_(t,iid,th1)
+        #    iid = t.add_node(cid, 'item')
+        #    if xq2: t.add_node(iid,'quantifier',value=xq2)
+        #    _graph_object_(t,iid,th2)
+        #else: _graph_object_(t,eid,th2)
 
         # graph any trailing posession clauses
         if poss:
-            nid = None
+            #nid = None
             try:
                 ply,neg,wd = dd.re_possession_clause.search(poss).groups()
                 lbl = 'owned-by' if wd == 'own' else 'controlled-by'
@@ -1273,7 +1325,8 @@ def graph_thing(t,pid,clause):
                     cid = t.add_node(nid,lbl)
                 graph_thing(t,cid,ply)
             except lts.LituusException:
-                if nid: t.del_node(nid)
+                #if nid: t.del_node(nid)
+                t.del_node(eid)
                 raise lts.LituusException(lts.EPTRN, "{} is not a possession".format(ctlr))
             except AttributeError as e:
                 if e.__str__().startswith("'NoneType'"):
@@ -1282,10 +1335,10 @@ def graph_thing(t,pid,clause):
                     )
                 else: raise
 
-
         # graph any trailing qualifying clauses
         if qual:
             if not _graph_qualifying_clause_(t,eid,qual):
+                t.del_node(eid)
                 raise lts.LituusException(lts.EPTRN,"{} is not a qualifying".format(qual))
 
         # and return the thing node id
@@ -1412,6 +1465,22 @@ def graph_action_param(t,pid,aw,param):
 
     # nothing found
     return t.add_node(pid,'action-params',tograph=param)
+
+def graph_ap_trailing_clause(t,pid,clause):
+    """
+    Graphs trailing clauses associated with aciton parameters
+    :param t: the tree
+    :param pid: the parent id
+    :param clause: the clause
+    :return: the trailing clause node id
+    """
+    try:
+        return t.add_node(pid,'times',quantity=dd.re_ntimes.search(clause).group(1))
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
+    return None
 
 def graph_phase(t,pid,clause):
     """
@@ -1694,6 +1763,45 @@ def _graph_qualifying_clause_(t,pid,clause):
 
     return None
 
+def _split_action_params_(clause):
+    """
+    attempts to split clause into action parameters and trailing clause
+    :param ap: the clause
+    :return: tuple (action-param,trailing-clause
+    """
+    ap = clause
+    tr = None
+    # check for n times
+    try:
+        ap,tr = dd.re_trailing_ntimes.search(clause).groups()
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+    return (ap,tr)
+
+def _check_thing_clause_(thing):
+    """
+    determines if the thing clause found by re_qst is a valid thing and if so
+    returns the regex object matching the thing clause and the type of match
+    :param thing: a thing clause found by re_qst
+    :return: a tuple t = (RegEx.Match,Thing-Type) where Thing-Type is one of
+     {'single','dual','multi','invalid}
+    """
+    # single
+    m = dd.re_singleton_thing.search(thing)
+    if m: return (m,'single')
+
+    # dual
+    m = dd.re_dual_conjunction_thing.search(thing)
+    if m: return (m,'dual')
+
+    # multi
+    m = dd.re_multi_conjunction_thing.search(thing)
+    if m: return (m,'multi')
+
+    # invalid
+    return (None,'invalid')
+
 ####
 ## ACTIONS
 ####
@@ -1712,7 +1820,8 @@ def _graph_ap_thing_(t,pid,phrase):
     try:
         return graph_thing(t,pid,phrase)
     except lts.LituusException:
-        return None
+        # return None TODO: uncomment and remove next line after testing
+        return t.add_node(pid, 'action-params', tograph=phrase)
 
 def _graph_ap_n_(t,pid,phrase):
     # graph parameters as number
@@ -1773,10 +1882,6 @@ def _graph_mana_string_(t,pid,phrase):
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): return None
         else: raise
-
-#_graph_ap_reveal_(t,pid,phrase):
-#    # reveal 701.15
-
 
 ## Lituus Actions
 

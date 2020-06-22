@@ -213,7 +213,7 @@ the phrase upto shuffle is a thing (player)
 
 276. Nafs Asp is tricky wording
 
-238. Deadlock Trap, Interdict, have "activate this turn", will have to go back and make sure "this turn" is being graphed
+238. Deadlock Trap, Interdict, have "activate this turn", will have to go back and make sure "this turn" is being graphed --> ADD to trailing clause search
 
 240. Do we want to continue combining "end of combat" Vebulid and "beginning of combat" Blood Mist?
 
@@ -240,3 +240,11 @@ the phrase upto shuffle is a thing (player)
     'copy',  # will have already been tagged?
     'named',  # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
+
+249. have to standarize conjunctions. conjunctions of things have item intermeditary nodes because the second thing may have quanitifiers but no other conjunctions do
+
+251. Go back and simplify re in mtgl, i.e. chains can be greatly simplified
+
+252. Something is going wrong now with graphing action-clauses, see Fossil Find
+
+253. Two cards Fossil Find and Search for Survivors mention 'reorder' might have to tag it as an action

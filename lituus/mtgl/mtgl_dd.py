@@ -86,7 +86,7 @@ re_act_line = re.compile(r"^(.+?): (.+?)(?:\. ([^.]+))?\.?$")
 #  have to build in checks for periods that are inclosed in double parenthesis
 #  and single, double parenthesis (Reef Worm)
 re_tgr_check = re.compile(r"^(tp<\w+>)")
-re_tgr_line = re.compile(r"^tp<(\w+)> ([^,]+), ([^\.]+)(?:\. (.+))?\.?$")
+re_tgr_line = re.compile(r"^tp<(\w+)> ([^\.]+), ([^\.]+)(?:\. (.+))?\.?$")
 
 # Delayed Triggered (603.7) "do something at a later time - contains a trigger
 # preamble but not usually at the beginning of the ability and end with a turn
@@ -496,6 +496,11 @@ re_action_ply_poss = re.compile(
      r"xc<(own|control)(?: suffix=s)?>(?: ([^\.]+))\.?$"
 )
 
+# trailing clauses of action phrases
+# 1. [action-parameters] [number] [times]
+re_trailing_ntimes = re.compile(r"^(?:(.+) )?(nu<[^>]+> sq<time suffix=s>)\.?$")
+
+
 # 701.2 activate [ability] [condition]?
 #  NOTE: ability may include quanitifiers
 re_ka_activate = re.compile(
@@ -795,15 +800,20 @@ re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$"
 #  only [player] may [action] and only during [timing]
 # I think only ands are present but just case check for 'or' and 'and/or'
 re_only_conjunction = re.compile(
-    r"^([^,|\.]+) (cn<\w+> [^,|\.]+) (and|or|and/or) (cn<\w+> [^,|\.]+)\.?$"
+    r"^([^,|\.]+) (cn<(?:only|only_if)> [^,|^\.]+) (and|or|and/or) "
+     r"(cn<(?:only|only_if)> [^,|^\.]+)\.?"
 )
 
 # timing restrictions only during ...
-# 1. [action] only during [phase/step]
-# 2. [action] only [number] times [phase/step]
+# 1. [action] only any time you could cast a sorcery
+# 2. [action] only during [phase/step]
+# 3. [action] only [number] times [phase/step]
 #  2.a variant due to tagging comes from no more than as an operator (translates
 #  to only up to x times
 #  TODO: see Sewer Rats no more
+re_restriction_time = re.compile(
+    r"^(?:([^,|\.]+) )?cn<only> (xq<any> sq<time> [^,|\.]+)\.?$"
+)
 re_restriction_timing = re.compile(
     r"^(?:([^,|\.]+) )?cn<only> sq<(\w+)> ((?:[^,|\.]+ )?ts<[^>]+>)\.?$"
 )
@@ -819,7 +829,7 @@ re_only_if = re.compile(r"^(?:([^,|\.]+) )?cn<only_if> ([^,|\.]+)\.?$")
 ## CLAUSES
 ####
 
-# TBD
+re_ntimes = re.compile(r"^nu<([^>]+)> sq<time(?: suffix=s)?>$")
 
 ####
 ## PHASES/STEPS
@@ -845,16 +855,15 @@ re_phase = re.compile(
 #  thing will always be card
 # quanitifier may be after the number see Scarab Feast
 re_qtz = re.compile(
-    #r"^xq<([^>]+)> (?:pr<(\w+)> )?(?:nu<([^>]+)> )?"
-    # r"(ob<[^>]+>) ([^,|^\.]+zn<[^>]+>)(?: xm<face amplifier=(up|down)>)?$"
     r"^xq<([^>]+)> (?:pr<(\w+)> )?(?:nu<([^>]+)> )?"
      r"(ob<[^>]+>) pr<(\w+)> ([^,|^\.]+zn<[^>]+>)(?: xm<face amplifier=(up|down)>)?$"
 )
 
 # find phrases of the form
-#  [number]? [quantifier]? [status]? [thing CONJ quantifier]? [thing]
-#  [possession-clause]? [qualifying-clause]?
+#  [number]? [quantifier]? [status]? [THING] [possession]? [qualifying]?
 # where:
+#  THING can be a single thing, a dual conjunction of things or a multi-conjunction
+#   of things.
 #  possession-clause has the form: [player] [owns|controls]
 #  qualifying-clause has the form:
 #   [preposition] [qualifiers] and/or
@@ -865,13 +874,32 @@ re_qtz = re.compile(
 #  or re_dual_qualifying_clause
 re_qst = re.compile(
     r"^(?:nu<([^>]+)> )?(?:xq<([^>]+)> )?(?:(?:xs|st)<([^>]+)> )?"
-    r"(?:((?:ob|xp|xo|zn)<[^>]+>) (and|or|and/or) (?:xq<([^>]+)> )?)?"
-    r"((?:ob|xp|xo|zn)<[^>]+>)"
+    r"((?:[^\.]+)?(?:ob|xp|xo|zn)<[^>]+>)"
     r"(?: ((?:xq<[^>]+> )?(?:(?:st|xs)<[^>]+> )?"
      r"xp<[^>]+> (?:xa<do> cn<not> )?xc<[^>]+>))?"
     r"(?: ((?:pr|xq)<(?:with|without|from|of|that_is|that_are|other_than)> "
      r"[^\.|^,]+))?\.?$"
 )
+
+# four possibilities for the THING returned from above
+#  1. a single object i.e. ob<card ref=self> as in Acid-Spewer Dragon
+#  2. a dual conjunction where the second thing may have a preceding quanitifer
+#   i.e. ob<card ref=self> or xq<another> ob<permanent characteristics=creature>
+#   as in Gruul Ragebeasat
+#  3. a multi-conjunction 3 or more comma-separated things i.e. ob<spell>,
+#   ob<ability type=activated>, or ob<ability type=triggered> as in Disallow
+#   See Royal Decree for a quad-conjunction (NOTE: these were not joined in the
+#   tagger because they are not 'like' objects
+#  4. Invalid - does not match one of the above
+re_singleton_thing = re.compile(r"^((?:ob|xp|xo|zn)<[^>]+>)$")
+re_dual_conjunction_thing = re.compile(
+    r"^(?:((?:ob|xp|xo|zn)<[^>]+>) (and|or|and/or) (?:xq<([^>]+)> )?)?"
+     r"((?:ob|xp|xo|zn)<[^>]+>)$"
+)
+re_multi_conjunction_thing = re.compile(
+    r"^((?:(?:ob|xp|xo|zn)<[^>]+>, ){2,})(and|or|and/or) ((?:ob|xp|xo|zn)<[^>]+>)$"
+)
+
 re_possession_clause = re.compile(
     r"((?:xq<\w*?> )?(?:(?:st|xs)<[^>]+> )?"
      r"xp<[^>]+>) (?:(xa<do> cn<not>) )?xc<([^>]+)(?: suffix=s)?>"
