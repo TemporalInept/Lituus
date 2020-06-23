@@ -849,10 +849,11 @@ def graph_sequence_phrase(t,pid,line):
     elif dd.re_sequence_check.search(line):
         # check for then [action] first
         try:
-            _,act = dd.re_sequence_then.search(line).groups()
+            act1,_,act2 = dd.re_sequence_then.search(line).groups()
+            if act1: graph_phrase(t,pid,act1)
             sid = t.add_node(pid,'then')
-            graph_phrase(t,sid,act)
-            return sid
+            graph_phrase(t,sid,act2)
+            return sid # TODO: is this what we want to return?
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
@@ -1199,13 +1200,13 @@ def graph_action_clause(t,pid,phrase):
                     # check for trailing clauses
                     ap,tr = _split_action_params_(ap)
 
-                    # graph any trailing clauses
-                    if tr: trid = graph_ap_trailing_clause(t,awid,tr)
-
                     # graph action-parameters if present
                     if ap:
                         if not graph_action_param(t,awid,mtgltag.tag_val(aw),ap):
                             graph_phrase(t,awid,ap)
+
+                    # graph any trailing clauses
+                    if tr: trid = graph_ap_trailing_clause(t,awid,tr)
             return aid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN:
@@ -1428,17 +1429,20 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'bolster': return _graph_ap_n_(t,pid,param)  # 701.32
     elif aw == 'manifest': return _graph_ap_thing_(t,pid,param) # 701.33
     elif aw == 'support': return _graph_ap_n_(t,pid,param)  # 701.34
-    # TODO: meld 701.36
+    elif aw == 'meld': return _graph_ap_meld_(t,pid,param) # 701.36
     elif aw == 'goad': return _graph_ap_thing_(t,pid,param) # 701.37
     elif aw == 'exert': return _graph_ap_thing_(t,pid,param) # 701.38
     elif aw == 'surveil': return _graph_ap_n_(t,pid,param)  # 701.41
     elif aw == 'adapt': return _graph_ap_n_(t,pid,param)  # 701.42
     elif aw == 'amass': return _graph_ap_n_(t,pid,param)  # 701.43
 
+    # TODO: remove after debugging
+    #if aw in mtgl.keyword_actions: return None
+
     # then lituus actions
     if aw == 'add': return _graph_ap_add_(t,pid,param)
 
-    # nothing found
+    # nothing found TODO: after debugging, return None
     return t.add_node(pid,'action-params',tograph=param)
 
 def graph_ap_trailing_clause(t,pid,clause):
@@ -1449,9 +1453,12 @@ def graph_ap_trailing_clause(t,pid,clause):
     :param clause: the clause
     :return: the trailing clause node id
     """
-    # do x times first
+    # do times first
     try:
-        return t.add_node(pid,'times',quantity=dd.re_ntimes.search(clause).group(1))
+        tkn = dd.re_ntimes.search(clause).group(1)
+        tid,val,_ = mtgltag.untag(tkn)
+        if tid == 'nu': return t.add_node(pid,'times',quantity=val)
+        else: return t.add_node(pid,'times',quanitifier=val)
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): pass
         else: raise

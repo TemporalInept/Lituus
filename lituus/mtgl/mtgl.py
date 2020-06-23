@@ -122,11 +122,12 @@ TID = {
 ####
 
 # CATCHALLS
-# re_dbl_qte = r'".*?"'                            # double quoted string
-re_rem_txt = re.compile(r"\(.+?\)")                # reminder text
-re_mana_remtxt = re.compile(r"\(({t}: add.+?)\)")  # find add mana inside ()
-re_non = re.compile(r"non(\w)")                    # find 'non' without hyphen
-re_un = re.compile(r"un(\w)")                      # find 'un'
+# re_dbl_qte = r'".*?"'                                    # double quoted string
+re_rem_txt = re.compile(r"\(.+?\)")                        # reminder text
+re_mana_remtxt = re.compile(r"\(({t}: add.+?)\)")          # find add mana inside ()
+re_melds_remtxt = re.compile(r"\((melds with [^\.]+\.)\)") # find melds ... inside ()
+re_non = re.compile(r"non(\w)")                            # find 'non' without hyphen
+re_un = re.compile(r"un(\w)")                              # find 'un'
 
 # DELIMITERS
 
@@ -227,7 +228,6 @@ named_cards = [
 NC2R = {n: md5(n.encode()).hexdigest() for n in named_cards}
 re_oth_ref2 = re.compile(r"({})".format('|'.join(list(NC2R.keys()))))
 
-
 def set_n2r(n2r):
     # call global IOT calculate the lengthy regex once during the first call
     # to tag (Could objectify the tagger and avoid this)
@@ -235,13 +235,12 @@ def set_n2r(n2r):
     global N2R
     if re_oth_ref is None:
         # IOT to avoid tagging cards like Sacrifice (an action and a card name) with
-        # this expression have to search for card names preceded by either named
-        # or Partner with
+        # this expression have to search for card names preceded by 'named',
+        # Partner with or Melds with
         re_oth_ref = re.compile(
-            r"(named|Partner with) ({})\b".format('|'.join(list(n2r.keys())))
+            r"(named|Partner with|Melds with) ({})\b".format('|'.join(list(n2r.keys())))
         )
         N2R = n2r
-
 
 def release_n2r():
     # release/delete the global N2R file (once its no longer needed)

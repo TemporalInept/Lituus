@@ -492,9 +492,12 @@ re_action_ply_poss = re.compile(
 )
 
 # trailing clauses of action phrases
-# 1. [action-parameters] [number] [times]
+# 1. [action-parameters] [number|quanitifier] [times]
 # 2. [action-parameters] [sequence] i.e. again see Roalesk, Apex Hybrid
-re_trailing_ntimes = re.compile(r"^(?:(.+) )?(nu<[^>]+> sq<time suffix=s>)\.?$")
+#re_trailing_ntimes = re.compile(r"^(?:(.+) )?(nu<[^>]+> sq<time suffix=s>)\.?$")
+re_trailing_ntimes = re.compile(
+    r"^(?:(.+) )?((?:nu<[^>]+>|xq<[^>]+>) sq<time(?: suffix=s)?>)\.?$"
+)
 re_trailing_sequence = re.compile(r"^(?:(.+) )?(sq<again>)\.?$")
 
 # 701.2 activate [ability] [condition]?
@@ -719,9 +722,9 @@ re_lvl_up_lvl = re.compile(
 #  c) condition [sequence] [condition], [action] i.e. Hungering Yetis
 #  d) trailing sequence from delayed triggers i.e. Prized Amalgam
 #   [quanitifer] [sequence] of [clause]? [quanitifier] [turn structure]
-re_sequence_check = re.compile(r"^sq<[^>]+>")
+re_sequence_check = re.compile(r"sq<[^>]+>")
 re_time_check = re.compile(r"ts<([^>]+)>$")
-re_sequence_then = re.compile(r"^(sq<then>) ([^\.]+)\.?$")
+re_sequence_then = re.compile(r"^(?:([^\.]+) )?(sq<then>) ([^\.]+)\.?$")
 re_sequence_dur = re.compile(r"^(sq<[^>]+> ts<[^,]+>), ([^\.]+)\.?$")
 re_sequence_cond = re.compile(r"^sq<([^>]+)> ([^,]+), ([^\.]+)\.?$")
 re_sequence_time = re.compile(
@@ -825,8 +828,8 @@ re_only_if = re.compile(r"^(?:([^,|\.]+) )?cn<only_if> ([^,|\.]+)\.?$")
 ## CLAUSES
 ####
 
-re_ntimes = re.compile(r"^nu<([^>]+)> sq<time(?: suffix=s)?>$")
-re_again = re.compile(r"sq<(again)>$")
+re_ntimes = re.compile(r"^(nu<[^>]+>|xq<[^>]+>) sq<time(?: suffix=s)?>$")
+re_again = re.compile(r"^sq<(again)>$")
 
 ####
 ## PHASES/STEPS

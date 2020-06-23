@@ -62,6 +62,8 @@ def preprocess(name,txt):
        4. hack words with anamolies contractions, etc
        5. english number words 0 - 10 are replacing with corresponding ints,
        6. Some reminder text is removed, some paraenthesis is removed
+        a. keep add mana removing the paranthesis
+        b. keep melds with ... removing the paraenthesis
        7. replace any 'non' w/out hypen to 'non-' w/ hyphen
        8. replace any ", then" with "then"
        9. Modify modal spells
@@ -79,7 +81,8 @@ def preprocess(name,txt):
     ntxt = mtgl.re_landwalk_pre.sub(r"\1 landwalk",ntxt)                     # 3
     ntxt = mtgl.re_word_hack.sub(lambda m: mtgl.word_hacks[m.group(1)],ntxt) # 4
     ntxt = mtgl.re_wd2int.sub(lambda m: mtgl.E2I[m.group(1)],ntxt)           # 5
-    ntxt = mtgl.re_mana_remtxt.sub(r"\1",ntxt)                               # 6
+    ntxt = mtgl.re_mana_remtxt.sub(r"\1",ntxt)                               # 6.a
+    ntxt = mtgl.re_melds_remtxt.sub(r"\1",ntxt)                              # 6.b
     ntxt = mtgl.re_reminder.sub("",ntxt)                                     # 6
     ntxt = mtgl.re_non.sub(r"non-\1",ntxt)                                   # 7
     ntxt = ntxt.replace(", then"," then")                                    # 8
@@ -99,7 +102,7 @@ def tag_ref(name,txt):
     NOTE: this does not handle words like "it" that require contextual understanding
      to determine if "it" referes to this card or something else
     """
-    # token names - do token names first so Stangg Twin is tagged prior to Stangg
+    # token names, including meld
     ntxt = mtgl.re_tkn_ref1.sub(
         lambda m: r"{} ob<token ref={}>".format(
             m.group(1), mtgl.TN2R[m.group(2)]), txt
@@ -109,16 +112,11 @@ def tag_ref(name,txt):
             mtgl.TN2R[m.group(1)], m.group(2)
         ), ntxt
     )
-
-    # replace self references
-    ntxt = mtgl.re_self_ref(name).sub(r"ob<card ref=self>",ntxt)
-
-    # meld tokens from Eldritch Moon
     ntxt = mtgl.re_tkn_ref3.sub(
-        lambda m: r"ob<token ref={}>".format(mtgl.MN2R[m.group(1)]),ntxt
+        lambda m: r"ob<token ref={}>".format(mtgl.MN2R[m.group(1)]), ntxt
     )
 
-    # references to other cards prefixed with 'named' or 'Partner with'
+    # references to other cards prefixed with 'named', 'Partner with' or melds with
     # This does not catch cases where there is an 'and' i.e. Throne of Empires
     #  "... named Crown of Empires and Scepter of Empires. For now, have to hack
     #  it using mtgl.re_oth_ref2
@@ -128,6 +126,10 @@ def tag_ref(name,txt):
     ntxt = mtgl.re_oth_ref2.sub(
         lambda m: r"ob<token ref={}>".format(mtgl.NC2R[m.group(1)]),ntxt
     )
+
+    # replace self references - do last to avoid conflict i.e. Hanweir Garrison
+    ntxt = mtgl.re_self_ref(name).sub(r"ob<card ref=self>",ntxt)
+
     return ntxt
 
 def fix_lvl_up(txt):

@@ -225,21 +225,11 @@ the phrase upto shuffle is a thing (player)
 
 244. phrases of the form OPERATOR THING'S ATTRIBUTE
 
-245. When removing reminder text, meld text is also removed see Midnight Scavengers
-
 246. Finish graphing keyword actions
  double, exchange, play, reveal, search populate, vote, meld
 
 247. Start graphing lituus actions:
-    'put','remove','distribute','get','return','draw','move','look','pay','deal',
-    'gain','attack','defend','unblock','block','enter','leave','choose',
-    'die','spend','unspend','take','reduce','trigger','prevent','declare','have',
-    'switch','assign','win','lose','tie','skip','flip','cycle','phase','become',
-    'share','turn','produce','round','resolve','do','repeat','change','bid',
-    'select','reselect','begin','separate','note',
-    'copy',  # will have already been tagged?
-    'named',  # Special case we only want this specific conjugation
-    'cost',  # will have already been tagged as an object
+    'put','remove','distribute','get','return','draw','move','look','pay','deal','gain','attack','defend','unblock','block','enter','leave','choose','die','spend','unspend','take','reduce','trigger','prevent','declare','have','switch','assign','win','lose','tie','skip','flip','cycle','phase','become','share','turn','produce','round','resolve','do','repeat','change','bid','select','reselect','begin','separate','note','reorder','copy','named','cost',
 
 249. have to standarize conjunctions. conjunctions of things have item intermeditary nodes because the second thing may have quanitifiers but no other conjunctions do
 
