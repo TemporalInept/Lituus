@@ -1807,13 +1807,6 @@ def _check_thing_clause_(thing):
 
 ## KEYWORD ACTIONS
 
-def _graph_ap_thing_test_(t,pid,phrase):
-    # attempt to graph parameters as a thing
-    try:
-        return graph_thing(t,pid,phrase)
-    except lts.LituusException:
-        return t.add_node(pid,'action-params',tograph=phrase)
-
 def _graph_ap_thing_(t,pid,phrase):
     # graph parameters as a thing
     try:
@@ -1848,7 +1841,7 @@ def _graph_ap_attach_(t,pid,phrase):
         else: raise
 
 def _graph_ap_clash_(t,pid,phrase):
-    # clash - ATT all clash cards have phrase "pr<with> xq<a> xp<opponent>"
+    # clash 701.22 - ATT all clash cards have phrase "pr<with> xq<a> xp<opponent>"
     # but just in case will confirm
     wid = None
     try:
@@ -1861,6 +1854,36 @@ def _graph_ap_clash_(t,pid,phrase):
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): pass
         else: raise
+    return None
+
+def _graph_ap_meld_(t,pid,phrase):
+    # meld 701.36 two forms "meld them into ..." and "melds with"
+    # meld into
+    oid = None
+    try:
+        obj = dd.re_meld_clause1.search(phrase).group(1)
+        oid = graph_thing(t,pid,'xo<them>')
+        graph_thing(t,t.add_node(pid,'into'),obj)
+        return oid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(oid)
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
+    # meld with
+    wid = None
+    try:
+        obj = dd.re_meld_clause2.search(phrase).group(1)
+        wid = t.add_node(pid,'with')
+        graph_thing(t,wid,obj)
+        return wid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(oid)
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
     return None
 
 def _graph_mana_string_(t,pid,phrase):

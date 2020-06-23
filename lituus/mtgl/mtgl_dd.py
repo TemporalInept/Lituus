@@ -1004,6 +1004,12 @@ re_attach_clause = re.compile(r"^([^\.]+) pr<to> ([^\.]+)$")
 # clash 701.22 has the form with [player] (always an opponennt)
 re_clash_clause = re.compile(r"^pr<with> ([^\.]+)$")
 
+# meld 701.36 has two forms
+#  1. meld them into [object]
+#  2. melds with [object]
+re_meld_clause1 = re.compile(r"^xo<them> pr<into> (ob<[^>]+>)$")
+re_meld_clause2 = re.compile(r"^pr<with> (ob<[^>]+>)$")
+
 # related to 'add' mana
 
 # same as chains but for mana (for add)
