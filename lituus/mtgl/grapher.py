@@ -1293,29 +1293,8 @@ def graph_thing(t,pid,clause):
             for th in (ts+tn).split(", "):
                 _graph_object_(t,t.add_node(cid,'item'),th)
 
-        #n,xq,st,th1,conj,xq2,th2,poss,qual = dd.re_qst.search(clause).groups()
-        #eid = t.add_node(pid,'thing')
-
-        # any preceding quantifier and/or status belong to the holistic thing
-        # while intermediate quantifiers belong only to the subsequent thing
-        #if n: t.add_node(eid,'number',value=n)
-        #if xq: t.add_node(eid,'quantifier',value=xq)
-        #if st: t.add_node(eid,'status',value=st)
-
-        # if there is a conjunction, graph the things as items under a conjunction
-        # node, adding the second quanitifier if present
-        #if conj:
-        #    cid = t.add_node(eid,'conjunction',value=conj,itype='thing')
-        #    iid = t.add_node(cid,'item')
-        #    _graph_object_(t,iid,th1)
-        #    iid = t.add_node(cid, 'item')
-        #    if xq2: t.add_node(iid,'quantifier',value=xq2)
-        #    _graph_object_(t,iid,th2)
-        #else: _graph_object_(t,eid,th2)
-
         # graph any trailing posession clauses
         if poss:
-            #nid = None
             try:
                 ply,neg,wd = dd.re_possession_clause.search(poss).groups()
                 lbl = 'owned-by' if wd == 'own' else 'controlled-by'
@@ -1325,7 +1304,6 @@ def graph_thing(t,pid,clause):
                     cid = t.add_node(nid,lbl)
                 graph_thing(t,cid,ply)
             except lts.LituusException:
-                #if nid: t.del_node(nid)
                 t.del_node(eid)
                 raise lts.LituusException(lts.EPTRN, "{} is not a possession".format(ctlr))
             except AttributeError as e:

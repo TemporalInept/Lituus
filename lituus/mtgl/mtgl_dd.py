@@ -874,7 +874,7 @@ re_qtz = re.compile(
 #  or re_dual_qualifying_clause
 re_qst = re.compile(
     r"^(?:nu<([^>]+)> )?(?:xq<([^>]+)> )?(?:(?:xs|st)<([^>]+)> )?"
-    r"((?:[^\.]+)?(?:ob|xp|xo|zn)<[^>]+>)"
+    r"((?:[^\.]*?)?(?:ob|xp|xo|zn)<[^>]+>)"
     r"(?: ((?:xq<[^>]+> )?(?:(?:st|xs)<[^>]+> )?"
      r"xp<[^>]+> (?:xa<do> cn<not> )?xc<[^>]+>))?"
     r"(?: ((?:pr|xq)<(?:with|without|from|of|that_is|that_are|other_than)> "
@@ -900,6 +900,7 @@ re_multi_conjunction_thing = re.compile(
     r"^((?:(?:ob|xp|xo|zn)<[^>]+>, ){2,})(and|or|and/or) ((?:ob|xp|xo|zn)<[^>]+>)$"
 )
 
+# possessive and qualifying clauses
 re_possession_clause = re.compile(
     r"((?:xq<\w*?> )?(?:(?:st|xs)<[^>]+> )?"
      r"xp<[^>]+>) (?:(xa<do> cn<not>) )?xc<([^>]+)(?: suffix=s)?>"
