@@ -915,7 +915,6 @@ re_base_pt = re.compile(
     r"base ch<power> and ch<toughness> "
     r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
 )
-#re_single_pt = re.compile(r"ch<power> and ch<toughness>")
 
 # if after instantiatiating attributes we want to 'chain' cases of
 #  power and/or toughness where toughness has a value i.e. Tetsuko Umezawa,

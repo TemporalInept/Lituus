@@ -63,10 +63,11 @@ def preprocess(name,txt):
        5. english number words 0 - 10 are replacing with corresponding ints,
        6. Some reminder text is removed, some paraenthesis is removed
        7. replace any 'non' w/out hypen to 'non-' w/ hyphen
-       8. Modify modal spells
+       8. replace any ", then" with "then"
+       9. Modify modal spells
          a. Replace occurrences of ".•" with " •" in modal spells
          b. if present, replace the last occurrence of ". " with a semi-colon
-       9. Fix level ups removing newlines inside of the the level descriptions
+      10. Fix level ups removing newlines inside of the the level descriptions
         and prefixing each level description with a bullet
     :param name: name of this card
     :param txt: the mtgl text
@@ -81,10 +82,11 @@ def preprocess(name,txt):
     ntxt = mtgl.re_mana_remtxt.sub(r"\1",ntxt)                               # 6
     ntxt = mtgl.re_reminder.sub("",ntxt)                                     # 6
     ntxt = mtgl.re_non.sub(r"non-\1",ntxt)                                   # 7
-    if '•' in ntxt:                                                          # 8
+    ntxt = ntxt.replace(", then"," then")                                    # 8
+    if '•' in ntxt:                                                          # 9
         ntxt = mtgl.re_modal_blt.sub(r" •",ntxt)
         ntxt = mtgl.re_modal_lvl_instr_fix.sub(r" ; ",ntxt)
-    if mtgl.re_lvl_up.search(ntxt): ntxt = fix_lvl_up(ntxt)                  # 9
+    if mtgl.re_lvl_up.search(ntxt): ntxt = fix_lvl_up(ntxt)                  # 10
     return ntxt
 
 def tag_ref(name,txt):

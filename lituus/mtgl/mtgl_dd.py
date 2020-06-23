@@ -52,12 +52,7 @@ re_aw_line = re.compile(r"^aw<([\w-]+)> — (.+?)\.$")
 
 # Keyword lines start with a keyword (or object keyword if landwalk) and contain
 # one or more comma separated keyword claues
-re_kw_line = re.compile(
-    r"^"
-    r"((?:ob|xr)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡v→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*> )?"
-    r"(kw<[\w-]+>)"
-)
+re_kw_line = re.compile(r"^((?:ob|xr)<[^>]+> )?(kw<[\w-]+>)")
 
 # a non-standard keyword line will contain a long hypen and end with a period
 # between the hypen and period is the non-standard cost i.e. Aboroth
@@ -498,8 +493,9 @@ re_action_ply_poss = re.compile(
 
 # trailing clauses of action phrases
 # 1. [action-parameters] [number] [times]
+# 2. [action-parameters] [sequence] i.e. again see Roalesk, Apex Hybrid
 re_trailing_ntimes = re.compile(r"^(?:(.+) )?(nu<[^>]+> sq<time suffix=s>)\.?$")
-
+re_trailing_sequence = re.compile(r"^(?:(.+) )?(sq<again>)\.?$")
 
 # 701.2 activate [ability] [condition]?
 #  NOTE: ability may include quanitifiers
@@ -830,6 +826,7 @@ re_only_if = re.compile(r"^(?:([^,|\.]+) )?cn<only_if> ([^,|\.]+)\.?$")
 ####
 
 re_ntimes = re.compile(r"^nu<([^>]+)> sq<time(?: suffix=s)?>$")
+re_again = re.compile(r"sq<(again)>$")
 
 ####
 ## PHASES/STEPS

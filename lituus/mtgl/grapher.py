@@ -1394,9 +1394,6 @@ def graph_action_param(t,pid,aw,param):
     :param param: paremeters
     :return: the graphed action node or None
     """
-    # before graphing the parameters, extract common trailing clauses like
-    #  (NUMBER times)
-
     # starting with mtg defined keyword actions
     # The following do not have parameters (proliferate,populate,investigate,
     #  explore)
@@ -1452,8 +1449,16 @@ def graph_ap_trailing_clause(t,pid,clause):
     :param clause: the clause
     :return: the trailing clause node id
     """
+    # do x times first
     try:
         return t.add_node(pid,'times',quantity=dd.re_ntimes.search(clause).group(1))
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
+    # again
+    try:
+        return t.add_node(pid,dd.re_again.search(clause).group(1))
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): pass
         else: raise
@@ -1749,12 +1754,21 @@ def _split_action_params_(clause):
     """
     ap = clause
     tr = None
+
     # check for n times
     try:
         ap,tr = dd.re_trailing_ntimes.search(clause).groups()
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): pass
         else: raise
+
+    # trailing sequence
+    try:
+        ap,tr = dd.re_trailing_sequence.search(clause).groups()
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
     return (ap,tr)
 
 def _check_thing_clause_(thing):
