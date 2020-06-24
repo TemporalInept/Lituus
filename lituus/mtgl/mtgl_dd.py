@@ -48,7 +48,7 @@ re_is_act_clause = re.compile(r"^[kx]a<\w+>")
 
 # Ability word lines start with an ability word followed by a long hypen and then
 # the ability clause and end with a sentence
-re_aw_line = re.compile(r"^aw<([\w-]+)> — (.+?)\.$")
+re_aw_line = re.compile(r"^aw<([^>]+)> — (.+?)\.$")
 
 # Keyword lines start with a keyword (or object keyword if landwalk) and contain
 # one or more comma separated keyword claues
@@ -1003,6 +1003,15 @@ re_attach_clause = re.compile(r"^([^\.]+) pr<to> ([^\.]+)$")
 
 # clash 701.22 has the form with [player] (always an opponennt)
 re_clash_clause = re.compile(r"^pr<with> ([^\.]+)$")
+
+# vote 701.31 has three forms
+#  1. vote for attribute (the votes are in the val attribute)
+#  2. vote for token1 or token2 (one or both of the tokens may have been inadverntly
+#   tagged. see Lieutenants of the Guard)
+#  3. vote for Thing
+re_vote_clause1 = re.compile(r"^pr<for> xr<(\w+) val=([^>]+)>$")
+re_vote_clause2 = re.compile(r"^pr<for> (.+?) or (.+?)$")
+re_vote_clause3 = re.compile(r"^pr<for> ([^\.]+)$")
 
 # meld 701.36 has two forms
 #  1. meld them into [object]

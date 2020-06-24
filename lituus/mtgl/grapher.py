@@ -1423,9 +1423,8 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'clash': return _graph_ap_clash_(t,pid,param) # 701.22
     elif aw == 'transform': return _graph_ap_thing_(t,pid,param) # 701.27
     elif aw == 'detain': return _graph_ap_thing_(t,pid,param) # 701.28
-    # TODO: populate 701.29 has no parameters but one card Full Flowering has populate X times
     elif aw == 'monstrosity': return _graph_ap_n_(t,pid,param)  # 701.30
-    # TODO: vote 701.31 have to return to this one, has interesting phrasing not yet graphed
+    elif aw == 'vote': return _graph_ap_vote_(t,pid,param) # 701.31
     elif aw == 'bolster': return _graph_ap_n_(t,pid,param)  # 701.32
     elif aw == 'manifest': return _graph_ap_thing_(t,pid,param) # 701.33
     elif aw == 'support': return _graph_ap_n_(t,pid,param)  # 701.34
@@ -1854,6 +1853,54 @@ def _graph_ap_clash_(t,pid,phrase):
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): pass
         else: raise
+    return None
+
+def _graph_ap_vote_(t,pid,phrase):
+    # vote 701.31 - three forms
+    fid = None
+
+    # attribute
+    try:
+        _,val = dd.re_vote_clause1.search(phrase).groups()
+        fid = t.add_node(pid,'for')
+        for val in val.split(mtgl.OR): t.add_node(fid,'candidate',value=val)
+        return fid
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
+    # tokens
+    try:
+        tkn1,tkn2 = dd.re_vote_clause2.search(phrase).groups()
+        fid = t.add_node(pid,'for')
+
+        # have to make sure we untag any tagged tokens first
+        if mtgltag.is_tag(tkn1):
+            _,tkn1,attr = mtgltag.untag(tkn1)
+            if 'suffix' in attr: tkn1 += attr['suffix']
+        t.add_node(fid,'candidate',value=tkn1)
+
+        if mtgltag.is_tag(tkn2):
+            _,tkn2,attr = mtgltag.untag(tkn2)
+            if 'suffix' in attr: tkn2 += attr['suffix']
+        t.add_node(fid,'candidate',value=tkn2)
+        return fid
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
+    # object
+    try:
+        obj = dd.re_vote_clause3.search(phrase).group(1)
+        fid = t.add_node(pid,'for')
+        graph_thing(t,t.add_node(fid,'candidate'),obj)
+        return fid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(fid)
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
     return None
 
 def _graph_ap_meld_(t,pid,phrase):
