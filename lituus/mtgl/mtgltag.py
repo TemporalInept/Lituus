@@ -70,11 +70,11 @@ re_mana_tag = re.compile(r"xo<mana( num=(≥?\d+|[xyz]))?>")
 # extract components of a tag (excluding all prop-values)
 # TODO: scrub this
 re_tag = re.compile(
-    r"(\w\w)"                             # 2 char tag-id       
-    r"<"                                  # opening bracket
-    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬⇔→'\(\)]+?)"  # tag value (w/ optional starting not)
-    r"( [\w\+/\-=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*"  # 0 or more attributes delimited by space
-    r">"                                  # closing bracket
+    r"^(\w\w)"                           # 2 char tag-id       
+    r"<"                                 # opening bracket
+    r"(¬?[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬⇔→'\(\)]+?)" # tag value (w/ optional starting not)
+    r"( [\w\+/\-=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*" # 0 or more attributes delimited by space
+    r">$"                                # closing bracket
 )
 
 # extract the attribute pairs
