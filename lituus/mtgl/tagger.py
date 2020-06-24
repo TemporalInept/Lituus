@@ -318,6 +318,9 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_discard_stat.sub(r"xs<discard suffix=ed>",ntxt)
     ntxt = mtgl.re_enchant_stat.sub(r"xs<enchant suffix=ed>",ntxt)
 
+    # retag spent as a status
+    ntxt = mtgl.re_spend_stat.sub(r"xs<\1spent>",ntxt)
+
     # deconflict 'at' making it a preposition when followed by a qualifier
     ntxt = mtgl.re_at_prep.sub(r"pr<at>",ntxt)
     #ntxt = mtgl.re_at_prep2.sub(r"pr<at>",ntxt)

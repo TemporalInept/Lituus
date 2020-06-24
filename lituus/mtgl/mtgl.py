@@ -432,7 +432,7 @@ re_obj = re.compile(
 # TODO: rest does not belong here
 lituus_objects = [  # lituus objects
     "city's blessing", 'game','mana pool','mana cost','commander','mana','attacker',
-    'blocker','itself','it','them','coin','choice','cost', "amount of",'life total',
+    'blocker','itself','it','them','coin','choice','cost', "amount",'life total',
     'life','symbol','rest','monarch','pile','team','mode','level','value','number',
     'him','her',
 ]
@@ -1103,7 +1103,7 @@ val_join = {
     "commander ninjutsu":"commander_ninjutsu","split second":"split_second",
     "living weapon":"living_weapon","totem armor":"totem_armor",
     "color identity":"color_identity",  # "mana cost":"mana_cost",
-    "amount of":"amount_of","that is":"that_is","that are":"that_are",
+    "that is":"that_is","that are":"that_are",
     "life total":"life_total","rather than":"rather_than","as though":"as_though",
     "did not":"did_not","other than":"other_than"
 }
@@ -1264,6 +1264,9 @@ re_discard_stat = re.compile(r"(?<=xq<the> )ka<discard suffix=ed>(?= ob<)")
 re_enchant_stat = re.compile(
     r"(?<=xq<(?:that_is|that_are)> )kw<enchant suffix=ed>"
 )
+
+# (un)spent is a status if followed by mana
+re_spend_stat = re.compile(r"xa<(un)?spend suffix=ed>(?= xo)")
 
 # 'at' is a preposition if followed by a qualifier (random) i.e. Black Cat
 re_at_prep = re.compile(r"(tp<at>)(?= xl<\w+>)")
