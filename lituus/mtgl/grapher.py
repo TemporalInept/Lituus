@@ -878,9 +878,22 @@ def graph_sequence_phrase(t,pid,line):
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
+
+        # try 'until'
+        try:
+            phrase,_,cond = dd.re_sequence_until.search(line).groups()
+            uid = t.add_node(pid, 'until')
+            graph_phrase(t,t.add_node(uid,'condition'),cond)
+            graph_phrase(t,t.add_node(uid,'effect'),phrase)
+            return uid
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
     else:
         # should never get here
         raise lts.LituusException(lts.EPTRN,"{} not a sequence".format(line))
+
+    # TODO: have to do until eot
 
     return None
 
@@ -1265,11 +1278,12 @@ def graph_thing(t,pid,clause):
         if e.__str__().startswith("'NoneType'"): pass
         else: raise
 
+    # check for qst
     try:
         # 'unpack' the phrase
         # TODO: ATT re_qst can grab and match invalid phrasings, before adding
         #  any nodes, have to determine if thing is valid and what type it is
-        n,xq,st,thing,poss,qual = dd.re_qst.search(clause).groups()
+        n,xq,st,thing,poss1,qual,poss2 = dd.re_qst.search(clause).groups()
         m,ttype = _check_thing_clause_(thing)
         if not m: raise AttributeError("'NoneType' object has no attribute 'groups'")
 
@@ -1295,6 +1309,7 @@ def graph_thing(t,pid,clause):
                 _graph_object_(t,t.add_node(cid,'item'),th)
 
         # graph any trailing posession clauses
+        poss = poss1 if poss1 else poss2
         if poss:
             try:
                 ply,neg,wd = dd.re_possession_clause.search(poss).groups()
@@ -1406,8 +1421,8 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'counter': return _graph_ap_thing_(t,pid,param) # 701.5
     elif aw == 'create': return _graph_ap_thing_(t,pid,param)  # 701.6
     elif aw == 'destroy': return _graph_ap_thing_(t,pid,param) # 701.7
-    elif aw == 'discard': return _graph_ap_thing_test_(t,pid,param) # 701.8
-    # TODO: elif aw == 'double': # 701.9
+    elif aw == 'discard': return _graph_ap_thing_(t,pid,param) # 701.8
+    elif aw == 'double': return _graph_ap_double_(t,pid,param) # 701.9
     # TODO: elif aw == 'exchange': # 701.10
     elif aw == 'exile': return _graph_ap_thing_(t,pid,param) # 701.11
     elif aw == 'fight': return _graph_ap_thing_(t,pid,param) # 701.12
@@ -1430,7 +1445,7 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'support': return _graph_ap_n_(t,pid,param)  # 701.34
     elif aw == 'meld': return _graph_ap_meld_(t,pid,param) # 701.36
     elif aw == 'goad': return _graph_ap_thing_(t,pid,param) # 701.37
-    elif aw == 'exert': return _graph_ap_thing_(t,pid,param) # 701.38
+    elif aw == 'exert': return _graph_ap_exert_(t,pid,param) # 701.38
     elif aw == 'surveil': return _graph_ap_n_(t,pid,param)  # 701.41
     elif aw == 'adapt': return _graph_ap_n_(t,pid,param)  # 701.42
     elif aw == 'amass': return _graph_ap_n_(t,pid,param)  # 701.43
@@ -1462,9 +1477,20 @@ def graph_ap_trailing_clause(t,pid,clause):
         if e.__str__().startswith("'NoneType'"): pass
         else: raise
 
+    # sequencing
     # again
     try:
         return t.add_node(pid,dd.re_again.search(clause).group(1))
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
+    # until ...
+    try:
+        sq,ts = dd.re_until_phase.search(clause).groups()
+        sid = t.add_node(pid,sq)
+        graph_phase(t,sid,ts)
+        return sid
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): pass
         else: raise
@@ -1763,14 +1789,14 @@ def _split_action_params_(clause):
 
     # check for n times
     try:
-        ap,tr = dd.re_trailing_ntimes.search(clause).groups()
+        return dd.re_trailing_ntimes.search(clause).groups()
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): pass
         else: raise
 
     # trailing sequence
     try:
-        ap,tr = dd.re_trailing_sequence.search(clause).groups()
+        return dd.re_trailing_sequence.search(clause).groups()
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): pass
         else: raise
@@ -1838,6 +1864,68 @@ def _graph_ap_attach_(t,pid,phrase):
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): return None
         else: raise
+    return None
+
+def _graph_ap_double_(t,pid,phrase):
+    # double # 701.9 - four variations 1) double a creatures power/toughness
+    # 2) double a player's life total 3) double the # of counters and 4) double
+    # the amount of mana in a mana pool
+
+    # p/t
+    if "xr<power>" in phrase or "xr<toughness" in phrase:
+        return t.add_node(t.add_node(pid,'attribute'),'p/t-clause',tograph=phrase)
+
+    # life total
+    lid = None
+    try:
+        ply = dd.re_double_clause2.search(phrase).group(1)
+        lid = graph_thing(t,pid,'xo<life_total>')
+        graph_thing(t,t.add_node(lid,'whose'),ply)
+        return lid
+    except lts.LituusException:
+        # have to check if the first object was graphed but the second failed
+        if tid: t.del_node(lid)
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
+    # counters
+    cid = None
+    try:
+        ctr,obj = dd.re_double_clause3.search(phrase).groups()
+        cid = t.add_node(pid,'counter')
+
+        # the ctr clause may be a specific ctr i.e. +1/+1 or each kind of counter
+        if mtgltag.is_tag(ctr): t.add_attr(cid,'type',mtgltag.tag_attr(ctr)['type'])
+        else: t.add_attr(cid,'type','each-kind')
+
+        # graph the object under a 'on' node (it may be a phrase, if so pass it back)
+        oid = t.add_node(cid,'on')
+        try:
+            graph_thing(t,oid,obj)
+        except lts.LituusException:
+            graph_phrase(t,oid,obj)
+
+        return cid
+    except KeyError:
+        # the counter did not have a type
+        raise lts.LituusException(lts.ETAG,"{} did not includ a valid counter".format(phrase))
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
+    # amount of mana
+    mid = None
+    try:
+        wd,cls = dd.re_double_clause4.search(phrase).groups()
+        mid = t.add_node(pid,wd)
+        t.add_node(t.add_node(mid,'of'),'mana-clause',tograph=cls) # TODO: need to flesh this out
+        return mid
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
+    return None
 
 def _graph_ap_clash_(t,pid,phrase):
     # clash 701.22 - ATT all clash cards have phrase "pr<with> xq<a> xp<opponent>"
@@ -1933,6 +2021,20 @@ def _graph_ap_meld_(t,pid,phrase):
 
     return None
 
+def _graph_ap_exert_(t,pid,phrase):
+    # exert 701.38 exert [object] - may include an 'as' clause
+    rid = None
+    try:
+        obj,asc = dd.re_exert_clause.search(phrase).groups()
+        tid = graph_thing(t,pid,obj)
+        if asc: graph_phrase(t,t.add_node(tid,'as'),asc)
+        return tid
+    except lts.LituusException as e: pass
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+    return None
+
 def _graph_mana_string_(t,pid,phrase):
     try:
         # get the mana symbols and recursively call for conjuctions
@@ -1949,8 +2051,9 @@ def _graph_mana_string_(t,pid,phrase):
         if xq: t.add_node(mid,'quantifier',value=xq)
         return mid
     except AttributeError as e:
-        if e.__str__().startswith("'NoneType'"): return None
+        if e.__str__().startswith("'NoneType'"): pass
         else: raise
+    return None
 
 ## Lituus Actions
 

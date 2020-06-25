@@ -226,7 +226,7 @@ the phrase upto shuffle is a thing (player)
 244. phrases of the form OPERATOR THING'S ATTRIBUTE
 
 246. Finish graphing keyword actions
- double, exchange, play, reveal, search populate, vote, meld
+ double, exchange, play, reveal, search
 
 247. Start graphing lituus actions:
     'put','remove','distribute','get','return','draw','move','look','pay','deal','gain','attack','defend','unblock','block','enter','leave','choose','die','spend','unspend','take','reduce','trigger','prevent','declare','have','switch','assign','win','lose','tie','skip','flip','cycle','phase','become','share','turn','produce','round','resolve','do','repeat','change','bid','select','reselect','begin','separate','note','reorder','copy','named','cost',
@@ -239,4 +239,7 @@ the phrase upto shuffle is a thing (player)
 
 254. Not a big deal but when reminder text at the end of the oracle is removed, hanging newlines can be left behind. Oracle text does not end with a newline.
 
-256.
+256. Should trailing clauses of actions (until eot) be graphed under the the action word or under the 'action' node?
+
+257. Have to handjam Game of Chaos with ka<double> xq<the> xo<life> stakes pr<with> xq<each> xa<flip>
+
