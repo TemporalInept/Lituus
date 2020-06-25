@@ -12,7 +12,7 @@ Tags MTG oracle text in the mtgl format
 
 #__name__ = 'tagger'
 __license__ = 'GPLv3'
-__version__ = '0.1.7'
+__version__ = '0.1.8'
 __date__ = 'June 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
@@ -824,6 +824,15 @@ def _reify_phrase_(m):
     # extract p/t, color, type and object, set up the new tag
     st,pt,clr,ent,obj = m.groups()
 
+    # if obj is a ref (primarily self) we want to create a new object and keep
+    #  the ref object (see Wall of Corpses)
+    tobj = None
+    if obj:
+        _,oval,oattr = mtgltag.untag(obj)
+        if 'ref' in oattr:
+            tobj = obj
+            obj = None
+
     # create the operand list
     if st: operands.append(st)
     if pt: operands.append(pt)
@@ -857,7 +866,10 @@ def _reify_phrase_(m):
         char = atype + mtgl.ARW + char
     attr['characteristics'] = char
 
-    return mtgltag.retag(tid,val,attr)
+    # put return value together and return it
+    ret = mtgltag.retag(tid,val,attr)
+    if tobj: ret += " " + tobj
+    return ret
 
 def _reify_single_(m):
     """

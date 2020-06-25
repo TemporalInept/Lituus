@@ -1514,7 +1514,7 @@ re_reify_phrase = re.compile(
     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
     # optional object
     r"(?: (ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>))?"
+     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>))?"
 )
 
 # after above we have some non-type characteristics followed by an object i.e.
