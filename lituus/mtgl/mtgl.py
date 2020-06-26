@@ -434,7 +434,7 @@ lituus_objects = [  # lituus objects
     "city's blessing", 'game','mana pool','mana cost','commander','mana','attacker',
     'blocker','itself','it','them','coin','choice','cost', "amount",'life total',
     'life','symbol','rest','monarch','pile','team','mode','level','value','number',
-    'him','her',
+    'him','her','loyalty',
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
