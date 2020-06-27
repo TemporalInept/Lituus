@@ -1159,6 +1159,7 @@ def _join_suffix_(m):
     if stem == 'monstrosity': joined = "monstrous"
     elif stem.endswith('p') and suffix in ['ed','ing']: joined = stem+'p'+suffix
     elif stem.endswith('e') and suffix in ['ed','ing']: joined = stem[:-1]+suffix
+    elif stem.endswith('y') and suffix in ['ed','ing']: joined = stem[:-1]+'i'+suffix
     else: joined = stem+suffix
     return "{}<{}>".format(tid,joined)
 

@@ -311,7 +311,7 @@ word_hacks = {
     "voting":"voteing","voted":"voteed",
     "investigating":"investigateing","investigated":"investigateed",
     "exploring":"exploreing","explored":"explored",
-    "copied":"copyied","copies":"copys",
+    "copied":"copyed","copies":"copys",
     "removing":"removeing","removed":"removeed",
     "distributing":"distributeing","distributed":"distributeed",
     "got":"getted","getting":"geting",
