@@ -334,7 +334,9 @@ word_hacks = {
     "tapping":"taping","tapped":"taped","untapping":"untaped","untapped":"untaped",
     "flipping":"fliping","flipped":"fliped",
     "phased":"phaseed",
-    "kicked":"kickered"
+    "kicked":"kickered",
+    # twice
+    "twice":"2 times",
 }
 word_hack_tkns = '|'.join(word_hacks.keys())
 re_word_hack = re.compile(r"\b({})\b".format(word_hack_tkns))
@@ -384,7 +386,7 @@ lituus_quantifiers = [
     'a','target','each','all','any','every','another','other than','other','this',
     'that is','that are','that','additional','those','these','their','the','extra',
     'first','second','third','fourth','fifth','sixth','seventh','eighth','ninth',
-    'tenth','half','twice','new','single','same','different','next','last',
+    'tenth','half','new','single','same','different','next','last',
     'opening','which',"chosen",
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
