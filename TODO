@@ -141,8 +141,6 @@ from s
 249. See Teferi's Moat things may have more than one preposition clause
  - re.compile(r"pr<(\w+)> ").split(test) does split into a list of [prep,clause,...,prep,clause]
 
-250. Have to do something about "where VAR is ..." 
-
 251. Made a handjam hack for coin counters (Athereos) since coins are tagged first as lituus objects
 
 254. Might have to relook etb-with and allow the with to pass into successive graphing see Academy elite
