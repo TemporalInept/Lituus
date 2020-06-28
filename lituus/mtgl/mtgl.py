@@ -1359,20 +1359,20 @@ re_align_super = re.compile(
 # remaining subtypes will be chained
 re_align_sub = re.compile(
     r"(ch<¬?(?:" + re_sub_char.pattern + ")> )+"
-                                         r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-                                         r"(?:[∧∨⊕→]¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
-                                         r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+    r"(?:[∧∨⊕→]¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
+    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
 )
 
 # hanging subtypes are those subtype characteristics that are not followed by
 # a type characteristic.
 re_hanging_subtype = re.compile(
     r"(ch<¬?(?:" + re_sub_char.pattern + ")"
-                                         r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-                                         r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
-                                         r"(?! ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-                                         r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-                                         r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
+    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
+    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
+    r"(?! ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
+    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
 )
 
 # An anamoulous phrasing found in 3 cards (Assassin's Blade, Exile, Tilonalli's
