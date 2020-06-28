@@ -25,15 +25,15 @@ import regex as re
 ## MISCELLANEOUS
 ####
 
-# use with split to break a line into sentences by the period where the period is
-# not enclosed in quotes. Grabs all characters upto the period
+# use with split to break a line into sentences or clauses by the period or comma
+# where the period is not enclosed in quotes. Grabs all characters upto the period
 # Thanks to 'Jens' for the solution to this at
 # https://stackoverflow.com/questions/6462578/regex-to-match-all-instances-not-inside-quotes
 # which finds any periods followed by an even number of quotes
 re_sentence = re.compile(r"\.(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")
 
-# use with spit to break a phrase into clauses by the comma (not enclosed in quotes)
-re_comma = re.compile(r", ")
+# clauses are separated by commas (may include an and that will be 'stripped'
+re_clause = re.compile(r",(?: and)?")
 
 ####
 ## TYPE CHECKS
@@ -464,6 +464,12 @@ kw_param_template = {
 ## KEYWORD ACTIONS (701.2 - 701/43)
 ####
 
+# some action clauses have trailing qualifying clauses i.e Soldevi Sentry
+# extract these before processing the action clause
+#re_action_clause = re.compile(
+#    r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
+#)
+
 # keyword or lituus action clause - can have
 #  1. a conjunction of actions
 #    [thing] [action-word] [parameters] and [action-word] [parameters]
@@ -477,14 +483,14 @@ kw_param_template = {
 re_act_clause_check = re.compile(
     r"((?:xa|ka)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
 )
-re_anded_action_clause = re.compile(
-    r"^(?:([^,|^\.]+) )?"
-     r"((?:xa|ka)<[^>]+>)(?: ([^.]+))? and ((?:xa|ka)<[^>]+>)(?: ([^.]+))?\.?$"
+re_conjunction_action_clause = re.compile(
+    r"^(?:([^,|^\.]+) )?((?:xa|ka)<[^>]+>)"
+    r"(?: ([^,|^\.]+))? (and|or) ((?:xa|ka)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
 )
 re_action_clause = re.compile(
     r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?"
     r"(?<!(?:ka|xa)<[^>]+>.*?)([xk]a<\w+(?: [^>]+)?>)" # cannot be preceded by an action
-    r"(?: ([^.]+))?\.?$"
+    r"(?: ([^,|^\.]+))?\.?$"
 )
 re_action_ply_poss = re.compile(
     r"^((?:xq<[^>]+> )?(?:xs<[^>]+> )?xp<[^>]+>) "
@@ -494,16 +500,16 @@ re_action_ply_poss = re.compile(
 # trailing clauses of action phrases
 # 1. [action-parameters] [number|quanitifier] [times]
 # 2. [action-parameters] [sequence] i.e. again see Roalesk, Apex Hybrid
-re_trailing_ntimes = re.compile(
-    r"^(?:(.+) )?((?:nu<[^>]+>|xq<[^>]+>) sq<time(?: suffix=s)?>)\.?$"
-)
-re_trailing_sequence = re.compile(r"^(?:(.+) )?(sq<[^>]+>(?: [^,|^\.]+)?)\.?$")
+#re_trailing_ntimes = re.compile(
+#    r"^(?:(.+) )?((?:nu<[^>]+>|xq<[^>]+>) sq<time(?: suffix=s)?>)\.?$"
+#)
+#re_trailing_sequence = re.compile(r"^(?:(.+) )?(sq<[^>]+>(?: [^,|^\.]+)?)\.?$")
 
 # 701.2 activate [ability] [condition]?
 #  NOTE: ability may include quanitifiers
-re_ka_activate = re.compile(
-    r"^ka<(activate)> ((?:.+) ob<ability(?: .+)?>)(?: ([^\.]+))?\.?$"
-)
+#re_ka_activate = re.compile(
+#    r"^ka<(activate)> ((?:.+) ob<ability(?: .+)?>)(?: ([^\.]+))?\.?$"
+#)
 
 ####
 ## REPLACEMENT EFFECTS (614)
@@ -716,7 +722,7 @@ re_lvl_up_lvl = re.compile(
 ####
 
 # sequences - three types
-#  a) then [action] i.e. Barishi
+#  a) then [action] i.e. Barishi possibly ended with an again see Roalesk
 #  b) duration [sequence] [phase/step], [action] i.e Abeyance
 #  c) condition [sequence] [condition], [action] i.e. Hungering Yetis
 #  d) untill [action] until [condition]
@@ -724,7 +730,9 @@ re_lvl_up_lvl = re.compile(
 #   [quanitifer] [sequence] of [clause]? [quanitifier] [turn structure]
 re_sequence_check = re.compile(r"sq<[^>]+>")
 re_time_check = re.compile(r"ts<([^>]+)>$")
-re_sequence_then = re.compile(r"^(?:([^\.]+) )?(sq<then>) ([^\.]+)\.?$")
+re_sequence_then = re.compile(
+    r"^(?:([^\.]+) )?(sq<then>) ([^\.]*?)(?: (sq<again>))?\.?$"
+)
 re_sequence_dur = re.compile(r"^(sq<[^>]+> ts<[^,]+>), ([^\.]+)\.?$")
 re_sequence_cond = re.compile(r"^sq<([^>]+)> ([^,]+), ([^\.]+)\.?$")
 re_sequence_until = re.compile(r"([^,|^\.]+) sq<(until)> ([^,|^\.]+)\.?$")
@@ -792,6 +800,12 @@ re_action_unless = re.compile(
 re_status_unless = re.compile(r"^(?:st|xs])<(\w+)> cn<unless> ([^,|\.]+)\.?$")
 re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$")
 
+# for each condition see
+#  1. for each [condition], [action] i.e. From the Ashes
+#  2. [action] for each [condition] i.e. Gnaw to the Bone
+re_for_each_cond1 = re.compile(r"pr<for> xq<each> ([^,|^\.]+), ([^,|\.]+)\.?$")
+re_for_each_cond2 = re.compile(r"^([^,|^\.]+) pr<for> xq<each> ([^,|\.]+)\.?$")
+
 # some restrictions have a conjunction of only restrictions with the basic form
 #  [action] only|only_if [clause] and only|only_if [clause]
 # for each of the clauses, have to look at the condition type. If it is only
@@ -825,9 +839,23 @@ re_restriction_number = re.compile(
 # condition restrictions only_if
 re_only_if = re.compile(r"^(?:([^,|\.]+) )?cn<only_if> ([^,|\.]+)\.?$")
 
+# but condition restrictions i.e. Haakon
+# [action],? but [condition-word] [restriction]
+re_restriction_but = re.compile(r"^(.+?),? but cn<(\w+)> ([^,|\.]+)\.?$")
+
+# Exception: contains except - the opposite of a restriction, it provides
+# additional abilities, characteristics see Lazav, the Multifarious
+re_exception_check = re.compile(r"cn<except>")
+re_exception_phrase = re.compile(r"(.+?), cn<except> ([^\.]+)\.?$")
+
 ####
 ## CLAUSES
 ####
+
+# two separate clauses conjoined by a conjunction word (will not cross boundaries
+# i.e., commas or periods
+#re_conjunction_clause = re.compile(r"^([^,|\.]+) (and|or|and/or) ([^,|\.]+)$")
+re_conjunction_clause = re.compile(r"^([^,|\.]+) and ([^,|\.]+)\.?$")
 
 re_ntimes = re.compile(r"^(nu<[^>]+>|xq<[^>]+>) sq<time(?: suffix=s)?>$")
 re_again = re.compile(r"^sq<(again)>$")
@@ -929,12 +957,15 @@ re_dual_qualifying_clause = re.compile(
 # finds consecutive things to determine if they are possessive
 #  TODO: need to determine if we only need to check for a suffix of "'s" or "r"
 #   in the first thing. If so, can clean up that pattern
+#re_consecutive_things = re.compile(
+#    r"^(?:xq<(\w+?)> )?"
+#    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
+#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>) "
+#    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
+#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)$"
+#)
 re_consecutive_things = re.compile(
-    r"^(?:xq<(\w+?)> )?"
-    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>) "
-    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)$"
+    r"^(?:xq<(\w+?)> )?((?:ob|xp|xo|zn)<[^>]+>) ((?:ob|xp|xo|zn)<[^>]+>)$"
 )
 
 # Qualifying clauses for exapmple with flying
@@ -1024,6 +1055,16 @@ re_double_clause3 = re.compile(
     r"^xq<the> xo<number> pr<of> ((?:.*? )?xo<ctr(?: [^>]+)?>) pr<on> ([^,|^\.]+)$"
 )
 re_double_clause4 = re.compile(r"^xq<the> xo<(amount|value)> pr<of> ([^,|^\.]+)$")
+
+# exchange 701.10
+# 1. exchange control of [thing] (and [thing])?
+# 2. exchange life total [Thing]? life_total (with [Thing])?
+re_exchange_ctrl_clause = re.compile(
+    r"^xc<control> pr<of> ([^,|^\.]+?)(?: and ([^,|^\.]+))?$"
+)
+re_exchange_lt_clause = re.compile(
+    r"^(?:(.*?) )?(xo<life_total(?: suffix=s)?>)(?: pr<with> (.+))?\.?$"
+)
 
 # reveal 701.15
 # has multiple forms commonly
