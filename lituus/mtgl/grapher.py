@@ -91,7 +91,7 @@ def graph(dcard):
                     else: raise
             else: graph_line(t,pids[i],line,dcard['type'])
 
-        # Remove keyword and ability word nodes if empty & graph the lines
+        # Remove keyword and ability word nodes if empty
         if t.is_leaf(kwid): t.del_node(kwid)
         if t.is_leaf(awid): t.del_node(awid)
 
@@ -140,9 +140,11 @@ def graph_line(t,pid,line,ctype=None):
     :param line: line to graph
     :param ctype: the card type(s)
     """
-    # enclosed quotes will mess up graphing - find all enclosed quotes and graph
-    # them separately under an unrooted node
+    # enclosed quotes and variables (i.e. x, where x is) will mess up graphing
+    # find all enclosed quotes and graph them separately under an unrooted node
+    # then do the same with variables
     line = dd.re_enclosed_quote.sub(lambda m: _enclosed_quote_(t,m),line)
+    line = dd.re_variable_val.sub(lambda m: _variable_val_(t,m),line)
 
     # Ability lines can be one of
     #  112.3a Spell = instant or sorcery,
@@ -1046,28 +1048,6 @@ def graph_conditional_phrase(t,pid,line):
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
 
-        #try:
-        #    cond,act = dd.re_for_each_cond1.search(line).groups()
-        #    #fid = t.add_node(pid,'for-each')
-        #    #graph_phrase(t,t.add_node(fid,'condition'),cond)
-        #    graph_phrase(t,pid,act)
-        #    fid = t.add_node(pid,'for-each')
-        #    graph_phrase(t,fid,cond)
-        #    return fid
-        #except AttributeError as e:
-        #    if e.__str__().startswith("'NoneType'"): pass
-        #    else: raise
-
-        #try:
-        #    act,cond = dd.re_for_each_cond2.search(line).groups()
-        #    graph_phrase(t,pid,act)
-        #    fid = t.add_node(pid,'for-each')
-        #    graph_phrase(t,fid,cond)
-        #    return fid
-        #except AttributeError as e:
-        #    if e.__str__().startswith("'NoneType'"): pass
-        #    else: raise
-
     return None
 
 def graph_restriction_phrase(t,pid,phrase):
@@ -1611,44 +1591,6 @@ def graph_action_clause_qual(t,pid,xq,tkn):
         return graph_phrase(t,pid,xq + " " + tkn)
         return t.add_node(pid,'qualifying-clause',quantitifier=xq,tograph=tkn)
 
-#def graph_ap_trailing_clause(t,pid,clause):
-#    """
-#    Graphs trailing clauses associated with aciton parameters
-#    :param t: the tree
-#    :param pid: the parent idf
-#    :param clause: the clause
-#    :return: the trailing clause node id
-#    """
-#    # do times first
-#    try:
-#        tkn = dd.re_ntimes.search(clause).group(1)
-#        tid,val,_ = mtgltag.untag(tkn)
-#        if tid == 'nu': return t.add_node(pid,'times',quantity=val)
-#        else: return t.add_node(pid,'times',quanitifier=val)
-#    except AttributeError as e:
-#        if e.__str__().startswith("'NoneType'"): pass
-#        else: raise
-#
-#    # sequencing
-#    # again
-#    try:
-#        return t.add_node(pid,dd.re_again.search(clause).group(1))
-#    except AttributeError as e:
-#        if e.__str__().startswith("'NoneType'"): pass
-#        else: raise
-#
-#    # until ...
-#    try:
-#        sq,ts = dd.re_until_phase.search(clause).groups()
-#        sid = t.add_node(pid,sq)
-#        graph_phase(t,sid,ts)
-#        return sid
-#    except AttributeError as e:
-#        if e.__str__().startswith("'NoneType'"): pass
-#        else: raise
-#
-#    return None
-
 def graph_phase(t,pid,clause):
     """
     Graphs the phase under node pid
@@ -1719,6 +1661,25 @@ def _enclosed_quote_(t,m):
     eqid = t.add_ur_node('enclosed-quote')
     graph_line(t,eqid,m.group()[1:-1])
     return "nd<{} num={}>".format(*eqid.split(':'))
+
+def _variable_val_(t,m):
+    """
+    graphs the value of a variable in an unrooted node returning the node-id inside
+    the variable tag
+    :param t: the tree
+    :param m: regex Match object
+    :return: retagged variable
+    """
+    # untag the tag with a variable, need the attribute dict
+    tid,val,attr = mtgltag.untag(m.group(1))
+
+    # graph the variable instantiation
+    vid = t.add_ur_node('variable-value')
+    graph_phrase(t,vid,m.group(2))
+
+    # add the variable node to the tag & return it
+    attr['node-num'] = vid.split(':')[1]
+    return mtgltag.retag(tid,val,attr)
 
 def _subcost_(t,pid,sc):
     """
@@ -2016,7 +1977,8 @@ def _graph_ap_n_(t,pid,phrase):
     # graph parameters as number
     try:
         return t.add_node(
-            pid,'quantity',value=dd.re_number_vanilla.search(phrase).group(1)
+            #pid,'quantity',value=dd.re_number_vanilla.search(phrase).group(1)
+            pid,'quantity',value=dd.re_number.search(phrase).group(1)
         )
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): return None

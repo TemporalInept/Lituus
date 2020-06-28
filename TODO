@@ -101,32 +101,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 221. See Okk, will have to add suffix to the action words
 
-222. See Okk
-CURRENT
-<Okk>
- ├─static-line:0
- │ └─cannot:0
- │   ├─thing:0
- │   │ └─mtg-object:0 (value=card)
- │   │   └─ref:0 (value=self)
- │   ├─action:0
- │   │ └─attack:0
- │   └─unless:0
-
-ALTERNATE
-<Okk>
- ├─static-line:0
- │ └─cannot:0
- │   ├─action:0
- │   │ ├─attack:0
- │   │ └─thing:0
- │   │   └─mtg-object:0 (value=card)
- │   │    └─ref:0 (value=self)
- │   └─unless:0
- ....
-
-would the second be better?
-
 228. have to tag kind (it's sorta of a meta charactersitic)
 
 229. do we need a special case for etb when graphing action clauses under triggered-abilities see Abyssal Horror
@@ -242,4 +216,6 @@ the phrase upto shuffle is a thing (player)
 257. Have to handjam Game of Chaos with ka<double> xq<the> xo<life> stakes pr<with> xq<each> xa<flip>
 
 258. you control but don't own Herald of Leshrac, Thieving Amalgam
+
+259. still need to figure when/how to combine power and toughness and when to leave the as is (see Entropic Specter - should be combined)
 

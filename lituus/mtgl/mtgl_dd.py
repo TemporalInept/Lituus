@@ -103,15 +103,20 @@ re_delayed_tgr_clause = re.compile(
 #  granted via an optional check for an 'and' followed by an enclosed phrase
 # These have the form:
 #  [duration],? [object] has/gains "[ability]" [and "ability"]? [duration]?.
-#re_enclosed_quote = re.compile(r'\"([^\"]+)\"\.')
 re_enclosed_quote = re.compile(r'\"([^\"]+)\"') # drop the last period
-re_grant_ability_check = re.compile(r"xa<(?:have|gain)(?: suffix=\w+)?> \"")
-re_grant_ability = re.compile(
-    r"^(?:(sq<\w+> [^,]+), )?"
-    r"(.+) (xa<(?:have|gain)(?: suffix=\w+)?>) \"([^\"]+)\""
-    r"(?: and \"(.+)\")?(?: (sq<\w+> [^\.]+))?\.$"
+#re_grant_ability_check = re.compile(r"xa<(?:have|gain)(?: suffix=\w+)?> \"")
+#re_grant_ability = re.compile(
+#    r"^(?:(sq<\w+> [^,]+), )?"
+#    r"(.+) (xa<(?:have|gain)(?: suffix=\w+)?>) \"([^\"]+)\""
+#    r"(?: and \"(.+)\")?(?: (sq<\w+> [^\.]+))?\.$"
+#)
+
+# variable instantiates have the form
+# [variable|variable attribute], where x|y is [instantiation]
+# NOTE: have to stop on a period, comma, end of line or 'and'
+re_variable_val = re.compile(
+    r"(nu<\w>|xr<[^>]+ val=≡\w>), where nu<\w> xa<is> ([^\.|,]+)(?=(?:\.|,| and|$))"
 )
-# TODO: currently not using grant ability??
 
 ####
 ## KEYWORDS
@@ -1034,7 +1039,7 @@ re_qual_otherthan_thing = re.compile(r"^(ob<[^>]+>)$")
 
 # numbers
 re_number = re.compile(r"^nu<([^>]+)>$")
-re_number_vanilla = re.compile(r"^nu<([0-9xyz]+)>$")
+#re_number_vanilla = re.compile(r"^nu<([0-9xyz]+)>$")
 
 # attach 701.3 attach [object] to [object] where the first object is self
 re_attach_clause = re.compile(r"^([^\.]+) pr<to> ([^\.]+)$")
