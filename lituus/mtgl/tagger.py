@@ -590,13 +590,9 @@ def postprocess(txt):
     # combine occurrences of OP NUMBER with OPNUMBER inside number tag
     ntxt = mtgl.re_op_num.sub(r"nu<\1\2>",ntxt)
 
-    # TODO: should we put
-    #  in any order
-    #  in a random order
-    #  as many as
-    # cost increase/reduction
-    #ntxt = mtgl.re_mc_qualifier.sub(
-    #    lambda m: r"{}{}".format('+' if m.group(2) == 'more' else '-',m.group(1)),txt)
+    # combine phrases of the form power and toughness = y
+    ntxt = mtgl.re_pt_value.sub(r"xr<power∧toughness val=\1>",ntxt)
+
     return ntxt
 
 def third_pass(txt):
@@ -734,14 +730,12 @@ def _chain_(m,strict=1):
             else:
                 # get the type and set atype if necessary then ensure the new
                 # type is the same as atype
-                #ptype = val.split(mtgl.ARW)[0]
                 ptype = mtgltag.split_align(val)[0]
                 if not atype: atype = ptype
                 if atype != ptype: aligned = False
 
             # check for complex values and wrap in () present then append the
             # tag-value and merge the tag's attribute dict
-            #if mtgltag.complex_ops(val): val = mtgltag.wrap(val)
             if mtgltag.conjunction_ops(val): val = mtgltag.wrap(val)
             nval.append(val)
             nattr = mtgltag.merge_attrs([attr,nattr],strict)
