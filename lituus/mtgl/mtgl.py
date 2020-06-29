@@ -414,7 +414,7 @@ re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 # that are preceded by whitespace, a '/','+','-' or start a line and that are
 # followed by whitespace '/' or '.' are matched.
 re_number = re.compile(
-    r"(?<=(?:^|[\s\/+-]))(\d+|x|y|z])(?=(?:[—\s\/+-\.]|$))"
+    r"(?<=(?:^|[\s\/+-]))(\d+|x|y|z])(?=(?:[—\s\/+-\.:]|$))"
 )
 
 ####
