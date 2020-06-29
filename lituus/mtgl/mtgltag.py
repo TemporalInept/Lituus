@@ -79,9 +79,9 @@ re_tag = re.compile(
 
 # extract the attribute pairs
 re_tag_attrs = re.compile(
-    r"(\w+="                       # alphanumeric property and =
+    r"([\w-]+="                     # alphanumeric property and =
     r"[\w\+/\-¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+)" # prop-value
-    r"[ >]"                        # followed by space or closing bracket
+    r"[ >]"                         # followed by space or closing bracket
 )
 
 MTGL_TAG = 0 # tag
