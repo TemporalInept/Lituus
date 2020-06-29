@@ -1617,8 +1617,10 @@ re_is2tag = re.compile(r"\b({})\b".format(is_forms_tkns))
 # OPERATOR NUMBER
 re_op_num = re.compile(r"op<(.)> nu<([^>]+)>")
 
-# power and toughness = y
-re_pt_value = re.compile(r"xr<power> and xr<toughness val=([^>]+)>")
+# power and toughness = y - have to check that it is not preceded by a power = y
+re_pt_value = re.compile(
+    r"(?<!xr<power val=[^>]+>[^\.]+)xr<power> and xr<toughness val=([^>]+)>"
+)
 
 ####
 ## PHRASING
