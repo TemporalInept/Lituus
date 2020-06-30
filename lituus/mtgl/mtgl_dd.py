@@ -115,7 +115,7 @@ re_enclosed_quote = re.compile(r'\"([^\"]+)\"') # drop the last period
 # [variable|variable attribute], where x|y is [instantiation]
 # NOTE: have to stop on a period, comma, end of line or 'and'
 re_variable_val = re.compile(
-    r"(nu<\w>|xr<[^>]+ val=≡\w>), where nu<\w> xa<is> ([^\.|,]+)(?=(?:\.|,| and|$))"
+    r"(nu<\w>|xr<[^>]+ val=≡\w>), where nu<\w> xa<is> ([^\.|,]+?)(?=(?:\.|,| and|$))"
 )
 
 ####
@@ -726,15 +726,20 @@ re_lvl_up_lvl = re.compile(
 ## LITUUS PHRASE TYPES
 ####
 
-# sequences - three types
-#  a) then [action] i.e. Barishi possibly ended with an again see Roalesk
-#  b) duration [sequence] [phase/step], [action] i.e Abeyance
-#  c) condition [sequence] [condition], [action] i.e. Hungering Yetis
-#  d) untill [action] until [condition]
-#  e) trailing sequence from delayed triggers i.e. Prized Amalgam
+# sequences
+#  1. dual - [sequence-clause], [sequence-clause] i.e. Templar Elder
+#  2. then [action] i.e. Barishi possibly ended with an again see Roalesk
+#  3. duration - [sequence] [phase/step], [action] i.e Abeyance
+#  4. condition - [sequence] [condition], [action] i.e. Hungering Yetis
+#  5. until -  [action] until [condition]
+#  6. trailing sequence from delayed triggers i.e. Prized Amalgam
 #   [quanitifer] [sequence] of [clause]? [quanitifier] [turn structure]
+#  7. as long as 2 variations
+#   a. [for]? as long as [condition], [effect] i.e Release to the Wind
+#   b. [effect] as long as [condition] i.e. Hooded Horror
 re_sequence_check = re.compile(r"sq<[^>]+>")
 re_time_check = re.compile(r"ts<([^>]+)>$")
+re_dual_sequence = re.compile(r"^(sq<[^>]+> [^,]+), (sq<[^>]+> [^\.]+)\.?$")
 re_sequence_then = re.compile(
     r"^(?:([^\.]+) )?(sq<then>) ([^\.]*?)(?: (sq<again>))?\.?$"
 )
@@ -743,6 +748,12 @@ re_sequence_cond = re.compile(r"^sq<([^>]+)> ([^,]+), ([^\.]+)\.?$")
 re_sequence_until = re.compile(r"([^,|^\.]+) sq<(until)> ([^,|^\.]+)\.?$")
 re_sequence_time = re.compile(
     r"^xq<([^>]+)> sq<([^>]+)> pr<of> (?:([^,|^\.]+) )?xq<([^>]+)> ts<([^>]+)>\.?$"
+)
+re_sequence_as_long_as1 = re.compile(
+    r"^(pr<for> )?sq<as_long_as> ([^,]+), ([^\.]+)\.?$"
+)
+re_sequence_as_long_as2 = re.compile(
+    r"^([^,|^\.]+) sq<as_long_as> ([^\.]+)\.?$"
 )
 
 # duration/times/sequences
@@ -753,11 +764,6 @@ re_duration_ts = re.compile(r"^((?:sq|xq)<[^>]+>) ts<(\w+)>$")
 # optionals, conditions and restrictions
 
 # [player] may [action] as though [action] [if [condition]]? i.e. Lone Wolf
-#re_may_as_though = re.compile(
-#    r"^((?:[^,|\.]+)?xp<\w+(?: suffix=\w+)?>(?:[^,|\.]+)?)"
-#     r"cn<may> ([^,]+) pr<as_though> ([^\.]+\.?$)"
-#)
-# TODO: why did the previous version check for hanging clause after the player
 re_may_as_though = re.compile(
     r"^((?:.+ )?xp<[^>]+>) cn<may> (.+) pr<as_though> ([^\.]+)\.?$"
 )
@@ -830,6 +836,10 @@ re_only_conjunction = re.compile(
 #  2.a variant due to tagging comes from no more than as an operator (translates
 #  to only up to x times
 #  TODO: see Sewer Rats no more
+# 4. Generic only i.e. Temple Elder these may fit one of the above but include
+#  additional phrases, clauses etc
+#  [action] only [condition]
+#  NOTE: as in Temple Elder, we do not want to break on commas
 re_restriction_time = re.compile(
     r"^(?:([^,|\.]+) )?cn<only> (xq<any> sq<time> [^,|\.]+)\.?$"
 )
@@ -839,6 +849,9 @@ re_restriction_timing = re.compile(
 re_restriction_number = re.compile(
     "^(?:([^,|\.]+) )?cn<only> nu<([^>]+)> sq<time(?:[^>]+)?>"
      "(?: ((?:[^,|\.]+ )?ts<[^>]+>))?\.?$"
+)
+re_restriction_only = re.compile(
+    r"^([^\.]+) cn<only> ([^\.]+)\.?$"
 )
 
 # condition restrictions only_if
@@ -857,14 +870,21 @@ re_exception_phrase = re.compile(r"(.+?), cn<except> ([^\.]+)\.?$")
 ## CLAUSES
 ####
 
+# TODO: i don't like doing these twice but unlike sequence phrases, these are
+#  standalone that is there are no preceding or following structures
+re_sequence_clause_check = re.compile(r"^sq<[^>]+>")
+re_sequence_clause = re.compile(
+    r"^sq<([^>]+)> ([^,|^\.]+)$"
+)
+
 # two separate clauses conjoined by a conjunction word (will not cross boundaries
 # i.e., commas or periods
-#re_conjunction_clause = re.compile(r"^([^,|\.]+) (and|or|and/or) ([^,|\.]+)$")
-re_conjunction_clause = re.compile(r"^([^,|\.]+) and ([^,|\.]+)\.?$")
-
+# TODO: are we still using this
 re_ntimes = re.compile(r"^(nu<[^>]+>|xq<[^>]+>) sq<time(?: suffix=s)?>$")
 re_again = re.compile(r"^sq<(again)>$")
 re_until_phase = re.compile(r"^sq<(until)> (ts<\w+>)$")
+
+re_as_long_as = re.compile(r"")
 
 ####
 ## PHASES/STEPS
@@ -875,8 +895,9 @@ re_until_phase = re.compile(r"^sq<(until)> (ts<\w+>)$")
 # TODO: push graphing of all phases/steps here (the beginning of your end step etc)
 # has the form
 #  [player-possessive] [phase/step]
+re_phase_clause_check = re.compile(r"ts<([^>]+)>$")
 re_phase = re.compile(
-    r"^(?:xq<([^>]+)> )?(?:xp<([^>]+) suffix=(?:r|'s)> )?ts<([^>]+)>$"
+    r"^(?:(xq<[^>]+>) )?(?:(xp<[^>]+ suffix=(?:r|'s)>) )?ts<([^>]+)>$"
 )
 
 ####
@@ -988,7 +1009,10 @@ re_consecutive_things = re.compile(
 #  5 a variation of above
 #   with the [qualifier] [lituus object] i.e. Ghazban Ogre
 re_qual_with_ability = re.compile(r"^(?:(ob<[^>]+>) )?kw<([^>]+)>$")
-re_qual_with_attribute = re.compile(r"^xr<([^>]+) val=([¬⋖⋗≤≥≡⇔])?([^>]+)>$")
+re_qual_with_dual_attribute = re.compile(
+    r"^(xr<[^>]+>) (and|or|and/or) (xr<[^>]+>)$"
+)
+re_qual_with_attribute = re.compile(r"^(xr<[^>]+>)$")
 re_qual_with_attribute2 = re.compile(r"^nu<([^>]+)> xq<([^>]+)> (xr<[^>]+>)$")
 re_qual_with_ctrs = re.compile(r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>)")
 re_qual_with_attribute_xq = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")

@@ -301,22 +301,21 @@ def graph_clause(t,pid,clause):
     :param pid: parent of the line
     :param clause: the text to graph
     """
-    # TODO: commented out below, votes all have a conjunction
-    # check for conjunctions first
-    try:
-        left,right = dd.re_conjunction_clause.search(clause).groups()
-        cid = t.add_node(pid,'conjunction',value='and',itype='clause')
-        graph_clause(t,cid,left)
-        graph_clause(t,cid,right)
-        return cid
-    except AttributeError as e:
-        if e.__str__().startswith("'NoneType'"): pass
-        else: raise
-
     # action clauses
     if dd.re_act_clause_check.search(clause):
         rid = graph_action_clause(t,pid,clause)
         if rid: return rid
+
+    # sequencing
+    if dd.re_sequence_clause_check.search(clause):
+        rid = graph_sequence_clause(t,pid,clause)
+        if rid: return rid
+
+    # phase clauses
+    if dd.re_phase_clause_check.search(clause):
+        rid = graph_phase_clause(t,pid,clause)
+        if rid: return rid
+
     return t.add_node(pid,'clause',tograph=clause)
 
 def graph_replacement_effects(t,pid,line):
@@ -891,7 +890,19 @@ def graph_sequence_phrase(t,pid,line):
     :param line: text to graph
     :return: node id or None
     """
-    # start with time (ending with a turn structure
+    # start dual sequences. there are not many but they need to be taking care
+    # of before the comma is handled incorrectly
+    try:
+        cond1,cond2 = dd.re_dual_sequence.search(line).groups()
+        cid = t.add_node(pid,'conjunction',value='and',itype='sequence')
+        graph_phrase(t,cid,cond1)
+        graph_phrase(t,cid,cond2)
+        return cid
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
+    # Then check time first, followed by sequence
     if dd.re_time_check.search(line):
         try:
             _,when,cls,xq,ts = dd.re_sequence_time.search(line).groups()
@@ -914,7 +925,6 @@ def graph_sequence_phrase(t,pid,line):
             sid = t.add_node(pid,'then')
             if again: sid = t.add_node(sid,'again')
             graph_phrase(t,sid,act2)
-            #if again: t.add_node(sid,'again')
             return phid if phid else sid
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
@@ -944,18 +954,36 @@ def graph_sequence_phrase(t,pid,line):
         # try 'until'
         try:
             phrase,_,cond = dd.re_sequence_until.search(line).groups()
-            uid = t.add_node(pid, 'until')
+            uid = t.add_node(pid,'until')
             graph_phrase(t,t.add_node(uid,'condition'),cond)
             graph_phrase(t,t.add_node(uid,'effect'),phrase)
             return uid
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
-    else:
-        # should never get here
-        raise lts.LituusException(lts.EPTRN,"{} not a sequence".format(line))
 
-    # TODO: have to do until eot
+        # as long as
+        try:
+            rid = None
+            pr,cond,effect = dd.re_sequence_as_long_as1.search(line).groups()
+            if pr: rid = t.add_node(t.add_node(pid,'for'),'as-long-as')
+            else: rid = t.add_node(pid,'as-long-as')
+            graph_phrase(t,t.add_node(rid,'condition'),cond)
+            graph_phrase(t,rid,effect)
+            return rid
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
+
+        try:
+            effect,cond = dd.re_sequence_as_long_as2.search(line).groups()
+            rid = t.add_node(pid,'as-long-as')
+            graph_phrase(t,t.add_node(rid,'condition'),cond)
+            graph_phrase(t,rid,effect)
+            return rid
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
     return None
 
@@ -1117,16 +1145,15 @@ def graph_restriction_phrase(t,pid,phrase):
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
 
-
         # only-[sequence]
         try:
             act,seq,phase = dd.re_restriction_timing.search(phrase).groups()
             if mtgt.node_type(pid) == 'conjunction':
-                return graph_phase(t,t.add_node(pid,seq),phase)
+                return graph_phase_clause(t,t.add_node(pid,seq),phase)
             else:
                 oid = t.add_node(pid,'only')
                 if act: graph_phrase(t,oid,act)
-                graph_phase(t,t.add_node(oid,seq),phase)
+                graph_phase_clause(t,t.add_node(oid,seq),phase)
                 return oid
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
@@ -1137,14 +1164,27 @@ def graph_restriction_phrase(t,pid,phrase):
             act,num,phase = dd.re_restriction_number.search(phrase).groups()
             if mtgt.node_type(pid) == 'conjunction':
                 nid = t.add_node(pid,'times',value=num)
-                if phase: graph_phase(t,nid,phase)
+                if phase: graph_phase_clause(t,nid,phase)
                 return nid
             else:
                 oid = t.add_node(pid,'only')
                 graph_phrase(t,oid,act)
                 nid = t.add_node(oid,'times',value=num)
-                if phase: graph_phase(t,nid,phase)
+                if phase: graph_phase_clause(t,nid,phase)
                 return oid
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
+
+        # only - all else
+        try:
+            act,cond = dd.re_restriction_only.search(phrase).groups()
+            # TODO: not checking first for conjunction monitor to see if it messes up
+            #if mtgt.node_type(pid) == 'conjunction':
+            oid = t.add_node(pid,'only')
+            graph_phrase(t,oid,act)
+            graph_phrase(t,t.add_node(oid,'condition'),cond)
+            return oid
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
@@ -1591,7 +1631,26 @@ def graph_action_clause_qual(t,pid,xq,tkn):
         return graph_phrase(t,pid,xq + " " + tkn)
         return t.add_node(pid,'qualifying-clause',quantitifier=xq,tograph=tkn)
 
-def graph_phase(t,pid,clause):
+def graph_sequence_clause(t,pid,clause):
+    """
+    graphs standalone sequence clauses
+    :param t: the tree
+    :param pid: parent id
+    :param clause: text to graph
+    :return: node id or None
+    """
+    try:
+        sq,cls = dd.re_sequence_clause.search(clause).groups()
+        sid = t.add_node(pid,'sequence',value=sq)
+        if sq == 'during': graph_phrase(t,sid,cls)
+        else: graph_clause(t,sid,cls)
+        return sid
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+    return None
+
+def graph_phase_clause(t,pid,clause):
     """
     Graphs the phase under node pid
     :param t: the tree
@@ -1602,10 +1661,11 @@ def graph_phase(t,pid,clause):
     # TODO: combine graph_duration and this
     try:
         xq,ply,phase = dd.re_phase.search(clause).groups()
-        phid = t.add_node(pid,'phase-clause')
-        if xq: t.add_node(phid,'quantifier',value=xq)
-        t.add_node(phid,'phase',value=phase)
-        if ply: t.add_node(phid,'whose',value=ply)
+        phid = t.add_node(pid,'phase',value=phase)
+        if xq and not ply: t.add_attr(phid,'quantifier',mtgltag.tag_val(xq))
+        elif ply:
+            if xq: ply = xq + " " + ply
+            graph_thing(t,t.add_node(phid,'whose'),ply)
         return phid
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): pass
@@ -1792,16 +1852,32 @@ def _graph_qualifying_clause_(t,pid,clause):
                     )
                 return t.add_node(qid,'ability',value=kw)
 
+            # check for conjunction attributes i.e. power and toughness
+            m = dd.re_qual_with_dual_attribute.search(pcls)
+            if m:
+                tkn1,conj,tkn2 = m.groups()
+                _,val1,attr1 = mtgltag.untag(tkn1)
+                _,val2,attr2 = mtgltag.untag(tkn2)
+                cid = t.add_node(qid,'conjunction',value=conj,itype='attribute')
+                aid1 = t.add_node(cid,'attribute',name=val1)
+                if 'val' in attr1: t.add_attr(aid1,'value',attr1['val'])
+                if 'node-num' in attr1: t.add_attr(aid1,'node-num',attr1['node-num'])
+                aid2 = t.add_node(cid,'attribute',name=val2)
+                if 'val' in attr2: t.add_attr(aid2,'value',attr2['val'])
+                if 'node-num' in attr2: t.add_attr(aid2,'node-num',attr2['node-num'])
+                return cid
+
             # check for attribute
             m = dd.re_qual_with_attribute.search(pcls)
             if m:
-                # TODO: for now just recombining the op and the value, but
-                #  maybe do something else later
-                name,op,val = m.groups()
-                return t.add_node(qid,'attribute',name=name,value=op+val)
+                _,val,attr = mtgltag.untag(m.group(1))
+                aid = t.add_node(qid,'attribute',name=val)
+                if 'val' in attr: t.add_attr(aid,'value',attr['val'])
+                if 'node-num' in attr: t.add_attr(aid,'node-num',attr['node-num'])
+                return aid
 
             # attribute2
-            # TODO: I don't like this whol approach
+            # TODO: I don't like this whole approach
             m = dd.re_qual_with_attribute2.search(pcls)
             if m:
                 num,xq,attr = m.groups()
@@ -1963,10 +2039,12 @@ def _graph_mana_string_(t,pid,phrase):
 
 def _graph_ap_thing_(t,pid,phrase):
     # TODO: very inefficient but trying to see what the trailing clauses look like
+    #print("GOT {} {}".format(pid,phrase))
     thid = phid = None
     for i in range(len(phrase),5,-1):
         try:
             thid = graph_thing(t,pid,phrase[:i])
+            #print("  FOUND {}<->{}".format(phrase[:i],phrase[i+1:]))
             dump = phrase[i+1:]
             if dump: graph_phrase(t,t.add_node(pid,'dump-huff'),dump)
             return thid
