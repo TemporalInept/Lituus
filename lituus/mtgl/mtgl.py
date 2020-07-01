@@ -1248,7 +1248,7 @@ misstag = {
     "cumulative ts<upkeep>":"kw<cumlative_upkeep>",
     "xo<commander> kw<ninjutsu>":"kw<commander ninjutsu>",
     "xo<level> pr<up>":"kw<level_up>","split xq<second>":"kw<split_second>",
-    "pr<as> long pr<as>":"sq<as_long_as>",
+    "pr<as> long pr<as>":"sq<as_long_as>","ob<spell> mastery":"aw<spell_mastery>",
 }
 misstag_tkns = '|'.join(misstag.keys())
 re_misstag = re.compile(r"({})".format(misstag_tkns))
