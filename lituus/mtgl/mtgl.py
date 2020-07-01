@@ -384,10 +384,9 @@ re_lvl_blt = re.compile(r"\n(?=level)")
 # TODO:  combine "that is" and "that are" as a  single  quantifier?
 lituus_quantifiers = [
     'a','target','each','all','any','every','another','other than','other','this',
-    'that is','that are','that','additional','those','these','their','the','extra',
-    'first','second','third','fourth','fifth','sixth','seventh','eighth','ninth',
-    'tenth','half','new','single','same','different','next','last',
-    'opening','which',"chosen",
+    'that','additional','those','these','their','the','extra','first','second',
+    'third','fourth','fifth','sixth','seventh','eighth','ninth','tenth','half',
+    'new','single','same','different','next','last','opening','which',"chosen",
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -1105,7 +1104,6 @@ val_join = {
     "commander ninjutsu":"commander_ninjutsu","split second":"split_second",
     "living weapon":"living_weapon","totem armor":"totem_armor",
     "color identity":"color_identity",  # "mana cost":"mana_cost",
-    "that is":"that_is","that are":"that_are",
     "life total":"life_total","rather than":"rather_than","as though":"as_though",
     "did not":"did_not","other than":"other_than"
 }
@@ -1264,7 +1262,7 @@ re_discard_stat = re.compile(r"(?<=xq<the> )ka<discard suffix=ed>(?= ob<)")
 
 # enchated is a status if it is preceded by that_is/that_are
 re_enchant_stat = re.compile(
-    r"(?<=xq<(?:that_is|that_are)> )kw<enchant suffix=ed>"
+    r"(?<=xq<that> xa<is(?:[^>]+)?> )kw<enchant suffix=ed>"
 )
 
 # (un)spent is a status if followed by mana
