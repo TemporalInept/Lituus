@@ -12,8 +12,8 @@ MTG (Language) Tree
 
 #__name__ = 'mtgt'
 __license__ = 'GPLv3'
-__version__ = '0.0.2'
-__date__ = 'August 2019'
+__version__ = '0.0.3'
+__date__ = 'July 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -288,24 +288,17 @@ class MTGTree:
         :param val: the val that the given attribute key will have
         :return: a list of node ids
         """
-        if val and not attr:
-            raise lts.LituusException(lts.ETREE,"Cannot have val without attr")
+        if val and not attr: raise lts.LituusException(lts.ETREE,"attr required with val")
         found = []
-        i = 0
-        while True:
-            nid = "{}:{}".format(ntype,i)
-            if nid in self._t:
-                if source in nx.ancestors(self._t,nid):
+        for node in nx.dfs_preorder_nodes(self._t,source):
+            if node_type(node) == ntype and not node == source:
                     if attr:
-                        if attr in self._t.node[nid]:
+                        if attr in self._t.node[node]:
                             if val:
-                                if self._t.node[nid][attr] == val: found.append(nid)
+                                if self._t.node[node][attr] == val: found.append(node)
                             else:
-                                if attr in self._t.node[nid]: found.append(nid)
-                    else: found.append(nid)
-                i += 1
-            else:
-                break
+                                if attr in self._t.node[nid]: found.append(node)
+                    else: found.append(node)
         return found
 
 #### PRIVATE FCTS ####
