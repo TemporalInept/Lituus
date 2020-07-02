@@ -112,10 +112,15 @@ re_enclosed_quote = re.compile(r'\"([^\"]+)\"') # drop the last period
 #)
 
 # variable instantiates have the form
-# [variable|variable attribute], where x|y is [instantiation]
+# [variable|variable attribute], where nu<x|y> is [instantiation]
 # NOTE: have to stop on a period, comma, end of line or 'and'
+# mana instantiates have the form (see Spell Rupture)
+# {X}, where nu<x> is [instantiation]
 re_variable_val = re.compile(
     r"(nu<\w>|xr<[^>]+ val=≡\w>), where nu<\w> xa<is> ([^\.|,]+?)(?=(?:\.|,| and|$))"
+)
+re_variable_mana = re.compile(
+    r"({x}), where nu<\w> xa<is> ([^\.|,]+?)(?=(?:\.|,| and|$))"
 )
 
 ####
@@ -469,11 +474,18 @@ kw_param_template = {
 ## KEYWORD ACTIONS (701.2 - 701/43)
 ####
 
-# some action clauses have trailing qualifying clauses i.e Soldevi Sentry
+# some action clauses have trailing qualifying clauses
 # extract these before processing the action clause
-#re_action_clause = re.compile(
-#    r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?([xk]a<\w+(?: [^>]+)?>)(?: ([^.]+))?\.?$"
-#)
+#  1. location i.e. Cremate
+#   [action-clause] [prep] [zone-clause]
+#  2. sequence i.e. Conqueror's Flail
+#   [action-clause] [sequence] [phase]
+#  3. that is/are i.e. Runic Armasaur
+re_act_clause_zone = re.compile(r"^([^,|^\.]+) pr<([^>]+)> (.+ zn<[^>]+>)\.?$")
+re_act_clause_sequence = re.compile(r"^([^,|^\.]+) (sq<[^>]+> .+ ts<[^>]+>)\.?$")
+re_act_clause_that_is = re.compile(
+    r"^^([^,|^\.]+) xq<that> (xa<is[^>]*> [^,|^\.]+)\.?$"
+)
 
 # keyword or lituus action clause - can have
 #  1. a conjunction of actions
@@ -489,7 +501,7 @@ re_act_clause_check = re.compile(
     r"((?:xa|ka)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
 )
 re_conjunction_action_clause = re.compile(
-    r"^(?:([^,|^\.]+) )?((?:xa|ka)<[^>]+>)"
+    r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?((?:xa|ka)<[^>]+>)"
     r"(?: ([^,|^\.]+))? (and|or) ((?:xa|ka)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
 )
 re_action_clause = re.compile(
@@ -657,7 +669,6 @@ re_repl_dmg = re.compile(
 )
 
 # alternate playing costs (APC) (118.9,113.6c)
-
 # Alternate costs are usually phrased:
 #  You may [action] rather than pay [this object’s] mana cost,
 # and
@@ -692,6 +703,14 @@ re_alt_action_apc = re.compile(
 #  1. rather than pay [cost], [player] may [action]
 re_rather_than_apc = re.compile(
     r"^cn<rather_than> xa<pay> ([^,]+), (.+) cn<may> ([^\.]+)\.?$"
+)
+
+## ADDITIONAL COSTS
+# (mentioned throughout but phrased in 604.5 "As an additional cost to cast..."
+# As an additional cost to cast [thing], [add-cost]
+re_add_cost_check = re.compile(r"xq<a∧additional> xo<cost>")
+re_add_cost = re.compile(
+    r"^pr<as> xq<a∧additional> xo<cost> pr<to> ka<cast> ([^,]+), ([^\.]+)\.?$"
 )
 
 ## MODAL PHRASES
@@ -786,11 +805,13 @@ re_optional_may = re.compile(
 #   ii. if [player] does [trigger] i.e. Providence
 #  b) if [player] cannot, [action] i.e. Brain Pry
 #  c) if [condition], [action] i.e Ordeal of Thassa
+#  d) [action] if [condition] i.e. Ghastly Demise
 re_if_ply_does  = re.compile(
     r"^cn<if> ([^,|^\.]+) xa<do(?: suffix=\w+)?>(?: (cn<not>))?, ([^\.]+)\.?$"
 )
 re_if_ply_cant = re.compile(r"^cn<if> ([^,|^\.]+) cn<cannot>, ([^\.]+)\.?$")
 re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
+re_act_if_cond = re.compile(r"^([^,|^\.]+) cn<if> ([^,|\.]+)\.?$")
 
 # contains unless
 # The rules only mention unless in 722.6 "[A] unless [B]" However going through
@@ -916,7 +937,7 @@ re_qtz = re.compile(
 )
 
 # find phrases of the form
-#  [number]? [quantifier]? [status]? [THING] [possession]? [qualifying]? [posession]?
+#  [number]? [quantifier]? [status]? [THING] [possession]? [qualifying]? [possession]?
 # where:
 #  THING can be a single thing, a dual conjunction of things or a multi-conjunction
 #   of things.
@@ -926,22 +947,14 @@ re_qtz = re.compile(
 #   that_is/are [qualifiers]
 # IOT to merge everything under the thing
 # NOTE: if possession-clause and/or preposition-clause are present, the whole is
-#  returned & must further be parsed w/ re_possessor_clause, re_qualifying_clause
+#  returned & must further be parsed w/ re_possesson_clause, re_qualifying_clause
 #  or re_dual_qualifying_clause
-#re_qst = re.compile(
-#    r"^(?:nu<([^>]+)> )?(?:xq<([^>]+)> )?(?:(?:xs|st)<([^>]+)> )?"
-#    r"((?:[^\.]*?)?(?:ob|xp|xo|zn)<[^>]+>)"
-#    r"(?: ((?:xq<[^>]+> )?(?:(?:st|xs)<[^>]+> )?"
-#     r"xp<[^>]+> (?:xa<do> cn<not> )?xc<[^>]+>))?"
-#    r"(?: ((?:pr|xq)<(?:with|without|from|of|that_is|that_are|other_than)> "
-#     r"[^\.|^,]+))?\.?$"
-#)
 re_qst = re.compile(
     r"^(?:nu<([^>]+)> )?(?:xq<([^>]+)> )?(?:(?:xs|st)<([^>]+)> )?"
     r"((?:[^\.]*?)?(?:ob|xp|xo|zn)<[^>]+>)"
     r"(?: ((?:xq<[^>]+> )?(?:(?:st|xs)<[^>]+> )?"
      r"xp<[^>]+> (?:xa<do> cn<not> )?xc<[^>]+>))?"
-    r"(?: ((?:pr|xq)<(?:with|without|from|of|that_is|that_are|other_than)> "
+    r"(?: ((?:pr|xq)<(?:with|without|from|of|other_than|that)> "
      r"[^\.|^,]+?))?"
     r"(?: ((?:xq<[^>]+> )?(?:(?:st|xs)<[^>]+> )?"
      r"xp<[^>]+> (?:xa<do> cn<not> )?xc<[^>]+>))?"
@@ -973,25 +986,21 @@ re_possession_clause = re.compile(
      r"xp<[^>]+>) (?:(xa<do> cn<not>) )?xc<([^>]+)(?: suffix=s)?>"
 )
 re_qualifying_clause = re.compile(
-    r"^(?:pr|xq)<(with|without|from|of|in|that_is|that_are|other_than|on)> (.+)$"
+    r"^(?:pr|xq)<(with|without|from|of|in|other_than|on|that)> (.+)$"
 )
 re_dual_qualifying_clause = re.compile(
     r"^(pr<(?:with|without|of)> .+) "
-     r"((?:pr|xq)<(?:from|with|without|on|of|as|in|that_is|that_are)> .+)$"
+     r"((?:pr|xq)<(?:from|with|without|on|of|as|in)> .+)$"
 )
 
 # finds consecutive things to determine if they are possessive
 #  TODO: need to determine if we only need to check for a suffix of "'s" or "r"
-#   in the first thing. If so, can clean up that pattern
-#re_consecutive_things = re.compile(
-#    r"^(?:xq<(\w+?)> )?"
-#    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>) "
-#    r"((?:ob|xp|xo|zn)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-#     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)$"
-#)
+#   in the first thing(s)
+#  NOTE: in some cases we have three consecutive things (see Trial of Ambition)
+#   it's owner's hand so check for three with first being optional and ignored
 re_consecutive_things = re.compile(
-    r"^(?:xq<(\w+?)> )?((?:ob|xp|xo|zn)<[^>]+>) ((?:ob|xp|xo|zn)<[^>]+>)$"
+    r"^(?:xq<(\w+?)> )?(?:((?:ob|xp|xo|zn)<[^>]+>) )?"
+     r"((?:ob|xp|xo|zn)<[^>]+>) ((?:ob|xp|xo|zn)<[^>]+>)$"
 )
 
 # Qualifying clauses for exapmple with flying
@@ -1043,15 +1052,16 @@ re_qual_of_possessive2 = re.compile(
     r"^((?:xq<[^>]+> )?ob<[^>]+> (?:.+? )?xp<[^>]+> xc<[^>]+>)$"
 )
 
+# TODO: removed that_is, that_are as tags
 # that_is/that_are
 #  1. that_is [keyword] (with suffix)
 #  2. that_is [attribute] (same as with_attribute)
 #  3. that_is [not]? on [quantifier] [zone]
 #   TODO: looking at Teferi, Mage of Zhalfir] are there different phrasings
 #    i.e. in target player's hand
-re_qual_thatis_status = re.compile(r"^xs<([^>]+)>$")
-re_qual_thatis_attribute = re.compile(r"^(cn<not> )?xr<([^>]+) val=([^>]+)>$")
-re_qual_thatis_zone = re.compile(r"^(?:(cn<not>) )?pr<on> (xq<[^>]+> zn<[^>]+>)$")
+#re_qual_thatis_status = re.compile(r"^xs<([^>]+)>$")
+#re_qual_thatis_attribute = re.compile(r"^(cn<not> )?xr<([^>]+) val=([^>]+)>$")
+#re_qual_thatis_zone = re.compile(r"^(?:(cn<not>) )?pr<on> (xq<[^>]+> zn<[^>]+>)$")
 
 # other_than - should be an object primarily self i.e. Wormfang Drake but could
 #  be other i.e. Haunting Echos
@@ -1100,6 +1110,14 @@ re_exchange_lt_clause = re.compile(
 #  1. their hand
 #  2.
 # TODO
+
+# search 701.18
+# has the form [zone] for [thing]
+re_search_clause = re.compile(r"^((?:[^\.]+ )?zn<[^>]+>) pr<for> ([^\.]+)\.?$")
+
+# tap 701.20
+# has the form [thing] (for thing)?
+re_tap_clause = re.compile(r"^(?:(.+?) ?)(?:pr<for> ([^\.]+))?\.?$")
 
 # clash 701.22 has the form with [player] (always an opponennt)
 re_clash_clause = re.compile(r"^pr<with> ([^\.]+)$")

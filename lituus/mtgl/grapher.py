@@ -120,7 +120,10 @@ def graph_keyword(t,pid,kw,ktype,param):
                     # TODO: for each of these, have to graph accordingly
                     # i.e. cost should be graphed as a cost etc
                     for i,k in enumerate(dd.kw_param_template[kw]):
-                        if m.group(i+1): t.add_node(kwid,k,value=m.group(i+1))
+                        if m.group(i+1):
+                            if k == 'cost':
+                                graph_cost(t,t.add_node(kwid,'cost'),m.group(i+1))
+                            else: t.add_node(kwid,k,value=m.group(i+1))
                 except IndexError:
                     raise lts.LituusException(
                         lts.EPTRN,"Error with {} does not match template".format(kw)
@@ -140,11 +143,13 @@ def graph_line(t,pid,line,ctype=None):
     :param line: line to graph
     :param ctype: the card type(s)
     """
-    # enclosed quotes and variables (i.e. x, where x is) will mess up graphing
+    # enclosed quotes, variable numbers and variable mana (both followed by a
+    # where clause) will mess up graphing
     # find all enclosed quotes and graph them separately under an unrooted node
-    # then do the same with variables
+    # then do the same with variable numbers and variable mana
     line = dd.re_enclosed_quote.sub(lambda m: _enclosed_quote_(t,m),line)
     line = dd.re_variable_val.sub(lambda m: _variable_val_(t,m),line)
+    line = dd.re_variable_mana.sub(lambda m: _variable_mana_(t,m),line)
 
     # Ability lines can be one of
     #  112.3a Spell = instant or sorcery,
@@ -219,7 +224,7 @@ def graph_phrase(t,pid,line,i=0):
     :param line: the text to graph
     :param i: iteration count to avoid infinite rcursion
     """
-    # check for activated/triggered ability first
+    # check for activated /triggered ability first
     if _activated_check_(line): return graph_activated(t,pid,line)
     elif dd.re_tgr_check.search(line): return graph_triggered(t,pid,line)
     else:
@@ -232,6 +237,11 @@ def graph_phrase(t,pid,line,i=0):
         # alternate casting costs
         rid = graph_apc_phrases(t,pid,line)
         if rid: return rid
+
+        # additional casting costs
+        if dd.re_add_cost_check.search(line):
+            rid = graph_additional_cost_phrase(t,pid,line)
+            if rid: return rid
 
         # modal lines
         if dd.re_modal_check.search(line):
@@ -463,6 +473,28 @@ def graph_apc_phrases(t,pid,line):
 
     return None
 
+def graph_additional_cost_phrase(t,pid,phrase):
+    """
+    graphs additional cost phrases
+    :param t: the tree
+    :param pid: parent id
+    :param phrase: phrase to graph
+    :return: the node id or None
+    """
+    aid = None
+    try:
+        thing,cost = dd.re_add_cost.search(phrase).groups()
+        aid = t.add_node(pid,'additional-cost')
+        graph_thing(t,t.add_node(aid,'for'),thing)
+        graph_phrase(t,t.add_node(aid,'cost'),cost)
+        return aid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(aid)
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+    return None
+
 ####
 ## REPLACEMENT CLAUSES
 ####
@@ -486,17 +518,24 @@ def graph_repl_instead(t,pid,phrase):
             # under a 'or' conjunction
             t1,w1,t2,w2,instead = dd.re_if_would2_instead.search(phrase).groups()
             rid = t.add_node(pid,'replacement-effect')
-            oid = t.add_node(rid,'conjunction',value='or',itype="if-would")
-            iid = t.add_node(oid,'if')
-            graph_thing(t,iid,t1)
-            graph_phrase(t,t.add_node(iid,'would'),w1)
-            iid = t.add_node(oid,'if')
-            graph_thing(t,iid,t2)
-            graph_phrase(t,t.add_node(iid,'would'),w2)
+            iid = t.add_node(rid,'if')
+            oid = t.add_node(iid,'conjunction',value='or',itype='would')
+            wid = t.add_node(oid,'would')
+            try:
+                graph_thing(t,wid,t1)
+            except lts.LituusException as e:
+                if e.errno == lts.EPTRN: graph_clause(t,wid,t1)
+                else: raise
+            graph_phrase(t,wid,w1)
+            wid = t.add_node(oid,'would')
+            try:
+                graph_thing(t,wid,t2)
+            except lts.LituusException as e:
+                if e.errno == lts.EPTRN: graph_clause(t,wid,t2)
+                else: raise
+            graph_phrase(t,wid,w2)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
-        except lts.LituusException as e:
-            if e.errno == lts.EPTRN: t.del_node(rid)
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
@@ -506,8 +545,9 @@ def graph_repl_instead(t,pid,phrase):
             thing,would,instead = dd.re_if_would_instead1.search(phrase).groups()
             rid = t.add_node(pid,'replacement-effect')
             iid = t.add_node(rid,'if')
-            graph_thing(t,iid,thing)
-            graph_phrase(t,t.add_node(iid,'would'),would)
+            wid = t.add_node(iid,'would')
+            graph_thing(t,wid,thing)
+            graph_phrase(t,wid,would)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except lts.LituusException as e:
@@ -521,8 +561,9 @@ def graph_repl_instead(t,pid,phrase):
             thing,would,instead = dd.re_if_would_instead2.search(phrase).groups()
             rid = t.add_node(pid,'replacement-effect')
             iid = t.add_node(rid,'if')
-            graph_thing(t,iid,thing)
-            graph_phrase(t,t.add_node(iid,'would'),would)
+            wid = t.add_node(iid,'would')
+            graph_thing(t,wid,thing)
+            graph_phrase(t,wid,would)
             graph_phrase(t,t.add_node(rid,'instead'),instead)
             return rid
         except lts.LituusException as e:
@@ -1001,7 +1042,7 @@ def graph_conditional_phrase(t,pid,line):
     """
     cid = None
     if line.startswith('cn<if>'):
-        # if-player-does
+        # if player does
         try:
             ply,neg,act = dd.re_if_ply_does.search(line).groups()
             cid = t.add_node(pid,'if')
@@ -1015,7 +1056,7 @@ def graph_conditional_phrase(t,pid,line):
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
 
-        # if-player-cannot
+        # if player cannot
         try:
             ply,act = dd.re_if_ply_cant.search(line).groups()
             cid = t.add_node(pid,'if')
@@ -1028,17 +1069,30 @@ def graph_conditional_phrase(t,pid,line):
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
 
-        # if condition-action
+        # if condition action
         try:
             cond,act = dd.re_if_cond_act.search(line).groups()
             cid = t.add_node(pid,'if')
             graph_phrase(t,cid,cond)
-            graph_phrase(t,t.add_node(cid,'then'),act)
+            graph_phrase(t,pid,act)
             return cid
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
-    elif 'cn<unless' in line:
+    elif 'cn<if>' in line:
+        # action if conition
+        try:
+            # TODO: should we put an intermidiary node in the action something
+            #  like 'do'? if cond do act (same for above) or leave as is
+            act,cond = dd.re_act_if_cond.search(line).groups()
+            cid = t.add_node(pid,'if')
+            graph_phrase(t,cid,cond)
+            graph_phrase(t,pid,act)
+            return cid
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
+    elif 'cn<unless>' in line:
         # thing-cannot-unless
         try:
             thing,act,cond = dd.re_cannot_unless.search(line).groups()
@@ -1072,6 +1126,7 @@ def graph_conditional_phrase(t,pid,line):
             fid = t.add_node(pid,'for')
             graph_phrase(t,t.add_node(fid,'each'),cond)
             graph_phrase(t,fid,act)
+            return fid
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
@@ -1308,16 +1363,56 @@ def graph_cost(t,pid,phrase):
     :return: cost node id
     """
     # a cost is one or more comma separated subcosts
-    # graph_line(t,t.add_node(aaid,'activated-cost'),cost)
-    # i.e. Flooded Strand
-    #  └─activated-ability:0
-    #    ├─activated-cost:0
-    #    │ └─ungraphed-sentence:0 (tograph={t}, xa<pay> nu<1> xo<life>, ka<sacrifice> ob<card ref=self>)
-    # = ['{t}', 'xa<pay> nu<1> xo<life>', 'ka<sacrifice> ob<card ref=self>']
-    for subcost in [x for x in dd.re_comma.split(phrase) if x != '']:
+    for subcost in [x for x in dd.re_clause.split(phrase) if x != '']:
         _subcost_(t,pid,subcost)
 
 def graph_action_clause(t,pid,phrase):
+    """
+    graphs action clause stripping and graphing any trailing/qualifying clauses
+    :param t: the tree
+    :param pid: parent id
+    :param phrase: action clause with possible qualifying clause(s)
+    :return: the action node id
+    """
+    # location related
+    try:
+        act,pr,zone = dd.re_act_clause_zone.search(phrase).groups()
+        aid = graph_action_clause_ex(t,pid,act)
+        if aid:
+            prid = t.add_node(t.children(aid)[0],pr)
+            graph_thing(t,prid,zone)
+            return aid
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
+    # sequence/timing related
+    try:
+        act,seq = dd.re_act_clause_sequence.search(phrase).groups()
+        aid = graph_action_clause_ex(t,pid,act)
+        if aid:
+            graph_sequence_clause(t,pid,seq)
+            return aid
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
+    # qualifying that is/are clauses (belong to the thing)
+    #try:
+    #    act,qual = dd.re_act_clause_that_is.search(phrase).groups()
+    #    aid = graph_action_clause_ex(t,pid,act)
+    #    if aid:
+    #        # find the first Thing
+    #        thid = t.findall('thing',aid)[0]
+    #        graph_phrase(t,t.add_node(thid,'that'),qual)
+    #        return aid
+    #except AttributeError as e:
+    #    if e.__str__().startswith("'NoneType'"): pass
+    #    else: raise
+
+    return graph_action_clause_ex(t,pid,phrase)
+
+def graph_action_clause_ex(t,pid,phrase):
     """
     graphs the keyword or lituus action clause in phrase under pid
     :param t: the tree
@@ -1327,23 +1422,15 @@ def graph_action_clause(t,pid,phrase):
     """
     # look for 'traditional' action claues first i.e. they have an action word
     try:
-        # first check for trailing qualifier
-        #twc = False
-        #xq = tkn = None
-        #m = dd.re_act_clause_qualifier.search(phrase)
-        #if m:
-        #    twc = True
-        #    phrase,xq,tkn = m.groups()
-
         # determine if there is a conjunction of actions or a singleton action
         # TODO: we need to check for conditional in anded clauses
         thing = conj = cnd = aw1 = act1 = aw2 = act2 = None
         m = dd.re_conjunction_action_clause.search(phrase)
-        if m: thing,aw1,act1,conj,aw2,act2 = m.groups()
+        if m: thing,cnd,aw1,act1,conj,aw2,act2 = m.groups()
         else: thing,cnd,aw1,act1 = dd.re_action_clause.search(phrase).groups()
 
         # set up nid and aid as None
-        nid = aid = None
+        aid = nid = None
 
         try:
             # now set up of singleton and graph the thing if present
@@ -1364,8 +1451,8 @@ def graph_action_clause(t,pid,phrase):
                 t.add_node(aid,'tap')
                 t.add_node(aid,'untap')
                 if not graph_action_param(t,aid,'tap',act2):
-                    #graph_phrase(t,aid,act2) # TODO: uncomment once debugging is complete
-                    t.add_node(aid,'action-params',tograph=act2)
+                    graph_phrase(t,aid,act2) # TODO: uncomment once debugging is complete
+                    #t.add_node(aid,'action-params',tograph=act2)
             else:
                 # graph the action params
                 for aw,ap in acs:
@@ -1373,8 +1460,8 @@ def graph_action_clause(t,pid,phrase):
                     awid = t.add_node(aid,mtgltag.tag_val(aw))
                     if ap:
                         if not graph_action_param(t,awid,mtgltag.tag_val(aw),ap):
-                            #graph_phrase(t,awid,ap) # TODO: uncomment once debugging is complete
-                            t.add_node(awid,'action-params',tograph=ap)
+                            graph_phrase(t,awid,ap) # TODO: uncomment once debugging is complete
+                            #t.add_node(awid,'action-params',tograph=ap)
 
             # before returning, check for qualifying clause
             #if twc: graph_action_clause_qual(t,aid,xq,tkn)
@@ -1409,6 +1496,24 @@ def graph_action_clause(t,pid,phrase):
 
 def graph_thing(t,pid,clause):
     """
+    primary grapher of Things (testing only)
+    :param t:
+    :param pid:
+    :param clause:
+    :return:
+    """
+    # TODO: very inefficient but trying to see what the trailing clauses look like
+    thid = phid = None
+    for i in range(len(clause),5,-1):
+        try:
+            thid = graph_thing_ex(t,pid,clause[:i])
+            if clause[i+1:]: t.add_node(pid,'dump-huff',tograph=clause[i+1:])
+            return thid
+        except lts.LituusException: pass
+    return None
+
+def graph_thing_ex(t,pid,clause):
+    """
     Graphs the thing under node pid
     :param t: the tree
     :param pid: the parent id
@@ -1416,7 +1521,7 @@ def graph_thing(t,pid,clause):
     :return: the thing node id
     """
     # TODO: should we combine suffix with the stem if present?
-    # could have a qst phrase, a qtz phrase or a possesive phrase - check all
+    # could have a qtz phrase, a qst phrase or a possesive phrase - check all
     # first cards in zones
     eid = None
     try:
@@ -1502,7 +1607,7 @@ def graph_thing(t,pid,clause):
     # check for possessives which may be preceded by a quantifier
     try:
         # unpack the things then untag each thing
-        xq,thing1,thing2 = dd.re_consecutive_things.search(clause).groups()
+        xq,_,thing1,thing2 = dd.re_consecutive_things.search(clause).groups()
         tid1,val1,attr1 = mtgltag.untag(thing1)
         tid2,val2,attr2 = mtgltag.untag(thing2)
 
@@ -1586,14 +1691,14 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'exchange': return _graph_ap_exchange_(t,pid,param) # 701.10
     elif aw == 'exile': return _graph_ap_thing_(t,pid,param) # 701.11
     elif aw == 'fight': return _graph_ap_fight_(t,pid,param) # 701.12
-    # TODO: elif aw == 'play': # 701.13
+    elif aw == 'play': return _graph_ap_thing_(t,pid,param) # TODO: elif aw == 'play': # 701.13
     elif aw == 'regenerate': return _graph_ap_thing_(t,pid,param) # 701.14
-    # TODO: elif aw == 'reveal': # 701.15
+    elif aw == 'reveal': return _graph_ap_thing_(t,pid,param) # TODO: elif aw == 'reveal': # 701.15
     elif aw == 'sacrifice': return _graph_ap_thing_(t,pid,param) # 701.16
     elif aw == 'scry': return _graph_ap_n_(t,pid,param) # 701.17
-    # TODO elif aw == 'search': # 701.18
+    elif aw == 'search': return _graph_ap_search_(t,pid,param) # 701.18
     elif aw == 'shuffle': return _graph_ap_thing_(t,pid,param) # 701.19
-    elif aw == 'tap' or aw == 'untap': return _graph_ap_thing_(t,pid,param) # 701.20
+    elif aw == 'tap' or aw == 'untap': return _graph_ap_tap_(t,pid,param) # 701.20
     elif aw == 'fateseal': return _graph_ap_n_(t,pid,param)  # 701.21
     elif aw == 'clash': return _graph_ap_clash_(t,pid,param) # 701.22
     elif aw == 'transform': return _graph_ap_thing_(t,pid,param) # 701.27
@@ -1741,6 +1846,19 @@ def _variable_val_(t,m):
     attr['node-num'] = vid.split(':')[1]
     return mtgltag.retag(tid,val,attr)
 
+def _variable_mana_(t,m):
+    """
+    graphs the value of variable mana in an unrooted node
+    the variable tag
+    :param t: the tree
+    :param m: regex Match object
+    :return: retagged variable
+    """
+    vid = t.add_ur_node('variable-mana')
+    graph_phrase(t,vid,m.group(2))
+    inst = "nd<{} num={}>".format(*vid.split(':'))
+    return "{} op<≡> {}".format(m.group(1),inst)
+
 def _subcost_(t,pid,sc):
     """
     graphs a subcost (sc) phrase under parent pid
@@ -1815,14 +1933,13 @@ def _graph_qualifying_clause_(t,pid,clause):
     :param pid: parent of the line
     :param clause: the text to graph
     """
+    # TODO: this whole thing is real shitty
     # check for duals first
     cid = None
     try:
         q1,q2 = dd.re_dual_qualifying_clause.search(clause).groups()
-        cid = t.add_node(pid,'conjunction',value='and',itype='qualifying-clause')
-        _graph_qualifying_clause_(t,cid,q1)
-        _graph_qualifying_clause_(t,cid,q2)
-        return cid
+        _graph_qualifying_clause_(t,pid,q1)
+        return _graph_qualifying_clause_(t,pid,q2)
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"):
             if cid: t.del_node(cid)
@@ -1835,9 +1952,12 @@ def _graph_qualifying_clause_(t,pid,clause):
     try:
         pw,pcls = dd.re_qualifying_clause.search(clause).groups()
         qid = t.add_node(pid,pw)
-        if pw == 'from' or pw == 'in': return graph_thing(t,qid,pcls) # a zone
-        elif pw == 'other_than': return graph_thing(t,qid,pcls)       # an object
-        elif pw == 'on': return graph_thing(t,qid,pcls)               # an object
+        if pw in ['from','in','other_than','on']: # zone or object
+            graph_thing(t,qid,pcls)
+            return qid
+        elif pw == 'that': # a clause
+            graph_clause(t,qid,pcls)
+            return qid
         elif pw == 'with' or pw == 'without':
             # check for ability
             m = dd.re_qual_with_ability.search(pcls)
@@ -1850,7 +1970,8 @@ def _graph_qualifying_clause_(t,pid,clause):
                     kw = "landwalk→{}".format(
                         mtgltag.split_align(attr['characteristics'])[1]
                     )
-                return t.add_node(qid,'ability',value=kw)
+                t.add_node(qid,'ability',value=kw)
+                return qid
 
             # check for conjunction attributes i.e. power and toughness
             m = dd.re_qual_with_dual_attribute.search(pcls)
@@ -1865,7 +1986,7 @@ def _graph_qualifying_clause_(t,pid,clause):
                 aid2 = t.add_node(cid,'attribute',name=val2)
                 if 'val' in attr2: t.add_attr(aid2,'value',attr2['val'])
                 if 'node-num' in attr2: t.add_attr(aid2,'node-num',attr2['node-num'])
-                return cid
+                return qid
 
             # check for attribute
             m = dd.re_qual_with_attribute.search(pcls)
@@ -1874,7 +1995,7 @@ def _graph_qualifying_clause_(t,pid,clause):
                 aid = t.add_node(qid,'attribute',name=val)
                 if 'val' in attr: t.add_attr(aid,'value',attr['val'])
                 if 'node-num' in attr: t.add_attr(aid,'node-num',attr['node-num'])
-                return aid
+                return qid
 
             # attribute2
             # TODO: I don't like this whole approach
@@ -1882,21 +2003,21 @@ def _graph_qualifying_clause_(t,pid,clause):
             if m:
                 num,xq,attr = m.groups()
                 name = mtgltag.tag_val(attr)
-                return t.add_node(
-                    qid,'attribute',name=name,quantity=num,qualifier=xq
-                )
+                t.add_node(qid,'attribute',name=name,quantity=num,qualifier=xq)
+                return qid
 
             # check with quantifier name attributes
             m = dd.re_qual_with_attribute_xq.search(pcls)
             if m:
                 xq,attr = m.groups()
-                return t.add_node(qid,'attribute',quantifier=xq,value=attr)
+                t.add_node(qid,'attribute',quantifier=xq,value=attr)
+                return qid
 
             # check for lituus object attributes
             m = dd.re_qual_with_attribute_lo.search(pcls)
             if m:
-                qual,attr = m.groups()
-                return t.add_node(qid,'attribute',qualifier=qual,value=attr)
+                t.add_node(qid,'attribute',qualifier=m.group(1),value=m.group(2))
+                return qid
 
             # check for counters
             m = dd.re_qual_with_ctrs.search(pcls)
@@ -1907,54 +2028,39 @@ def _graph_qualifying_clause_(t,pid,clause):
                     t.add_attr(cid,'quantity',int(q))
                 except ValueError:
                     t.add_attr(cid,'quanitifier',q)
-                return cid
+                return qid
 
             # check for object (should be abilities)
             m = dd.re_qual_with_object.search(pcls)
-            if m: return graph_thing(t,qid,m.group(1))
+            if m:
+                graph_thing(t,qid,m.group(1))
+                return qid
         elif pw == 'of':
             # attributes
             m = dd.re_qual_of_attribute.search(pcls)
             if m:
                 xq,attr,lo = m.groups()
                 val = attr if attr else lo
-                return t.add_node(qid,'attribute',quantifier=xq,value=val)
+                t.add_node(qid,'attribute',quantifier=xq,value=val)
+                return qid
 
             # objects
             m = dd.re_qual_of_object.search(pcls)
-            if m: return graph_thing(t,qid,m.group(1))
+            if m:
+                graph_thing(t,qid,m.group(1))
+                return qid
 
             # possessives (possessive suffix)
             m = dd.re_qual_of_possessive.search(pcls)
-            if m: return graph_thing(t,qid,m.group(1))
+            if m:
+                graph_thing(t,qid,m.group(1))
+                return qid
 
             # player own/control
             m = dd.re_qual_of_possessive2.search(pcls)
-            if m: return graph_thing(t,qid,m.group(1))
-        elif pw == 'that_is' or pw == 'that_are':
-            # check for status
-            m = dd.re_qual_thatis_status.search(pcls)
-            if m: return t.add_node(qid,'status',value=m.group(1))
-
-            # check for attribute
-            m = dd.re_qual_thatis_attribute.search(pcls)
             if m:
-                # TODO: for now just recombining the op and the value, but
-                #  maybe do something else later
-                neg,name,val = m.groups()
-                if neg: val = "{}{}".format(mtgl.NOT,val)
-                return t.add_node(qid,'attribute',name=name,value=val)
-
-            # check for location
-            # TODO: only finds [quantifier] [zone] i.e. does expand to meet
-            #  zones with preceding players etc
-            m = dd.re_qual_thatis_zone.search(pcls)
-            if m:
-                neg,zn = m.groups()
-                cid = None
-                if neg: cid = t.add_node(t.add_node(qid,'not'),'on')
-                else: cid = t.add_node(qid,'on')
-                return graph_thing(t,cid,zn)  # always a zone
+                graph_thing(t,qid,m.group(1))
+                return qid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(qid)
     except AttributeError as e:
@@ -2037,25 +2143,23 @@ def _graph_mana_string_(t,pid,phrase):
 
 ## KEYWORD ACTIONS
 
-def _graph_ap_thing_(t,pid,phrase):
-    # TODO: very inefficient but trying to see what the trailing clauses look like
+def _graph_ap_thing_(t,pid,phrase): return graph_thing(t,pid,phrase)
     #print("GOT {} {}".format(pid,phrase))
-    thid = phid = None
-    for i in range(len(phrase),5,-1):
-        try:
-            thid = graph_thing(t,pid,phrase[:i])
-            #print("  FOUND {}<->{}".format(phrase[:i],phrase[i+1:]))
-            dump = phrase[i+1:]
-            if dump: graph_phrase(t,t.add_node(pid,'dump-huff'),dump)
-            return thid
-        except lts.LituusException: pass
-    return t.add_node(pid,'action-params',tograph=phrase)
+    #thid = phid = None
+    #for i in range(len(phrase),5,-1):
+    #    try:
+    #        thid = graph_thing(t,pid,phrase[:i])
+    #        #print("  FOUND {}<->{}".format(phrase[:i],phrase[i+1:]))
+    #        dump = phrase[i+1:]
+    #        if dump: graph_phrase(t,t.add_node(pid,'dump-huff'),dump)
+    #        return thid
+    #    except lts.LituusException: pass
+    #return t.add_node(pid,'action-params',tograph=phrase)
 
 def _graph_ap_n_(t,pid,phrase):
     # graph parameters as number
     try:
         return t.add_node(
-            #pid,'quantity',value=dd.re_number_vanilla.search(phrase).group(1)
             pid,'quantity',value=dd.re_number.search(phrase).group(1)
         )
     except AttributeError as e:
@@ -2181,6 +2285,39 @@ def _graph_ap_fight_(t,pid,phrase):
         t.add_attr(pid,'quantifier','each∧other')
         return pid
     else: return _graph_ap_thing_(t,pid,phrase)
+
+def _graph_ap_search_(t,pid,phrase):
+    # search 701.18 "to search for a card in a zone"
+    fid = None
+    try:
+        zone,thing = dd.re_search_clause.search(phrase).groups()
+        fid = t.add_node(pid,'for')
+        _graph_ap_thing_(t,fid,thing)
+        graph_thing(t,t.add_node(fid,'in'),zone)
+        return fid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN: t.del_node(fid)
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): return None
+        else: raise
+
+def _graph_ap_tap_(t,pid,phrase):
+    # tap/untap 701.20 in general we tap or untap a permanent but in some caess
+    # there can be a qualifying phrase "for mana"
+    try:
+        thing,fc = dd.re_tap_clause.search(phrase).groups()
+        thid = _graph_ap_thing_(t,pid,thing)
+        if fc:
+            try:
+                graph_thing(t,t.add_node(pid,'for'),fc)
+            except lts.LituusException as e:
+                if e.errno == lts.EPTRN:
+                    fid = t.add_node(pid,'for')
+                    t.add_node(fid,'dump-huff',tograph=fc)
+        return thid
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): return None
+        else: raise
 
 def _graph_ap_clash_(t,pid,phrase):
     # clash 701.22 - ATT all clash cards have phrase "pr<with> xq<a> xp<opponent>"
