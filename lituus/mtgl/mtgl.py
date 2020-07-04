@@ -197,7 +197,7 @@ TN2R = {n: md5(n.encode()).hexdigest() for n in token_names}
 
 # "create a .... token named NAME" i.e. Cloudseeder
 re_tkn_ref1 = re.compile(
-    r"([C|c]reate .+? named) ({})".format('|'.join(list(TN2R.keys())))
+    r"(.+? named) ({})".format('|'.join(list(TN2R.keys())))
 )
 
 # "create TOKEN NAME, .... token."
