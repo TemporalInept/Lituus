@@ -178,7 +178,7 @@ def re_self_ref(name):
 # The majority of these can be found in the phrase
 #   "create a token ... named TOKEN_NAME" except Marit Lage, Kaldra which have
 # the form "create TOKEN NAME, .... token."
-# Updated 25-May-20 to IKO
+# Updated 03-Jul-20 to M21
 token_names = [
     # Tokens that have been printed as a non-token card.
     #  See https://mtg.gamepedia.com/Token/Full_List#Printed_as_non-token
@@ -191,7 +191,7 @@ token_names = [
     "Minor Demon","Urami","Karox Bladewing","Ashaya, the Awoken World",
     "Lightning Rager","Stoneforged Blade","Tuktuk the Returned","Mowu",
     "Stangg Twin","Butterfly","Hornet","Wasp","Wirefly","Ragavan","Kelp","Wood",
-    "Wolves of the Hunt","Voja, Friend to Elves","Tombspawn","Feather"
+    "Wolves of the Hunt","Voja, Friend to Elves","Tombspawn","Feather",
 ]
 TN2R = {n: md5(n.encode()).hexdigest() for n in token_names}
 
@@ -564,7 +564,7 @@ re_trigger = re.compile(r"\b(at|whenever|when)\b")
 ## COUNTERS
 ####
 
-# counters 122.1 Updated 25-May-20 with IKO
+# counters 122.1 Updated 03-Julu-20 with M21
 # two types p/t counters i.e +/-M/+/-N or a named counters (122 total ATT)
 # see (https://mtg.gamepedia.com/Counter_(marker)/Full_List)
 # Ikoria introduced keyword counters which will be kept separate
@@ -577,15 +577,15 @@ named_counters = [
     'dream','echo','egg','elixir','energy','eon','experience','eyeball','fade',
     'fate','feather','filibuster','flood','flying','fungus','fuse','gem','glyph',
     'gold','growth','hatchling','healing','hit','hoofprint','hour','hourglass',
-    'hunger','ice','incubation','infection','intervention','isolation','javelin',
-    'ki','knowledge','level','lore','loyalty','luck','magnet','manifestation',
-    'mannequin','mask','matrix','mine','mining','mire','music','muster','net',
-    'omen','ore','page','pain','paralyzation','petal','petrification','phylactery',
-    'pin','plague','poison','polyp','pressure','prey','pupa','quest','rust',
-    'scream','shell','shield','silver','shred','sleep','sleight','slime','slumber',
-    'soot','soul','spark','spore','storage','strife','study','task','theft','tide',
-    'time','tower','training','trap','treasure','velocity','verse','vitality',
-    'volatile','wage','winch','wind','wish',
+    'hunger','ice','incarnation','incubation','infection','intervention',
+    'isolation','javelin','ki','knowledge','level','lore','loyalty','luck',
+    'magnet','manifestation','mannequin','mask','matrix','mine','mining','mire',
+    'music','muster','net','omen','ore','page','pain','paralyzation','petal',
+    'petrification','phylactery','pin','plague','poison','polyp','pressure','prey',
+    'pupa','quest','rust','scream','shell','shield','silver','shred','sleep',
+    'sleight','slime','slumber','soot','soul','spark','spore','storage','strife',
+    'study','task','theft','tide','time','tower','training','trap','treasure',
+    'velocity','verse','vitality','volatile','wage','winch','wind','wish',
 
 ]
 named_ctr_tkns = '|'.join(named_counters)
@@ -610,7 +610,7 @@ ability_words = [  # ability words 207.2c Updated 25-May-20 with IKO
     "heroic","imprint","inspired","join forces","kinship","landfall","lieutenant",
     "metalcraft","morbid","parley","radiance","raid","rally","revolt",
     "spell mastery","strive","sweep","tempting offer","threshold","undergrowth",
-    "will of the council"
+    "will of the council",
 ]
 aw_tkns = '|'.join(ability_words)
 re_aw = re.compile(
@@ -623,7 +623,7 @@ keyword_actions = [  # (legal) Keyword actions 701.2 - 701.43 Updated IKO 25-May
     'scry','search','shuffle','tap','untap','fateseal','clash','abandon',
     'proliferate','transform','detain','populate','monstrosity','vote','bolster',
     'manifest','support','investigate','meld','goad','exert','explore','surveil',
-    'adapt','amass',
+    'adapt','amass','mill',
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
@@ -767,7 +767,7 @@ re_subtype_instant_sorcery_char = re.compile(
     r"{}".format('|'.join(subtype_instant_sorcery_characteristics))
 )
 
-# 205.3m creature subtypes
+# 205.3m creature subtypes (updated 03-Jul-20 with M21)
 subtype_creature_characteristics = [
     "advisor","aetherborn","ally","angel","antelope","ape","archer","archon",
     "army","artificer","assassin","assembly-worker","atog","aurochs","avatar",
@@ -775,7 +775,7 @@ subtype_creature_characteristics = [
     "berserker","bird","blinkmoth","boar","bringer","brushwagg","camarid","camel",
     "caribou","carrier","cat","centaur","cephalid","chimera","citizen","cleric",
     "cockatrice","construct","coward","crab","crocodile","cyclops","dauthi",
-    "demigod","demon","deserter","devil","dinosaur","djinn","dragon","drake",
+    "demigod","demon","deserter","devil","dinosaur","djinn","dog","dragon","drake",
     "dreadnought","drone","druid","dryad","dwarf","efreet","egg","elder","eldrazi",
     "elemental","elephant","elf","elk","eye","faerie","ferret","fish","flagbearer",
     "fox","frog","fungus","gargoyle","germ","giant","gnome","goat","goblin","god",

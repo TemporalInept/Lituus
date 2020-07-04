@@ -481,11 +481,13 @@ kw_param_template = {
 #  2. sequence i.e. Conqueror's Flail
 #   [action-clause] [sequence] [phase]
 #  3. that is/are i.e. Runic Armasaur
+#  4. at random i.e Urgoros, the Empty One
 re_act_clause_zone = re.compile(r"^([^,|^\.]+) pr<([^>]+)> (.+ zn<[^>]+>)\.?$")
 re_act_clause_sequence = re.compile(r"^([^,|^\.]+) (sq<[^>]+> .+ ts<[^>]+>)\.?$")
 re_act_clause_that_is = re.compile(
     r"^^([^,|^\.]+) xq<that> (xa<is[^>]*> [^,|^\.]+)\.?$"
 )
+re_act_clause_random = re.compile(r"")
 
 # keyword or lituus action clause - can have
 #  1. a conjunction of actions
@@ -673,7 +675,6 @@ re_repl_dmg = re.compile(
 #  You may [action] rather than pay [this object’s] mana cost,
 # and
 #  You may cast [this object] without paying its mana cost.
-# For now, we are only looking at the above that start with 'if'
 
 # optional APC (i.e. you may)
 # (if [condition],)? [player] may [action] rather than pay [cost].
@@ -688,7 +689,8 @@ re_action_apc = re.compile(
 # if [condition], you may cast [object] without paying its mana cost i.e. Massacre
 # these are all condition based
 re_cast_apc_nocost = re.compile(
-    r"^cn<if> (.+), xp<you> cn<may> ka<cast> ob<card ref=self> pr<without> ([^.]+)\.?$"
+    r"^cn<if> (.+), "
+     r"xp<you> cn<may> ka<cast> ob<card ref=self> pr<without> ([^.]+)\.?$"
 )
 
 # alternate phrasing found in three cards (Skyshroud Cutter, Reverent Silence &
@@ -703,6 +705,14 @@ re_alt_action_apc = re.compile(
 #  1. rather than pay [cost], [player] may [action]
 re_rather_than_apc = re.compile(
     r"^cn<rather_than> xa<pay> ([^,]+), (.+) cn<may> ([^\.]+)\.?$"
+)
+
+# Additionally, some cards "grant" alternate playing costs i.e Once Upon a Time
+#  and Isochron Scepter
+# [player] may cast [thing] without paying [thing's] mana cost
+re_grant_nocost = re.compile(
+    r"^([^,|*\.]+) cn<may> (ka<(?:cast|play)> .+) pr<without> "
+     r"(xa<pay suffix=ing> .+ xo<cost type=mana>)\.?$"
 )
 
 ## ADDITIONAL COSTS
@@ -799,19 +809,27 @@ re_optional_may = re.compile(
      r"cn<may> ([x|k]a<\w+>(?:[^\.]+))\.?$"
 )
 
-# starts with if - 3 typess
+# starts with if
 #  a) if-player-does has two formation
 #   i. if [player] does [not]? [action] i.e. Decree of Justice
 #   ii. if [player] does [trigger] i.e. Providence
 #  b) if [player] cannot, [action] i.e. Brain Pry
 #  c) if [condition], [action] i.e Ordeal of Thassa
 #  d) [action] if [condition] i.e. Ghastly Demise
+#  e) if [condition], [action]. otherwise, [action]
 re_if_ply_does  = re.compile(
     r"^cn<if> ([^,|^\.]+) xa<do(?: suffix=\w+)?>(?: (cn<not>))?, ([^\.]+)\.?$"
 )
 re_if_ply_cant = re.compile(r"^cn<if> ([^,|^\.]+) cn<cannot>, ([^\.]+)\.?$")
 re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
 re_act_if_cond = re.compile(r"^([^,|^\.]+) cn<if> ([^,|\.]+)\.?$")
+re_if_otherwise = re.compile(
+    r"^cn<if> ([^,|^\.]+), ([^\.]+)\. cn<otherwise>, ([^\.]+)\.?$"
+)
+
+# ends with if
+# [action] if able i.e. Aggravate
+#re_act_if_able = re.compile(r"^([^,|^\.]+) (cn<if> able)$")
 
 # contains unless
 # The rules only mention unless in 722.6 "[A] unless [B]" However going through
@@ -954,7 +972,7 @@ re_qst = re.compile(
     r"((?:[^\.]*?)?(?:ob|xp|xo|zn)<[^>]+>)"
     r"(?: ((?:xq<[^>]+> )?(?:(?:st|xs)<[^>]+> )?"
      r"xp<[^>]+> (?:xa<do> cn<not> )?xc<[^>]+>))?"
-    r"(?: ((?:pr|xq)<(?:with|without|from|of|other_than|that)> "
+    r"(?: ((?:pr|xq)<(?:with|without|from|of|other_than|that|at)> "
      r"[^\.|^,]+?))?"
     r"(?: ((?:xq<[^>]+> )?(?:(?:st|xs)<[^>]+> )?"
      r"xp<[^>]+> (?:xa<do> cn<not> )?xc<[^>]+>))?"
@@ -986,11 +1004,11 @@ re_possession_clause = re.compile(
      r"xp<[^>]+>) (?:(xa<do> cn<not>) )?xc<([^>]+)(?: suffix=s)?>"
 )
 re_qualifying_clause = re.compile(
-    r"^(?:pr|xq)<(with|without|from|of|in|other_than|on|that)> (.+)$"
+    r"^(?:pr|xq)<(with|without|from|of|in|other_than|on|that|at)> (.+)$"
 )
 re_dual_qualifying_clause = re.compile(
     r"^(pr<(?:with|without|of)> .+) "
-     r"((?:pr|xq)<(?:from|with|without|on|of|as|in)> .+)$"
+     r"((?:pr|xq)<(?:from|with|without|on|of|as|in|that)> .+)$"
 )
 
 # finds consecutive things to determine if they are possessive

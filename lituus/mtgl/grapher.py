@@ -405,7 +405,7 @@ def graph_apc_phrases(t,pid,line):
     # See 118.9 for some phrasing
     # start with 'you may' optional APCs
     aid = None
-    if 'xp<you> cn<may>' in line:
+    if 'cn<may>' in line:
         # [condition]? [player] may [action] rather than pay [cost]
         try:
             cond,ply,act,cost = dd.re_action_apc.search(line).groups()
@@ -449,6 +449,21 @@ def graph_apc_phrases(t,pid,line):
             mid = t.add_node(aid,'may')
             graph_thing(t,mid,'xp<you>')
             graph_phrase(t,t.add_node(mid,'apc-cost'),act)
+            return aid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN: t.del_node(aid)
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
+
+        # phrasing that "grants" no casting cost
+        try:
+            ply,act,apc = dd.re_grant_nocost.search(line).groups()
+            aid = t.add_node(pid,'apc')
+            mid = t.add_node(aid,'may')
+            graph_thing(t,mid,ply)
+            graph_clause(t,mid,act)
+            graph_phrase(t,t.add_node(mid,'without'),apc)
             return aid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN: t.del_node(aid)
@@ -1073,20 +1088,34 @@ def graph_conditional_phrase(t,pid,line):
         try:
             cond,act = dd.re_if_cond_act.search(line).groups()
             cid = t.add_node(pid,'if')
-            graph_phrase(t,cid,cond)
-            graph_phrase(t,pid,act)
+            graph_phrase(t,t.add_node(cid,'condition'),cond)
+            graph_phrase(t,cid,act)
             return cid
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
+
+        # if-otherwise
+        try:
+            cond,act1,act2 = dd.re_if_otherwise.search(line).groups()
+            cid = t.add_node(pid,'if')
+            graph_phrase(t,t.add_node(cid,'condition'),cond)
+            graph_phrase(t,cid,act1)
+            graph_phrase(t,t.add_node(cid,'otherwise'),act2)
+            return cid
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
+
     elif 'cn<if>' in line:
-        # action if conition
+        # action if condition
         try:
             # TODO: should we put an intermidiary node in the action something
             #  like 'do'? if cond do act (same for above) or leave as is
             act,cond = dd.re_act_if_cond.search(line).groups()
-            cid = t.add_node(pid,'if')
-            graph_phrase(t,cid,cond)
+            if cond == 'able': cid = t.add_node(pid,'if-able')
+            else: cid = t.add_node(pid,'if')
+            if cond != 'able': graph_phrase(t,cid,cond)
             graph_phrase(t,pid,act)
             return cid
         except AttributeError as e:
@@ -1691,29 +1720,30 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'exchange': return _graph_ap_exchange_(t,pid,param) # 701.10
     elif aw == 'exile': return _graph_ap_thing_(t,pid,param) # 701.11
     elif aw == 'fight': return _graph_ap_fight_(t,pid,param) # 701.12
-    elif aw == 'play': return _graph_ap_thing_(t,pid,param) # TODO: elif aw == 'play': # 701.13
-    elif aw == 'regenerate': return _graph_ap_thing_(t,pid,param) # 701.14
-    elif aw == 'reveal': return _graph_ap_thing_(t,pid,param) # TODO: elif aw == 'reveal': # 701.15
-    elif aw == 'sacrifice': return _graph_ap_thing_(t,pid,param) # 701.16
-    elif aw == 'scry': return _graph_ap_n_(t,pid,param) # 701.17
-    elif aw == 'search': return _graph_ap_search_(t,pid,param) # 701.18
-    elif aw == 'shuffle': return _graph_ap_thing_(t,pid,param) # 701.19
-    elif aw == 'tap' or aw == 'untap': return _graph_ap_tap_(t,pid,param) # 701.20
-    elif aw == 'fateseal': return _graph_ap_n_(t,pid,param)  # 701.21
-    elif aw == 'clash': return _graph_ap_clash_(t,pid,param) # 701.22
-    elif aw == 'transform': return _graph_ap_thing_(t,pid,param) # 701.27
-    elif aw == 'detain': return _graph_ap_thing_(t,pid,param) # 701.28
-    elif aw == 'monstrosity': return _graph_ap_n_(t,pid,param)  # 701.30
-    elif aw == 'vote': return _graph_ap_vote_(t,pid,param) # 701.31
-    elif aw == 'bolster': return _graph_ap_n_(t,pid,param)  # 701.32
-    elif aw == 'manifest': return _graph_ap_thing_(t,pid,param) # 701.33
-    elif aw == 'support': return _graph_ap_n_(t,pid,param)  # 701.34
-    elif aw == 'meld': return _graph_ap_meld_(t,pid,param) # 701.36
-    elif aw == 'goad': return _graph_ap_thing_(t,pid,param) # 701.37
-    elif aw == 'exert': return _graph_ap_exert_(t,pid,param) # 701.38
-    elif aw == 'surveil': return _graph_ap_n_(t,pid,param)  # 701.41
-    elif aw == 'adapt': return _graph_ap_n_(t,pid,param)  # 701.42
-    elif aw == 'amass': return _graph_ap_n_(t,pid,param)  # 701.43
+    elif aw == 'mill': return _graph_ap_mill_(t,pid,param) # 701.13
+    elif aw == 'play': return _graph_ap_thing_(t,pid,param) # 701.14
+    elif aw == 'regenerate': return _graph_ap_thing_(t,pid,param) # 701.15
+    elif aw == 'reveal': return _graph_ap_thing_(t,pid,param) # 701.16
+    elif aw == 'sacrifice': return _graph_ap_thing_(t,pid,param) # 701.17
+    elif aw == 'scry': return _graph_ap_n_(t,pid,param) # 701.18
+    elif aw == 'search': return _graph_ap_search_(t,pid,param) # 701.19
+    elif aw == 'shuffle': return _graph_ap_thing_(t,pid,param) # 701.20
+    elif aw == 'tap' or aw == 'untap': return _graph_ap_tap_(t,pid,param) # 701.21
+    elif aw == 'fateseal': return _graph_ap_n_(t,pid,param)  # 701.22
+    elif aw == 'clash': return _graph_ap_clash_(t,pid,param) # 701.23
+    elif aw == 'transform': return _graph_ap_thing_(t,pid,param) # 701.28
+    elif aw == 'detain': return _graph_ap_thing_(t,pid,param) # 701.29
+    elif aw == 'monstrosity': return _graph_ap_n_(t,pid,param)  # 701.31
+    elif aw == 'vote': return _graph_ap_vote_(t,pid,param) # 701.32
+    elif aw == 'bolster': return _graph_ap_n_(t,pid,param)  # 701.33
+    elif aw == 'manifest': return _graph_ap_thing_(t,pid,param) # 701.34
+    elif aw == 'support': return _graph_ap_n_(t,pid,param)  # 701.35
+    elif aw == 'meld': return _graph_ap_meld_(t,pid,param) # 701.37
+    elif aw == 'goad': return _graph_ap_thing_(t,pid,param) # 701.38
+    elif aw == 'exert': return _graph_ap_exert_(t,pid,param) # 701.39
+    elif aw == 'surveil': return _graph_ap_n_(t,pid,param)  # 701.42
+    elif aw == 'adapt': return _graph_ap_n_(t,pid,param)  # 701.43
+    elif aw == 'amass': return _graph_ap_n_(t,pid,param)  # 701.44
 
     # then lituus actions
     if aw == 'add': return _graph_ap_add_(t,pid,param)
@@ -1958,6 +1988,10 @@ def _graph_qualifying_clause_(t,pid,clause):
         elif pw == 'that': # a clause
             graph_clause(t,qid,pcls)
             return qid
+        elif pw == 'at': # a qualifier
+            if pcls == 'xl<random>':
+                t.add_node(qid,'qualifier',value='random')
+                return qid
         elif pw == 'with' or pw == 'without':
             # check for ability
             m = dd.re_qual_with_ability.search(pcls)
@@ -2287,7 +2321,7 @@ def _graph_ap_fight_(t,pid,phrase):
     else: return _graph_ap_thing_(t,pid,phrase)
 
 def _graph_ap_search_(t,pid,phrase):
-    # search 701.18 "to search for a card in a zone"
+    # search 701.19 "to search for a card in a zone"
     fid = None
     try:
         zone,thing = dd.re_search_clause.search(phrase).groups()
@@ -2302,7 +2336,7 @@ def _graph_ap_search_(t,pid,phrase):
         else: raise
 
 def _graph_ap_tap_(t,pid,phrase):
-    # tap/untap 701.20 in general we tap or untap a permanent but in some caess
+    # tap/untap 701.21 in general we tap or untap a permanent but in some caess
     # there can be a qualifying phrase "for mana"
     try:
         thing,fc = dd.re_tap_clause.search(phrase).groups()
@@ -2320,7 +2354,7 @@ def _graph_ap_tap_(t,pid,phrase):
         else: raise
 
 def _graph_ap_clash_(t,pid,phrase):
-    # clash 701.22 - ATT all clash cards have phrase "pr<with> xq<a> xp<opponent>"
+    # clash 701.23 - ATT all clash cards have phrase "pr<with> xq<a> xp<opponent>"
     # but just in case will confirm
     wid = None
     try:
@@ -2335,7 +2369,7 @@ def _graph_ap_clash_(t,pid,phrase):
         else: raise
 
 def _graph_ap_vote_(t,pid,phrase):
-    # vote 701.31 - three forms
+    # vote 701.32 - three forms
     fid = None
 
     # attribute
@@ -2383,7 +2417,7 @@ def _graph_ap_vote_(t,pid,phrase):
     return None
 
 def _graph_ap_meld_(t,pid,phrase):
-    # meld 701.36 two forms "meld them into ..." and "melds with"
+    # meld 701.37 two forms "meld them into ..." and "melds with"
     # meld into
     oid = None
     try:
@@ -2413,7 +2447,7 @@ def _graph_ap_meld_(t,pid,phrase):
     return None
 
 def _graph_ap_exert_(t,pid,phrase):
-    # exert 701.38 exert [object] - may include an 'as' clause
+    # exert 701.39 exert [object] - may include an 'as' clause
     rid = None
     try:
         obj,asc = dd.re_exert_clause.search(phrase).groups()
