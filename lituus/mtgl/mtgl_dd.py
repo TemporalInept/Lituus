@@ -817,6 +817,8 @@ re_optional_may = re.compile(
 #  c) if [condition], [action] i.e Ordeal of Thassa
 #  d) [action] if [condition] i.e. Ghastly Demise
 #  e) if [condition], [action]. otherwise, [action]
+#   NOTE: we need to catch this prior to lines being broken down into sentences
+#   so we catch previous sentences if present
 re_if_ply_does  = re.compile(
     r"^cn<if> ([^,|^\.]+) xa<do(?: suffix=\w+)?>(?: (cn<not>))?, ([^\.]+)\.?$"
 )
@@ -824,7 +826,9 @@ re_if_ply_cant = re.compile(r"^cn<if> ([^,|^\.]+) cn<cannot>, ([^\.]+)\.?$")
 re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
 re_act_if_cond = re.compile(r"^([^,|^\.]+) cn<if> ([^,|\.]+)\.?$")
 re_if_otherwise = re.compile(
-    r"^cn<if> ([^,|^\.]+), ([^\.]+)\. cn<otherwise>, ([^\.]+)\.?$"
+    #r"^(?:(.+?\.) )?cn<if> ([^,|^\.]+), ([^\.]+)\. cn<otherwise>, ([^\.]+)\.?$"
+    r"^(?:(.+?\.) )?cn<if> ([^,|^\.]+), ([^\.]+)\. "
+     r"cn<otherwise>, ([^\.]+)\.?(?: ([^\.]+)\.?)?$"
 )
 
 # ends with if
@@ -849,6 +853,9 @@ re_action_unless = re.compile(
 )
 re_status_unless = re.compile(r"^(?:st|xs])<(\w+)> cn<unless> ([^,|\.]+)\.?$")
 re_may_unless = re.compile(r"^([^,|\.]+) cn<may> (.+) cn<unless> ([^,|\.]+)\.?$")
+
+# standalone otherwise i.e. primal empathy
+re_otherwise = re.compile(r"^cn<otherwise>, ([^\.]+)\.?$")
 
 # for each condition see
 #  1. for each [condition], [action] i.e. From the Ashes

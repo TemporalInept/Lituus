@@ -1095,13 +1095,17 @@ def graph_conditional_phrase(t,pid,line):
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
 
-        # if-otherwise
+        # if-otherwise NOTE: since this spans sentences, we need to catch it
+        #  prior to splitting on periods which means we may grab sentences that
+        #  are not part of this sructure
         try:
-            cond,act1,act2 = dd.re_if_otherwise.search(line).groups()
+            pre,cond,act1,act2,post = dd.re_if_otherwise.search(line).groups()
+            if pre: graph_phrase(t,pid,pre)
             cid = t.add_node(pid,'if')
             graph_phrase(t,t.add_node(cid,'condition'),cond)
             graph_phrase(t,cid,act1)
             graph_phrase(t,t.add_node(cid,'otherwise'),act2)
+            if post: graph_phrase(t,pid,post)
             return cid
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
@@ -1142,6 +1146,15 @@ def graph_conditional_phrase(t,pid,line):
             graph_phrase(t,pid,act)
             cid = t.add_node(pid,'unless')
             graph_phrase(t,cid,cond)
+            return cid
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
+    elif 'cn<otherwise' in line:
+        try:
+            oth = dd.re_otherwise.search(line).group(1)
+            cid = t.add_node(pid,'otherwise')
+            graph_phrase(t,cid,oth)
             return cid
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
