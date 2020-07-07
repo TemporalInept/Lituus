@@ -70,6 +70,7 @@ def graph(dcard):
         kwid = t.add_node(pids[i],'keywords')
         awid = t.add_node(pids[i],'ability-words')
         for line in side.split('\n'):
+            if not line: continue # TODO: due to Sagas having a hanging newline
             if dd.re_kw_line.search(line):
                 for ktype,kw,param in dd.re_kw_clause.findall(line):
                     graph_keyword(t,kwid,kw,ktype,param)
@@ -156,11 +157,14 @@ def graph_line(t,pid,line,ctype=None):
     #  112.3b Activated = of the form cost:effect,instructions.
     #  112.3c Triggered = of the form tgr condition, effect. instructions &
     #  112.3d static = none of the above
+    # A special case is the Saga, (714) which we graph as a line in and of itself
+    #  namely so that the highest node is a "saga" vice "static-line"
     # A special case is the delayed trigger (603.7) as these may generally be
     # part of a larger line (Prized Amalgam), they are not checked for here but
     # in graph_phrase when phrases are checked
     if _activated_check_(line): graph_activated(t,pid,line)
     elif dd.re_tgr_check.search(line): graph_triggered(t,pid,line)
+    elif dd.re_saga_check.search(line): graph_saga(t,pid,line)
     else:
         # only the first call from graph() will include a ctype. If there
         # isn't one graph the line without a line-node
@@ -199,6 +203,18 @@ def graph_triggered(t,pid,line):
     :param pid: parent of the line
     :param line: the tagged text to graph
     """
+    # first check for embedded trigger abilities
+    try:
+        tp,cond,effect = dd.re_embedded_tgr_line.search(line).groups()
+        taid = t.add_node(pid,'triggered-ability')
+        t.add_node(taid,'triggered-preamble',value=tp)
+        graph_phrase(t,t.add_node(taid,'triggered-condition'),cond)
+        graph_phrase(t,t.add_node(taid,'triggered-effect'),effect)
+        return taid
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
     try:
         tp,cond,effect,istr = dd.re_tgr_line.search(line).groups()
         taid = t.add_node(pid,'triggered-ability')
@@ -210,9 +226,35 @@ def graph_triggered(t,pid,line):
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"):
             raise lts.LituusException(
-                lts.EPTRN,"Not an activated ability ({})".format(line)
+                lts.EPTRN,"Not an triggered ability ({})".format(line)
             )
         else: raise
+
+def graph_saga(t,pid,line):
+    """
+    graphs saga card text
+    :param t: the tree
+    :param pid: parent id
+    :param line: the saga text
+    :return: the node id or None
+    """
+    sid = None
+    try:
+        # split the line on the chapter symbol and long hyphen
+        chapters = [x for x in dd.re_chapter_delim.split(line) if x]
+        sid = t.add_node(pid,'saga')
+        for j in range(0,len(chapters),2):
+            # 714.2c add a chapter line for each individual chapter symbol
+            syms,effect = chapters[j],chapters[j+1]
+            for sym in syms.split(', '):
+                ca = t.add_node(sid,'chapter-line')
+                t.add_node(ca,'chapter-symbol',value=sym)
+                graph_phrase(t,t.add_node(ca,'chapter-ability'),effect)
+        return sid
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'") and sid: t.del_node(sid)
+        else: raise
+    return None
 
 def graph_phrase(t,pid,line,i=0):
     """
@@ -280,14 +322,20 @@ def graph_phrase(t,pid,line,i=0):
             rid =graph_delayed_tgr(t,pid,line)
             if rid: return rid
 
-        # action clauses
-        #if dd.re_act_clause_check.search(line):
-        #    rid = graph_action_clause(t,pid,line)
-        #    if rid: return rid
+        # before splitting into sentences and.or clauses check for conjunction
+        try:
+            phrase1,phrase2 = dd.re_phrase_conjunction.search(line).groups()
+            cid = t.add_node(pid,'conjunction',value='and',itype='phrase')
+            graph_phrase(t,cid,phrase1)
+            graph_phrase(t,cid,phrase2)
+            return cid
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
 
         # Now we have to break down the line in smaller chunks: sentences and
         # then clauses
-        ss = [x.strip() + '.' for x in dd.re_sentence.split(line) if x != '']
+        ss = [x.strip() + '.' for x in dd.re_sentence.split(line) if x]
         if len(ss) > 1:
             rid = None
             for s in ss: rid = graph_phrase(t,pid,s,i+1)
@@ -295,14 +343,17 @@ def graph_phrase(t,pid,line,i=0):
         else:
             # if the iteration is less than one we have to run it through again
             # or oracle text with only one sentence will not be graphed
-            #if i < 1: return graph_phrase(t,t.add_node(pid,'sentence'),line,i+1)
             if i < 1: return graph_phrase(t,pid,line,i+1)
             else:
-                # TODO: the clause split removes any 'ands' for now it works
-                cs = [x.strip() for x in dd.re_clause.split(line) if x != '']
-                cid = None
-                for clause in cs: cid = graph_clause(t,pid,clause)
-                return cid
+                # split the phrase into clauses (by comma) - we have to run the
+                # individual clauses through graph_phrase first NOTE: the clause
+                # split removes any 'ands'
+                if mtgl.CMA not in line: return graph_clause(t,pid,line)
+                else:
+                    cid = None
+                    for clause in [x.strip() for x in dd.re_clause.split(line) if x]:
+                        cid = graph_phrase(t,pid,clause)
+                    return cid # return the last one
 
 def graph_clause(t,pid,clause):
     """
@@ -842,8 +893,6 @@ def graph_repl_damage(t,pid,phrase):
         wid = t.add_node(rid,'would')
         graph_phrase(t,wid,act1)
         if tgt: graph_thing(t,t.add_node(wid,'to'),tgt)
-        #graph_phrase(t,t.add_node(rid,'would'),act1)
-        #if tgt: graph_thing(t,t.add_node(rid,'to'),tgt)
         graph_phrase(t,rid,act2)
         return did
     except lts.LituusException as e:
@@ -958,11 +1007,22 @@ def graph_sequence_phrase(t,pid,line):
         if e.__str__().startswith("'NoneType'"): pass
         else: raise
 
-    # Then check time first, followed by sequence
-    if dd.re_time_check.search(line):
+    # check time first, followed by sequence
+    if dd.re_time_check_start.search(line) or dd.re_time_check_end.search(line):
+        # starts wih a sequence
+        try:
+            phase,cls = dd.re_sequence_time2.search(line).groups()
+            phid = graph_phase_clause(t,pid,phase)
+            graph_phrase(t,phid,cls)
+            return phid
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
+
+        # ends with a sequence
         try:
             _,when,cls,xq,ts = dd.re_sequence_time.search(line).groups()
-            tid = tid = t.add_node(pid,'timing') # TODO: don't like this label
+            tid = t.add_node(pid,'timing') # TODO: don't like this label
             t.add_node(tid,'when',value=when)  # ignore the first quantifier
             if ts in mtgl.steps1: ts = ts + "-step"
             if cls: # TODO: have to graph the complex phrases
@@ -972,7 +1032,8 @@ def graph_sequence_phrase(t,pid,line):
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
-    elif dd.re_sequence_check.search(line):
+
+    if dd.re_sequence_check.search(line):
         # check for then [action] first
         phid = sid = None
         try:
@@ -989,8 +1050,8 @@ def graph_sequence_phrase(t,pid,line):
         # then durations [sequence] [phase/step], [action]
         try:
             dur,act = dd.re_sequence_dur.search(line).groups()
-            did = graph_duration(t,pid,dur)
-            graph_phrase(t,did,act) # TODO: should this be under the 'until' node (see Pale Moon)
+            did = graph_duration(t,pid,dur) # TODO: we should check here (and elsewhere that did is instantiated
+            graph_phrase(t,did,act)
             return did
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
@@ -1019,18 +1080,20 @@ def graph_sequence_phrase(t,pid,line):
             else: raise
 
         # as long as
+        # as long as condition,effect
         try:
             rid = None
             pr,cond,effect = dd.re_sequence_as_long_as1.search(line).groups()
             if pr: rid = t.add_node(t.add_node(pid,'for'),'as-long-as')
             else: rid = t.add_node(pid,'as-long-as')
             graph_phrase(t,t.add_node(rid,'condition'),cond)
-            graph_phrase(t,rid,effect)
+            graph_phrase(t,t.add_node(rid,'effect'),effect)
             return rid
         except AttributeError as e:
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
 
+        # effect as long as condition
         try:
             effect,cond = dd.re_sequence_as_long_as2.search(line).groups()
             rid = t.add_node(pid,'as-long-as')
@@ -1111,6 +1174,15 @@ def graph_conditional_phrase(t,pid,line):
             if e.__str__().startswith("'NoneType'"): pass
             else: raise
 
+        # generic if condition (TODO do not like this approach)
+        try:
+            cond = dd.re_if_condition.search(line).group(1)
+            cid = t.add_node(pid,'if')
+            graph_phrase(t,t.add_node(cid,'condition'),cond)
+            return cid
+        except AttributeError as e:
+            if e.__str__().startswith("'NoneType'"): pass
+            else: raise
     elif 'cn<if>' in line:
         # action if condition
         try:
@@ -1277,7 +1349,6 @@ def graph_restriction_phrase(t,pid,phrase):
         try:
             act,cond = dd.re_restriction_only.search(phrase).groups()
             # TODO: not checking first for conjunction monitor to see if it messes up
-            #if mtgt.node_type(pid) == 'conjunction':
             oid = t.add_node(pid,'only')
             graph_phrase(t,oid,act)
             graph_phrase(t,t.add_node(oid,'condition'),cond)
@@ -1405,7 +1476,7 @@ def graph_cost(t,pid,phrase):
     :return: cost node id
     """
     # a cost is one or more comma separated subcosts
-    for subcost in [x for x in dd.re_clause.split(phrase) if x != '']:
+    for subcost in [x for x in dd.re_clause.split(phrase) if x]:
         _subcost_(t,pid,subcost)
 
 def graph_action_clause(t,pid,phrase):
@@ -1432,25 +1503,21 @@ def graph_action_clause(t,pid,phrase):
     try:
         act,seq = dd.re_act_clause_sequence.search(phrase).groups()
         aid = graph_action_clause_ex(t,pid,act)
-        if aid:
-            graph_sequence_clause(t,pid,seq)
-            return aid
+        if aid: graph_sequence_clause(t,aid,seq)
+        return aid
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): pass
         else: raise
 
-    # qualifying that is/are clauses (belong to the thing)
-    #try:
-    #    act,qual = dd.re_act_clause_that_is.search(phrase).groups()
-    #    aid = graph_action_clause_ex(t,pid,act)
-    #    if aid:
-    #        # find the first Thing
-    #        thid = t.findall('thing',aid)[0]
-    #        graph_phrase(t,t.add_node(thid,'that'),qual)
-    #        return aid
-    #except AttributeError as e:
-    #    if e.__str__().startswith("'NoneType'"): pass
-    #    else: raise
+    # duration related i.e. this turn
+    try:
+        act,dur = dd.re_act_clause_duration.search(phrase).groups()
+        aid = graph_action_clause_ex(t,pid,act)
+        if aid: graph_duration(t,aid,dur)
+        return aid
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
 
     return graph_action_clause_ex(t,pid,phrase)
 
@@ -1504,16 +1571,12 @@ def graph_action_clause_ex(t,pid,phrase):
                         if not graph_action_param(t,awid,mtgltag.tag_val(aw),ap):
                             graph_phrase(t,awid,ap) # TODO: uncomment once debugging is complete
                             #t.add_node(awid,'action-params',tograph=ap)
-
-            # before returning, check for qualifying clause
-            #if twc: graph_action_clause_qual(t,aid,xq,tkn)
             return aid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN:
                 if nid: t.del_node(nid)
                 else: t.del_node(aid)
-            else:
-                raise
+            else: raise
             return None
     except AttributeError as e:
         if e.__str__().startswith("'NoneType'"): pass
@@ -1562,9 +1625,29 @@ def graph_thing_ex(t,pid,clause):
     :param clause: the clause
     :return: the thing node id
     """
+    # first look at reified attributes
+    try:
+        xq,xs,thing,attr = dd.re_reified_attribute.search(clause).groups()
+        eid = t.add_node(pid,'thing')
+        aid = t.add_node(eid,'attribute',value=attr)
+
+        # have to collate the thing after removing the possessive attribute
+        _t,_v,_a = mtgltag.untag(thing)
+        del _a['suffix']
+        thing = mtgltag.retag(_t,_v,_a)
+        if xs: thing = xs + " " + thing
+        if xq: thing = xq + " " + thing
+
+        # graph the thing under an 'of' node
+        graph_thing(t,t.add_node(aid,'of'),thing)
+        return eid
+    except AttributeError as e:
+        if e.__str__().startswith("'NoneType'"): pass
+        else: raise
+
     # TODO: should we combine suffix with the stem if present?
     # could have a qtz phrase, a qst phrase or a possesive phrase - check all
-    # first cards in zones
+    # check cards in zones
     eid = None
     try:
         xq,loc,num,thing,prep,zn,amp = dd.re_qtz.search(clause).groups()
@@ -1685,9 +1768,12 @@ def graph_duration(t,pid,clause):
     :param clause: the duration clause to graph
     :return:  node id of the duration subtree or None
     """
-    # there are two variations
-    #  b) [quantifier] [phase/step] and
-    #  c) [sequence] [phase/step) (Abeyance)
+    # there are three variations
+    #  a) [quantifier] [phase/step] and
+    #  b) [sequence] [phase/step) (Abeyance)
+    #  c) [sequence] [qualifying clause] [phase/step]
+
+    return t.add_node(pid,'duration',tograph=clause)
     try:
         # unpack the tags and create the duration node
         tkn,phase = dd.re_duration_ts.search(clause).groups()
@@ -1699,7 +1785,6 @@ def graph_duration(t,pid,clause):
         # graph the clause based on the type of the first token
         if tid == 'sq': t.add_node(did,val,value=phase)
         elif tid == 'xq': t.add_node(did,phase,value=val)
-        else: assert(False)
 
         return did
     except AttributeError as e:
@@ -1967,7 +2052,10 @@ def _activated_check_(line):
     return dd.re_act_check.search(line) and not dd.re_modal_check.search(line)
 
 def _sequence_check_(line):
-    return dd.re_sequence_check.search(line) or dd.re_time_check.search(line)
+    if dd.re_sequence_check.search(line): return True
+    if dd.re_time_check_start.search(line): return True
+    if dd.re_time_check_end.search(line): return True
+    return False
 
 def _graph_qualifying_clause_(t,pid,clause):
     """

@@ -372,6 +372,9 @@ re_modal_lvl_instr_fix = re.compile(r"\.(?= )")
 re_lvl_up = re.compile(r"^(level up {[^\n]+})\n")
 re_lvl_blt = re.compile(r"\n(?=level)")
 
+# modify sagas IOT facilitate graphing
+re_saga_chapter = re.compile(r"\n([iv]+[,iv]*) — ")
+
 ####
 ## BEGIN MTGL REG EX
 ####
@@ -1634,6 +1637,15 @@ re_mill = re.compile(
 
 # your opponents can be combined
 re_your_opponents = re.compile(r"xp<you suffix=r> xp<opponent suffix=s>")
+
+# own, control related
+# a. both own and control can remove the both
+# b. neither own nor control (Conjured Currency)
+# c TODO: you control but do not own (Thieving Amalgam)
+# d. you don't control (Aether tradewinds) and don't own (Agent of Treachery)
+re_both_ownctrl = re.compile(r"both (xc<own∧control>)")
+re_neither_ownctrl = re.compile(r"neither xc<own> nor xc<control>")
+#re_dont_ownctrl = re.compile(r"xa<do> cn<not> xc<own>")
 
 # Finds phrases of the form {n} more|less for cost increase/reduction one or more
 # mana symbols followed by a qualifier

@@ -77,11 +77,14 @@ re_act_line = re.compile(r"^(.+?): (.+?)(?:\. ([^.]+))?\.?$")
 # Triggered (603.1) lines starts with a trigger preamble
 # Triggered abilities have the form:
 #  [When/Whenever/At] [condition], [effect]. [Instructions]?
+# Some cards (Goblin Flotilla) have embedded triggered abilities of the form
+#  [When/Whenever/At] [condition] [triggered-ability]
 # NOTE: since we are basing our delimitation of the individual 'components',
 #  have to build in checks for periods that are inclosed in double parenthesis
 #  and single, double parenthesis (Reef Worm)
 re_tgr_check = re.compile(r"^(tp<\w+>)")
 re_tgr_line = re.compile(r"^tp<(\w+)> ([^\.]+), ([^\.]+)(?:\. (.+))?\.?$")
+re_embedded_tgr_line = re.compile(r"^tp<(\w+)> ([^\.]+), (tp<\w+> [^\.]+)\.?$")
 
 # Delayed Triggered (603.7) "do something at a later time - contains a trigger
 # preamble but not usually at the beginning of the ability and end with a turn
@@ -95,6 +98,13 @@ re_delayed_tgr_clause = re.compile(
     r"([^,|^\.]+) tp<(\w+)> ((?:[^\.]+ )?ts<[^>]+>)\.?$"
 )
 
+# conjunction of phrases (See Giant Oyster)
+# These will have a phrase followed by a ", and" and another phrase. Have to check
+# that the first phrase does not have commas (or periods). In other words, if
+# there are commas preceding a ", and", this is part of a list otherwise, it
+# signifies distinct parts
+re_phrase_conjunction = re.compile(r"^([^,|^\.]+), and ([^\.]+)$")
+
 # the following is not a defined line but needs to be handled carefully
 # Quotation enclosed phrases preceded by 'have' (Coral Net) or 'gain' (Abnormal
 # Endurance). Mentioned in 113.1a under effects that grant abilities
@@ -104,12 +114,6 @@ re_delayed_tgr_clause = re.compile(
 # These have the form:
 #  [duration],? [object] has/gains "[ability]" [and "ability"]? [duration]?.
 re_enclosed_quote = re.compile(r'\"([^\"]+)\"') # drop the last period
-#re_grant_ability_check = re.compile(r"xa<(?:have|gain)(?: suffix=\w+)?> \"")
-#re_grant_ability = re.compile(
-#    r"^(?:(sq<\w+> [^,]+), )?"
-#    r"(.+) (xa<(?:have|gain)(?: suffix=\w+)?>) \"([^\"]+)\""
-#    r"(?: and \"(.+)\")?(?: (sq<\w+> [^\.]+))?\.$"
-#)
 
 # variable instantiates have the form
 # [variable|variable attribute], where nu<x|y> is [instantiation]
@@ -480,14 +484,11 @@ kw_param_template = {
 #   [action-clause] [prep] [zone-clause]
 #  2. sequence i.e. Conqueror's Flail
 #   [action-clause] [sequence] [phase]
-#  3. that is/are i.e. Runic Armasaur
-#  4. at random i.e Urgoros, the Empty One
+#  3. duration i.e. Turf Wound
+#   [quanitifer] [phase]
 re_act_clause_zone = re.compile(r"^([^,|^\.]+) pr<([^>]+)> (.+ zn<[^>]+>)\.?$")
-re_act_clause_sequence = re.compile(r"^([^,|^\.]+) (sq<[^>]+> .+ ts<[^>]+>)\.?$")
-re_act_clause_that_is = re.compile(
-    r"^^([^,|^\.]+) xq<that> (xa<is[^>]*> [^,|^\.]+)\.?$"
-)
-re_act_clause_random = re.compile(r"")
+re_act_clause_sequence = re.compile(r"^([^,|^\.]+) (sq<[^>]+> (?:.* )?ts<[^>]+>)\.?$")
+re_act_clause_duration = re.compile(r"^([^,|^\.]+) (xq<[^>]+> ts<[^>]+>)\.?$")
 
 # keyword or lituus action clause - can have
 #  1. a conjunction of actions
@@ -515,20 +516,6 @@ re_action_ply_poss = re.compile(
     r"^((?:xq<[^>]+> )?(?:xs<[^>]+> )?xp<[^>]+>) "
      r"xc<(own|control)(?: suffix=s)?>(?: ([^\.]+))\.?$"
 )
-
-# trailing clauses of action phrases
-# 1. [action-parameters] [number|quanitifier] [times]
-# 2. [action-parameters] [sequence] i.e. again see Roalesk, Apex Hybrid
-#re_trailing_ntimes = re.compile(
-#    r"^(?:(.+) )?((?:nu<[^>]+>|xq<[^>]+>) sq<time(?: suffix=s)?>)\.?$"
-#)
-#re_trailing_sequence = re.compile(r"^(?:(.+) )?(sq<[^>]+>(?: [^,|^\.]+)?)\.?$")
-
-# 701.2 activate [ability] [condition]?
-#  NOTE: ability may include quanitifiers
-#re_ka_activate = re.compile(
-#    r"^ka<(activate)> ((?:.+) ob<ability(?: .+)?>)(?: ([^\.]+))?\.?$"
-#)
 
 ####
 ## REPLACEMENT EFFECTS (614)
@@ -740,7 +727,7 @@ re_modal_phrase_instr = re.compile(
 )
 re_opt_delim = re.compile(r" ?•")
 
-### LEVELER PHRASES
+## LEVELER PHRASES
 # (710.2a) (NOTE: the form as specified in 710.2a has [Abilities] [P/T] whereas
 # the oracle text has [P/T] [Abilities]
 # Level lines consist of one or more level clauses each having the form:
@@ -751,39 +738,54 @@ re_lvl_up_lvl = re.compile(
      r"(?: xr<p/t val=(\d+/\d+)>)?(?: (.+))?$"
 )
 
+## SAGA PHRASES
+# (714.2)
+re_saga_check = re.compile(r"^i.* — ") # there is a hanging newline
+re_chapter_delim = re.compile(r"(i[iv]*(?:, i[iv]+)*) — ")
+#re_saga_chapter = re.compile(r"(i[iv]*(?:, i[iv]+)?) — (.+?)(?=(?:\.[iv]+|$))")
+
 ####
 ## LITUUS PHRASE TYPES
 ####
 
 # sequences
+#  Checks
+#   a - any phrase with a sequence will be considered a sequence phrase
+#   b - for time, if the phrase ends with a turn-structure or starts w/ the form
+#   [quanitifier] [turn-structure], ...
 #  1. dual - [sequence-clause], [sequence-clause] i.e. Templar Elder
 #  2. then [action] i.e. Barishi possibly ended with an again see Roalesk
-#  3. duration - [sequence] [phase/step], [action] i.e Abeyance
+#  3. duration -
+#     [sequence] [playes]? [phase/step], [action]
 #  4. condition - [sequence] [condition], [action] i.e. Hungering Yetis
 #  5. until -  [action] until [condition]
 #  6. trailing sequence from delayed triggers i.e. Prized Amalgam
 #   [quanitifer] [sequence] of [clause]? [quanitifier] [turn structure]
-#  7. as long as 2 variations
+#  7. time variation 2 i.e. Delfin's Cube
+#   this turn, (effect)
+#  8. as long as 2 variations
 #   a. [for]? as long as [condition], [effect] i.e Release to the Wind
 #   b. [effect] as long as [condition] i.e. Hooded Horror
 re_sequence_check = re.compile(r"sq<[^>]+>")
-re_time_check = re.compile(r"ts<([^>]+)>$")
+re_time_check_start = re.compile(r"^xq<[^>]+> ts<[^>]+>,")
+re_time_check_end = re.compile(r"ts<([^>]+)>$")
 re_dual_sequence = re.compile(r"^(sq<[^>]+> [^,]+), (sq<[^>]+> [^\.]+)\.?$")
 re_sequence_then = re.compile(
     r"^(?:([^\.]+) )?(sq<then>) ([^\.]*?)(?: (sq<again>))?\.?$"
 )
-re_sequence_dur = re.compile(r"^(sq<[^>]+> ts<[^,]+>), ([^\.]+)\.?$")
+re_sequence_dur = re.compile(
+    r"^(sq<[^>]+> (?:.*xp<[^>]+>.* )?ts<[^,]+>), ([^\.]+)\.?$"
+)
 re_sequence_cond = re.compile(r"^sq<([^>]+)> ([^,]+), ([^\.]+)\.?$")
 re_sequence_until = re.compile(r"([^,|^\.]+) sq<(until)> ([^,|^\.]+)\.?$")
 re_sequence_time = re.compile(
     r"^xq<([^>]+)> sq<([^>]+)> pr<of> (?:([^,|^\.]+) )?xq<([^>]+)> ts<([^>]+)>\.?$"
 )
+re_sequence_time2 = re.compile(r"^(xq<[^>]+> ts<[^>]+>), (.+)\.?$")
 re_sequence_as_long_as1 = re.compile(
-    r"^(pr<for> )?sq<as_long_as> ([^,]+), ([^\.]+)\.?$"
+    r"^(?:(pr<for>) )?sq<as_long_as> ([^,]+), ([^\.]+)\.?$"
 )
-re_sequence_as_long_as2 = re.compile(
-    r"^([^,|^\.]+) sq<as_long_as> ([^\.]+)\.?$"
-)
+re_sequence_as_long_as2 = re.compile(r"^([^,|^\.]+) sq<as_long_as> ([^\.]+)\.?$")
 
 # duration/times/sequences
 # [sequence|quantifier] [phase]
@@ -819,6 +821,8 @@ re_optional_may = re.compile(
 #  e) if [condition], [action]. otherwise, [action]
 #   NOTE: we need to catch this prior to lines being broken down into sentences
 #   so we catch previous sentences if present
+#  f) generic if condition
+#  if [condition]
 re_if_ply_does  = re.compile(
     r"^cn<if> ([^,|^\.]+) xa<do(?: suffix=\w+)?>(?: (cn<not>))?, ([^\.]+)\.?$"
 )
@@ -826,10 +830,10 @@ re_if_ply_cant = re.compile(r"^cn<if> ([^,|^\.]+) cn<cannot>, ([^\.]+)\.?$")
 re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
 re_act_if_cond = re.compile(r"^([^,|^\.]+) cn<if> ([^,|\.]+)\.?$")
 re_if_otherwise = re.compile(
-    #r"^(?:(.+?\.) )?cn<if> ([^,|^\.]+), ([^\.]+)\. cn<otherwise>, ([^\.]+)\.?$"
     r"^(?:(.+?\.) )?cn<if> ([^,|^\.]+), ([^\.]+)\. "
      r"cn<otherwise>, ([^\.]+)\.?(?: ([^\.]+)\.?)?$"
 )
+re_if_condition = re.compile(r"^cn<if> ([^,|\.]+)\.?$")
 
 # ends with if
 # [action] if able i.e. Aggravate
@@ -930,8 +934,6 @@ re_ntimes = re.compile(r"^(nu<[^>]+>|xq<[^>]+>) sq<time(?: suffix=s)?>$")
 re_again = re.compile(r"^sq<(again)>$")
 re_until_phase = re.compile(r"^sq<(until)> (ts<\w+>)$")
 
-re_as_long_as = re.compile(r"")
-
 ####
 ## PHASES/STEPS
 ####
@@ -949,6 +951,14 @@ re_phase = re.compile(
 ####
 ## THINGS
 ####
+
+# find phrases of the form: i.e. Wintermoor Commander
+#  [quanitifier]? [status]? [thing's] [attribute]
+# in this case, the attribute is the 'subject' or the thing
+re_reified_attribute = re.compile(
+    r"^(?:(xq<[^>]+>) )?(?:(xs<[^>]+>) )?"
+     r"((?:xo|ob)<[^>]+ (?:[^>]*suffix=(?:r|'s)[^>]*)>) xr<([^>]+)>\.?$"
+)
 
 # find phrases of the form i.e. Ethereal Ambush (top) Phyrexian Furnace (bottom)
 # [quantifier] [top|bottom] [number]? [thing] [zone-clause] [amplifier]?
@@ -978,11 +988,11 @@ re_qst = re.compile(
     r"^(?:nu<([^>]+)> )?(?:xq<([^>]+)> )?(?:(?:xs|st)<([^>]+)> )?"
     r"((?:[^\.]*?)?(?:ob|xp|xo|zn)<[^>]+>)"
     r"(?: ((?:xq<[^>]+> )?(?:(?:st|xs)<[^>]+> )?"
-     r"xp<[^>]+> (?:xa<do> cn<not> )?xc<[^>]+>))?"
+     r"xp<[^>]+> (?:xa<do[^>]*> cn<not> )?xc<[^>]+>))?"
     r"(?: ((?:pr|xq)<(?:with|without|from|of|other_than|that|at)> "
      r"[^\.|^,]+?))?"
     r"(?: ((?:xq<[^>]+> )?(?:(?:st|xs)<[^>]+> )?"
-     r"xp<[^>]+> (?:xa<do> cn<not> )?xc<[^>]+>))?"
+     r"xp<[^>]+> (?:xa<do[^>]*> cn<not> )?xc<[^>]+>))?"
     r"\.?$"
 )
 
@@ -1008,7 +1018,7 @@ re_multi_conjunction_thing = re.compile(
 # possessive and qualifying clauses
 re_possession_clause = re.compile(
     r"((?:xq<\w*?> )?(?:(?:st|xs)<[^>]+> )?"
-     r"xp<[^>]+>) (?:(xa<do> cn<not>) )?xc<([^>]+)(?: suffix=s)?>"
+     r"xp<[^>]+>) (?:(xa<do[^>]*> cn<not>) )?xc<([^>]+)(?: suffix=s)?>"
 )
 re_qualifying_clause = re.compile(
     r"^(?:pr|xq)<(with|without|from|of|in|other_than|on|that|at)> (.+)$"
@@ -1103,6 +1113,11 @@ re_number = re.compile(r"^nu<([^>]+)>$")
 # attach 701.3 attach [object] to [object] where the first object is self
 re_attach_clause = re.compile(r"^([^\.]+) pr<to> ([^\.]+)$")
 
+# create 701.6 sometimes has a trailing clause named ...
+re_create_clause = re.compile(
+    r"^([^\.]+?)(?: xa<name suffix=ed> ob<token ref=(\w+)>)?\.?$"
+)
+
 # double 701.9 four variations
 # 1. p/t - two variations
 #   a. [creature]? [power and/or toughness]
@@ -1110,10 +1125,7 @@ re_attach_clause = re.compile(r"^([^\.]+) pr<to> ([^\.]+)$")
 # 2. life total - [player] life-total
 # 3. countters - the number of [counters] on [thing]
 # 4. mana - the [amount|value] of [mana-clause]
-re_double_clause1 = re.compile(
-    # TODO: need to work this out
-    r"^xr<(power)> (and|or) xr<(toughness)>$"
-)
+re_double_clause1 = re.compile(r"^xr<(power)> (and|or) xr<(toughness)>$")
 re_double_clause2 = re.compile(r"^([^\.]+) xo<life_total>$")
 re_double_clause3 = re.compile(
     r"^xq<the> xo<number> pr<of> ((?:.*? )?xo<ctr(?: [^>]+)?>) pr<on> ([^,|^\.]+)$"

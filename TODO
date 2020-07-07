@@ -209,8 +209,6 @@ the phrase upto shuffle is a thing (player)
 
 254. Not a big deal but when reminder text at the end of the oracle is removed, hanging newlines can be left behind. Oracle text does not end with a newline.
 
-256. Should trailing clauses of actions (until eot) be graphed under the the action word or under the 'action' node?
-
 257. Have to handjam Game of Chaos with ka<double> xq<the> xo<life> stakes pr<with> xq<each> xa<flip>
 
 258. you control but don't own Herald of Leshrac, Thieving Amalgam
@@ -223,6 +221,13 @@ the phrase upto shuffle is a thing (player)
 
 263. Some ifs span multiples sentences, see Once Upon a Time
 
-264. Look at othwerwise clauses see Wild Evocation
+265. See Lhurgoyf the name was treated as a characteristic
+
+266. See Agent of Treachery, we have 
+ "At the beginning of your end step, if you control three or more permanents you don't own, draw three cards."
+ - the if clause belongs with the effect (draw three cards) but due to how triggered abilities are being split, it is moved to the condition clause
+
+266. Have to clean up and rethink any sequencing, timing and phase/step related graphing
+
 
 

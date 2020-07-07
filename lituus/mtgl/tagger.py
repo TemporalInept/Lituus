@@ -71,6 +71,7 @@ def preprocess(name,txt):
          b. if present, replace the last occurrence of ". " with a semi-colon
       10. Fix level ups removing newlines inside of the the level descriptions
         and prefixing each level description with a bullet
+      11. Fix sagas removing newlines inside of the chapter descriptions
     :param name: name of this card
     :param txt: the mtgl text
     :return: preprocessed oracle text
@@ -90,6 +91,7 @@ def preprocess(name,txt):
         ntxt = mtgl.re_modal_blt.sub(r" •",ntxt)
         ntxt = mtgl.re_modal_lvl_instr_fix.sub(r" ; ",ntxt)
     if mtgl.re_lvl_up.search(ntxt): ntxt = fix_lvl_up(ntxt)                  # 10
+    ntxt = mtgl.re_saga_chapter.sub(r"\1 — ",ntxt)                           # 11
     return ntxt
 
 def tag_ref(name,txt):
@@ -128,9 +130,7 @@ def tag_ref(name,txt):
     )
 
     # replace self references - do last to avoid conflict i.e. Hanweir Garrison
-    ntxt = mtgl.re_self_ref(name).sub(r"ob<card ref=self>",ntxt)
-
-    return ntxt
+    return mtgl.re_self_ref(name).sub(r"ob<card ref=self>",ntxt)
 
 def fix_lvl_up(txt):
     """
@@ -610,6 +610,10 @@ def third_pass(txt):
     # mil
     ntxt = mtgl.re_mill.sub(r"xa<mill\1> \2",txt)
     ntxt = mtgl.re_your_opponents.sub(r"xp<opponent suffix=s>",ntxt) # for grapher
+
+    # look at 'abnormal' possessives (own, control)
+    ntxt = mtgl.re_both_ownctrl.sub(r"\1",ntxt)
+    ntxt = mtgl.re_neither_ownctrl.sub(r"xa<do> cn<not> xc<own∨control>",ntxt)
     return ntxt
 
 ####
