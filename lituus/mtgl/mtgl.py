@@ -114,7 +114,7 @@ MIN = '−'  # not used yet (found in negative loyalty costs)
 ####
 TID = {
     # entities
-    'ob':'mtg-object','xo':'lituus-object','xp':'player','zn':'zone',
+    'ob':'mtg-object','xo':'lituus-object','xp':'player','zn':'zone','ef':'effect',
     #actions
     'ka':'keyword-action','xa':'lituus-action',
 }
