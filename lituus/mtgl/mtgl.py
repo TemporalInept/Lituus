@@ -13,7 +13,7 @@ Defines regexes,strings and helper functions used in the mtgl format
 # __name__ = 'mtgl'
 __license__ = 'GPLv3'
 __version__ = '0.1.9'
-__date__ = 'June 2020'
+__date__ = 'July 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -115,6 +115,8 @@ MIN = '−'  # not used yet (found in negative loyalty costs)
 TID = {
     # entities
     'ob':'mtg-object','xo':'lituus-object','xp':'player','zn':'zone',
+    #actions
+    'ka':'keyword-action','xa':'lituus-action',
 }
 
 ####
