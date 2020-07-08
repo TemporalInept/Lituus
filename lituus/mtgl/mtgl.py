@@ -469,7 +469,7 @@ re_phase = re.compile(r"\b({}) phase".format('|'.join(phases)))
 #  1. preceded by a quantifier this, each or that
 #  2. preceded by a sequence (NOTE: they have not been tagged yet)
 re_combat_phase = re.compile(
-    r"(?<=(?:(?:xq<\w+?>)|during) )"
+    r"(?<=(?:(?:xq<\w+?>)|during|before|after) )"
     r"combat(?! damage)"
 )
 
