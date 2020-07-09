@@ -217,7 +217,7 @@ the phrase upto shuffle is a thing (player)
 
 260. do something with trailing qualifiers see Loyal Pegasus
 
-262. See Incite Hysteria, have to figure how to break the action clauses up, that is by action word do we split
+262. See Incite Hysteria, have to figure how to break the action clauses up, that is by action word do we split 
 
 263. Some ifs span multiples sentences, see Once Upon a Time
 
@@ -231,5 +231,12 @@ the phrase upto shuffle is a thing (player)
 
 267. See Three Wishes, when graphing a 'whose', we can remove the possessive suffix, how to do this?
 
-268. After adding 'predicate' intermediate nodes to action claueses, the 'action' node is redudant. Also we should tag the action word as either mtg or lituus somewhere
+270. Do we want to make and i-node for 'may' i.e. optional value='may'
 
+272. See Pale Moon and graphing of if-instead-of the orginal event is fragmentary and somehow should be part of the 'predicate' clause of the action-clause
+
+273. See Crown of Empires,  Throne of Empires is being tagged as a token
+
+274. See Aegis of Honor - have to graph phrases of the form [quantifier] [time]
+
+275. See Skullbriar, the Walking Grave, "to any zone other than a player's hand or library" belong to the predicate and not the thing

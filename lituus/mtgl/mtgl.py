@@ -671,7 +671,7 @@ lituus_actions = [  # words not defined in the rules but important any way
     'die','spend','unspend','take','reduce','trigger','prevent','declare','have',
     'switch','assign','win','lose','tie','skip','flip','cycle','phase','become',
     'share','turn','produce','round','resolve','do','repeat','change','bid',
-    'select','reselect','begin','separate','note','reorder',
+    'select','reselect','begin','separate','note','reorder','remain',
     'copy',  # will have already been tagged?
     'named',  # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
@@ -943,12 +943,11 @@ re_lituus_ch = re.compile(
 
 # zones 400.1
 zones = [
-    'library','hand','battlefield','graveyard','stack','exile','command','anywhere'
+    'library','hand','battlefield','graveyard','stack','exile','command',
+    'anywhere','zone',
 ]
 zn_tkns = '|'.join(zones)
-re_zone = re.compile(
-    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(zn_tkns)
-)
+re_zone = re.compile(r"\b(?<!<[^>]*)({})(?=s|:|\.|,| )".format(zn_tkns))
 
 ####
 ## STATUS
