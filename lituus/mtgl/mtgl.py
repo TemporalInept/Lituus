@@ -1630,11 +1630,14 @@ re_pt_value = re.compile(
 
 # find common phrases that can be replaced by keyword actions or slang
 
-# mill as defined in Core 2021
+# mill
 re_mill = re.compile(
     r"xa<put( suffix=\w+)?> xq<the> pr<top> (nu<[^>]+>) ob<card suffix=s> of "
      r"xq<their> zn<library> pr<into> xq<their> zn<graveyard>"
 )
+
+# etb
+re_etb = re.compile(r"xa<enter( suffix=s)?> xq<the> zn<battlefield>")
 
 # your opponents can be combined
 re_your_opponents = re.compile(r"xp<you suffix=r> xp<opponent suffix=s>")

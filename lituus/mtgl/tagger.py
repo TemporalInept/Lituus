@@ -609,6 +609,7 @@ def third_pass(txt):
     # TODO: need to address this so this mill is not confused with the new keyword
     # mil
     ntxt = mtgl.re_mill.sub(r"xa<mill\1> \2",txt)
+    ntxt = mtgl.re_etb.sub(r"xa<etb\1>",ntxt)
     ntxt = mtgl.re_your_opponents.sub(r"xp<opponent suffix=s>",ntxt) # for grapher
 
     # look at 'abnormal' possessives (own, control)
