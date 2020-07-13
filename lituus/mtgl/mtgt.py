@@ -175,7 +175,7 @@ class MTGTree:
         except nx.NetworkXError:
             raise lts.LituusException(lts.ENODE,"No such node {}".format(nid))
 
-    """ returns a list ofall descendants of node nid (in no particular order) """
+    """ returns a list of all descendants of node nid (in no particular order) """
     def descendants(self,nid):
         try:
             return [n for n in nx.descendants(self._t,nid)]
