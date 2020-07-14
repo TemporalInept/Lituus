@@ -269,13 +269,13 @@ re_landwalk_pre = re.compile(r"(\w+?)(?<! land)walk(?!er)")  # seperate type & l
 
 word_hacks = {
     # contractions
-    "can't":"can not","don't":"do not","didn't":"did not","it's":"it is",
-    "isn't":"is not","haven't":"have not","hasn't":"has not","aren't":"are not",
+    "can't":"can not","don't":"do not","didn't":"doed not","it's":"it is",
+    "isn't":"is not","haven't":"have not","hasn't":"have not","aren't":"are not",
     "you're":"you are","couldn't":"could not","they're":"they are",
     "doesn't":"dos not","you've":"you have","that's":"that is","wasn't":"was not",
     "weren't":"were not",
     # special
-    'an': "a",
+    'an':"a",
     # plural
     "werewolves":"werewolfs","allies":"allys","elves":"elfs","abilities":"abilitys",
     "sorceries":"sorcerys","libraries":"librarys","armies":"armys",
@@ -544,7 +544,7 @@ re_prep = re.compile(r"\b(?<!<[^>]*)({})\b(?!>)".format('|'.join(prepositions)))
 # conditional/requirement related
 conditionals = [
     'only if','if','would','could','unless','rather than','instead','may','except',
-    'did not','not','only','cannot','can','otherwise',
+    'not','only','otherwise',
 ]
 re_cond = re.compile(r"\b({})\b".format('|'.join(conditionals)))
 
