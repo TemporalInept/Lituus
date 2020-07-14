@@ -269,7 +269,7 @@ re_landwalk_pre = re.compile(r"(\w+?)(?<! land)walk(?!er)")  # seperate type & l
 
 word_hacks = {
     # contractions
-    "can't":"cannot","don't":"do not","didn't":"did not","it's":"it is",
+    "can't":"can not","don't":"do not","didn't":"did not","it's":"it is",
     "isn't":"is not","haven't":"have not","hasn't":"has not","aren't":"are not",
     "you're":"you are","couldn't":"could not","they're":"they are",
     "doesn't":"dos not","you've":"you have","that's":"that is","wasn't":"was not",
@@ -671,7 +671,7 @@ lituus_actions = [  # words not defined in the rules but important any way
     'die','spend','unspend','take','reduce','trigger','prevent','declare','have',
     'switch','assign','win','lose','tie','skip','flip','cycle','phase','become',
     'share','turn','produce','round','resolve','do','repeat','change','bid',
-    'select','reselect','begin','separate','note','reorder','remain',
+    'select','reselect','begin','separate','note','reorder','remain','can',
     'copy',  # will have already been tagged?
     'named',  # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
