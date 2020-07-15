@@ -135,8 +135,7 @@ re_un = re.compile(r"un(\w)")                              # find 'un'
 
 # matches mtgl punctuation & spaces not inside a tag
 re_tkn_delim = re.compile(
-    r"([:,\.\"\'•—\s])"
-    r"(?![\w \+\/\-=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+>)"
+    r"([:,\.\"\'•—\s])(?![\w \+\/\-=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+>)"
 )
 
 # matches mtgl conjoining operators in a mtgl tag parameter
@@ -253,7 +252,6 @@ def release_n2r():
         del N2R
         re_oth_ref = None
 
-
 ####
 ## SPECIAL KEYWORD PREPROCESSING
 ####
@@ -272,8 +270,8 @@ word_hacks = {
     "can't":"can not","don't":"do not","didn't":"doed not","it's":"it is",
     "isn't":"is not","haven't":"have not","hasn't":"have not","aren't":"are not",
     "you're":"you are","couldn't":"could not","they're":"they are",
-    "doesn't":"dos not","you've":"you have","that's":"that is","wasn't":"was not",
-    "weren't":"were not",
+    "doesn't":"dos not","you've":"you have","your":"you's","that's":"that is",
+    "wasn't":"was not","weren't":"were not",
     # special
     'an':"a",
     # plural
@@ -418,7 +416,7 @@ re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
 # that are preceded by whitespace, a '/','+','-' or start a line and that are
 # followed by whitespace '/' or '.' are matched.
 re_number = re.compile(
-    r"(?<=(?:^|[\s\/+-]))(\d+|x|y|z])(?=(?:[—\s\/+-\.:]|$))"
+    r"(?<=(?:^|[\s\/+-]))(\d+|x|y|z])(?=(?:[—\s\/+-\.:\n]|$))"
 )
 
 ####
@@ -431,7 +429,7 @@ objects = [  # objects 109.1 NOTE target can also be an object (115.1)
 ]
 obj_tkns = '|'.join(objects)
 re_obj = re.compile(
-    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(obj_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|.|,|\n|s)".format(obj_tkns)
 )
 
 # keep suffix but check word boundary in beginning
@@ -444,7 +442,7 @@ lituus_objects = [  # lituus objects
 ]
 lituus_obj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
-    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(lituus_obj_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|.|,|\n|s)".format(lituus_obj_tkns)
 )
 
 # lituus players - keep suffix but check word boundary in beginning
@@ -453,7 +451,7 @@ lituus_players = [
 ]
 lituus_ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
-    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(lituus_ply_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|.|,|\n|s)".format(lituus_ply_tkns)
 )
 
 ####
@@ -471,8 +469,7 @@ re_phase = re.compile(r"\b({}) phase".format('|'.join(phases)))
 #  1. preceded by a quantifier this, each or that
 #  2. preceded by a sequence (NOTE: they have not been tagged yet)
 re_combat_phase = re.compile(
-    r"(?<=(?:(?:xq<\w+?>)|during|before|after) )"
-    r"combat(?! damage)"
+    r"(?<=(?:(?:xq<\w+?>)|during|before|after) )combat(?! damage)"
 )
 
 # steps
@@ -555,7 +552,7 @@ sequences = [
 ]
 seq_tkns = '|'.join(sequences)
 re_seq = re.compile(
-    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(seq_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|.|,|\n| |$)".format(seq_tkns)
 )
 
 ####
@@ -619,7 +616,7 @@ ability_words = [  # ability words 207.2c Updated 25-May-20 with IKO
 ]
 aw_tkns = '|'.join(ability_words)
 re_aw = re.compile(
-    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(aw_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|\.|,|\s|\n|—|$)".format(aw_tkns)
 )
 
 keyword_actions = [  # (legal) Keyword actions 701.2 - 701.43 Updated IKO 25-May-20
@@ -632,7 +629,7 @@ keyword_actions = [  # (legal) Keyword actions 701.2 - 701.43 Updated IKO 25-May
 ]
 kw_act_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
-    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(kw_act_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|\.|,|\s|\n|—|$)".format(kw_act_tkns)
 )
 
 keywords = [  # (legal) Keyword Abilties 702.2 - 702,139 Updated IKO 25-May-20
@@ -662,7 +659,7 @@ kw_tkns = '|'.join(keywords)
 re_kw = re.compile(
     # NOTE: we have to add checks for the long hyphen and end of string to
     # ensure we tag all keywords
-    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|—|$)".format(kw_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|\.|,|\s|—|\n|$)".format(kw_tkns)
 )
 
 lituus_actions = [  # words not defined in the rules but important any way
@@ -678,7 +675,7 @@ lituus_actions = [  # words not defined in the rules but important any way
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|:|\.|,|\s)".format(la_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|:|\.|,|\s|\n)".format(la_tkns)
 )
 
 # because target is primarily a quantifier we will only tag the verb version
@@ -694,7 +691,7 @@ re_lituus_target_verb = re.compile(r'\btarget(s|ing|ed)\b')
 effects = ["combat damage","damage","effect"]
 eff_tkns = '|'.join(effects)
 re_effect = re.compile(
-    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s)".format(eff_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|.|,|s|\n)".format(eff_tkns)
 )
 
 ####
@@ -886,7 +883,7 @@ char_tkns = '|'.join(
     sub_characteristics
 )
 re_ch = re.compile(
-    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,|\s|\b)".format(char_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|\.|,|\s|\b)".format(char_tkns)
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
@@ -934,7 +931,7 @@ lituus_characteristics = [
 ]
 lituus_ch_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
-    r"\b(?<!<[^>]*)({})(?=r|s|ing|ed|ion|'s|s'|:|\.|,| )".format(lituus_ch_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|.|,| )".format(lituus_ch_tkns)
 )
 
 ####
@@ -1184,7 +1181,7 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 #  1) only capture the 'ts' tag id IOT replace it with 'xa' lituus action
 re_turn_action = re.compile(
     r"(ts)"
-    r"(?=<turn(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>(?:r|s|ing|ed|ion|'s|s')? "
+    r"(?=<turn(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>(?:s|ing|ed|ion|'s|s')? "
     r"x[m|q]<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
 )
 
@@ -1292,7 +1289,7 @@ re_with_null = re.compile(r"pr<with> nu<0>")
 ####
 
 # move any suffices 'r','s','ing' 'ed' or "'s" to parameters inside tags
-re_suffix = re.compile(r"(\w\w)<(.+?)>(s'|r|s|ion|ing|ed|'s)")
+re_suffix = re.compile(r"(\w\w)<(.+?)>(s'|s|ion|ing|ed|'s)")
 
 ####
 ## ALIGNMENTS

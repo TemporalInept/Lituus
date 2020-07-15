@@ -323,7 +323,6 @@ def deconflict_tags1(txt):
 
     # deconflict 'at' making it a preposition when followed by a qualifier
     ntxt = mtgl.re_at_prep.sub(r"pr<at>",ntxt)
-    #ntxt = mtgl.re_at_prep2.sub(r"pr<at>",ntxt)
 
     # a few cards (7) will have the phrase 'no nu<1>' - make this xp<no_one>
     # and (2) will have the phrase "with no" - make these pr<without>
@@ -412,7 +411,6 @@ def powt(txt):
     :return: modified tagged txt with power and toughness and p/t chains tagged
     """
     ntxt = mtgl.re_base_pt.sub(r"\1",txt)                    # base power & toughness
-    #ntxt = mtgl.re_single_pt.sub(r"ch<p/t>",ntxt)            # solitary power & toughness
     ntxt = mtgl.re_pt_chain.sub(lambda m: _ptchain_(m),ntxt) # p/t or p/t chain
     return ntxt
 

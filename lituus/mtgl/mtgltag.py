@@ -257,7 +257,6 @@ def base_type(val):
     if is_aligned(val): val = split_align(val)[0]
     if conjunction_ops(val): val = operand(val)
     else: val = [val]
-    #for i,v in enumerate(val): val[i] = strip(v)
     return val
 
 re_paren = re.compile(r"[\(\)]")
