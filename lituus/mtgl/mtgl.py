@@ -1634,7 +1634,7 @@ re_mill = re.compile(
 )
 
 # etb
-re_etb = re.compile(r"xa<enter( suffix=s)?> xq<the> zn<battlefield>")
+re_etb = re.compile(r"xa<enter( [^>]+)?> xq<the> zn<battlefield>")
 
 # your opponents can be combined
 re_your_opponents = re.compile(r"xp<you suffix=r> xp<opponent suffix=s>")
