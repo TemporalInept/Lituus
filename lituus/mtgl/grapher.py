@@ -267,11 +267,16 @@ def graph_phrase(t,pid,line,i=0):
     :param line: the text to graph
     :param i: iteration count to avoid infinite rcursion
     """
-    # check for activated /triggered ability first
+    # check for activated /triggered ability and modal lines first
     if _activated_check_(line): return graph_activated(t,pid,line)
     elif dd.re_tgr_check.search(line): return graph_triggered(t,pid,line)
     else:
         # TODO: can we make a check for all of these?
+
+        # have to modal first', due to  graph_replacment_effect mistakenly
+        #  grabbing portions of modal lines
+        if dd.re_modal_check.search(line): return graph_modal_phrase(t,pid,line)
+
         # replacement effects
         rid = graph_replacement_effects(t,pid,line)
         if rid: return rid
@@ -285,15 +290,14 @@ def graph_phrase(t,pid,line,i=0):
             rid = graph_additional_cost_phrase(t,pid,line)
             if rid: return rid
 
-        # modal lines
-        if dd.re_modal_check.search(line):
-            rid  = graph_modal_phrase(t,pid,line)
-            if rid: return rid
-
         # leveler
         if dd.re_lvl_up_check.search(line):
             rid = graph_lvl_up_phrase(t,pid,line)
             if rid: return rid
+
+        # restriction phrases
+        rid = graph_restriction_phrase(t,pid,line)
+        if rid: return rid
 
         # sequences
         if _sequence_check_(line):
@@ -302,10 +306,6 @@ def graph_phrase(t,pid,line,i=0):
 
         # condition phrases
         rid = graph_conditional_phrase(t,pid,line)
-        if rid: return rid
-
-        # restriction phrases
-        rid = graph_restriction_phrase(t,pid,line)
         if rid: return rid
 
         # optional phrases
@@ -409,31 +409,30 @@ def graph_replacement_effects(t,pid,line):
             #  the sequence is in two parts (time, phase) we'll handle it here
             #  for now
             time,th,act,phase,ne,instead = dd.re_repl_time_turn.search(line).groups()
-            sid = t.add_node(pid,'sequence')
-            graph_phase_clause(t,t.add_node(sid,'condition'),time+" "+phase)
-            eid = t.add_node(sid,'effect')
-            rid = t.add_node(eid,'replacement-effect')
-            oeid = t.add_node(rid,'original-event')
-            graph_phrase(t,t.add_node(oeid,'condition',value='would'),th+" "+act)
-            rsid = t.add_node(t.add_node(rid,'new-event'),'replacement')
-            if instead: efid = t.add_node(t.add_node(rsid,'instead'),'effect')
-            else: efid = t.add_node(rsid,'effect')
+            sid = t.add_node(pid,'sequence-phrase') # graph sequence-phrase first
+            graph_phrase(t,t.add_node(sid,'seq-condition'),time+" "+phase)
+            cid = t.add_node(t.add_node(sid,'seq-effect'),'conditional-phrase')
+            graph_phrase(t,t.add_node(cid,'cond-condition',value='would'),th+" "+act)
+            rid = t.add_node(t.add_node(cid,'cond-effect'),'replacement-effect')
+            efid = t.add_node(t.add_node(rid,'repl-new-event'),'repl-effect')
+            if instead: t.add_attr(efid,'value','instead')
             graph_phrase(t,efid,ne)
             return sid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
-    elif 'cn<instead>' in line: return graph_repl_instead(t,pid,line)
+    elif 'cn<instead>' in line:
+        return graph_repl_instead(t,pid,line)
     elif dd.re_repl_dmg_check.search(line):
         # 614.2 damage prevention from a source if [source] would [old], [new]
         try:
             th,act,ne = dd.re_repl_dmg.search(line).groups()
-            rid = t.add_node(pid,'replacement-effect')
-            oeid = t.add_node(rid,'original-event')
-            ccid = t.add_node(oeid,'conditional-clause',value='if')
-            graph_phrase(t,t.add_node(ccid,'condition',value='would'),th+" "+act)
-            graph_phrase(t,t.add_node(t.add_node(rid,'new-event'),'effect'),ne)
-            return rid
+            cid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(cid,'cond-condition',value='if-would'),th+" "+act)
+            rid = t.add_node(t.add_node(cid,'cond-effect'),'replacement-effect')
+            reid = t.add_node(t.add_node(rid,'repl-new-event'),'repl-effect')
+            graph_phrase(t,reid,ne)
+            return cid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -441,9 +440,10 @@ def graph_replacement_effects(t,pid,line):
         # 614.1b 'skip' replacements
         rid = None
         try:
+            # TODO: should we add a 'who' node for the player?
             ply,phase = dd.re_skip.search(line).groups()
             rid = t.add_node(pid,'replacement-effect')
-            skid = t.add_node(rid,'skip')
+            skid = t.add_node(rid,'repl-effect',value='skip')
             if ply: graph_thing(t,skid,ply)
             graph_phrase(t,skid,phase)
             return rid
@@ -463,13 +463,12 @@ def graph_replacement_effects(t,pid,line):
         rid = None
         try:
             cond,action = dd.re_turn_up.search(line).groups()
-            rid = t.add_node(pid,'replacement-effect')
-            sid = t.add_node(rid,'sequence',value='as')
-            graph_phrase(t,t.add_node(sid,'condition'),cond)
-            graph_phrase(t,t.add_node(sid,'effect'),action)
-            return rid
-        except lts.LituusException as e:
-            if e.errno == lts.EPTRN and rid: t.del_node(rid)
+            sid = t.add_node(pid,'sequence-phrase')
+            graph_phrase(t,t.add_node(sid,'seq-condition',value='as'),cond)
+            rid = t.add_node(t.add_node(sid,'seq-effect'),'replacement-effect')
+            rrid = t.add_node(t.add_node(rid,'repl-new-event'),'repl-effect')
+            graph_phrase(t,rrid,action)
+            return sid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -585,7 +584,6 @@ def graph_repl_instead(t,pid,phrase):
     :param phrase: the text to graph
     :return: id of the replacement-effect node or None
     """
-    rid = None
     # check for 'would' phrasing, 'of' phrasing and 'if' phrasing
     if 'cn<would>' in phrase:
         # if-would-instead variant a (conjunction of woulds)
@@ -593,17 +591,15 @@ def graph_repl_instead(t,pid,phrase):
             # for this, we graph the two 'woulds' as separate action-clauses
             # under a 'or' conjunction
             t1,w1,t2,w2,instead = dd.re_if_would2_instead.search(phrase).groups()
-            rid = t.add_node(pid,'replacement-effect')
-            oeid = t.add_node(rid,'original-event')
-            ccid = t.add_node(oeid,'conditional-clause',value='if')
-            cid = t.add_node(ccid,'condition',value='would')
-            oid = t.add_node(cid,'conjunction',value='or',itype='action-clause')
+            cid = t.add_node(pid,'conditional-phrase')
+            ccid = t.add_node(cid,'cond-condition',value='if-would')
+            oid = t.add_node(ccid,'conjunction',value='or',itype='action-clause')
             graph_phrase(t,oid,t1+" "+ w1)
             graph_phrase(t,oid,t2+" "+ w2)
-            rsid = t.add_node(t.add_node(rid,'new-event'),'replacement')
-            efid = t.add_node(t.add_node(rsid,'instead'),'effect')
-            graph_phrase(t,efid,instead)
-            return rid
+            rid = t.add_node(t.add_node(cid,'cond-effect'),'replacement-effect')
+            reid = t.add_node(rid,'repl-new-event')
+            graph_phrase(t,t.add_node(reid,'repl-effect',value='instead'),instead)
+            return cid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -613,14 +609,13 @@ def graph_repl_instead(t,pid,phrase):
             m = dd.re_if_would_instead1.search(phrase)
             if m: th,act,instead = m.groups()
             else: th,act,instead = dd.re_if_would_instead2.search(phrase).groups()
-            rid = t.add_node(pid,'replacement-effect')
-            oeid = t.add_node(rid,'original-event')
-            ccid = t.add_node(oeid,'conditional-clause',value='if')
-            graph_phrase(t,t.add_node(ccid,'condition',value='would'),th+" "+act)
-            rsid = t.add_node(t.add_node(rid,'new-event'),'replacement')
-            efid = t.add_node(t.add_node(rsid,'instead'),'effect')
-            graph_phrase(t,efid,instead)
-            return rid
+            cid = t.add_node(pid,'conditional-phrase')
+            ccid = t.add_node(cid,'cond-condition',value='if-would')
+            graph_phrase(t,ccid,th+" "+act)
+            rid = t.add_node(t.add_node(cid,'cond-effect'),'replacement-effect')
+            reid = t.add_node(rid, 'repl-new-event')
+            graph_phrase(t,t.add_node(reid,'repl-effect',value='instead'),instead)
+            return cid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -632,15 +627,13 @@ def graph_repl_instead(t,pid,phrase):
             # will throw an exception if the phrase is not valid for this
             th,subphrase = dd.re_that_would_instead.search(phrase).groups()
             act,instead = _twi_split_(subphrase)
-            rid = t.add_node(pid,'replacement-effect')
-            oeid = t.add_node(rid,'original-event')
-            graph_phrase(
-                t,t.add_node(oeid,'condition',value='that-would'),th+" "+act
-            )
-            rsid = t.add_node(t.add_node(rid,'new-event'),'replacement')
-            efid = t.add_node(t.add_node(rsid,'instead'),'effect')
-            graph_phrase(t,efid,instead)
-            return rid
+            cid = t.add_node(pid,'conditional-phrase')
+            ccid = t.add_node(cid,'cond-condition',value='that-would')
+            graph_phrase(t,ccid,th+" "+act)
+            rid = t.add_node(t.add_node(cid,'cond-effect'),'replacement-effect')
+            reid = t.add_node(rid,'repl-new-event')
+            graph_phrase(t,t.add_node(reid,'repl-effect',value='instead'),instead)
+            return cid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -649,15 +642,15 @@ def graph_repl_instead(t,pid,phrase):
         try:
             # NOTE: thing1 and thing2 should be the same
             th1,act1,th2,act2 = dd.re_if_may_instead.search(phrase).groups()
-            rid = t.add_node(pid,'replacement-effect')
-            ccid = t.add_node(
-                t.add_node(rid,'original-event'),'conditional-clause',value='if'
+            cid = t.add_node(pid,'conditional-phrase')
+            ccid = t.add_node(cid,'cond-condition',value='if-would')
+            graph_phrase(t,ccid,th1+" "+act1)
+            rid = t.add_node(t.add_node(cid,'cond-effect'),'replacement-effect')
+            reid = t.add_node(rid,'repl-new-event')
+            graph_phrase(
+                t,t.add_node(reid,'repl-effect',value='instead'),th2+" cn<may> "+act2
             )
-            graph_phrase(t,t.add_node(ccid,'condition',value='would'),th1+" "+act1)
-            rsid = t.add_node(t.add_node(rid,'new-event'),'replacement')
-            efid = t.add_node(t.add_node(rsid,'instead'),'effect')
-            graph_phrase(t,efid,th2+" cn<may> "+act2)
-            return rid
+            return cid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -667,40 +660,37 @@ def graph_repl_instead(t,pid,phrase):
         try:
             # NOTE: does not have an orginal event
             act,repl,iof = dd.re_if_instead_of.search(phrase).groups()
-            rid = t.add_node(pid,'replacement-effect')
-            ccid = t.add_node(rid,'conditional-clause',value='if')
-            graph_phrase(t,t.add_node(ccid,'condition'),act)
-            rsid = t.add_node(t.add_node(rid,'new-event'),'replacement')
-            graph_phrase(t,t.add_node(rsid,'instead-of'),iof)
-            graph_phrase(t,t.add_node(rsid,'effect'),repl)
-            return rid
+            cid = graph_phrase(t,pid,act)
+            rid = t.add_node(t.add_node(cid,'cond-effect'),'replacement-effect')
+            rsid = t.add_node(rid,'repl-new-event')
+            graph_phrase(t,t.add_node(rsid,'repl-effect',value='instead-of'),iof)
+            graph_phrase(t,t.add_node(rsid,'repl-effect'),repl)
+            return cid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
 
         # test for instead-of-if clause
         try:
-            # NOTE: these do not have original events, they are generally found
-            #  in the preceding sentence
             repl,iof,cond = dd.re_instead_of_if.search(phrase).groups()
-            rid = t.add_node(pid,'replacement-effect')
-            ccid = t.add_node(rid,'conditional-clause',value='if')
-            graph_phrase(t,t.add_node(ccid,'condition'),cond)
-            rsid = t.add_node(t.add_node(rid,'new-event'),'replacement')
-            graph_phrase(t,t.add_node(rsid,'instead-of'),iof)
-            graph_phrase(t,t.add_node(rsid,'effect'),repl)
-            return rid
+            cid = graph_phrase(t,pid,cond)
+            rid = t.add_node(t.add_node(cid,'cond-effect'),'replacement-effect')
+            rrid = t.add_node(rid,'repl-new-event')
+            graph_phrase(t,t.add_node(rrid,'repl-effect',value='instead-of'),iof)
+            graph_phrase(t,t.add_node(rrid,'repl-effect'),repl)
+            return cid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
 
         # test for instead-of
         try:
+            # TODO: start here
             repl,iof = dd.re_instead_of.search(phrase).groups()
             rid = t.add_node(pid,'replacement-effect')
-            rsid = t.add_node(t.add_node(rid,'new-event'),'replacement')
-            graph_phrase(t,t.add_node(rsid,'instead-of'),iof)
-            graph_phrase(t,t.add_node(rsid,'effect'),repl)
+            rrid = t.add_node(rid,'repl-new-event')
+            graph_phrase(t,t.add_node(rrid,'repl-effect',value='instead-of'),iof)
+            graph_phrase(t,t.add_node(rrid,'repl-effect'),repl)
             return rid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -710,13 +700,12 @@ def graph_repl_instead(t,pid,phrase):
         # test for if-instead
         try:
             cond,instead = dd.re_if_instead.search(phrase).groups()
-            rid = t.add_node(pid,'replacement-effect')
-            ccid = t.add_node(rid,'conditional-clause',value='if')
-            graph_phrase(t,t.add_node(ccid,'condition'),cond)
-            rsid = t.add_node(t.add_node(rid,'new-event'),'replacement')
-            efid = t.add_node(t.add_node(rsid,'instead'),'effect')
-            graph_phrase(t,efid,instead)
-            return rid
+            cid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(cid,'cond-condition',value='if'),cond)
+            rid = t.add_node(t.add_node(cid,'cond-effect'),'replacement-effect')
+            rrid = t.add_node(rid,'repl-new-event')
+            graph_phrase(t,t.add_node(rrid,'repl-effect',value='instead'),instead)
+            return cid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -724,13 +713,12 @@ def graph_repl_instead(t,pid,phrase):
         # test for if-instead fenced
         try:
             cond,instead = dd.re_if_instead_fence.search(phrase).groups()
-            rid = t.add_node(pid,'replacement-effect')
-            ccid = t.add_node(rid,'conditional-clause',value='if')
-            graph_phrase(t,t.add_node(ccid,'condition'),cond)
-            rsid = t.add_node(t.add_node(rid,'new-event'),'replacement')
-            efid = t.add_node(t.add_node(rsid,'instead'),'effect')
-            graph_phrase(t,efid,instead)
-            return rid
+            cid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(cid,'cond-condition',value='if'),cond)
+            rid = t.add_node(t.add_node(cid,'cond-effect'),'replacement-effect')
+            rrid = t.add_node(rid,'repl-new-event')
+            graph_phrase(t,t.add_node(rrid,'repl-effect',value='instead'),instead)
+            return cid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -738,13 +726,12 @@ def graph_repl_instead(t,pid,phrase):
         # test for instead-if clause
         try:
             instead,cond = dd.re_instead_if.search(phrase).groups()
-            rid = t.add_node(pid,'replacement-effect')
-            ccid = t.add_node(rid,'conditional-clause',value='if')
-            graph_phrase(t,t.add_node(ccid,'condition'),cond)
-            rsid = t.add_node(t.add_node(rid,'new-event'),'replacement')
-            efid = t.add_node(t.add_node(rsid,'instead'),'effect')
-            graph_phrase(t, efid, instead)
-            return rid
+            cid = t.add_node(pid,'conditional-effect')
+            graph_phrase(t,t.add_node(cid,'cond-condition',value='if'),cond)
+            rid = t.add_node(t.add_node(cid,'cond-effect'),'replacement-effect')
+            rrid = t.add_node(rid,'repl-new-event')
+            graph_phrase(t,t.add_node(rrid,'repl-effect',value='instead'),instead)
+            return cid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -762,26 +749,32 @@ def graph_repl_etb1(t,pid,phrase):
     rid = None
     # Permanent ETB with ...
     try:
-        etb,cls = dd.re_etb_with.search(phrase).groups()
+        thing,cls = dd.re_etb_with.search(phrase).groups()
         rid = t.add_node(pid,'replacement-effect')
-        eid = t.add_node(rid,'etb-trigger')
-        graph_phrase(t,eid,etb)
-        graph_phrase(t,t.add_node(eid,'etb-effect',value='with'),cls)
+        rrid = t.add_node(rid,'repl-new-event')
+        graph_thing(t,t.add_node(rrid,'repl-etb-trigger'),thing)
+        graph_phrase(t,t.add_node(rid,'repl-etb-effect',value='with'),cls)
         return rid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN and rid: t.del_node(rid)
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
 
     # As Permanent ETB ...
+    sid = None
     try:
-        # TODO: not sure if I like the graphing of this
-        etb,action = dd.re_as_etb.search(phrase).groups()
-        rid = t.add_node(pid,'replacement-effect')
-        sid = t.add_node(rid,'sequence',value='as')
-        cid = t.add_node(sid,'condition',value='etb-trigger')
-        graph_phrase(t,cid,etb)
-        graph_phrase(t,t.add_node(sid,'etb-effect'),action)
-        return rid
+        thing,etb,action = dd.re_as_etb.search(phrase).groups()
+        sid = t.add_node(pid,'sequence-phrase')
+        scid = t.add_node(sid,'seq-condition',value='as')
+        graph_action_clause(t,scid,thing+" "+etb)
+        rid = t.add_node(t.add_node(sid,'seq-effect'),'replacement-effect')
+        rrid = t.add_node(rid,'repl-new-event')
+        graph_thing(t,t.add_node(rrid,'repl-etb-trigger'),thing)
+        graph_phrase(t,t.add_node(rid,'repl-etb-effect'),action)
+        return sid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN and sid: t.del_node(sid)
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
@@ -789,21 +782,30 @@ def graph_repl_etb1(t,pid,phrase):
     # Permanent ETB as
     oid = rid = None
     try:
-        ply,etb,cls = dd.re_etb_as.search(phrase).groups()
+        # have to first graph the optional-phrase if present
+        ply,thing,cls = dd.re_etb_as.search(phrase).groups()
         if ply:
-            oid = t.add_node(pid,'optional',value='may')
-            acid = graph_phrase(t,oid,ply+" xa<have>")
+            oid = t.add_node(pid,'optional-phrase')
+            ooid = t.add_node(oid,'opt-option',value='may-have')
             try:
-                rid = t.add_node( # want it under the 'have' node
-                    t.findall('have',acid)[0],'replacement-effect'
-                )
-            except IndexError:
-                raise lts.LituusException(lts.ETREE,"Error finding child")
+                graph_thing(t,ooid,ply)
+            except lts.LituusException as e:
+                if e.errno == lts.EPTRN and oid: t.del_node(oid)
+                return None
+            rid = t.add_node(ooid,'replacment-effect')
         else: rid = t.add_node(pid,'replacement-effect')
-        eid = t.add_node(rid,'etb-trigger')
-        graph_phrase(t,eid,etb)
-        graph_phrase(t,t.add_node(eid,'etb-effect',value='as'),cls)
+
+        # graph the etb replacement effect
+        rrid = t.add_node(rid,'repl-new-event')
+        graph_thing(t,t.add_node(rrid,'repl-etb-trigger'),thing)
+        # TODO: either have to graph the below as a thing or make graphing
+        #  things a part of the graphing flow
+        graph_phrase(t,t.add_node(rrid,'repl-etb-effect',value='etb-as'),cls)
         return oid if oid else rid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN:
+            if oid: t.del_node(oid)
+            elif rid: t.del_node(rid)
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
@@ -819,30 +821,33 @@ def graph_repl_etb2(t,pid,phrase):
     :param phrase: the text to graph
     :return: node id of the etb subtree  or None
     """
+    # see if we have a status etb
     rid = None
-    # see if we have a status etb first (without condition)
     try:
-        etb,status = dd.re_etb_status.search(phrase).groups()
+        thing,status = dd.re_etb_status.search(phrase).groups()
         rid = t.add_node(pid,'replacement-effect')
-        eid = t.add_node(rid,'etb-trigger')
-        graph_phrase(t,eid,etb)
-        t.add_node(t.add_node(eid,'etb-effect'),'status',value=status)
+        rrid = t.add_node(rid,'repl-new-event')
+        graph_thing(t,t.add_node(rrid,'repl-etb-trigger'),thing)
+        t.add_node(t.add_node(rrid,'repl-etb-effect'),'status',value=status)
         return rid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN and rid: t.del_node(rid)
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
 
     # continuous etb with an optional effect
-    try:
-        etb,effect = dd.re_etb_1d.search(phrase).groups()
-        rid = t.add_node(pid,'replacement-effect')
-        eid = t.add_node(rid,'etb-trigger')
-        graph_action_clause(t,eid,etb) # don't use phrase IOT avoid inf. recursion
-        if effect: graph_phrase(t,t.add_node(eid,'etb-effect'),effect)
-        return rid
-    except AttributeError as e:
-        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-        else: raise
+    #try:
+    #    print("GOT {} {} {}".format(t._name,pid,phrase))
+    #    etb,effect = dd.re_etb_1d.search(phrase).groups()
+    #    rid = t.add_node(pid,'replacement-effect')
+    #    rrid = t.add_node(rid,'repl-new-event')
+    #    graph_action_clause(t,t.add_node(rrid,'repl-etb-trigger'),etb)
+    #    if effect: graph_phrase(t,t.add_node(rrid,'repl-etb-effect'),effect)
+    #    return rid
+    #except AttributeError as e:
+    #    if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+    #    else: raise
 
     return None
 
@@ -942,10 +947,11 @@ def graph_sequence_phrase(t,pid,line):
     # of before the comma is handled incorrectly
     try:
         cond1,cond2 = dd.re_dual_sequence.search(line).groups()
+        sid = t.add_node(pid,'sequence-phrase')
         cid = t.add_node(pid,'conjunction',value='and',itype='sequence')
         graph_phrase(t,cid,cond1)
         graph_phrase(t,cid,cond2)
-        return cid
+        return sid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
@@ -955,9 +961,10 @@ def graph_sequence_phrase(t,pid,line):
         # starts wih a sequence
         try:
             phase,cls = dd.re_sequence_turn_structure.search(line).groups()
-            sid = t.add_node(pid,'sequence')
-            graph_phrase(t,t.add_node(sid,'condition',value='when'),phase)
-            graph_phrase(t,t.add_node(sid,'effect'),cls)
+            if mtgt.node_type(pid) == 'conjunction': sid = pid
+            else: sid = t.add_node(pid,'sequence-phrase')
+            graph_phrase(t,t.add_node(sid,'seq-condition',value='when'),phase)
+            graph_phrase(t,t.add_node(sid,'seq-effect'),cls)
             return sid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -968,8 +975,9 @@ def graph_sequence_phrase(t,pid,line):
             # TODO: Fragmentery - should be moved to clause graphing perhaps graph_
             #  phase_clause
             _,seq,phase = dd.re_sequence_time.search(line).groups()
-            sid = t.add_node(pid,'sequence')
-            cid = t.add_node(sid,'condition',value='when')
+            if mtgt.node_type(pid) == 'conjunction': sid = pid
+            else: sid = t.add_node(pid,'sequence-phrase')
+            cid = t.add_node(sid,'seq-condition',value='when')
             t.add_node(cid,'time',value=seq)
             graph_phrase(t,cid,phase)
             return sid
@@ -978,7 +986,14 @@ def graph_sequence_phrase(t,pid,line):
             else: raise
     # TODO: can we elif the below
     if dd.re_sequence_check.search(line):
-        # check for [action]? then [action]
+        # look for "then [phrase]" IOT remove the 'then'
+        try:
+            phrase = dd.re_then_sequence.search(line).group(1)
+            return graph_phrase(t,pid,phrase)
+        except AttributeError as e:
+            if e.__str__() == "'NoneType' object has no attribute 'group'": pass
+            else: raise
+
         try:
             # we're removing the 'then' as the pre and post will be graphed
             # sequentially implying the 'then'
@@ -986,7 +1001,9 @@ def graph_sequence_phrase(t,pid,line):
             if pre: graph_phrase(t,pid,pre)
             if not again: return graph_phrase(t,pid,post)
             else:
-                return graph_phrase(t,t.add_node(pid,'sequence',value='again'),post)
+                sid = t.add_node(pid,'sequence-phrase')
+                graph_phrase(t,t.add_node(sid,'seq-effect',value='again'),post)
+                return sid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -994,11 +1011,12 @@ def graph_sequence_phrase(t,pid,line):
         # then sequence-condition-effect
         try:
             seq,cond,act = dd.re_sequence_cond_effect.search(line).groups()
-            sid = t.add_node(pid,'sequence')
+            if mtgt.node_type(pid) == 'conjunction': sid = pid
+            else: sid = t.add_node(pid,'sequence-phrase')
             graph_phrase(
-                t,t.add_node(sid,'condition',value=seq.replace('_','-')),cond
+                t,t.add_node(sid,'seq-condition',value=seq.replace('_','-')),cond
             )
-            graph_phrase(t,t.add_node(sid,'effect'),act)
+            graph_phrase(t,t.add_node(sid,'seq-effect'),act)
             return sid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -1007,11 +1025,12 @@ def graph_sequence_phrase(t,pid,line):
         # and effect-sequence-condition
         try:
             act,seq,cond = dd.re_sequence_effect_cond.search(line).groups()
-            sid = t.add_node(pid,'sequence')
+            if mtgt.node_type(pid) == 'conjunction': sid = pid
+            else: sid = t.add_node(pid,'sequence-phrase')
             graph_phrase(
-                t,t.add_node(sid,'condition',value=seq.replace('_','-')),cond
+                t,t.add_node(sid,'seq-condition',value=seq.replace('_','-')),cond
             )
-            graph_phrase(t,t.add_node(sid,'effect'),act)
+            graph_phrase(t,t.add_node(sid,'seq-effect'),act)
             return sid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -1032,111 +1051,80 @@ def graph_conditional_phrase(t,pid,line):
     :return: node id or None
     """
     if line.startswith('cn<if>'):
-        # if player does forms a condition, effect
-        try:
-            cond,effect = dd.re_if_ply_does.search(line).groups()
-            ccid = t.add_node(pid,'conditional-clause',value='if')
-            graph_phrase(t,t.add_node(ccid,'condition'),cond)
-            graph_phrase(t,t.add_node(ccid,'effect'),effect)
-            return ccid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
-
-        # if player cannot
-        try:
-            cond,act = dd.re_if_ply_cant.search(line).groups()
-            ccid = t.add_node(pid,'conditional-clause',value='if')
-            graph_phrase(t,t.add_node(ccid,'condition'),cond)
-            return ccid
-            #cid = t.add_node(pid,'if')
-            #graph_thing(t,cid,ply)
-            #graph_phrase(t,t.add_node(cid,'cannot'),act)
-            #return cid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
-
         # if condition action
         try:
-            cond,act = dd.re_if_cond_act.search(line).groups()
-            cid = t.add_node(pid,'if')
-            graph_phrase(t,t.add_node(cid,'condition'),cond)
-            graph_phrase(t,cid,act)
-            return cid
+            cond,effect = dd.re_if_cond_act.search(line).groups()
+            ccid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(ccid,'cond-condition',value='if'),cond)
+            graph_phrase(t,t.add_node(ccid,'cond-effect'),effect)
+            return ccid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
 
-        # if-otherwise NOTE: since this spans sentences, we need to catch it
-        #  prior to splitting on periods which means we may grab sentences that
-        #  are not part of this sructure
-        try:
-            pre,cond,act1,act2,post = dd.re_if_otherwise.search(line).groups()
-            if pre: graph_phrase(t,pid,pre)
-            cid = t.add_node(pid,'if')
-            graph_phrase(t,t.add_node(cid,'condition'),cond)
-            graph_phrase(t,cid,act1)
-            graph_phrase(t,t.add_node(cid,'otherwise'),act2)
-            if post: graph_phrase(t,pid,post)
-            return cid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
-
-        # generic if condition (TODO do not like this approach)
+        # generic if condition
+        # TODO: see Nim Abomination, this is a fragmentary condition, it should
+        #  be rolled into the larger phrase it is a part of
         try:
             cond = dd.re_if_condition.search(line).group(1)
-            cid = t.add_node(pid,'if')
-            graph_phrase(t,t.add_node(cid,'condition'),cond)
-            return cid
+            ccid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(ccid,'cond-condition',value='if'),cond)
+            return ccid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'group'": pass
             else: raise
     elif 'cn<if>' in line:
-        # action if condition
+        # if-otherwise NOTE: since this spans sentences, we need to catch it
+        #  prior to splitting on periods which means we will grab sentences that
+        #  are not part of this sructure
+        # TODO: would be a good example of if-then-else
         try:
-            # TODO: should we put an intermidiary node in the action something
-            #  like 'do'? if cond do act (same for above) or leave as is
-            act,cond = dd.re_act_if_cond.search(line).groups()
-            if cond == 'able': cid = t.add_node(pid,'if-able')
-            else: cid = t.add_node(pid,'if')
-            graph_phrase(t,cid,act)
-            return cid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
-    elif 'cn<unless>' in line:
-        # thing-cannot-unless
-        try:
-            thing,act,cond = dd.re_cannot_unless.search(line).groups()
-            cid = t.add_node(pid,'cannot')
-            graph_thing(t,cid,thing)
-            graph_phrase(t,cid,act)
-            graph_phrase(t,t.add_node(cid,'unless'),cond)
-            return cid
-        except lts.LituusException as e:
-            if e.errno == lts.EPTRN: t.del_node(cid)
+            pre,cond,act1,act2,post = dd.re_if_otherwise.search(line).groups()
+            if pre: graph_phrase(t,pid,pre)
+            ccid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(ccid,'cond-condition',value='if'),cond)
+            graph_phrase(t,t.add_node(ccid,'cond-effect'),act1)
+            graph_phrase(t,t.add_node(ccid,'cond-effect',value='otherwise'),act2)
+            if post: graph_phrase(t,pid,post)
+            return ccid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
 
+        # action if condition
+        try:
+            # one possibility is a "if able", handle these differently
+            act,cond = dd.re_act_if_cond.search(line).groups()
+            ccid = t.add_node(pid,'conditional-phrase')
+            if cond == 'able': t.add_node(ccid,'cond-condition',value='if-able')
+            else:
+                graph_phrase(t,t.add_node(ccid,'cond-condition',value='if'),cond)
+            graph_phrase(t,t.add_node(ccid,'cond-effect'),act)
+            return ccid
+        except AttributeError as e:
+            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+            else: raise
+    elif 'cn<unless>' in line:
         # action-unless
         try:
+            # we need to check for "can not" and not graph if found
             act,cond = dd.re_action_unless.search(line).groups()
-            graph_phrase(t,pid,act)
-            cid = t.add_node(pid,'unless')
-            graph_phrase(t,cid,cond)
-            return cid
+            if "xa<can> cn<not>" in act: return None
+            ccid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(ccid,'condition',value='unless'),cond)
+            graph_phrase(t,t.add_node(ccid,'effect'),act)
+            return ccid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
     elif 'cn<otherwise' in line:
         try:
+            # TODO: see Primal Empathy - these should really be part of a larger
+            #  conditional-phrase in the preceding line
             oth = dd.re_otherwise.search(line).group(1)
-            cid = t.add_node(pid,'otherwise')
-            graph_phrase(t,cid,oth)
-            return cid
+            ccid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(ccid,'cond-effect',value='otherwise'),oth)
+            return ccid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'group'": pass
             else: raise
@@ -1146,10 +1134,10 @@ def graph_conditional_phrase(t,pid,line):
             m = dd.re_for_each_cond1.search(line)
             if m: cond,act = m.groups()
             else: act,cond = dd.re_for_each_cond2.search(line).groups()
-            fid = t.add_node(pid,'for')
-            graph_phrase(t,t.add_node(fid,'each'),cond)
-            graph_phrase(t,fid,act)
-            return fid
+            ccid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(ccid,'cond-condition',value='for-each'),cond)
+            graph_phrase(t,t.add_node(ccid,'cond-effect'),act)
+            return ccid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -1164,104 +1152,123 @@ def graph_restriction_phrase(t,pid,phrase):
     :param phrase: text to graph
     :return: node id or None on failure
     """
-    # TODO: do we need to add intermediate restriction node
-    # need to check conjunctions first
-    try:
-        act,rstr1,conj,rstr2 = dd.re_only_conjunction.search(phrase).groups()
-        oid = t.add_node(pid,'only')
-        graph_phrase(t,oid,act)
-        cid = t.add_node(oid,'conjunction',value=conj,itype='only')
-        graph_restriction_phrase(t,cid,rstr1)
-        graph_restriction_phrase(t,cid,rstr2)
-        return oid
-    except AttributeError as e:
-        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-        else: raise
-
-    # graph but restrictions first (only 12 at IKO)
+    # "but"-restrictions and "can/do"-restrictions will not be part of a conjunctive
+    # restriction, get them out of theway first
+    # graph but restrictions first (only 12 at time of IKO)
     if 'but' in phrase:
         try:
             act,wd,rstr = dd.re_restriction_but.search(phrase).groups()
-            phid = graph_phrase(t,pid,act)
-            graph_phrase(t,t.add_node(t.add_node(phid,'but'),wd),rstr)
-            return phid
+            rsid = t.add_node(pid,'restriction-phrase')
+            graph_phrase(t,t.add_node(rsid,'rstr-effect'),act)
+            graph_phrase(t,t.add_node(rsid,'rstr-restriction',value='but-not'),rstr)
+            return rsid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
 
+    # can/do not
+    if dd.re_restriction_cando_check.search(phrase):
+        # first can/dos with unless
+        try:
+            th,rw,act,cond = dd.re_restriction_cando_unless.search(phrase).groups()
+            rsid = t.add_node(pid,'restriction-phrase')
+            graph_phrase(
+                t,t.add_node(rsid,'rstr-restriction',value=rw+'-not'),th+" "+act
+            )
+            graph_phrase(t,t.add_node(rsid,'rstr-exception',value='unless'),cond)
+            return rsid
+        except AttributeError as e:
+            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+            else: raise
+
+        # blanket can/dos with no exceptions
+        try:
+            th,rw,act = dd.re_restriction_cando.search(phrase).groups()
+            rsid = t.add_node(pid,'restriction-phrase')
+            return graph_phrase(
+                t,t.add_node(rsid,'rstr-restriction',value=rw+'-not'),th+" "+act
+            )
+        except AttributeError as e:
+            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+            else: raise
+
+    # before proceeding, check conjunctions of restrictions
+    try:
+        act,rstr1,conj,rstr2 = dd.re_only_conjunction.search(phrase).groups()
+        rsid = t.add_node(pid,'restriction-phrase')
+        graph_phrase(t,t.add_node(rsid,'rstr-effect'),act)
+        cid = t.add_node(rsid,'conjunction',value=conj,itype='rstr-restriction')
+        graph_restriction_phrase(t,cid,rstr1)
+        graph_restriction_phrase(t,cid,rstr2)
+        return rsid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
+
     # The below may be part of a recursive call due to a conjunction. Check the
     # parent type first. If conjunction, only the restriction will be present,
     # do not add a new 'only' node, merely graphing the restriciton
-
     # only-ifs
     if 'cn<only_if>' in phrase:
         try:
-            effect,cond = dd.re_only_if.search(phrase).groups()
-            if mtgt.node_type(pid) == 'conjunction':
-                return graph_phrase(t,t.add_node(pid,'if'),cond)
-            else:
-                oid = t.add_node(pid,'only')
-                if effect: graph_phrase(t,oid,effect)
-                graph_phrase(t,t.add_node(oid,'if'),cond)
-                return oid
+            act,cond = dd.re_only_if.search(phrase).groups()
+            if mtgt.node_type(pid) == 'conjunction': rsid = pid
+            else: rsid = t.add_node(pid,'restriction-phrase')
+            if act: graph_phrase(t,t.add_node(rsid,'rstr-effect'),act)
+            graph_phrase(t,t.add_node(rsid,'rstr-restriction',value='only-if'),cond)
+            return rsid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
 
     if 'cn<only>' in phrase:
-        # only - any time you could cast a sorcery
+        # only - any time player could cast a sorcery
         try:
-            act,time = dd.re_restriction_time.search(phrase).groups()
-            if mtgt.node_type(pid) == 'conjunction':
-                return graph_phrase(t,t.add_node(pid,'when'),time)
-            else:
-                oid = t.add_node(pid,'only')
-                if act: graph_phrase(t,oid,act)
-                graph_phrase(t,t.add_node(oid,'when'),time)
-                return oid
+            act,rstr = dd.re_restriction_anytime.search(phrase).groups()
+            if mtgt.node_type(pid) == 'conjunction': rsid = pid
+            else: rsid = t.add_node(pid,'restriction-phrase')
+            if act: graph_phrase(t,t.add_node(rsid,'rstr-effect'),act)
+            graph_phrase(t,t.add_node(rsid,'rstr-restriction',value='only-when'),rstr)
+            return rsid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
 
         # only-[sequence]
         try:
-            act,seq,phase = dd.re_restriction_timing.search(phrase).groups()
-            if mtgt.node_type(pid) == 'conjunction':
-                return graph_phase_clause(t,t.add_node(pid,seq),phase)
-            else:
-                oid = t.add_node(pid,'only')
-                if act: graph_phrase(t,oid,act)
-                graph_phase_clause(t,t.add_node(oid,seq),phase)
-                return oid
+            act,seq,phase = dd.re_restriction_phase.search(phrase).groups()
+            if mtgt.node_type(pid) == 'conjunction': rsid = pid
+            else: rsid = t.add_node(pid,'restriction-phrase')
+            if act: graph_phrase(t,t.add_node(rsid,'rstr-effect'),act)
+            graph_phrase(t,t.add_node(rsid,'rstr-restriction',value='only-'+seq),phase)
+            return rsid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
 
         # only-number per turn
         try:
-            act,num,phase = dd.re_restriction_number.search(phrase).groups()
-            if mtgt.node_type(pid) == 'conjunction':
-                nid = t.add_node(pid,'times',value=num)
-                if phase: graph_phase_clause(t,nid,phase)
-                return nid
-            else:
-                oid = t.add_node(pid,'only')
-                graph_phrase(t,oid,act)
-                nid = t.add_node(oid,'times',value=num)
-                if phase: graph_phase_clause(t,nid,phase)
-                return oid
+            act,limit,phase = dd.re_restriction_number.search(phrase).groups()
+            if mtgt.node_type(pid) == 'conjunction': rsid = pid
+            else: rsid = t.add_node(pid,'restriction-phrase')
+            if act: graph_phrase(t,t.add_node(rsid,'rstr-effect'),act)
+            rrid=t.add_node(rsid,'rstr-restriction',value='times')
+            t.add_node(rrid,'rstr-limit',value=limit)
+            if phase: graph_phase_clause(t,rrid,phase)
+            return rsid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
 
         # only - all else
         try:
-            act,cond = dd.re_restriction_only.search(phrase).groups()
-            # TODO: not checking first for conjunction monitor to see if it messes up
-            oid = t.add_node(pid,'only')
-            graph_phrase(t,oid,act)
-            graph_phrase(t,t.add_node(oid,'condition'),cond)
-            return oid
+            act,rstr = dd.re_restriction_only.search(phrase).groups()
+            # NOTE: these should not be part of a conjunction but just in case
+            if mtgt.node_type(pid) == 'conjunction': rsid = pid
+            else: rsid = t.add_node(pid,'restriction-phrase')
+            graph_phrase(t,t.add_node(rsid,'rstr-effect'),act)
+            graph_phrase(t,t.add_node(rsid,'rstr-restriction',value='only'),rstr)
+            return rsid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -1280,41 +1287,23 @@ def graph_optional_phrase(t,pid,phrase):
     :param phrase: text to graph
     :return: node id or None
     """
-    mid = None
-
     # check may as-though first
     try:
-        # TODO: should we graph these under an i-node 'option'
-        ply,act1,act2 = dd.re_may_as_though.search(phrase).groups()
-        mid = t.add_node(pid,'may')
-        graph_thing(t,mid,ply)
-        graph_phrase(t,mid,act1)
-        graph_phrase(t,t.add_node(mid,'as-though'),act2)
-        return mid
-    except lts.LituusException as e:
-        if e.errno == lts.EPTRN and mid: t.del_node(mid)
+        ply,opt,effect = dd.re_may_as_though.search(phrase).groups()
+        opid = t.add_node(pid,'optional-phrase')
+        graph_phrase(t,t.add_node(opid,'opt-option',value='may'),ply+" "+opt)
+        graph_phrase(t,t.add_node(opid,'opt-effect',value='as-though'),effect)
+        return opid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
 
-    # may have
+    # may have and singleton may
     try:
-        ply,phrase = dd.re_may_have.search(phrase).groups()
-        mid = t.add_node(pid,'optional',value='may')
-        graph_phrase(t,mid,ply+" "+phrase)
-        return mid
-    except lts.LituusException as e:
-        if e.errno == lts.EPTRN and mid: t.del_node(mid)
-    except AttributeError as e:
-        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-        else: raise
-
-    # may only
-    try:
-        ply,act = dd.re_optional_may.search(phrase).groups()
-        mid = t.add_node(pid,'optional',value='may')
-        graph_phrase(t,mid,ply+" "+act)
-        return mid
+        ply,opt = dd.re_player_may.search(phrase).groups()
+        opid = t.add_node(pid,'optional-phrase')
+        graph_phrase(t,t.add_node(opid,'opt-option',value='may'),ply+" "+opt)
+        return opid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
@@ -1334,11 +1323,11 @@ def graph_exception_phrase(t,pid,phrase):
     :return: node id or None
     """
     try:
-        act,add = dd.re_exception_phrase.search(phrase).groups()
-        aid = graph_phrase(t,pid,act)
-        eid = t.add_node(aid,'except')
-        graph_phrase(t,eid,add)
-        return aid
+        act,excp = dd.re_exception_phrase.search(phrase).groups()
+        eid = t.add_node(pid,'exception-phrase')
+        graph_phrase(t,t.add_node(eid,'excp-effect'),act)
+        graph_phrase(t,t.add_node(eid,'excp-exception',value='except'),excp)
+        return eid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise

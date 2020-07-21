@@ -255,11 +255,21 @@ the phrase upto shuffle is a thing (player)
 
 283. See Gather Specimens as an example of action_clause/thing graphing failures
 
-
-
 282. See Nyxbloom Ancient the "three times as much" is being treated as a sequence
 
 283. Make 'as' a sequence with condition, effect
 
-285. 
+285. Add loot, rummage, flicker to common phrase replacments
+
+286. See Primal Empathy, the 'otherwise' in triggered-instructions, should be in the triggered-effect clause
+
+287. in actions, need to combine "can action", "that are/is" (Find others)
+
+289. Could clean up some functions like graph_repl_instead due to multiple patterns having the same graphing function
+
+290. Something funky is happening with Blind Obedience in graph_thing of ob<permanent suffix=s characteristics=artifact∧creature> xp<you suffix='s> xp<opponent suffix=s> xc<control>
+
+292. Have commented out the fall-back continous etb graphing for now
+
+
 
