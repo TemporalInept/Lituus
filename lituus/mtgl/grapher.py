@@ -157,12 +157,16 @@ def graph_line(t,pid,line,ctype=None):
     #  112.3b Activated = of the form cost:effect,instructions.
     #  112.3c Triggered = of the form tgr condition, effect. instructions &
     #  112.3d static = none of the above
-    # A special case is the Saga, (714) which we graph as a line in and of itself
-    #  namely so that the highest node is a "saga" vice "static-line"
-    # A special case is the delayed trigger (603.7) as these may generally be
-    # part of a larger line (Prized Amalgam), they are not checked for here but
-    # in graph_phrase when phrases are checked
-    if _activated_check_(line): graph_activated(t,pid,line)
+    # Special cases are
+    #  o Saga, (714) which we graph as a line in and of itself namely so that the
+    #   highest node is a "saga" vice "static-line"
+    #  o delayed trigger (603.7) as these may generally be part of a larger line
+    #   (Prized Amalgam), they are not checked for here but in graph_phrase when
+    #    phrases are checked
+    #  o Leveler (710) have to graphed first because some of the level effects
+    #   may contain activated abilities
+    if dd.re_lvl_up_check.search(line): graph_lvl_up_phrase(t,pid,line)
+    elif _activated_check_(line): graph_activated(t,pid,line)
     elif dd.re_tgr_check.search(line): graph_triggered(t,pid,line)
     elif dd.re_saga_check.search(line): graph_saga(t,pid,line)
     else:
@@ -291,9 +295,9 @@ def graph_phrase(t,pid,line,i=0):
             if rid: return rid
 
         # leveler
-        if dd.re_lvl_up_check.search(line):
-            rid = graph_lvl_up_phrase(t,pid,line)
-            if rid: return rid
+        #if dd.re_lvl_up_check.search(line):
+        #    rid = graph_lvl_up_phrase(t,pid,line)
+        #    if rid: return rid
 
         # restriction phrases
         rid = graph_restriction_phrase(t,pid,line)
@@ -486,62 +490,56 @@ def graph_apc_phrases(t,pid,line):
     """
     # See 118.9 for some phrasing
     # start with 'you may' optional APCs
-    aid = None
     if 'cn<may>' in line:
         # [condition]? [player] may [action] rather than pay [cost]
+        cid = oid = None
         try:
-            cond,act,cost = dd.re_action_apc.search(line).groups()
-            aid = t.add_node(pid,'apc')
-            if cond: graph_phrase(t,t.add_node(aid,'condition',value='if'),cond)
-            graph_phrase(t,t.add_node(aid,'apc-cost'),act)
-            graph_phrase(t,t.add_node(aid,'original-cost',value='rather-than'),cost)
-            return aid
+            # have 1 primary and 2 alternate phrasings
+            m = dd.re_action_apc.search(line)
+            if m: cond,ply,alt,cost = m.groups()
+            else:
+                m = dd.re_alt_action_apc.search(line)
+                if m: cond,cost,ply,alt = m.groups()
+                else:
+                    cond = None
+                    cost,ply,alt = dd.re_rather_than_apc.search(line).groups()
+
+            # graph condition if present than the optional apc
+            if cond:
+                cid = t.add_node(pid,'conditional-phrase')
+                graph_phrase(t,t.add_node(cid,'cond-condition',value='if'),cond)
+                ceid = t.add_node(cid,'condition-effect')
+                oid = t.add_node(ceid,'optional-phrase')
+            else: oid = t.add_node(pid,'optional-phrase')
+            aid = t.add_node(t.add_node(oid,'opt-option',value='may'),'apc')
+            graph_thing(t,t.add_node(aid,'apc-player'),ply)
+            graph_phrase(t,t.add_node(aid,'apc-apc-cost'),alt)
+            graph_phrase(
+                t,t.add_node(aid,'apc-original-cost',value='rather-than'),cost
+            )
+            return cid if cid else oid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN:
+                if cid: t.del_node(cid)
+                else: t.del_node(oid)
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
 
         # if [condition] you may cast ...
+        cid = None
         try:
-            cond,act,cost = dd.re_cast_apc_nocost.search(line).groups()
-            aid = t.add_node(pid,'apc')
-            graph_phrase(t,t.add_node(aid,'condition',value='if'),cond)
-            acid = graph_phrase(t,aid,act)
-            graph_phrase(t,t.add_node(acid,'without'),cost)
-            return aid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
-
-        # alternate phrasing of action-apc that always has a condition
-        try:
-            cond,cost,act = dd.re_alt_action_apc.search(line).groups()
-            aid = t.add_node(pid,'apc')
-            graph_phrase(t,t.add_node(aid,'condition',value='if'),cond)
-            graph_phrase(t,t.add_node(aid,'apc-cost'),act)
-            graph_phrase(t,t.add_node(aid,'original-cost',value='rather-than'),cost)
-            return aid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
-
-        # phrasing that "grants" no casting cost
-        try:
-            act,cost = dd.re_grant_nocost.search(line).groups()
-            aid = t.add_node(pid,'apc')
-            acid = graph_phrase(t,t.add_node(aid,'apc-cost'),act)
-            graph_phrase(t,t.add_node(acid,'without'),cost)
-            return aid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
-
-        # starts with rather than
-        try:
-            cost,act = dd.re_rather_than_apc.search(line).groups()
-            aid = t.add_node(pid,'apc')
-            graph_phrase(t,aid,act)
-            graph_phrase(t,t.add_node(aid,'original-cost',value='rather-than'),cost)
-            return aid
+            cond,ply,act,cost = dd.re_cast_apc_nocost.search(line).groups()
+            cid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(cid,'cond-condition',value='if'),cond)
+            oid = t.add_node(t.add_node(cid,'condition-effect'),'optional-phrase')
+            aid = t.add_node(t.add_node(oid,'opt-option',value='may'),'apc')
+            graph_thing(t,t.add_node(aid,'apc-player'),ply)
+            _graph_mana_string_(t,t.add_node(aid,'apc-apc-cost'),'{0}')
+            graph_phrase(t,t.add_node(aid,'apc-original-cost',value='without'),cost)
+            return cid
+        except lts.LituusException as e:
+            if e.errno == lts.EPTRN and cid: t.del_node(cid)
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
@@ -560,8 +558,8 @@ def graph_additional_cost_phrase(t,pid,phrase):
     try:
         thing,cost = dd.re_add_cost.search(phrase).groups()
         aid = t.add_node(pid,'additional-cost')
-        graph_thing(t,t.add_node(aid,'for'),thing)
-        graph_phrase(t,t.add_node(aid,'cost'),cost)
+        graph_thing(t,t.add_node(aid,'add-cost-for'),thing)
+        graph_phrase(t,t.add_node(aid,'add-cost-cost'),cost)
         return aid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN: t.del_node(aid)
@@ -922,8 +920,8 @@ def graph_lvl_up_phrase(t,pid,line):
             lvid=t.add_node(
                 lid,'level',symbol="{}{}".format(ep1,'+' if not ep2 else "-"+ep2)
             )
-            if pt: t.add_node(lvid,'p/t',value=pt)
-            if ab: graph_phrase(t,t.add_node(lvid,'ability'),ab)
+            if pt: t.add_node(lvid,'lvl-p/t',value=pt)
+            if ab: graph_phrase(t,t.add_node(lvid,'lvl-ability'),ab)
         return lid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'":
@@ -1348,9 +1346,9 @@ def graph_delayed_tgr(t,pid,clause):
     try:
         effect,tp,cond = dd.re_delayed_tgr_clause.search(clause).groups()
         dtid = t.add_node(pid,'delayed-trigger-ability')
-        t.add_node(dtid,'triggered-preamble',value=tp)
-        graph_phrase(t,t.add_node(dtid,'triggered-condition'),cond)
-        graph_phrase(t,t.add_node(dtid,'triggered-effect'),effect)
+        t.add_node(dtid,'del-triggered-preamble',value=tp)
+        graph_phrase(t,t.add_node(dtid,'del-triggered-condition'),cond)
+        graph_phrase(t,t.add_node(dtid,'del-triggered-effect'),effect)
         return dtid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -2169,7 +2167,10 @@ def _graph_mana_string_(t,pid,phrase):
             return oid
 
         ms = mtgltag.re_mtg_ms.findall(m3)
-        mid = t.add_node(pid,'mana',quantity=len(ms),value=m3)
+        #mid = t.add_node(pid,'mana',quantity=len(ms),value=m3)
+        mid = t.add_node(
+            pid,'mana',quantity=0 if m3 == '{0}' else len(ms),value=m3
+        )
         if xq: t.add_node(mid,'quantifier',value=xq)
         return mid
     except AttributeError as e:

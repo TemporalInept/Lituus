@@ -659,45 +659,39 @@ re_repl_dmg = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.?$")
 #  You may cast [this object] without paying its mana cost.
 
 # optional APC (i.e. you may)
-# (if [condition],)? [player may action] rather than pay [cost].
+# (if [condition],)? [player] may [action] rather than pay [cost].
 # NOTE: the condition may or may not be present see Ricochet Trap for a condition
 #  and Bringer of the Red Dawn for a conditionless
 # NOTE: the action may be an alternate/reduced mana payment i.e. Ricochet Trap or
 #  other i.e. Sivvi's Valor
 re_action_apc = re.compile(
-    r"^(?:cn<if> (.+), )?([^,]+ cn<may> [^,]+) cn<rather_than> xa<pay> ([^\.]+)\.$"
-)
-
-# if [condition], [you may cast object] without [paying its mana cost] i.e. Massacre
-# these are all condition based
-re_cast_apc_nocost = re.compile(
-    r"^cn<if> ([^,]+), ([^\.]+) pr<without> ([^.]+)\.?$"
+    r"^(?:cn<if> (.+), )?([^,]+) cn<may> ([^,]+) cn<rather_than> (xa<pay> [^\.]+)\.$"
 )
 
 # alternate phrasing found in three cards (Skyshroud Cutter, Reverent Silence &
 # Invigorate).
 #  if [condition], rather than pay self's mana cost you may [action].
-# this is alternate phrasing of re_action_apc
+# this is alternate phrasing of re_action_apc and always has a condition
 re_alt_action_apc = re.compile(
-    r"^cn<if> (.+), cn<rather_than> (xa<pay> [^,]+), (xp<you> cn<may> [^\.]+)\.?$"
+    r"^cn<if> (.+), cn<rather_than> (xa<pay> [^,]+), (xp<you>) cn<may> ([^\.]+)\.?$"
 )
 
-# Additionally, some cards "grant" alternate playing costs i.e Once Upon a Time
-#  and Isochron Scepter
-# [player] may cast [thing] without paying [thing's] mana cost
-re_grant_nocost = re.compile(
-    r"^([^,|*\.]+ cn<may> ka<(?:cast|play)> [^,|*\.]+) pr<without> ([^,|*\.]+)\.?$"
-)
-
-# contains "rather than" - a reverse of re_action_apc i.e. Dream Halls
-#  1. rather than pay [cost], [player] may [action]
+# 2nd alternate phrasing starts with "rather than" and does not have a condition
+# i.e. Dream Halls
+#  rather than pay [cost], [player] may [action]
 re_rather_than_apc = re.compile(
-    r"^cn<rather_than> (xa<pay> [^,]+), ([^\.]+ cn<may> [^\.]+)\.?$"
+    r"^cn<rather_than> (xa<pay> [^,]+), ([^\.]+) cn<may> ([^\.]+)\.?$"
+)
+
+# if [condition], [you may cast object] without [paying its mana cost] i.e. Massacre
+# these are all condition based
+re_cast_apc_nocost = re.compile(
+    r"^cn<if> ([^,]+), ([^,]+) cn<may> ([^,]+) pr<without> ([^.]+)\.?$"
 )
 
 ## ADDITIONAL COSTS
 # (mentioned throughout but phrased in 604.5 "As an additional cost to cast..."
-# As an additional cost to cast [thing], [add-cost]
+# As an additional cost to cast [thing], [add-cost] see Abjure
 re_add_cost_check = re.compile(r"xq<a∧additional> xo<cost>")
 re_add_cost = re.compile(
     r"^pr<as> xq<a∧additional> xo<cost> pr<to> ka<cast> ([^,]+), ([^\.]+)\.?$"
@@ -723,6 +717,7 @@ re_opt_delim = re.compile(r" ?•")
 # the oracle text has [P/T] [Abilities]
 # Level lines consist of one or more level clauses each having the form:
 #  •[level symbol] [P/T]? [Abilities]
+# see Enclave Cryptologist
 re_lvl_up_check = re.compile(r"^•xo<level>")
 re_lvl_up_lvl = re.compile(
     r"^xo<level> nu<([^>]+)>(\+|-)(?:nu<([^>]+)>)?"
