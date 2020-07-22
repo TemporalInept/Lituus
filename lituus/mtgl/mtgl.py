@@ -273,7 +273,7 @@ word_hacks = {
     "doesn't":"dos not","you've":"you have","your":"you's","that's":"that is",
     "wasn't":"was not","weren't":"were not",
     # special
-    'an':"a",
+    'an':"a","command zone":"command",
     # plural
     "werewolves":"werewolfs","allies":"allys","elves":"elfs","abilities":"abilitys",
     "sorceries":"sorcerys","libraries":"librarys","armies":"armys",
