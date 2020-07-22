@@ -1637,7 +1637,7 @@ re_mill = re.compile(
 re_etb = re.compile(r"xa<enter( [^>]+)?> xq<the> zn<battlefield>")
 
 # your opponents can be combined
-re_your_opponents = re.compile(r"xp<you suffix=r> xp<opponent suffix=s>")
+re_your_opponents = re.compile(r"xp<you suffix='s> xp<opponent suffix=s>")
 
 # own, control related
 # a. both own and control can remove the both
