@@ -589,7 +589,7 @@ def postprocess(txt):
     ntxt = mtgl.re_op_num.sub(r"nu<\1\2>",ntxt)
 
     # combine damage with any preceding number
-    ntxt = mtgl.re_num_dmg.sub(r"ef<damage quantity=\1>",ntxt)
+    ntxt = mtgl.re_num_dmg.sub(r"ef<\2 quantity=\1>",ntxt)
 
     # combine phrases of the form power and toughness = y
     ntxt = mtgl.re_pt_value.sub(r"xr<power∧toughness val=\1>",ntxt)
