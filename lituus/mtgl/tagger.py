@@ -588,6 +588,9 @@ def postprocess(txt):
     # combine occurrences of OP NUMBER with OPNUMBER inside number tag
     ntxt = mtgl.re_op_num.sub(r"nu<\1\2>",ntxt)
 
+    # combine damage with any preceding number
+    ntxt = mtgl.re_num_dmg.sub(r"ef<damage quantity=\1>",ntxt)
+
     # combine phrases of the form power and toughness = y
     ntxt = mtgl.re_pt_value.sub(r"xr<power∧toughness val=\1>",ntxt)
 
@@ -605,7 +608,7 @@ def third_pass(txt):
     #  the # discarded i.e. attunement and how would this affect the words
     #  drawn & discard
     # TODO: need to address this so this mill is not confused with the new keyword
-    # mil
+    # mtg slang
     ntxt = mtgl.re_mill.sub(r"xa<mill\1> \2",txt)
     ntxt = mtgl.re_etb.sub(r"xa<etb\1>",ntxt)
     ntxt = mtgl.re_your_opponents.sub(r"xp<opponent suffix=s>",ntxt) # for grapher

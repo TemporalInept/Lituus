@@ -902,6 +902,9 @@ re_attr_val = re.compile(
 # TODO: may need to relook 'mana'
 re_op_num_lo = re.compile(r"op<(.)> nu<([^>]+)> xo<(\w+)>")
 
+# damage preceded by a number should be combined
+re_num_dmg = re.compile(r"nu<([^>]+)> ef<damage>")
+
 # exception cases for three cards Void Winnower, Gyruda and Isperia
 # TODO: could we add 'different' here as well, perhaps some other quantifiers
 re_attr_val_wd = re.compile(r"(?:xq<a> )?xc<(odd|even)> xr<([^>]+)( suffix=s)?>")
