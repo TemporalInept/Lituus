@@ -511,9 +511,15 @@ re_conjunction_action_clause = re.compile(
     r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?((?:xa|ka)<[^>]+>)"
     r"(?: ([^,|^\.]+))? (and|or) ((?:xa|ka)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
 )
+#re_action_clause = re.compile(
+#    r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?"
+#    r"(?<!(?:ka|xa)<[^>]+>.*?)([xk]a<\w+(?: [^>]+)?>)" # cannot be preceded by an action
+#    r"(?: ([^,|^\.]+))?\.?$"
+#)
+re_action_word = re.compile(r"(?:xa<(is|be)[^>]*> )?([xk]a<[^>]+>)")
 re_action_clause = re.compile(
     r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?"
-    r"(?<!(?:ka|xa)<[^>]+>.*?)([xk]a<\w+(?: [^>]+)?>)" # cannot be preceded by an action
+    r"((?:xa<(?:is|be)[^>]*> )?[xk]a<[^>]+>)"
     r"(?: ([^,|^\.]+))?\.?$"
 )
 re_action_ply_poss = re.compile(
@@ -645,12 +651,39 @@ re_turn_up = re.compile(
 
 ## (614.2) applying to damage from a source
 # NOTE: some of these have already been handled during graphing of would-instead
-
 # similar to 'instead' but is a replacement under 614.2 i.e. Sphere of Purity
 # this will catch regenerate i.e. Mossbridge Troll as well as prevention
 # if [source] would [old], [new]
-re_repl_dmg_check = re.compile(r"(?:ef<damage>|ka<regenerate>)")
+re_repl_dmg_check = re.compile(r"(?:ef<damage[^>]*>|ka<regenerate>)")
 re_repl_dmg = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.?$")
+
+# and (615) Prevention Effects
+#  Prevention effects will start with 'prevent', contain damage and will have a
+#   target and/or source having the form
+#  prevent [damage] (that would be dealt to [target)? [sequence]? (by [source])?
+# Examples:
+# both target and source are Comeuppance (w/ sequence) and Uncle Istavn (w/o sequence)
+# only target Abuna Acolyte
+re_prevent_dmg = re.compile(
+    r"^xa<prevent> ([^,|^\.]+ef<damage[^>]*>)"
+     r"(?: xq<that> cn<would> xa<be> xa<deal[^>]+> pr<to> ([^,|^\.]+?))?"
+     r"(?: ((?:xq|sq)<[^>]+> ts<[^>]+>))?"
+     r"(?: pr<by> ([^,|^\.]+))?\.?$"
+)
+
+# variation to prevent damage to target only, see Angel of Salvation has the form
+# prevent [damage] that would be dealt [sequence] to [target]
+re_prevent_dmg_tgt = re.compile(
+    r"^xa<prevent> ([^,|^\.]+?) xq<that> cn<would> xa<be> xa<deal[^>]+> "
+     r"((?:xq|sq)<[^>]+> ts<[^>]+>) pr<to> ([^,|^\.]+)\.?$"
+)
+
+# variation to prevent damage by source only, see Barbed Wire has the form
+# prevent [damage] that would be dealt by [source] [sequence]
+re_prevent_dmg_src = re.compile(
+    r"^xa<prevent> ([^,|^\.]+?) xq<that> cn<would> xa<be> xa<deal[^>]+> "
+     r"pr<by> ([^,|^\.]+) ((?:xq|sq)<[^>]+> ts<[^>]+>)\.?$"
+)
 
 # alternate playing costs (APC) (118.9,113.6c)
 # Alternate costs are usually phrased:
@@ -990,6 +1023,10 @@ re_qst = re.compile(
     r"(?: ((?:xq<[^>]+> )?(?:(?:st|xs)<[^>]+> )?"
      r"xp<[^>]+> (?:xa<do[^>]*> cn<not> )?xc<[^>]+>))?"
     r"\.?$"
+)
+re_qst1 = re.compile(
+    r"^(?:nu<([^>]+)> )?(?:xq<([^>]+)> )?(?:(?:xs|st)<([^>]+)> )?"
+    r"((?:[^\.]*?)?(?:ob|xp|xo|zn|ef)<[^>]+>)(?! (?:or|and|and/or))(?: ([^\.]+))?\.?$"
 )
 
 # four possibilities for the THING returned from above
