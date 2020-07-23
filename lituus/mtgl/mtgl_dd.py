@@ -875,6 +875,10 @@ re_otherwise = re.compile(r"^cn<otherwise>, ([^\.]+)\.?$")
 re_for_each_cond1 = re.compile(r"pr<for> xq<each> ([^,|^\.]+), ([^,|\.]+)\.?$")
 re_for_each_cond2 = re.compile(r"^([^,|^\.]+) pr<for> xq<each> ([^,|\.]+)\.?$")
 
+# could phrases see Dimir Guildmange
+#  [thing] could [action]
+re_could_cond = re.compile(r"^([^,|^\.]+) cn<could> ([^,|\.]+)\.?$")
+
 ## RESTRICTION PHRASES
 
 # but condition restrictions i.e. Haakon

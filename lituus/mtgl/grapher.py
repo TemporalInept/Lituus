@@ -1192,7 +1192,6 @@ def graph_conditional_phrase(t,pid,line):
             if e.__str__() == "'NoneType' object has no attribute 'group'": pass
             else: raise
     elif "pr<for> xq<each" in line:
-        act = cond = None
         try:
             m = dd.re_for_each_cond1.search(line)
             if m: cond,act = m.groups()
@@ -1201,6 +1200,15 @@ def graph_conditional_phrase(t,pid,line):
             graph_phrase(t,t.add_node(ccid,'cond-condition',value='for-each'),cond)
             graph_phrase(t,t.add_node(ccid,'cond-effect'),act)
             return ccid
+        except AttributeError as e:
+            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+            else: raise
+    elif "cn<could>" in line:
+        try:
+            th,act = dd.re_could_cond.search(line).groups()
+            cid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(cid,'cond-condition',value='could'),th+" "+act)
+            return cid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
