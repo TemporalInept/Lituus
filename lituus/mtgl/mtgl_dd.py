@@ -654,7 +654,7 @@ re_turn_up = re.compile(
 # similar to 'instead' but is a replacement under 614.2 i.e. Sphere of Purity
 # this will catch regenerate i.e. Mossbridge Troll as well as prevention
 # if [source] would [old], [new]
-re_repl_dmg_check = re.compile(r"(?:ef<damage[^>]*>|ka<regenerate>)")
+re_repl_dmg_check = re.compile(r"(?:ef<[^>]*damage[^>]*>|ka<regenerate>)")
 re_repl_dmg = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.?$")
 
 # and (615) Prevention Effects
@@ -664,24 +664,44 @@ re_repl_dmg = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.?$")
 # Examples:
 # both target and source are Comeuppance (w/ sequence) and Uncle Istavn (w/o sequence)
 # only target Abuna Acolyte
+# neither target nor source see Revealing Wind
 re_prevent_dmg = re.compile(
-    r"^xa<prevent> ([^,|^\.]+ef<damage[^>]*>)"
-     r"(?: xq<that> cn<would> xa<be> xa<deal[^>]+> pr<to> ([^,|^\.]+?))?"
+    r"^xa<prevent> ([^,|^\.]*ef<[^>]*damage[^>]*>)"
+     r" xq<that> cn<would> xa<be> xa<deal[^>]*>"
+     r"(?: pr<to> ([^,|^\.]+?))?"
      r"(?: ((?:xq|sq)<[^>]+> ts<[^>]+>))?"
      r"(?: pr<by> ([^,|^\.]+))?\.?$"
 )
 
+# variation where target and source are the same i.e. Moonlight Geist has the form
+#  prevent [damage] that would be dealt to and dealt by [thing] [sequence]?
+re_prevent_dmg2 = re.compile(
+    r"^xa<prevent> ([^,|^\.]*ef<[^>]*damage[^>]*>)"
+     r" xq<that> cn<would> xa<be> xa<deal[^>]+> pr<to> and xa<deal[^>]+> pr<by>"
+     r" ([^,|^\.]+?)(?: ((?:xq|sq)<[^>]+> ts<[^>]+>))?\.?$"
+)
+
+# variation on wording that may or may not have a target
+#  Refraction Trap has a target
+#  Guard Dogs does not
+#  prevent [damage] [source] would [action] [sequence]?
+re_prevent_dmg3 = re.compile(
+    r"^xa<prevent> ([^,|^\.]*ef<[^>]*damage[^>]*>)(?: xq<that[^>]*>)? (.+)"
+    r" cn<would> xa<deal[^>]*>(?: pr<to> (.+?))?"
+    r"(?: ((?:xq|sq)<[^>]+> ts<[^>]+>))?\.?$"
+)
+
 # variation to prevent damage to target only, see Angel of Salvation has the form
-# prevent [damage] that would be dealt [sequence] to [target]
+# prevent [damage] that would be dealt [sequence]? to [target]
 re_prevent_dmg_tgt = re.compile(
-    r"^xa<prevent> ([^,|^\.]+?) xq<that> cn<would> xa<be> xa<deal[^>]+> "
-     r"((?:xq|sq)<[^>]+> ts<[^>]+>) pr<to> ([^,|^\.]+)\.?$"
+    r"^xa<prevent> ([^,|^\.]+?) xq<that> cn<would> xa<be> xa<deal[^>]*>"
+     r"(?: ((?:xq|sq)<[^>]+> ts<[^>]+>))? pr<to> ([^,|^\.]+)\.?$"
 )
 
 # variation to prevent damage by source only, see Barbed Wire has the form
 # prevent [damage] that would be dealt by [source] [sequence]
 re_prevent_dmg_src = re.compile(
-    r"^xa<prevent> ([^,|^\.]+?) xq<that> cn<would> xa<be> xa<deal[^>]+> "
+    r"^xa<prevent> ([^,|^\.]+?) xq<that> cn<would> xa<be> xa<deal[^>]*> "
      r"pr<by> ([^,|^\.]+) ((?:xq|sq)<[^>]+> ts<[^>]+>)\.?$"
 )
 
@@ -812,9 +832,10 @@ re_sequence_cond_effect = re.compile(
 # effect sequence condition (variation of above)
 # [effect] [sequence] [condition] i.e. Hooded Horror
 # Generally "do something until something" or "do something as long as something"
-# Note: if the sequence word is preceded by "only" or "only_if" skip it
+# Note: we don't want to grab anything where the sequence is preceded by a
+# quantifier or number (i.e. 1 time)
 re_sequence_effect_cond = re.compile(
-    r"([^,|\.]+) (?<!xq<[^>]+> )sq<([^>]+)> ([^,|^\.]+)\.?$"
+    r"([^,|\.]+) (?<!(?:xq|nu)<[^>]+> )sq<([^>]+)> ([^,|^\.]+)\.?$"
 )
 
 ##
@@ -850,6 +871,7 @@ re_if_otherwise = re.compile(
      r"cn<otherwise>, ([^\.]+)\.?(?: ([^\.]+)\.?)?$"
 )
 re_act_if_cond = re.compile(r"^([^,|^\.]+) cn<if> ([^,|\.]+)\.?$")
+re_if_cond = re.compile(r"^cn<if> ([^\.]+)\.?$")
 
 # contains unless
 # The rules only mention unless in 722.6 "[A] unless [B]" However going through
@@ -889,11 +911,15 @@ re_restriction_but = re.compile(r"^(.+?),? but cn<(\w+)> ([^,|\.]+)\.?$")
 # two forms
 #  1. [thing] can/do not [action] unless [condition] i.e. Howlpack Wolf
 # these are a restriction with a condition
-#  2. [thing] can/do not [action] i.e. Suleiman's Legacy
+#  2. [thing] that would [action] can/do not [action] i.e. Questing Beast
+#  3. [thing] can/do not [action] i.e. Suleiman's Legacy
 # these are blanket restriction
 re_restriction_cando_check = re.compile(r"xa<(?:can|do)> cn<not>")
 re_restriction_cando_unless = re.compile(
     r"^([^,|^\.]+) xa<(can|do)> cn<not> ([kx]a<[^>]+>.*) cn<unless> ([^,|\.]+)\.?$"
+)
+re_restriction_would_cando = re.compile(
+    r"^([^,|^\.]+) xq<that> cn<would> ([^,|\.]+) xa<(can|do)> cn<not> ([^,|\.]+)\.?$"
 )
 re_restriction_cando = re.compile(
     r"^([^,|^\.]+) xa<(can|do)> cn<not> ([kx]a<[^>]+>.*)\.?$"
@@ -913,10 +939,17 @@ re_only_conjunction = re.compile(
      r"(cn<(?:only|only_if)> [^,|^\.]+)\.?"
 )
 
+# may-only see Mystic Barrier has the form
+# [thing] may [action] only [restriction]
+re_restriction_may_only = re.compile(
+    r"^([^,|\.]+) cn<may> ([^,|\.]+) cn<only> ([^,|\.]+)\.?$"
+)
+
 # timing restrictions ...
 
-# [action] only any time you could cast a sorcery
+# [action] only any time [timing]
 #  see Dimir Guildmage, see Teferi Mage of Zhalfir for a restriction on opponents
+# NOTE: the timing clause contains a 'could' which will be graphed as a conditional
 re_restriction_anytime = re.compile(
     r"^(?:([^,|\.]+) )?cn<only> xq<any> sq<time> ([^,|\.]+)\.?$"
 )
@@ -928,10 +961,10 @@ re_restriction_phase = re.compile(
 
 # [action] only [number] times [phase/step]? i.e. Phyrexian Battleflies
 # Variant does not have a phase/step i.e. Stalking Leonin
-re_restriction_number = re.compile(
-    "^(?:([^,|\.]+) )?cn<only> nu<([^>]+)> sq<time(?:[^>]+)?>"
-     "(?: ((?:[^,|\.]+ )?ts<[^>]+>))?\.?$"
-)
+#re_restriction_number = re.compile(
+#    "^(?:([^,|\.]+) )?cn<only> nu<([^>]+)> sq<time(?:[^>]+)?>"
+#     "(?: ((?:[^,|\.]+ )?ts<[^>]+>))?\.?$"
+#)
 
 # Generic only i.e. Temple Elder these may fit one of the above but include
 #  additional phrases, clauses etc
@@ -970,10 +1003,14 @@ re_until_phase = re.compile(r"^sq<(until)> (ts<\w+>)$")
 
 # NOTE: these are very similar to the graphing of things and we could consider the
 # phases/steps graphed here as 'things' i.e. your turn. Has the forms
-#  1. [time] [phase]
-#  2. [thing]? [phase/step] i.e Apathy
+#  1. [number] time(s) [phase] i.e. Mairsil, the Pretender
+#  2. [time] [phase]
+#  3. [thing]? [phase/step] i.e Apathy
 #   NOTE: have to make sure that a Thing is present in the first match
 re_phase_clause_check = re.compile(r"ts<([^>]+)>$")
+re_num_times_phase = re.compile(
+    r"^nu<([^>]+)> sq<(time[^>]*)> (?:xq<([^>]+)> )?ts<([^>]+)>$"
+)
 re_time_phase_clause = re.compile(
     r"^xq<([^>]+)> sq<([^>]+)> (?:xq<([^>]+)> )?ts<([^>]+)>$"
 )

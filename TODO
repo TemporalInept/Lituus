@@ -277,5 +277,13 @@ the phrase upto shuffle is a thing (player)
 
 298. Battlefield Medic is an example of a variable value where the variable is removed from the variable definition
 
+299. See mystic barrier has a conjunction of triggered conditions that are being treated as one delayed trigger ability
+
+300. See Mana Cache, has two consectutive sequences where the second one is being treated as a sequence effect
+
+302. for phase_clauses of the form num time(s) quanitifier phase, I don't like how the limit is being placed in the turn-structure, should somehow be moved up
+
+303. See Angel of Salvation, the sequence/prevent damage subtree should be the triggered effect
+
 
 
