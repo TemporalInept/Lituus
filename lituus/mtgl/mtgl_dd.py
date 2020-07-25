@@ -570,6 +570,12 @@ re_that_would_instead = re.compile(
     r"^([^,|\.]+) xq<that> cn<would> (.+) cn<instead>\.?$"
 )
 
+# that would instead variant i.e. False Dawn
+# [sequence] [thing] [action (original)] instead [action (new)]
+re_seq_that_would_instead = re.compile(
+    r"^([^,|\.]+), (.+) xq<that> cn<would> ([^\.]+) cn<instead> ([^\.]+)\.?$"
+)
+
 # may instead (limited replacement - have only seen 3 i.e. Abundance
 # if [player] would [action], [player] may instead [action]
 re_if_may_instead = re.compile(
@@ -578,7 +584,9 @@ re_if_may_instead = re.compile(
 
 # if instead of i.e. Pale Moon
 #   if [action], [replacement] instead of [original]
-re_if_instead_of = re.compile(r"^(cn<if> .+), (.+) cn<instead> pr<of> ([^\.]+)\.?$")
+re_if_instead_of = re.compile(
+    r"^(cn<if> .+), (.+) cn<instead> pr<of> ([^\.]+)\.?$"
+)
 
 # instead of if i.e. Caravan Vigil
 #  [replacement] instead of [orginal] [conditional-phrase]
@@ -660,17 +668,19 @@ re_repl_dmg = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.?$")
 # and (615) Prevention Effects
 #  Prevention effects will start with 'prevent', contain damage and will have a
 #   target and/or source having the form
-#  prevent [damage] (that would be dealt to [target)? [sequence]? (by [source])?
+#  prevent [damage] (that would be dealt to [target)?
+#   [sequence]? ([except]? by [source])?
 # Examples:
 # both target and source are Comeuppance (w/ sequence) and Uncle Istavn (w/o sequence)
 # only target Abuna Acolyte
 # neither target nor source see Revealing Wind
+# except by see Insprie Awe (this is the only one I've seen
 re_prevent_dmg = re.compile(
     r"^xa<prevent> ([^,|^\.]*ef<[^>]*damage[^>]*>)"
      r" xq<that> cn<would> xa<be> xa<deal[^>]*>"
      r"(?: pr<to> ([^,|^\.]+?))?"
      r"(?: ((?:xq|sq)<[^>]+> ts<[^>]+>))?"
-     r"(?: pr<by> ([^,|^\.]+))?\.?$"
+     r"(?: (cn<except> )?pr<by> ([^,|^\.]+))?\.?$"
 )
 
 # variation where target and source are the same i.e. Moonlight Geist has the form
@@ -716,7 +726,7 @@ re_prevent_dmg_src = re.compile(
 # NOTE: the condition may or may not be present see Ricochet Trap for a condition
 #  and Bringer of the Red Dawn for a conditionless
 # NOTE: the action may be an alternate/reduced mana payment i.e. Ricochet Trap or
-#  other i.e. Sivvi's Valor
+#  other i.e. Sivvi's Valoryu76
 re_action_apc = re.compile(
     r"^(?:cn<if> (.+), )?([^,]+) cn<may> ([^,]+) cn<rather_than> (xa<pay> [^\.]+)\.$"
 )
@@ -734,6 +744,14 @@ re_alt_action_apc = re.compile(
 #  rather than pay [cost], [player] may [action]
 re_rather_than_apc = re.compile(
     r"^cn<rather_than> (xa<pay> [^,]+), ([^\.]+) cn<may> ([^\.]+)\.?$"
+)
+
+# 3rd alternate phrasing found (so far only in Bolas's Citadel)
+#  if [player] [cond], [apc] rather than [cost]
+# These are not optional apcs
+re_rather_than_mand_apc = re.compile(
+    r"^cn<if> (.*xp<[^>]+>) (.+), "
+     r"(xa<pay> [^,]+) cn<rather_than> (xa<pay> [^,]+)\.?$"
 )
 
 # if [condition], [you may cast object] without [paying its mana cost] i.e. Massacre
@@ -861,8 +879,9 @@ re_player_may = re.compile(
 #  b) if [condition], [action]. otherwise, [action] i.e Advice from the Fae
 #   NOTE: we need to catch this prior to lines being broken down into sentences
 #   so we catch previous sentences if present
-#  b) [action] if [condition] i.e. Ghastly Demise
-#  d) hanging if (fragmentary, that is, there is no effect) these are generally
+#  c) [action] if [condition] i.e. Ghastly Demise
+#  d) hanging if would i.e. Whip of Erebos (same as below)
+#  e) hanging if (fragmentary, that is, there is no effect) these are generally
 #   part of a higher level construct such as a triggered effect i.e. Nim Abomination
 #   if [condition]
 re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
@@ -870,7 +889,8 @@ re_if_otherwise = re.compile(
     r"^(?:(.+?\.) )?cn<if> ([^,|^\.]+), ([^\.]+)\. "
      r"cn<otherwise>, ([^\.]+)\.?(?: ([^\.]+)\.?)?$"
 )
-re_act_if_cond = re.compile(r"^([^,|^\.]+) cn<if> ([^,|\.]+)\.?$")
+re_act_if_cond = re.compile(r"^([^,|^\.]+),? cn<if> ([^,|\.]+)\.?$")
+re_if_would = re.compile(r"^cn<if> ([^,|^\.]+) cn<would> ([^,|^\.]+)\.?$")
 re_if_cond = re.compile(r"^cn<if> ([^\.]+)\.?$")
 
 # contains unless
@@ -894,12 +914,21 @@ re_otherwise = re.compile(r"^cn<otherwise>, ([^\.]+)\.?$")
 # for each condition see
 #  1. for each [condition], [action] i.e. From the Ashes
 #  2. [action] for each [condition] i.e. Gnaw to the Bone
-re_for_each_cond1 = re.compile(r"pr<for> xq<each> ([^,|^\.]+), ([^,|\.]+)\.?$")
-re_for_each_cond2 = re.compile(r"^([^,|^\.]+) pr<for> xq<each> ([^,|\.]+)\.?$")
+# NOTE: we check the quantifier for chains
+re_for_each_cond_start = re.compile(
+    r"pr<for> xq<each(?:[∧∨⊕]([^>]+))?> ([^,|^\.]+), "
+    r"([^\.]+)\.?$"
+)
+re_for_each_cond_mid = re.compile(
+    r"^([^,|^\.]+) pr<for> xq<each(?:[∧∨⊕]([^>]+))?> ([^\.]+)\.?$"
+)
 
-# could phrases see Dimir Guildmange
-#  [thing] could [action]
-re_could_cond = re.compile(r"^([^,|^\.]+) cn<could> ([^,|\.]+)\.?$")
+# generic would/could phrases
+#  See Dimir Guildmange for a could, Rock Hydra for a would
+#  [thing] that? would|could [action]
+re_gen_cond = re.compile(
+    r"^([^,|^\.]+?) (?:xq<(that)> )?cn<([wc]ould)> ([^,|\.]+)\.?$"
+)
 
 ## RESTRICTION PHRASES
 
