@@ -1143,8 +1143,8 @@ re_are_each = re.compile(r"are xq<each> (?=op<[⊕⋖⋗≤≥≡]>)")
 # find xo<mana cost> for conversion
 re_mana_cost = re.compile(r"xo<mana cost( suffix=s)?>")
 
-# find 'no' followed by a thing
-re_no_thing = re.compile(r"no(?= (?:ob|xp|xo|zn))")
+# find 'no' followed by a thing or quanitifier
+re_no_thing = re.compile(r"no(?= (?:ob|xp|xo|zn|xq))")
 
 ####
 ## STATUS DECONFLICTION

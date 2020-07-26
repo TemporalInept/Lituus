@@ -252,7 +252,7 @@ def midprocess(txt):
         b. replace "any number of" with nu<z>
         c. remove "are each" if followed by an operator
        6. replace 'mana cost' as xo<cost type=mana>
-       7. replace 'no' followed by a thing as nu<0>
+       7. replace 'no' followed by a thing (or quanitifier) as nu<0>
        8. deconflict incorrectly tagged tokens
     :param txt: tagged oracle txt
     :return: processed oracle txt
