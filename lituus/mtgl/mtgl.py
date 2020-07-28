@@ -700,7 +700,7 @@ re_effect = re.compile(
 
 meta_characteristics = [  # 200.1 These are parts of a card
     'p/t','everything','text','name','mana cost','cmc','power','toughness',
-    'color identity','color','type'
+    'color identity','color','type','kind',
 ]
 re_meta_char = re.compile(r"{}".format('|'.join(meta_characteristics)))
 re_meta_attr = re.compile(  # for meta characteristics
