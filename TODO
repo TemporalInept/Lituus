@@ -289,5 +289,16 @@ the phrase upto shuffle is a thing (player)
 
 305. Woolly Razorback has an and separated two distinct phrasing types (prevent and grant)
 
-306. Check out Lost Auramancers for correct graphing
+306. verify Lost Auramancers for correct graphing
 
+307. Reveka, Wizard Savant, the sequence only applies to the "does not untap" and not the whole activated effect
+
+308. See Assault Suit "gets +2/+2, has haste, can't attack you or a planeswalker you control, and can't be sacrificed" these should be capture as a conjunction prior to splitting phrases by 'comma'
+
+310. Add the attribute sub-tree used in _graph_ap_double_ to all attribute related
+
+311. Need to look at conjunctions should they be moved down under a i-node i.e. if it is a conjunction of things, move the conjunction under a thing a node?
+
+312. Still have to add or annotate ETB as part of triggered abilities, i.e. Spawnbroker
+
+313. Don't like graphing of exchange life total

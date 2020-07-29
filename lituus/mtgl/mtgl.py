@@ -110,16 +110,6 @@ SNG = "'"  # single quote
 MIN = '−'  # not used yet (found in negative loyalty costs)
 
 ####
-# TAG ID CONSTANTS
-####
-TID = {
-    # entities
-    'ob':'mtg-object','xo':'lituus-object','xp':'player','zn':'zone','ef':'effect',
-    #actions
-    'ka':'keyword-action','xa':'lituus-action',
-}
-
-####
 # REGEX AND STRING MANIP FOR PARSING
 ####
 
