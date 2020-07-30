@@ -25,6 +25,16 @@ import regex as re
 ## MISCELLANEOUS
 ####
 
+####
+# TAG ID CONSTANTS
+####
+TID = {
+    # entities
+    'ob':'mtg-object','xo':'lituus-object','xp':'player','zn':'zone','ef':'effect',
+    #actions
+    'ka':'keyword-action','xa':'lituus-action',
+}
+
 # use with split to break a line into sentences or clauses by the period or comma
 # where the period is not enclosed in quotes. Grabs all characters upto the period
 # Thanks to 'Jens' for the solution to this at
@@ -494,34 +504,37 @@ re_act_clause_duration = re.compile(r"^([^,|^\.]+) (xq<[^>]+> ts<[^>]+>)\.?$")
 #  [quantifier] [turn-structure] i.e Relentless Raptor
 re_quant_duration_clause = re.compile(r"^(xq<[^>]+> ts<\w+>)$")
 
-# keyword or lituus action clause - can have
-#  1. a conjunction of actions
-#    [thing] [action-word] [parameters] and [action-word] [parameters]
+# keyword or lituus action clause
+# TODO: this is not a perfect check but will eliminate most none action clauses
+re_act_clause_check = re.compile(
+    r"((?:xa|ka)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
+)
+re_action_word = re.compile(r"(?:xa<(is|be)[^>]*> )?([xk]a<[^>]+>)")
+
+#  1. a conjunction of actions i.e. Lost Auramancers
+#    [thing] [action] and [action]
+re_conjunction_action_clause = re.compile(
+    r"^(?:([^,|^\.]*?) )?"
+     r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?) (and|or) ((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"
+)
+
 #  2. singular (may have optional thing and/or conditional
 #   [thing]? [conditional]? [action word] [parameters]
+#  NOTE: have to make sure that the action(s) are not preceded by another action
+re_action_clause = re.compile(
+    r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?"
+     r"(?<!ka<[^>]+>.*)((?:xa<(?:is|be)[^>]*> )?[xk]a<[^>]+>)(?: ([^,|^\.]+))?\.?$"
+)
+
+# 2.a tap or untap is a special phrasing
+re_tq_action_clause = re.compile(
+    r"^(?:([^,|^\.]*?) )?(ka<tap> or ka<untap>) ([^,|^\.]+)\.?$"
+)
+
 #  3. an exceptions is control/own phrases of the form i.e. Synod Centurion
 #   [player] [own|control] [clause]
 #  will also be treated as action clause. NOTE: IOT not match "you control" and
 #  the like, requires at least one character following the own/control tag
-# TODO: this is not a perfect check but will cut out most none action clauses
-re_act_clause_check = re.compile(
-    r"((?:xa|ka)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
-)
-re_conjunction_action_clause = re.compile(
-    r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?((?:xa|ka)<[^>]+>)"
-    r"(?: ([^,|^\.]+))? (and|or) ((?:xa|ka)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
-)
-#re_action_clause = re.compile(
-#    r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?"
-#    r"(?<!(?:ka|xa)<[^>]+>.*?)([xk]a<\w+(?: [^>]+)?>)" # cannot be preceded by an action
-#    r"(?: ([^,|^\.]+))?\.?$"
-#)
-re_action_word = re.compile(r"(?:xa<(is|be)[^>]*> )?([xk]a<[^>]+>)")
-re_action_clause = re.compile(
-    r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?"
-    r"((?:xa<(?:is|be)[^>]*> )?[xk]a<[^>]+>)"
-    r"(?: ([^,|^\.]+))?\.?$"
-)
 re_action_ply_poss = re.compile(
     r"^((?:xq<[^>]+> )?(?:xs<[^>]+> )?xp<[^>]+>) "
      r"xc<(own|control)(?: suffix=s)?>(?: ([^\.]+))\.?$"
@@ -739,11 +752,17 @@ re_alt_action_apc = re.compile(
     r"^cn<if> (.+), cn<rather_than> (xa<pay> [^,]+), (xp<you>) cn<may> ([^\.]+)\.?$"
 )
 
-# 2nd alternate phrasing starts with "rather than" and does not have a condition
-# i.e. Dream Halls
-#  rather than pay [cost], [player] may [action]
-re_rather_than_apc = re.compile(
+# two alternate phrasing that do not contain a conditional
+#  rather than pay [cost], [player] may [action] see Dream Halls
+re_rather_than_may_apc = re.compile(
     r"^cn<rather_than> (xa<pay> [^,]+), ([^\.]+) cn<may> ([^\.]+)\.?$"
+)
+
+# see i.e. Scourge of Nel Toth
+# [player] may [action] pr<by> [alt-cost] rather than [cost]
+re_may_rather_than_apc = re.compile(
+    r"^([^,]+) cn<may> ([^,]+) pr<by> (xa<pay[^>]*> [^,]+) "
+     r"cn<rather_than> (xa<pay[^>]*> [^,]+)\.?$"
 )
 
 # 3rd alternate phrasing found (so far only in Bolas's Citadel)
@@ -854,6 +873,19 @@ re_sequence_cond_effect = re.compile(
 # quantifier or number (i.e. 1 time)
 re_sequence_effect_cond = re.compile(
     r"([^,|\.]+) (?<!(?:xq|nu)<[^>]+> )sq<([^>]+)> ([^,|^\.]+)\.?$"
+)
+
+# effect as condition sequence
+#  [effect] as [condition] i.e. Trueheart Twins
+# NOTE: Both effect and condition are action clauses. however, the condition must
+#  be a simple action clause that always contain a subject, a predicates and
+#  optionally, a direct object no more and no less
+re_sequence_as_cond_check = re.compile(
+    r"pr<as> ((?:xo|xp|ob)<[^>]+> (?:xa|ka)<[^>]+>(?: (?:xo|ob)<[^>]+>)?)\.?$"
+)
+re_sequence_as_cond = re.compile(
+    r"^(.*(?:xa|ka)<[^>]+>(?: [^,|^\.]+)?) pr<as> "
+     r"((?:xo|xp|ob)<[^>]+> (?:xa|ka)<[^>]+>(?: (?:xo|ob)<[^>]+>)?)\.?$"
 )
 
 ##
@@ -987,13 +1019,6 @@ re_restriction_anytime = re.compile(
 re_restriction_phase = re.compile(
     r"^(?:([^,|\.]+) )?cn<only> sq<(\w+)> ((?:[^,|\.]+ )?ts<[^>]+>)\.?$"
 )
-
-# [action] only [number] times [phase/step]? i.e. Phyrexian Battleflies
-# Variant does not have a phase/step i.e. Stalking Leonin
-#re_restriction_number = re.compile(
-#    "^(?:([^,|\.]+) )?cn<only> nu<([^>]+)> sq<time(?:[^>]+)?>"
-#     "(?: ((?:[^,|\.]+ )?ts<[^>]+>))?\.?$"
-#)
 
 # Generic only i.e. Temple Elder these may fit one of the above but include
 #  additional phrases, clauses etc
@@ -1206,6 +1231,20 @@ re_qual_of_possessive2 = re.compile(
 #  be other i.e. Haunting Echos
 re_qual_otherthan_thing = re.compile(r"^(ob<[^>]+>)$")
 
+# attribute clauses - two forms (NOTE: we consider life-total in some cases to
+# be an attribute of a player
+re_attr_clause_check = re.compile(r"(xo<life_total>|xr<[^>]+>)")
+
+# [thing]'s [attribute] i.e. Okaun, Eye of Chaos
+re_things_attr = re.compile(
+    r"^(.*(?:ob|xp|xo)<[^>]+>) (?:(?:xr|xo)<([^>]+)> (and|or) )?(?:xr|xo)<([^>]+)>$"
+)
+
+# [attribute] of [thing] i.e. God-Eternal Rhonas
+re_attr_of_thing = re.compile(
+    r"^(?:.*)?(?:(?:xr|xo)<([^>]+)> (and|or) )?((?:xr|xo)<[^>]+>) pr<of> ([^\.]+)\.?$"
+)
+
 ####
 ## KEYWORD/LITUUS ACTION
 ####
@@ -1222,28 +1261,27 @@ re_create_clause = re.compile(
     r"^([^\.]+?)(?: xa<name suffix=ed> ob<token ref=(\w+)>)?\.?$"
 )
 
-# double 701.9 four variations
-# 1. p/t - two variations
-#   a. [creature]? [power and/or toughness]
-#   b. the [power and/or toughness] of [creature]
-# 2. life total - [player] life-total
-# 3. countters - the number of [counters] on [thing]
-# 4. mana - the [amount|value] of [mana-clause]
-re_double_clause1 = re.compile(r"^xr<(power)> (and|or) xr<(toughness)>$")
-re_double_clause2 = re.compile(r"^([^\.]+) xo<life_total>$")
-re_double_clause3 = re.compile(
-    r"^xq<the> xo<number> pr<of> ((?:.*? )?xo<ctr(?: [^>]+)?>) pr<on> ([^,|^\.]+)$"
+# double 701.9 three variations
+# attribute of a thing (to include life_total) is handled by re_attr_clause
+
+# the number of [counters] on [thing], see Primordial Hydra, Gilder Bairn
+re_double_ctr_clause = re.compile(
+    r"^xq<the> xo<number> pr<of> (xq<each>.*? )?(xo<ctr[^>]*>) pr<on> ([^,|^\.]+)$"
 )
-re_double_clause4 = re.compile(r"^xq<the> xo<(amount|value)> pr<of> ([^,|^\.]+)$")
+
+# mana - the [amount|value] of [mana-clause] see Unbound Flourishing
+re_double_mana_clause = re.compile(
+    r"^xq<the> xo<(amount|value)> pr<of> ([^,|^\.]+)$"
+)
 
 # exchange 701.10
-# 1. exchange control of [thing] (and [thing])?
-# 2. exchange life total [Thing]? life_total (with [Thing])?
+# 1. exchange control of [thing] (and [thing])? i.e. Spawnbroker
+# 2. exchange life total [Thing]? life_total (with [Thing])? i.e. Magus of the Mirror
 re_exchange_ctrl_clause = re.compile(
     r"^xc<control> pr<of> ([^,|^\.]+?)(?: and ([^,|^\.]+))?$"
 )
 re_exchange_lt_clause = re.compile(
-    r"^(?:(.*?) )?(xo<life_total(?: suffix=s)?>)(?: pr<with> (.+))?\.?$"
+    r"^(?:(.*?) )?(?:xo<life_total(?: suffix=s)?>)(?: pr<with> (.+))?\.?$"
 )
 
 # reveal 701.15
@@ -1258,27 +1296,28 @@ re_search_clause = re.compile(r"^((?:[^\.]+ )?zn<[^>]+>) pr<for> ([^\.]+)\.?$")
 
 # tap 701.20
 # has the form [thing] (for thing)?
-re_tap_clause = re.compile(r"^(?:(.+?) ?)(?:pr<for> ([^\.]+))?\.?$")
+re_tap_clause = re.compile(r"^(?:(.*?) ?)?(?:pr<for> ([^\.]+))?\.?$")
 
 # clash 701.22 has the form with [player] (always an opponennt)
 re_clash_clause = re.compile(r"^pr<with> ([^\.]+)$")
 
 # vote 701.31 has three forms
-#  1. vote for attribute (the votes are in the val attribute)
+#  1. vote forki attribute (the votes are in the val attribute) i.e. Council Guardian
 #  2. vote for token1 or token2 (one or both of the tokens may have been inadverntly
 #   tagged. see Lieutenants of the Guard)
-#  3. vote for Thing
-re_vote_clause1 = re.compile(r"^pr<for> xr<(\w+) val=([^>]+)>$")
-re_vote_clause2 = re.compile(r"^pr<for> (.+?) or (.+?)$")
-re_vote_clause3 = re.compile(r"^pr<for> ([^\.]+)$")
+#  3. vote for Thing i.e. Custodi Squire
+re_vote_attribute_clause = re.compile(r"^pr<for> xr<(\w+) val=([^>]+)>$")
+re_vote_tokens_clause = re.compile(r"^pr<for> (.+?) or (.+?)$")
+re_vote_thing_clause = re.compile(r"^pr<for> ([^\.]+)$")
 
 # meld 701.36 has two forms
-#  1. meld them into [object]
-#  2. melds with [object]
+#  1. meld them into [object] i.e. Midnight Scavengers
+#  2. melds with [object] i.e. Graf Rats
 re_meld_clause1 = re.compile(r"^xo<them> pr<into> (ob<[^>]+>)$")
 re_meld_clause2 = re.compile(r"^pr<with> (ob<[^>]+>)$")
 
-# exert 701.38 exert ob [as it attacks]?
+# exert 701.38
+#  exert ob [as it attacks]?
 re_exert_clause = re.compile(r"^(.+?)(?: pr<as> ([^\.]+))?$")
 
 # related to 'add' mana

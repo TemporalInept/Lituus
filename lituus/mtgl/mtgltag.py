@@ -500,7 +500,7 @@ def is_conditional(tkn):
 def is_number(tkn):
     try:
         return untag(tkn)[0] == 'nu'
-    except lts.LitussException:
+    except lts.LituusException:
         return False
 
 def is_variable(tkn):

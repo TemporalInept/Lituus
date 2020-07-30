@@ -237,21 +237,11 @@ the phrase upto shuffle is a thing (player)
 
 275. See Skullbriar, the Walking Grave, "to any zone other than a player's hand or library" belong to the predicate and not the thing
 
-276. look at 'as', 'without', 'with' are there special i-nodes we could create for these?
-
-277. make only, unless, cannot, if-able i-node values
-
-279. See Awe Strike, losing 'the next time' in graph_phrase of the condition
-
-280. See Awe Strike
- a. do not like the hand-jamming w.r.t the sequence structure
- b. do not like the whole time node with value the&next
+276. look at 'without', 'with' are there special i-nodes we could create for these?
 
 281. See Abundance, the "you may instead choose land or nonland and reveal cards from the top of your library until you reveal a card of the chosen kind" is being graphed incorrectly. 
 
 282. See Nyxbloom Ancient the "three times as much" is being treated as a sequence
-
-283. Make 'as' a sequence with condition, effect
 
 285. Add loot, rummage, flicker to common phrase replacments
 
@@ -302,3 +292,14 @@ the phrase upto shuffle is a thing (player)
 312. Still have to add or annotate ETB as part of triggered abilities, i.e. Spawnbroker
 
 313. Don't like graphing of exchange life total
+
+314. need more deconfliction on 'flip', see Okaun, Eye of Chaos
+
+315. See Okaun, Eye of Chaos, the trigger condition "the beginning of combat on your turn" not being graphed correctly
+
+316. Added to-be as a prefix but did not take into account is not verb such as in Nessian Wild Ravager "if tribute was not paid"
+
+317. subcosts are not being further graphed see Steward of solidarity
+
+318. how to tag divided (as a verb?)
+
