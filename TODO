@@ -199,7 +199,7 @@ the phrase upto shuffle is a thing (player)
  double, exchange, play, reveal, search
 
 247. Start graphing lituus actions:
-    'put','remove','distribute','get','return','draw','move','look','pay','deal','gain','attack','defend','unblock','block','enter','leave','choose','die','spend','unspend','take','reduce','trigger','prevent','declare','have','switch','assign','win','lose','tie','skip','flip','cycle','phase','become','share','turn','produce','round','resolve','do','repeat','change','bid','select','reselect','begin','separate','note','reorder','copy','named','cost',
+    'put','remove','distribute','get','return','draw','move','look','pay','deal','gain','attack','defend','unblock','block','enter','leave','choose','die','spend','unspend','take','reduce','trigger','prevent','declare','have','switch','assign','tie','skip','flip','cycle','phase','become','share','turn','produce','round','resolve','do','repeat','change','bid','select','reselect','begin','separate','note','reorder','copy','named','cost',
 
 249. have to standarize conjunctions. conjunctions of things have item intermeditary nodes because the second thing may have quanitifiers but no other conjunctions do
 
@@ -289,7 +289,7 @@ the phrase upto shuffle is a thing (player)
 
 311. Need to look at conjunctions should they be moved down under a i-node i.e. if it is a conjunction of things, move the conjunction under a thing a node?
 
-312. Still have to add or annotate ETB as part of triggered abilities, i.e. Spawnbroker
+312. Still have to add or annotate continuous ETB as part of triggered abilities, i.e. Spawnbroker
 
 313. Don't like graphing of exchange life total
 

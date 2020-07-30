@@ -2099,8 +2099,7 @@ def graph_action_param(t,pid,aw,param):
         pass  # TODO
     elif aw == 'take':
         pass  # TODO
-    elif aw == 'tie':
-        pass  # TODO
+    elif aw == 'tie': pass  # TODO
     elif aw == 'trigger':
         pass  # TODO
     elif aw == 'turn':
@@ -2109,7 +2108,7 @@ def graph_action_param(t,pid,aw,param):
         pass  # TODO
     elif aw == 'unspend':
         pass  # TODO
-    elif aw == 'win' or aw == 'lose': pass
+    elif aw == 'win' or aw == 'lose': _graph_ap_thing_(t,pid,param)
 
     # nothing found TODO: after debugging, return None
     return t.add_node(pid,'act-parameter',tograph=param)
