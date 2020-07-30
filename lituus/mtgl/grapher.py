@@ -1994,7 +1994,6 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'support': return _graph_ap_n_(t,pid,param)  # 701.35
     elif aw == 'meld': return _graph_ap_meld_(t,pid,param) # 701.37
     elif aw == 'goad': return _graph_ap_thing_(t,pid,param) # 701.38
-    #elif aw == 'exert': return _graph_ap_exert_(t,pid,param) # 701.39
     elif aw == 'exert': return _graph_ap_thing_(t,pid,param)  # 701.39
     elif aw == 'surveil': return _graph_ap_n_(t,pid,param)  # 701.42
     elif aw == 'adapt': return _graph_ap_n_(t,pid,param)  # 701.43
@@ -2002,15 +2001,115 @@ def graph_action_param(t,pid,aw,param):
 
     # then lituus actions
     if aw == 'add': return _graph_ap_add_(t,pid,param)
-    #'put','remove','distribute','get','return','draw','move','look','pay','deal',
-    #'gain','attack','defend','unblock','block','add','enter','leave','choose',
-    #'die','spend','unspend','take','reduce','trigger','prevent','declare','have',
-    #'switch','assign','win','lose','tie','skip','flip','cycle','phase','become',
-    #'share','turn','produce','round','resolve','do','repeat','change','bid',
-    #'select','reselect','begin','separate','note','reorder','remain','can',
-    #'copy',  # will have already been tagged?
-    #'named',  # Special case we only want this specific conjugation
-    #'cost',  # will have already been tagged as an object
+    elif aw == 'assign':
+        pass  # TODO
+    elif aw == 'attack':
+        pass  # TODO
+    elif aw == 'become':
+        pass  # TODO
+    elif aw == 'begin':
+        pass  # TODO
+    elif aw == 'bid':
+        pass  # TODO
+    elif aw == 'block':
+        pass  # TODO
+    elif aw == 'can':
+        pass  # TODO
+    elif aw == 'change':
+        pass  # TODO
+    elif aw == 'choose':
+        pass  # TODO
+    elif aw == 'copy':
+        pass  # TODO
+    elif aw == 'cost':
+        pass  # TODO
+    elif aw == 'cycle':
+        pass  # TODO
+    elif aw == 'deal':
+        pass  # TODO
+    elif aw == 'declare':
+        pass  # TODO
+    elif aw == 'defend':
+        pass  # TODO
+    elif aw == 'die':
+        pass  # TODO
+    elif aw == 'distribute':
+        pass  # TODO
+    elif aw == 'do':
+        pass  # TODO
+    elif aw == 'draw':
+        pass  # TODO
+    elif aw == 'flip':
+        pass  # TODO
+    elif aw == 'gain':
+        pass  # TODO
+    elif aw == 'get':
+        pass  # TODO
+    elif aw == 'have':
+        pass  # TODO
+    elif aw == 'leave':
+        pass  # TODO
+    elif aw == 'look':
+        pass  # TODO
+    elif aw == 'move':
+        pass  # TODO
+    elif aw == 'named':
+        pass  # TODO
+    elif aw == 'note':
+        pass  # TODO
+    elif aw == 'pay':
+        pass  # TODO
+    elif aw == 'phase':
+        pass  # TODO
+    elif aw == 'prevent':
+        pass  # TODO
+    elif aw == 'produce':
+        pass  # TODO
+    elif aw == 'put':
+        pass  # TODO
+    elif aw == 'reduce':
+        pass  # TODO
+    elif aw == 'remain':
+        pass  # TODO
+    elif aw == 'remove':
+        pass  # TODO
+    elif aw == 'reorder':
+        pass  # TODO
+    elif aw == 'repeat':
+        pass  # TODO
+    elif aw == 'reselect':
+        pass  # TODO
+    elif aw == 'resolve':
+        pass  # TODO
+    elif aw == 'return':
+        pass  # TODO
+    elif aw == 'round':
+        pass  # TODO
+    elif aw == 'select':
+        pass  # TODO
+    elif aw == 'separate':
+        pass  # TODO
+    elif aw == 'share':
+        pass  # TODO
+    elif aw == 'skip':
+        pass  # TODO
+    elif aw == 'spend':
+        pass  # TODO
+    elif aw == 'switch':
+        pass  # TODO
+    elif aw == 'take':
+        pass  # TODO
+    elif aw == 'tie':
+        pass  # TODO
+    elif aw == 'trigger':
+        pass  # TODO
+    elif aw == 'turn':
+        pass  # TODO
+    elif aw == 'unblock':
+        pass  # TODO
+    elif aw == 'unspend':
+        pass  # TODO
+    elif aw == 'win' or aw == 'lose': pass
 
     # nothing found TODO: after debugging, return None
     return t.add_node(pid,'act-parameter',tograph=param)
@@ -2777,23 +2876,6 @@ def _graph_ap_meld_(t,pid,phrase):
         if e.__str__() == "'NoneType' object has no attribute 'group'": pass
         else: raise
 
-    return None
-
-def _graph_ap_exert_(t,pid,phrase):
-    # exert 701.39 exert [object] - may include an 'as' clause
-    # TODO: if we graph the as portion earlier as a sequence phrase, this could
-    #  all be handled by graph_ap_thing
-    rid = None
-    try:
-        obj,asc = dd.re_exert_clause.search(phrase).groups()
-        tid = graph_thing(t,pid,obj)
-        #if asc: graph_phrase(t,t.add_node(tid,'as'),asc)
-        if asc: graph_phrase(t,tid,"pr<as> "+asc)
-        return tid
-    except lts.LituusException as e: pass
-    except AttributeError as e:
-        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-        else: raise
     return None
 
 ## Lituus Actions

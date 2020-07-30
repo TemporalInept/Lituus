@@ -1168,7 +1168,6 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 ## TURN (ACTION|OBJECT) DECONFLICTION
 ####
 
-
 # turn is an action if it is followed by a 'xm' (modifier) or 'xq' (quantifier)
 # NOTE:
 #  1) only capture the 'ts' tag id IOT replace it with 'xa' lituus action
@@ -1218,6 +1217,12 @@ re_cost_aa = re.compile(
 re_cost_except = re.compile(  # Drought and Brutal Suppresion and Valiant Changeling
     r"xo<cost( suffix=s)?>(?= (?:xq<a> xq<additional>|by more than))"
 )
+
+# flip as action vs object
+#  1. flip is an object if it is preceded by a quantifier or a number
+#  2. flip is an object if preceded by coin
+re_flip_object = re.compile(r"(?<=(?:xq<[^>]+>|nu<[^>]+>) )xa<flip( suffix=s)?>")
+re_coin_flip = re.compile(r"xo<coin> xa<flip>")
 
 # 'counters' as action vs lituus object
 # two cards Baral and Lullmage mentor have counters that is an action all others

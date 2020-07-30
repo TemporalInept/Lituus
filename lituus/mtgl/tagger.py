@@ -304,6 +304,11 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_cost_aa.sub(r"xa<cost\1>",ntxt)
     ntxt = mtgl.re_cost_except.sub(r"xa<cost\1>",ntxt)
 
+    # Flip is defined as an action word but in some cases is an object (i.e.
+    # win the flip)
+    ntxt = mtgl.re_flip_object.sub(r"xo<flip>",ntxt)
+    ntxt = mtgl.re_coin_flip.sub(r"xo<flip type='coin'>",ntxt)
+
     # deconflict counters as object or action
     ntxt = mtgl.re_counters_obj.sub(r"xo<ctr suffix=s>",ntxt)
     ntxt = mtgl.re_counter_obj.sub(r"xo<ctr>",ntxt)
