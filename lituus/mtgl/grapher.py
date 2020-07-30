@@ -1607,17 +1607,16 @@ def graph_delayed_tgr(t,pid,clause):
 ## CLAUSES, TOKENS
 ####
 
-def graph_cost(t,pid,phrase):
+def graph_cost(t,pid,cls):
     """
     graphs the cost(s) in phrase
     :param t: the tree
     :param pid: parent id to graph under
-    :param phrase: the cost phrase
+    :param cls: the cost clause
     :return: cost node id
     """
     # a cost is one or more comma separated subcosts
-    for subcost in [x for x in dd.re_clause.split(phrase) if x]:
-        _subcost_(t,pid,subcost)
+    for sc in [x.strip() for x in dd.re_clause.split(cls) if x]: _subcost_(t,pid,sc)
 
 #def graph_action_clause(t,pid,phrase):
 #    """
@@ -2202,17 +2201,17 @@ def _subcost_(t,pid,sc):
     #TODO need to flesh out
     if ttype == mtgltag.MTGL_SYM:
         if dd.re_mana_check.search(sc):
-            return _graph_mana_string_(t,t.add_node(pid,'subcost',type='mana'),sc)
-        else: return t.add_node(pid,'subcost',type='symbol',value=sc)
+            return _graph_mana_string_(t,t.add_node(pid,'sub-cost',type='mana'),sc)
+        else: return t.add_node(pid,'sub-cost',type='symbol',value=sc)
     elif ttype == mtgltag.MTGL_LOY:
         op,num = mtgltag.re_mtg_loy_sym.search(sc).groups()
         return t.add_node(
-            pid,'subcost',type='loyalty',value="{}{}".format(op if op else '',num)
+            pid,'sub-cost',type='loyalty',value="{}{}".format(op if op else '',num)
         )
     elif dd.re_is_act_clause.search(sc):
         return graph_phrase(t,t.add_node(pid,'sub-cost',type='action'),sc)
     else:
-        return t.add_node(pid,'subcost',tograph=sc)
+        return t.add_node(pid,'sub-cost',tograph=sc)
 
 def _graph_action_word_(t,pid,aw):
     """
