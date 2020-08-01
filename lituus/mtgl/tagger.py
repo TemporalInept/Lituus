@@ -328,6 +328,7 @@ def deconflict_tags1(txt):
 
     # deconflict 'at' making it a preposition when followed by a qualifier
     ntxt = mtgl.re_at_prep.sub(r"pr<at>",ntxt)
+    ntxt = mtgl.re_at_prep2.sub(r"pr<at>",ntxt)
 
     # a few cards (7) will have the phrase 'no nu<1>' - make this xp<no_one>
     # and (2) will have the phrase "with no" - make these pr<without>

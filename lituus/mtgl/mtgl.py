@@ -1268,14 +1268,10 @@ re_enchant_stat = re.compile(
 # (un)spent is a status if followed by mana
 re_spend_stat = re.compile(r"xa<(un)?spend suffix=ed>(?= xo)")
 
-# 'at' is a preposition if followed by a qualifier (random) i.e. Black Cat
-re_at_prep = re.compile(r"(tp<at>)(?= xl<\w+>)")
-
-# 'at' is also a preposition if it is not followed by some number of tokens and
-# a comma
-# TODO: this screwing delayed trigger preambles up - see Prized Amalgam, hiding
-#  for now
-#re_at_prep2 = re.compile(r"(tp<at>)(?=[^,]+?\.)")
+# 'at' is a preposition if followed by a qualifier (random) i.e. Black Cat or
+#  status i.e. Lens of Clarity or preceeded by 'look' i.e. Lens of Clarity
+re_at_prep = re.compile(r"(tp<at>)(?= (?:xl|st)<[^>]+>)")
+re_at_prep2 = re.compile(r"(?<=xa<look> )(tp<at>)")
 
 # no nu<1> needs to be retagged
 re_no_one = re.compile(r"no nu<1>")
