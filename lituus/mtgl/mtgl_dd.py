@@ -76,6 +76,12 @@ re_kw_line = re.compile(r"^((?:ob|xr)<[^>]+> )?(kw<[\w-]+>)")
 #   A delayed trigger (603.7) a result of replacement effects
 #  113.3d static - none of the above
 
+# complex activated (contain an 'and' or 'or'
+# 2. the conjunction operator separates two phrases, the second being a triggered
+#  ability i.e. Chaos Moon
+re_complex_tgr_check = re.compile(r"^[^,]+ (,? )?(and|or) tp<[^>]+> [^\.]+\.?$")
+re_complex_tgr = re.compile(r"^([^\,]+?[, ](and|or) )(tp<[^>]+> [^\.]+?)\.?$")
+
 # Activated (602.1, 113.3b) contains a ':' which splits the cost and effect (cannot
 # be inside double quotes) have the form:
 #  [cost]: [effect]. [Instructions]?
@@ -87,14 +93,20 @@ re_act_line = re.compile(r"^(.+?): (.+?)(?:\. ([^.]+))?\.?$")
 # Triggered (603.1) lines starts with a trigger preamble
 # Triggered abilities have the form:
 #  [When/Whenever/At] [condition], [effect]. [Instructions]?
-# Some cards (Goblin Flotilla) have embedded triggered abilities of the form
+# Some cards:
+#  (Goblin Flotilla) have embedded triggered abilities of the form
 #  [When/Whenever/At] [condition] [triggered-ability]
-# NOTE: since we are basing our delimitation of the individual 'components',
+#  (Wildfire Devils) have conjoined conditions
+#  [When/Whenever/At] [condition] and|or [When/Whenever/At] [condition] ...
+# NOTE: since we are basing our deliniation of the individual 'components',
 #  have to build in checks for periods that are inclosed in double parenthesis
 #  and single, double parenthesis (Reef Worm)
 re_tgr_check = re.compile(r"^(tp<\w+>)")
 re_tgr_line = re.compile(r"^tp<(\w+)> ([^\.]+), ([^\.]+)(?:\. (.+))?\.?$")
-re_embedded_tgr_line = re.compile(r"^tp<(\w+)> ([^\.]+), (tp<\w+> [^\.]+)\.?$")
+re_embedded_tgr_line = re.compile(r"^tp<([^>+)> ([^\.]+), (tp<[^>]+> [^\.]+)\.?$")
+re_dual_condition_tgr_line = re.compile(
+    r"^(tp<[^>]+> [^,]+) (and|or) (tp<[^>]+> [^,]+), (.+)\.?$"
+)
 
 # Delayed Triggered (603.7) "do something at a later time - contains a trigger
 # preamble but not usually at the beginning of the ability and end with a turn
@@ -511,11 +523,25 @@ re_act_clause_check = re.compile(
 )
 re_action_word = re.compile(r"(?:xa<(is|be)[^>]*> )?([xk]a<[^>]+>)")
 
-#  1. a conjunction of actions i.e. Lost Auramancers
+# conjunction of actions
+#  1.a where the subject is the same i.e. Lost Auramancers
 #    [thing] [action] and [action]
-re_conjunction_action_clause = re.compile(
+re_conj_action_common_clause = re.compile(
     r"^(?:([^,|^\.]*?) )?"
-     r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?) (and|or) ((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"
+    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?) "
+    r"(and|or) "
+    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"
+)
+
+# 1.b where the subjects are different for each action i.e Abyssal Persecuter
+#  [thing] [action] and [thing] [action]
+# NOTE:
+#  1. this is a misnomer as both things could the same
+#  2. we force the bpth action clauses to have preceding things
+re_conj_action_unique_clause = re.compile(
+    r"^([^,|^\.]*(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)"
+    r" (and|or) "
+    r"([^,|^\.]*(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
 
 #  2. singular (may have optional thing and/or conditional
@@ -872,7 +898,7 @@ re_sequence_cond_effect = re.compile(
 # Note: we don't want to grab anything where the sequence is preceded by a
 # quantifier or number (i.e. 1 time)
 re_sequence_effect_cond = re.compile(
-    r"([^,|\.]+) (?<!(?:xq|nu)<[^>]+> )sq<([^>]+)> ([^,|^\.]+)\.?$"
+    r"^([^,|\.]+) (?<!(?:xq|nu)<[^>]+> )sq<([^>]+)> ([^,|^\.]+)\.?$"
 )
 
 # effect as condition sequence
