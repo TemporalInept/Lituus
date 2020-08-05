@@ -614,7 +614,12 @@ def third_pass(txt):
     #  the # discarded i.e. attunement and how would this affect the words
     #  drawn & discard
     # mtg slang
-    ntxt = mtgl.re_mill.sub(r"ka<mill\1> \2",txt) # we have errated all mill
+    ntxt = mtgl.re_mill.sub(
+        lambda m: r"ka<mill{}> {}".format(
+            m.group(1) if m.group(1) else '',     # add suffix if present
+            m.group(2) if m.group(2) else 'nu<1>' # if # not specified, make it 1
+        ),txt
+    )
     ntxt = mtgl.re_etb.sub(r"xa<etb\1>",ntxt)
     ntxt = mtgl.re_your_opponents.sub(r"xp<opponent suffix=s>",ntxt) # for grapher
 

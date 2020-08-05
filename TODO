@@ -89,16 +89,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 212. action clause is too broad and will graph phrases that are not action clauses
 
-215. see Harbinger of the Tides - has an 'if' mid clause (action clause) Saproling Symbiosis is the same
- │   └─as-though:0
- │     └─action:1
- │       ├─thing:1
- │       │ └─it:0 (type=lituus-object)
- │       └─have:0
- │         └─action-params:1 (tograph=kw<flash> cn<if> xp<you> xa<pay> {2} xl<more> pr<to> ka<cast> xo<it>)
-
-216. should we graph "then if" as if-then structure?
-
 221. See Okk, will have to add suffix to the action words
 
 228. have to tag kind (it's sorta of a meta charactersitic)
@@ -301,10 +291,7 @@ the phrase upto shuffle is a thing (player)
 
 320. Angel of Jubilation action-clause conjunction is screwing up because there are two 'or' clauses
 
-321. Have to figure out to find and graph conjunctions of high level structures i.e. Chaos Moon
- cn<if> xq<the> xo<number> xa<is> xc<odd>, sq<until> ts<eot>, ob<permanent characteristics=creature∧red suffix=s> xa<get> xr<p/t val=+1/+1> and tp<whenever> xq<a> xp<player> ka<tap suffix=s> xq<a> ob<permanent characteristics=land→mountain> pr<for> xo<mana>, xq<that> xp<player> xa<add suffix=s> xq<a∧additional> {r}.
-
 322. Wildfire Devils, thought I got rid of graphing location but there is a from node
 
-
+324. 
 

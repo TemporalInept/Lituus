@@ -458,8 +458,11 @@ re_phase = re.compile(r"\b({}) phase".format('|'.join(phases)))
 # additional checks.
 #  1. preceded by a quantifier this, each or that
 #  2. preceded by a sequence (NOTE: they have not been tagged yet)
+# TODO:cannot remember why this all necessary, shouldn't we just be able to
+#  check that it is not followed by damage
 re_combat_phase = re.compile(
-    r"(?<=(?:(?:xq<\w+?>)|during|before|after) )combat(?! damage)"
+    #r"(?<=(?:(?:xq<\w+?>)|during|before|after) )combat(?! damage)"
+    r"combat(?! damage)"
 )
 
 # steps
@@ -471,8 +474,9 @@ re_combat_phase = re.compile(
 #  multiple things (i.e. untap, draw, end), there are two regexs
 steps1 = ['untap','draw','end','combat damage']  # must be followed by 'step'
 steps2 = [  # may or may not be followed by 'step'
-    'upkeep','beginning of combat','declare attackers',
-    'declare blockers','end of combat','cleanup',
+    #'upkeep','beginning of combat','declare attackers',
+    #'declare blockers','end of combat','cleanup',
+    'upkeep','declare attackers','declare blockers','cleanup',
 ]
 re_step1 = re.compile(r"\b({}) step".format('|'.join(steps1)))
 re_step2 = re.compile(r"\b({})( step)?".format('|'.join(steps2)))
@@ -1623,9 +1627,11 @@ re_pt_value = re.compile(
 # find common phrases that can be replaced by keyword actions or slang
 
 # mill
+#  can be targeted i.e. their library or the player i.e. your library
+#  can specify the number of cards "top 2 cards" or not "top card"
 re_mill = re.compile(
-    r"xa<put( suffix=\w+)?> xq<the> pr<top> (nu<[^>]+>) ob<card suffix=s> of "
-     r"xq<their> zn<library> pr<into> xq<their> zn<graveyard>"
+    r"xa<put( suffix=\w+)?> xq<the> pr<top> (?:(nu<[^>]+>) )?ob<card[^>]*> "
+    r"pr<of> (xp|xq)<[^>]+> zn<library> pr<into> (xp|xq)<[^>]+> zn<graveyard>"
 )
 
 # etb
