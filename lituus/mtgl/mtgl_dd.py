@@ -502,8 +502,28 @@ kw_param_template = {
 }
 
 ####
-## KEYWORD ACTIONS (701.2 - 701/43)
+## KEYWORD ACTIONS (701.2 - 701/43) AND LITUUS ACTIONS
 ####
+
+# A conjunction of multiple action-clauses having a common subject. These are
+# treated as phrases i.e. Assault Suit has the form
+#  [thing] [action],? [action], [action], [and|or|and/or] [action]
+# NOTE: we don't want to catch cards that have a distinct sequence of unique
+# action clauses like Liliana of the Dark Realms so we force the Thing to be
+# present
+re_act_phrase_conjunction_check = re.compile(
+    r"(?:xa|ka)<[^>]+>(?: [^,|^\.]+)?, (?:and|or|and/or) "
+     r"(?:xa|ka)<[^>]+>(?: [^,|^\.]+)?"
+)
+
+re_act_phrase_conjunction = re.compile(
+    r"^(?:([^,|^\.]*?) )"                       # common thing
+    r"(?:((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), )?" # 1st is optional
+    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "      # 2nd act clause
+    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "      # 3rd act clause
+    r"(and|or|and/or) "                         # conjunction operator
+    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"    # 4th act clause
+)
 
 # some action clauses have trailing qualifying clauses
 # extract these before processing the action clause
@@ -529,12 +549,13 @@ re_act_clause_check = re.compile(
 re_action_word = re.compile(r"(?:xa<(is|be)[^>]*> )?((?:xa|ka|kw)<[^>]+>)")
 
 # conjunction of actions
-#  1.a where the subject is the same i.e. Lost Auramancers
+# 1.a where the subject is the same and there are exactly two actions
+#  i.e. Lost Auramancers
 #    [thing] [action] and [action]
 re_conj_action_common_clause = re.compile(
     r"^(?:([^,|^\.]*?) )?"
     r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?) "
-    r"(and|or) "
+    r"(and|or|and/or) "
     r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
 
