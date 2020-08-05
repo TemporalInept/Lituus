@@ -32,7 +32,7 @@ TID = {
     # entities
     'ob':'mtg-object','xo':'lituus-object','xp':'player','zn':'zone','ef':'effect',
     #actions
-    'ka':'keyword-action','xa':'lituus-action',
+    'ka':'keyword-action','xa':'lituus-action','kw':'keyword',
 }
 
 # use with split to break a line into sentences or clauses by the period or comma
@@ -107,6 +107,11 @@ re_embedded_tgr_line = re.compile(r"^tp<([^>+)> ([^\.]+), (tp<[^>]+> [^\.]+)\.?$
 re_dual_condition_tgr_line = re.compile(
     r"^(tp<[^>]+> [^,]+) (and|or) (tp<[^>]+> [^,]+), (.+)\.?$"
 )
+
+# some cards have additional conditional phrases in the trigger condition
+# such as Faerie Miscreant where the trigger condition clause will have the form
+# [condition], if [condition]
+re_split_tgr_condition = re.compile(r"^(.+), (cn<if> .+)$")
 
 # Delayed Triggered (603.7) "do something at a later time - contains a trigger
 # preamble but not usually at the beginning of the ability and end with a turn
@@ -519,9 +524,9 @@ re_quant_duration_clause = re.compile(r"^(xq<[^>]+> ts<\w+>)$")
 # keyword or lituus action clause
 # TODO: this is not a perfect check but will eliminate most none action clauses
 re_act_clause_check = re.compile(
-    r"((?:xa|ka)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
+    r"((?:xa|ka|kw)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
 )
-re_action_word = re.compile(r"(?:xa<(is|be)[^>]*> )?([xk]a<[^>]+>)")
+re_action_word = re.compile(r"(?:xa<(is|be)[^>]*> )?((?:xa|ka|kw)<[^>]+>)")
 
 # conjunction of actions
 #  1.a where the subject is the same i.e. Lost Auramancers
@@ -537,11 +542,11 @@ re_conj_action_common_clause = re.compile(
 #  [thing] [action] and [thing] [action]
 # NOTE:
 #  1. this is a misnomer as both things could the same
-#  2. we force the bpth action clauses to have preceding things
+#  2. the first action clause may have an implied subject but we force the second
+#   action clause to have a subject
 re_conj_action_unique_clause = re.compile(
-    r"^([^,|^\.]*(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)"
-    r" (and|or) "
-    r"([^,|^\.]*(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"
+    r"^([^,|^\.]*?(?:xa|ka|kw)<[^>]+>[^,|^\.]*)? (and|or) "
+    r"([^,|^\.]*(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
 
 #  2. singular (may have optional thing and/or conditional
@@ -549,7 +554,8 @@ re_conj_action_unique_clause = re.compile(
 #  NOTE: have to make sure that the action(s) are not preceded by another action
 re_action_clause = re.compile(
     r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?"
-     r"(?<!ka<[^>]+>.*)((?:xa<(?:is|be)[^>]*> )?[xk]a<[^>]+>)(?: ([^,|^\.]+))?\.?$"
+     r"(?<!ka<[^>]+>.*)((?:xa<(?:is|be)[^>]*> )?(?:xa|ka|kw)<[^>]+>)"
+     r"(?: ([^,|^\.]+))?\.?$"
 )
 
 # 2.a tap or untap is a special phrasing
@@ -861,14 +867,34 @@ re_time_check_end = re.compile(r"ts<([^>]+)>$")
 # dual - [sequence-clause], [sequence-clause] i.e. Temple Elder
 re_dual_sequence = re.compile(r"^(sq<[^>]+> [^,]+), (sq<[^>]+> [^\.]+)\.?$")
 
+# conjoined see Teleportal very limited but has to be handled carefully. These
+# are two conjoined sequence phrases that have a common subject
+#  [thing] [sequence-clause] and [sequence-clause] i.e. Rhona's Stalwart
+re_sequence_conj = re.compile(
+    r"^([^\.]+?(?:ob|xo|xp)<[^>]+>) ([^\.]+?(?:xq|sq)<[^>]+> ts<[^>]+>)"
+    r" (and|or|and/or) "
+    r"([^\.]+?(?:xq|sq)<[^>]+> ts<[^>]+>)\.$"
+)
+
 # turn structure related
-# 1. [quanitifier phase/step], [effect] i.e. Delif's Cube
-# 2. [quantifier] [beginning|end] of [phase/step] i.e. Agent of Masks
-#  NOTE: we're dropping the quantifier because it should always be 'the'
-re_sequence_turn_structure = re.compile(r"^(xq<[^>]+> ts<[^>]+>), (.+)\.?$")
-re_sequence_time = re.compile(
-    r"^xq<([^>]+)> sq<([^>]+)> pr<of> "
+# 1. [quantifier phase/step], [effect] i.e. Delif's Cube
+# 2. [effect] [quantifier phase/step] i.e. Taigam's Strike
+re_sequence_turn_structure1 = re.compile(r"^(xq<[^>]+> ts<[^>]+>), (.+)\.?$")
+re_sequence_turn_structure2 = re.compile(r"^([^,|^\.]+) (xq<[^>]+> ts<[^>]+>)\.?$")
+
+# 3. [quantifier] [beginning|end] of [phase/step] i.e. Agent of Masks
+# 4. [quantifier] [beginning|end] of [phase/step] on [turn-strucutre] i.e Okaun,
+#  Eye of chaos
+# NOTE: we're dropping the quantifier because it should always be 'the'
+# TODO: for #4 we are only catching phrases of the form "your turn", that is
+#  it will not match any thing that says "target player's turn" etc. So, far
+#  have not seen any phrasing of this form but need to keep it in mind
+re_sequence_time1 = re.compile(
+    r"^xq<[^>]+> sq<([^>]+)> pr<of> "
      r"((?:xq<[^>]+> )?(?:xp<[^>]+> )?(?:xq<[^>]+> )?ts<[^>]+>)$"
+)
+re_sequence_time2 = re.compile(
+    r"^xq<[^>]+> sq<([^>]+)> pr<of> (ts<[^>]+>) pr<on> (xp<[^>]+>) ts<turn>$"
 )
 
 # flow of actions
@@ -883,7 +909,7 @@ re_sequence_then = re.compile(
 )
 
 # sequence condition i.e. Shriveling Rot
-# [sequence] [condition], [action]graph_replacement_effects
+# [sequence] [condition], [action]
 # these range from simple "until end of turn, ..." (Oko, the Trickster) to more
 # complex "as long as it is your turn" (Hardy Veteran) and cover none phase/step
 # related as well i.e. Hungering Yeti.
@@ -1014,7 +1040,7 @@ re_restriction_cando = re.compile(
 
 # some restrictions have a conjunction of only restrictions with the basic form
 #  [action] only|only_if [clause] and only|only_if [clause]
-# i.e. Security Detal
+# i.e. Security Detail
 #  NOTE: only 16 cards at time of IKO
 # for each of the clauses, have to look at the condition type. If it is only
 #  the clause is timing related. If it is only_if, the clause is a condition
@@ -1046,6 +1072,13 @@ re_restriction_phase = re.compile(
     r"^(?:([^,|\.]+) )?cn<only> sq<(\w+)> ((?:[^,|\.]+ )?ts<[^>]+>)\.?$"
 )
 
+# [action] only [number] times [phase/step]? i.e. Phyrexian Battleflies
+# Variant does not have a phase/step i.e. Stalking Leonin
+re_restriction_number = re.compile(
+    "^(?:([^,|\.]+) )?cn<only> nu<([^>]+)> sq<time(?:[^>]+)?>"
+     "(?: ((?:[^,|\.]+ )?ts<[^>]+>))?\.?$"
+)
+
 # Generic only i.e. Temple Elder these may fit one of the above but include
 #  additional phrases, clauses etc
 #  [action] only [condition]
@@ -1066,7 +1099,7 @@ re_exception_phrase = re.compile(r"(.+?), cn<except> ([^\.]+)\.?$")
 ####
 
 # TODO: i don't like doing these twice but unlike sequence phrases, these are
-#  standalone that is there are no preceding or following structures
+#  standalone, there are no preceding or following structures
 re_sequence_clause_check = re.compile(r"^sq<[^>]+>")
 re_sequence_clause = re.compile(r"^sq<([^>]+)> ([^,|^\.]+)$")
 
@@ -1149,12 +1182,30 @@ re_qst1 = re.compile(
     r"^(?:nu<([^>]+)> )?(?:xq<([^>]+)> )?(?:(?:xs|st)<([^>]+)> )?"
     r"((?:[^\.]*?)?(?:ob|xp|xo|zn|ef)<[^>]+>)(?! (?:or|and|and/or))(?: ([^\.]+))?\.?$"
 )
+re_qst2 = re.compile(
+    r"^(?:nu<([^>]+)> )?"
+    r"(?:xq<([^>]+)> )?"
+    r"(?:(?:xs|st)<([^>]+)> )?"
+    r"((?:ob|xp|xo|zn|ef)<[^>]+>)"
+    r"(?: ([^\.]+))?\.?$"
+)
+
+# handles 1 to 3 things
+re_thing_clause = re.compile(
+    r"^(?:((?:nu<[^>]+> )?(?:xq<[^>]+> )?(?:(?:xs|st)<[^>]+> )?"
+     r"(?:ob|xp|xo|zn|ef)<[^>]+>(?: [^\.]+?)?), )?"
+    r"(?:((?:nu<[^>]+> )?(?:xq<[^>]+> )?(?:(?:xs|st)<[^>]+> )?"
+     r"(?:ob|xp|xo|zn|ef)<[^>]+>(?: [^\.]+?)?)"
+    r",? (and|or|and/or) )?"
+    r"((?:nu<[^>]+> )?(?:xq<[^>]+> )?(?:(?:xs|st)<[^>]+> )?"
+     r"(?:ob|xp|xo|zn|ef)<[^>]+>(?: [^\.]+?)?)\.?$"
+)
 
 # four possibilities for the THING returned from above
 #  1. a single object i.e. ob<card ref=self> as in Acid-Spewer Dragon
 #  2. a dual conjunction where the second thing may have a preceding quanitifer
 #   i.e. ob<card ref=self> or xq<another> ob<permanent characteristics=creature>
-#   as in Gruul Ragebeasat
+#   as in Gruul Ragebeast
 #  3. a multi-conjunction 3 or more comma-separated things i.e. ob<spell>,
 #   ob<ability type=activated>, or ob<ability type=triggered> as in Disallow
 #   See Royal Decree for a quad-conjunction (NOTE: these were not joined in the
