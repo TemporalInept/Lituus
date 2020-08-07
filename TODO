@@ -273,8 +273,6 @@ the phrase upto shuffle is a thing (player)
 
 307. Reveka, Wizard Savant, the sequence only applies to the "does not untap" and not the whole activated effect
 
-308. See Assault Suit "gets +2/+2, has haste, can't attack you or a planeswalker you control, and can't be sacrificed" these should be capture as a conjunction prior to splitting phrases by 'comma'
-
 310. Add the attribute sub-tree used in _graph_ap_double_ to all attribute related
 
 312. Still have to add or annotate continuous ETB as part of triggered abilities, i.e. Spawnbroker
@@ -289,5 +287,38 @@ the phrase upto shuffle is a thing (player)
 
 322. Wildfire Devils, thought I got rid of graphing location but there is a from node
 
-324. 
+324. See Liliana of the Dark Realms, dropping the 'for' in 'search your library for a swamp' but no it looks a little off to do so
+
+325. See Kill Switch, need to catch "for as long as", currently is being treated as two separate tokens
+
+326. See Mirri, Weatherlight Duelist, does the restriction phrasing work? 
+
+327. See Fasting we're still getting two 'replacement-effect' nodes
+ │ │ └─cond-effect:1
+ │ │   └─replacement-effect:0
+ │ │     └─repl-new-event:0
+ │ │       └─repl-effect:0 (value=instead)
+ │ │         └─optional-phrase:0
+ │ │           └─opt-effect:0 (value=may)
+ │ │             └─replacement-effect:1
+ │ │               └─repl-effect:1 (value=skip)
+ │ │                 ├─thing-clause:4
+ │ │                 │ └─thing:4
+ │ │                 │   └─player:2 (value=you)
+ │ │                 └─turn-structure:1
+ │ │                   ├─quantifier:0 (value=that)
+ │ │                   └─phase:1 (value=step)
+the first is comming from the if-would-instead, the second from the skip
+
+328. Have to make all graphing of things under a thing-clause (such as reified attributes, qtz phrases etc)
+
+329. See Lazav, the Mulifarious, it has a multiple-conjoined action phrase but because each action clause is preceded by 'it' rather than an action. It would look cleaner and be more consistent as a conjunction. Another inconsistency are cards like Liliana of the Dark Realms which has comma separated actions conjoined by an 'and'. 
+
+330. Do not like except-for graphing see Season of the Witch
+
+331. See Treasure Keeper, 'grants' an APC which is not being graphed
+
+332. Emblazoned Golem is being graphed incorrectly
+
+
 

@@ -515,7 +515,6 @@ re_act_phrase_conjunction_check = re.compile(
     r"(?:xa|ka)<[^>]+>(?: [^,|^\.]+)?, (?:and|or|and/or) "
      r"(?:xa|ka)<[^>]+>(?: [^,|^\.]+)?"
 )
-
 re_act_phrase_conjunction = re.compile(
     r"^(?:([^,|^\.]*?) )"                       # common thing
     r"(?:((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), )?" # 1st is optional
@@ -546,7 +545,10 @@ re_quant_duration_clause = re.compile(r"^(xq<[^>]+> ts<\w+>)$")
 re_act_clause_check = re.compile(
     r"((?:xa|ka|kw)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
 )
-re_action_word = re.compile(r"(?:xa<(is|be)[^>]*> )?((?:xa|ka|kw)<[^>]+>)")
+re_action_word = re.compile(
+    #r"(?:xa<(is|be)[^>]*> )?((?:xa|ka|kw)<[^>]+>)"
+    r"(?:(?:xa<(is|be)[^>]*>|cn<(not)>) )?((?:xa|ka|kw)<[^>]+>)"
+)
 
 # conjunction of actions
 # 1.a where the subject is the same and there are exactly two actions
@@ -570,13 +572,12 @@ re_conj_action_unique_clause = re.compile(
     r"([^,|^\.]*(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
 
-#  2. singular (may have optional thing and/or conditional
-#   [thing]? [conditional]? [action word] [parameters]
+#  2. singular
+#   [thing]? [can|do]? [conditional]? [action-word] [action-parameters]
 #  NOTE: have to make sure that the action(s) are not preceded by another action
 re_action_clause = re.compile(
-    r"^(?:([^,|^\.]*?) )?(?:cn<([^>]+)> )?"
-     r"(?<!ka<[^>]+>.*)((?:xa<(?:is|be)[^>]*> )?(?:xa|ka|kw)<[^>]+>)"
-     r"(?: ([^,|^\.]+))?\.?$"
+    r"^(?:([^,|^\.]*?) )?(?:xa<(can|do)> )?(?:cn<(not)> )?"
+     r"(?<!(?:ka|xa)<[^>]+>.*)((?:xa<(?:is|be)[^>]*> )?(?:xa|ka|kw)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
 )
 
 # 2.a tap or untap is a special phrasing
@@ -584,7 +585,7 @@ re_tq_action_clause = re.compile(
     r"^(?:([^,|^\.]*?) )?(ka<tap> or ka<untap>) ([^,|^\.]+)\.?$"
 )
 
-#  3. an exceptions is control/own phrases of the form i.e. Synod Centurion
+#  3. an exception is control/own phrases of the form i.e. Synod Centurion
 #   [player] [own|control] [clause]
 #  will also be treated as action clause. NOTE: IOT not match "you control" and
 #  the like, requires at least one character following the own/control tag
@@ -683,7 +684,8 @@ re_instead_if = re.compile(r"^([^,|\.]+) cn<instead> cn<if> ([^\.]+)\.?$")
 # skip clauses i.e. Stasis (Note as of IKO, I found 49) have the form
 #  [player]? skip(s) [phase/step]
 # where if player is not present there is an implied 'you'
-re_skip = re.compile(r"^(?:(.+) )?xa<skip(?: suffix=s)?> ([^\.]+)\.$")
+# Additionaly some cards (4 total as of IKO) i.e. Fasting include an optional 'may'
+re_skip = re.compile(r"^(?:(.+?) )?(?:cn<(may)> )?xa<skip[^>]*> ([^\.]+)\.?$")
 
 ## ENTERS THE BATTLEFIELD CLAUSES (614.1c)
 # Permanent enters the battlefield with ...
@@ -1030,9 +1032,9 @@ re_for_each_cond_mid = re.compile(
 
 # generic would/could phrases
 #  See Dimir Guildmange for a could, Rock Hydra for a would
-#  [thing] that? would|could [action]
+#  [thing] that? would|could not? [action]
 re_gen_cond = re.compile(
-    r"^([^,|^\.]+?) (?:xq<(that)> )?cn<([wc]ould)> ([^,|\.]+)\.?$"
+    r"^([^,|^\.]+?) (?:xq<(that)> )?cn<([wc]ould)> (?:cn<(not)> )?([^,|\.]+)\.?$"
 )
 
 ## RESTRICTION PHRASES
@@ -1111,9 +1113,13 @@ re_restriction_only = re.compile(r"^([^\.]+) cn<only> ([^\.]+)\.?$")
 re_only_if = re.compile(r"^(?:([^,|\.]+) )?cn<only_if> ([^,|\.]+)\.?$")
 
 # Exception: contains except - the opposite of a restriction, it provides
-# additional abilities, characteristics see Lazav, the Multifarious
+# additional abilities, characteristics or exclusions from an action
+# Two variations
+#  [action], except [exception] i.e. Lazav, the Multifarious
+#  [action], except for [exception] i.e. Season of the Witch
 re_exception_check = re.compile(r"cn<except>")
 re_exception_phrase = re.compile(r"(.+?), cn<except> ([^\.]+)\.?$")
+re_exclusion_phrase = re.compile(r"(?:([^\.]+) )?cn<except> pr<for> ([^\.]+)\.?$")
 
 ####
 ## CLAUSES

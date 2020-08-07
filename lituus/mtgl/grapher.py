@@ -339,6 +339,11 @@ def graph_phrase(t,pid,line,i=0):
         rid = graph_restriction_phrase(t,pid,line)
         if rid: return rid
 
+        # exception clauses
+        if dd.re_exception_check.search(line):
+            rid = graph_exception_phrase(t, pid, line)
+            if rid: return rid
+
         # sequences
         if _sequence_check_(line):
             rid = graph_sequence_phrase(t,pid,line)
@@ -352,17 +357,13 @@ def graph_phrase(t,pid,line,i=0):
         rid = graph_optional_phrase(t,pid,line)
         if rid: return rid
 
-        # exception clauses
-        if dd.re_exception_check.search(line):
-            rid = graph_exception_phrase(t,pid,line)
-            if rid: return rid
-
         # delayed triggers
         if dd.re_delayed_tgr_check.search(line):
             rid = graph_delayed_tgr(t,pid,line)
             if rid: return rid
 
         # multiple comjoined action clause phrases (See Assault Suit)
+        # TODO: add support for addiitional Liliana of the Dark Realms, Lazav
         if dd.re_act_phrase_conjunction_check.search(line):
             rid = graph_action_conj_phrase(t,pid,line)
             if rid: return rid
@@ -471,9 +472,13 @@ def graph_replacement_effect(t,pid,line):
         rid = None
         try:
             # TODO: should we add a 'who' node for the player?
-            ply,phase = dd.re_skip.search(line).groups()
-            rid = t.add_node(pid,'replacement-effect')
-            skid = t.add_node(rid,'repl-effect',value='skip')
+            ply,may,phase = dd.re_skip.search(line).groups()
+            if may:
+                rid = t.add_node(pid,'optional-phrase')
+                oeid = t.add_node(rid,'opt-effect',value='may')
+                rpid = t.add_node(oeid,'replacement-effect')
+            else: rpid = t.add_node(pid,'replacement-effect')
+            skid = t.add_node(rpid,'repl-effect',value='skip')
             if ply: graph_thing(t,skid,ply)
             graph_phrase(t,skid,phase)
             return rid
@@ -1389,8 +1394,8 @@ def graph_conditional_phrase(t,pid,line):
             act,cond = dd.re_action_unless.search(line).groups()
             if "xa<can> cn<not>" in act: return None
             ccid = t.add_node(pid,'conditional-phrase')
-            graph_phrase(t,t.add_node(ccid,'condition',value='unless'),cond)
-            graph_phrase(t,t.add_node(ccid,'effect'),act)
+            graph_phrase(t,t.add_node(ccid,'cond-condition',value='unless'),cond)
+            graph_phrase(t,t.add_node(ccid,'cond-effect'),act)
             return ccid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -1409,9 +1414,10 @@ def graph_conditional_phrase(t,pid,line):
     elif "cn<could>" in line or "cn<would>" in line:
         # generic would|could conditions w/out effects
         try:
-            th,xq,cnd,act = dd.re_gen_cond.search(line).groups()
+            th,xq,abw,neg,act = dd.re_gen_cond.search(line).groups()
             cid = t.add_node(pid,'conditional-phrase')
-            lbl = "that-"+cnd if xq else cnd
+            lbl = "that-" + abw if xq else abw
+            if neg: lbl += "-not"
             graph_phrase(t,t.add_node(cid,'cond-condition',value=lbl),th+" "+act)
             return cid
         except AttributeError as e:
@@ -1627,6 +1633,20 @@ def graph_exception_phrase(t,pid,phrase):
     :param phrase: text to graph
     :return: node id or None
     """
+    # except (exclusion)
+    try:
+        act,excp = dd.re_exclusion_phrase.search(phrase).groups()
+        eid = t.add_node(pid,'exception-phrase')
+        if act: graph_phrase(t,t.add_node(eid,'excp-effect'),act)
+        graph_phrase(t,t.add_node(eid,'excp-exclusion',value='except-for'),excp)
+        return eid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'":
+            pass
+        else:
+            raise
+
+    # except (additional abilities)
     try:
         act,excp = dd.re_exception_phrase.search(phrase).groups()
         eid = t.add_node(pid,'exception-phrase')
@@ -1636,6 +1656,7 @@ def graph_exception_phrase(t,pid,phrase):
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
+
     return None
 
 ####
@@ -1759,8 +1780,8 @@ def graph_action_clause_ex(t,pid,phrase):
             left = thing + " " + left
             right = thing + " " + right
         cid = t.add_node(aid,'conjunction',value=op,itype="action-clause")
-        graph_phrase(t,cid,left)
-        graph_phrase(t,cid,right)
+        graph_action_clause(t,cid,left)
+        graph_action_clause(t,cid,right)
         return cid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -1769,15 +1790,27 @@ def graph_action_clause_ex(t,pid,phrase):
     aid = None
     try:
         # unpack the clause
-        thing,cnd,aw,act = dd.re_action_clause.search(phrase).groups()
-        #if cnd: print("{} {} {}\n".format(t._name,cnd,phrase))
-        aid = t.add_node(pid,'action-clause')
-        if thing: graph_thing(t,t.add_node(aid,'act-subject'),thing)
-        # for the predicate is it negated? or other conditional (TODO: needs work)
-        apid = t.add_node(aid,cnd) if cnd else aid
-        apid = t.add_node(apid,'act-predicate')
-        awid,val = _graph_action_word_(t,apid,aw)
-        if act: graph_action_param(t,aid,val,act)
+        thing,abw,cnd,aw,ap = dd.re_action_clause.search(phrase).groups()
+
+        # check for a restricted action i.e. "can not", "do not"
+        if abw:
+            aid = t.add_node(pid,'restriction-phrase')
+            reid = t.add_node(
+                aid,'restriction-effect',value=abw+"-"+cnd if cnd else abw
+            )
+            phrase = thing + " " + aw if thing else aw
+            if ap: phrase = phrase + " " + ap
+            graph_action_clause(t,reid,phrase)
+        else:
+            # TODO: still need to handle stand-alone conditionals
+            #if cnd: print("{} {} {}\n".format(t._name,cnd,phrase))
+            if cnd: assert(cnd == 'not')
+            aid = t.add_node(pid,'action-clause')
+            if thing: graph_thing(t,t.add_node(aid,'act-subject'),thing)
+            #apid = t.add_node(aid,cnd) if cnd else aid
+            apid = t.add_node(aid,'act-predicate')
+            awid,val = _graph_action_word_(t,apid,"cn<not> "+aw if cnd else aw)
+            if ap: graph_action_param(t,aid,val,ap)
         return aid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN and aid: t.del_node(aid)
@@ -1921,7 +1954,7 @@ def graph_thing(t,pid,clause):
             if xq3: t.add_node(rid,'quantifier',value=xq3)
             if st3: t.add_node(rid,'status',value=st3)
             thid3 = _graph_object_(t,t.add_node(rid,'thing'),th3)
-            if dh3: t.add_node(thid3,dh3)
+            if dh3: t.add_node(thid3,'dump-huff',tograph=dh3)
         return rid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -2048,7 +2081,6 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'copy': pass  # TODO
     elif aw == 'cost': pass  # TODO
     elif aw == 'count': pass  # TODO
-    elif aw == 'cycle': pass  # TODO
     elif aw == 'deal': pass  # TODO
     elif aw == 'declare': pass  # TODO
     elif aw == 'defend': pass  # TODO
@@ -2094,7 +2126,8 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'unspend': pass  # TODO
     elif aw == 'win' or aw == 'lose': return _graph_ap_thing_(t,pid,param)
 
-    # TODO: have to add keywords that are actions see Esper Sojourners
+    # TODO: have to add keywords
+    if aw == 'cycle': return _graph_ap_thing_(t,pid,param)
 
     # nothing found TODO: after debugging, return None
     return t.add_node(pid,'act-parameter',tograph=param)
@@ -2293,12 +2326,14 @@ def _graph_action_word_(t,pid,aw):
     # we could have a single token, the action word or a prefixed action word
     # i.e. "to be" action-word
     try:
-        pre,wd = dd.re_action_word.search(aw).groups()
+        pre,neg,wd = dd.re_action_word.search(aw).groups()
         tid,val,attr = mtgltag.untag(wd)
         awid = t.add_node(pid,dd.TID[tid])
         avid = t.add_node(awid,val)
         if pre:
             if pre == 'be' or pre == 'is': t.add_attr(avid,'prefix','to-be')
+        elif neg:
+            t.add_attr(avid,'prefix','not')
         return awid,val
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
