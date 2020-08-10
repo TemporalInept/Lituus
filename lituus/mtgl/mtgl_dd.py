@@ -984,6 +984,15 @@ re_sequence_as_cond = re.compile(
 
 ##
 # optionals, conditions and restrictions
+re_optional_check = re.compile(r"cn<may>")
+
+# conjoined optionals i.e. Hostage Taker
+#  [optional] and|or [optional]
+re_conjoined_optional_phrase = re.compile(
+    r"^((?:[^,|\.]+)?xp<[^>]+>(?:[^,|\.]+)? cn<may> [^,|\.]+)"
+    r", (and|or|and/or) "
+    r"((?:[^,|\.]+)?xp<[^>]+>(?:[^,|\.]+)? cn<may> [^,|\.]+)\.?$"
+)
 
 # [player] may [action] as though [action] [if [condition]]? i.e. Lone Wolf
 re_may_as_though = re.compile(

@@ -317,7 +317,6 @@ def graph_phrase(t,pid,line,i=0):
     elif dd.re_complex_tgr_check.search(line): graph_complex_triggered(t,pid,line)
     else:
         # TODO: can we make a check for all of these?
-
         # have to modal first', due to  graph_replacment_effect mistakenly
         #  grabbing portions of modal lines
         if dd.re_modal_check.search(line): return graph_modal_phrase(t,pid,line)
@@ -354,8 +353,9 @@ def graph_phrase(t,pid,line,i=0):
         if rid: return rid
 
         # optional phrases
-        rid = graph_optional_phrase(t,pid,line)
-        if rid: return rid
+        if dd.re_optional_check.search(line):
+            rid = graph_optional_phrase(t,pid,line)
+            if rid: return rid
 
         # delayed triggers
         if dd.re_delayed_tgr_check.search(line):
@@ -1597,7 +1597,19 @@ def graph_optional_phrase(t,pid,phrase):
     :param phrase: text to graph
     :return: node id or None
     """
-    # check may as-though first
+    # conjoined optionals
+    try:
+        opt1,op,opt2 = dd.re_conjoined_optional_phrase.search(phrase).groups()
+        cid = t.add_node(pid,'conjunction-phrase',value=op,itype='phrase')
+        graph_phrase(t,cid,opt1)
+        graph_phrase(t,cid,opt2)
+        return cid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
+
+
+    # may as-though
     try:
         ply,opt,effect = dd.re_may_as_though.search(phrase).groups()
         opid = t.add_node(pid,'optional-phrase')
@@ -1760,13 +1772,13 @@ def graph_action_clause_ex(t,pid,phrase):
     aid = None
     try:
         ply, _, obj = dd.re_tq_action_clause.search(phrase).groups()
-        aid = t.add_node(pid, 'action-clause')
-        graph_thing(t, t.add_node(aid, 'act-subject'), ply)
-        apid = t.add_node(t.add_node(aid, 'act-predicate'), "ka<tap∨untap>")
+        aid = t.add_node(pid,'action-clause')
+        graph_thing(t,t.add_node(aid,'act-subject'),ply)
+        apid = t.add_node(t.add_node(aid,'act-predicate'),"ka<tap∨untap>")
         try:  # TODO: this is just a hack for now
-            graph_thing(t, t.add_node(aid, 'act-object'), obj)
+            graph_thing(t,t.add_node(aid,'act-object'),obj)
         except lts.LituusException as e:
-            graph_phrase(t, t.add_node(aid, 'act-parameters'), apid, obj)
+            graph_phrase(t,t.add_node(aid,'act-parameters'),apid,obj)
         return aid
     except lts.LituusException as e:
         if e.errno == lts.EPTRN and aid: t.del_node(aid)
@@ -1776,6 +1788,7 @@ def graph_action_clause_ex(t,pid,phrase):
         else:
             raise
 
+    # subjects are specified for both actions
     try:
         left,op,right = dd.re_conj_action_unique_clause.search(phrase).groups()
         cid = t.add_node(pid,'conjunction',value=op,itype='action-clause')
@@ -1789,11 +1802,10 @@ def graph_action_clause_ex(t,pid,phrase):
     # then check for those with a common thing
     try:
         thing,left,op,right = dd.re_conj_action_common_clause.search(phrase).groups()
-        aid = t.add_node(pid,'action-clause')
         if thing:
             left = thing + " " + left
             right = thing + " " + right
-        cid = t.add_node(aid,'conjunction',value=op,itype="action-clause")
+        cid = t.add_node(pid,'conjunction',value=op,itype="action-clause")
         graph_action_clause(t,cid,left)
         graph_action_clause(t,cid,right)
         return cid

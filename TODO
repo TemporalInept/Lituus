@@ -324,5 +324,9 @@ the first is comming from the if-would-instead, the second from the skip
 
 335. Add 'to' as a prefix to action words i.e. "to cast"
 
-337. See Hostage Taker, has a conjunction of optional 'mays'
-"You may cast that card for as long as it remains exiled, and you may spend mana as though it were mana of any type to cast that spell."
+338. See Sworn Defender, the first sequence-phrase is not being graphed
+
+339. Standarize naming conventions of conjunction regex
+ re_conjoined_<type>_phrase_<additional>?
+
+
