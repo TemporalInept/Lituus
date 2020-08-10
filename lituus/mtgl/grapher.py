@@ -362,8 +362,7 @@ def graph_phrase(t,pid,line,i=0):
             rid = graph_delayed_tgr(t,pid,line)
             if rid: return rid
 
-        # multiple comjoined action clause phrases (See Assault Suit)
-        # TODO: add support for addiitional Liliana of the Dark Realms, Lazav
+        # multiple comjoined action clause phrases
         if dd.re_act_phrase_conjunction_check.search(line):
             rid = graph_action_conj_phrase(t,pid,line)
             if rid: return rid
@@ -1696,16 +1695,31 @@ def graph_action_conj_phrase(t,pid,line):
     :return: node id or None on failure
     """
     try:
-        th,ac1,ac2,ac3,op,ac4 = dd.re_act_phrase_conjunction.search(line).groups()
-        cid = t.add_node(pid,'conjunction',value=op,itype='action-clause')
-        if ac1: graph_action_clause(t,cid,th+" "+ac1)
-        graph_action_clause(t,cid,th+" "+ac2)
-        graph_action_clause(t,cid,th+" "+ac3)
-        graph_action_clause(t,cid,th+" "+ac4)
+        # try implied first
+        th = ac1 = ac2 = ac3 = ac4 = op = None
+        m = dd.re_act_phrase_conjunction_implied.search(line)
+        if m: ac1,ac2,ac3,op,ac4 = m.groups()
+
+        # if not check common subject
+        if not m:
+            m = dd.re_act_phrase_conjunction_common.search(line)
+            if m: th,ac1,ac2,ac3,op,ac4 = m.groups()
+
+        # and if not check default
+        if not m:
+            ac1,ac2,ac3,op,ac4 = dd.re_act_phrase_conjunction.search(line).groups()
+
+        # add the conjunction and children
+        cid = t.add_node(pid,'conjunction',value=op,itype='phrase')
+        if ac1: graph_phrase(t,cid,th+" "+ac1 if th else ac1)
+        graph_phrase(t,cid,th+" "+ac2 if th else ac2)
+        graph_phrase(t,cid,th+" "+ac3 if th else ac3)
+        graph_phrase(t,cid,th+" "+ac4 if th else ac4)
         return cid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
+
     return None
 
 ####

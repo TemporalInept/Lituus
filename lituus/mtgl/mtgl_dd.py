@@ -505,23 +505,43 @@ kw_param_template = {
 ## KEYWORD ACTIONS (701.2 - 701/43) AND LITUUS ACTIONS
 ####
 
-# A conjunction of multiple action-clauses having a common subject. These are
-# treated as phrases i.e. Assault Suit has the form
+# A conjunction of multiple action-clauses. There are three variations:
+#  1. An implied subject (namely xp<you>) i.e. Liliana of the Dark Realms
+#   [action],? [action], [action], [and|or|and/or] [action]
+#  2. A common subject i.e. Assault Suit
 #  [thing] [action],? [action], [action], [and|or|and/or] [action]
-# NOTE: we don't want to catch cards that have a distinct sequence of unique
-# action clauses like Liliana of the Dark Realms so we force the Thing to be
-# present
-re_act_phrase_conjunction_check = re.compile(
-    r"(?:xa|ka)<[^>]+>(?: [^,|^\.]+)?, (?:and|or|and/or) "
-     r"(?:xa|ka)<[^>]+>(?: [^,|^\.]+)?"
+#  3. Each action clause has a subject i.e. Lazav, the Multifarious
+#   [action],? [action], [action], [and|or|and/or] [action]
+#  where action = [thing] [action] [action-parameters]
+# NOTE: for 1 and 2, we write two distinct regex due to mismatches caused by
+#  having an optional thing
+# TODO: this assumes that there will never be more than 4 conjoined action clauses
+#re_act_phrase_conjunction_check = re.compile(
+#    r"(?:xa|ka)<[^>]+>(?: [^,|^\.]+)?, (?:and|or|and/or) "
+#     r"(?:xa|ka)<[^>]+>(?: [^,|^\.]+)?"
+#)
+re_act_phrase_conjunction_check = re.compile(r" (?:and|or|and/or) ") # TODO
+re_act_phrase_conjunction_implied = re.compile(
+    r"^(?:((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), )?"
+    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "
+    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "
+    r"(and|or|and/or) "
+    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"
+)
+re_act_phrase_conjunction_common = re.compile(
+    r"^(?:([^,|^\.]*?) )"
+    r"(?:((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), )?"
+    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "
+    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "
+    r"(and|or|and/or) "
+    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
 re_act_phrase_conjunction = re.compile(
-    r"^(?:([^,|^\.]*?) )"                       # common thing
-    r"(?:((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), )?" # 1st is optional
-    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "      # 2nd act clause
-    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "      # 3rd act clause
-    r"(and|or|and/or) "                         # conjunction operator
-    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"    # 4th act clause
+    r"^(?:([^,|^\.]*?(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), )?"
+    r"([^,|^\.]*?(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "
+    r"([^,|^\.]*?(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "
+    r"(and|or|and/or) "
+    r"([^,|^\.]*?(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
 
 # some action clauses have trailing qualifying clauses
@@ -546,7 +566,6 @@ re_act_clause_check = re.compile(
     r"((?:xa|ka|kw)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
 )
 re_action_word = re.compile(
-    #r"(?:xa<(is|be)[^>]*> )?((?:xa|ka|kw)<[^>]+>)"
     r"(?:(?:xa<(is|be)[^>]*>|cn<(not)>) )?((?:xa|ka|kw)<[^>]+>)"
 )
 
