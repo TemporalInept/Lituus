@@ -104,7 +104,7 @@ re_act_line = re.compile(r"^(.+?): (.+?)(?:\. ([^.]+))?\.?$")
 re_tgr_check = re.compile(r"^(tp<\w+>)")
 re_tgr_line = re.compile(r"^tp<(\w+)> ([^\.]+), ([^\.]+)(?:\. (.+))?\.?$")
 re_embedded_tgr_line = re.compile(r"^tp<([^>+)> ([^\.]+), (tp<[^>]+> [^\.]+)\.?$")
-re_dual_condition_tgr_line = re.compile(
+re_conjoined_tgr_condition_line = re.compile(
     r"^(tp<[^>]+> [^,]+) (and|or) (tp<[^>]+> [^,]+), (.+)\.?$"
 )
 
@@ -130,7 +130,7 @@ re_delayed_tgr_clause = re.compile(
 # that the first phrase does not have commas (or periods). In other words, if
 # there are commas preceding a ", and", this is part of a list otherwise, it
 # signifies distinct parts
-re_phrase_conjunction = re.compile(r"^([^,|^\.]+), and ([^\.]+)$")
+re_conjoined_phrase_dual = re.compile(r"^([^,|^\.]+), and ([^\.]+)$")
 
 # the following is not a defined line but needs to be handled carefully
 # Quotation enclosed phrases preceded by 'have' (Coral Net) or 'gain' (Abnormal
@@ -516,19 +516,14 @@ kw_param_template = {
 # NOTE: for 1 and 2, we write two distinct regex due to mismatches caused by
 #  having an optional thing
 # TODO: this assumes that there will never be more than 4 conjoined action clauses
-#re_act_phrase_conjunction_check = re.compile(
-#    r"(?:xa|ka)<[^>]+>(?: [^,|^\.]+)?, (?:and|or|and/or) "
-#     r"(?:xa|ka)<[^>]+>(?: [^,|^\.]+)?"
-#)
-re_act_phrase_conjunction_check = re.compile(r" (?:and|or|and/or) ") # TODO
-re_act_phrase_conjunction_implied = re.compile(
+re_conjoined_act_phrase_implied = re.compile(
     r"^(?:((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), )?"
     r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "
     r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "
     r"(and|or|and/or) "
     r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
-re_act_phrase_conjunction_common = re.compile(
+re_conjoined_act_phrase_common = re.compile(
     r"^(?:([^,|^\.]*?) )"
     r"(?:((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), )?"
     r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "
@@ -536,7 +531,7 @@ re_act_phrase_conjunction_common = re.compile(
     r"(and|or|and/or) "
     r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
-re_act_phrase_conjunction = re.compile(
+re_conjoined_act_phrase_distinct = re.compile(
     r"^(?:([^,|^\.]*?(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), )?"
     r"([^,|^\.]*?(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "
     r"([^,|^\.]*?(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka)<[^>]+>(?: [^,|^\.]+)?), "
@@ -573,7 +568,7 @@ re_action_word = re.compile(
 # 1.a where the subject is the same and there are exactly two actions
 #  i.e. Lost Auramancers
 #    [thing] [action] and [action]
-re_conj_action_common_clause = re.compile(
+re_conjoined_act_clause_common = re.compile(
     r"^(?:([^,|^\.]*?) )?"
     r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?) "
     r"(and|or|and/or) "
@@ -586,7 +581,7 @@ re_conj_action_common_clause = re.compile(
 #  1. this is a misnomer as both things could the same
 #  2. the first action clause may have an implied subject but we force the second
 #   action clause to have a subject
-re_conj_action_unique_clause = re.compile(
+re_conjoined_act_clause_unique = re.compile(
     r"^([^,|^\.]*?(?:xa|ka|kw)<[^>]+>[^,|^\.]*)? (and|or) "
     r"([^,|^\.]*(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
@@ -912,7 +907,7 @@ re_dual_sequence = re.compile(r"^(sq<[^>]+> [^,]+), (sq<[^>]+> [^\.]+)\.?$")
 # conjoined see Teleportal very limited but has to be handled carefully. These
 # are two conjoined sequence phrases that have a common subject
 #  [thing] [sequence-clause] and [sequence-clause] i.e. Rhona's Stalwart
-re_sequence_conj = re.compile(
+re_conjoined_seq_phrase = re.compile(
     r"^([^\.]+?(?:ob|xo|xp)<[^>]+>) ([^\.]+?(?:xq|sq)<[^>]+> ts<[^>]+>)"
     r" (and|or|and/or) "
     r"([^\.]+?(?:xq|sq)<[^>]+> ts<[^>]+>)\.$"
@@ -1098,7 +1093,7 @@ re_restriction_cando = re.compile(
 # TODO: Capricopian is an exception to the pattern and is of the form
 #  only [player] may [action] and only during [timing]
 # I think only ands are present but just case check for 'or' and 'and/or'
-re_only_conjunction = re.compile(
+re_conjoined_restriction_only = re.compile(
     r"^([^,|\.]+) (cn<(?:only|only_if)> [^,|^\.]+) (and|or|and/or) "
      r"(cn<(?:only|only_if)> [^,|^\.]+)\.?"
 )
@@ -1254,39 +1249,6 @@ re_thing_clause = re.compile(
     r",? (and|or|and/or) )?"
     r"((?:nu<[^>]+> )?(?:xq<[^>]+> )?(?:(?:xs|st)<[^>]+> )?"
      r"(?:ob|xp|xo|zn|ef)<[^>]+>(?: [^\.]+?)?)\.?$"
-)
-
-# four possibilities for the THING returned from above
-#  1. a single object i.e. ob<card ref=self> as in Acid-Spewer Dragon
-#  2. a dual conjunction where the second thing may have a preceding quanitifer
-#   i.e. ob<card ref=self> or xq<another> ob<permanent characteristics=creature>
-#   as in Gruul Ragebeast
-#  3. a multi-conjunction 3 or more comma-separated things i.e. ob<spell>,
-#   ob<ability type=activated>, or ob<ability type=triggered> as in Disallow
-#   See Royal Decree for a quad-conjunction (NOTE: these were not joined in the
-#   tagger because they are not 'like' objects
-#  4. Invalid - does not match one of the above
-re_singleton_thing = re.compile(r"^((?:ob|xp|xo|zn|ef)<[^>]+>)$")
-re_dual_conjunction_thing = re.compile(
-    r"^(?:((?:ob|xp|xo|zn|ef)<[^>]+>) (and|or|and/or) (?:xq<([^>]+)> )?)?"
-     r"((?:ob|xp|xo|zn|ef)<[^>]+>)$"
-)
-re_multi_conjunction_thing = re.compile(
-    r"^((?:(?:ob|xp|xo|zn|ef)<[^>]+>, ){2,})(and|or|and/or) "
-     r"((?:ob|xp|xo|zn|ef)<[^>]+>)$"
-)
-
-# possessive and qualifying clauses
-re_possession_clause = re.compile(
-    r"((?:xq<\w*?> )?(?:(?:st|xs)<[^>]+> )?"
-     r"xp<[^>]+>) (?:(xa<do[^>]*> cn<not>) )?xc<([^>]+)(?: suffix=s)?>"
-)
-re_qualifying_clause = re.compile(
-    r"^(?:pr|xq)<(with|without|from|of|in|other_than|on|that|at)> (.+)$"
-)
-re_dual_qualifying_clause = re.compile(
-    r"^(pr<(?:with|without|of)> .+) "
-     r"((?:pr|xq)<(?:from|with|without|on|of|as|in|that)> .+)$"
 )
 
 # finds consecutive things to determine if they are possessive

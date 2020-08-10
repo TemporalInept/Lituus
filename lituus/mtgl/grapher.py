@@ -228,7 +228,7 @@ def graph_triggered(t,pid,line):
     # check for dual conditions, rebuild the line as two separate triggered abilities
     # under a common conjunction node
     try:
-        cond1,op,cond2,effect = dd.re_dual_condition_tgr_line.search(line).groups()
+        cond1,op,cond2,effect = dd.re_conjoined_tgr_condition_line.search(line).groups()
         cid = t.add_node(pid,'conjunction',value=op,itype='triggered-ability')
         graph_phrase(t,cid,cond1+", "+effect)
         graph_phrase(t,cid,cond2+", "+effect)
@@ -363,20 +363,8 @@ def graph_phrase(t,pid,line,i=0):
             if rid: return rid
 
         # multiple comjoined action clause phrases
-        if dd.re_act_phrase_conjunction_check.search(line):
-            rid = graph_action_conj_phrase(t,pid,line)
-            if rid: return rid
-
-        # before splitting check for conjunction of phrases
-        try:
-            phrase1,phrase2 = dd.re_phrase_conjunction.search(line).groups()
-            cid = t.add_node(pid,'conjunction',value='and',itype='phrase')
-            graph_phrase(t,cid,phrase1)
-            graph_phrase(t,cid,phrase2)
-            return cid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
+        rid = graph_conjoined_phrase(t,pid,line)
+        if rid: return rid
 
         # Now we have to break down the line in smaller chunks: sentences and
         # then clauses
@@ -1201,7 +1189,7 @@ def graph_sequence_phrase(t,pid,line):
 
     # check for conjoined sequences
     try:
-        thing,seq1,op,seq2 = dd.re_sequence_conj.search(line).groups()
+        thing,seq1,op,seq2 = dd.re_conjoined_seq_phrase.search(line).groups()
         cid = t.add_node(pid,'conjunction',value=op,itype='sequence-phrase')
         graph_phrase(t,cid,thing+" "+seq1)
         graph_phrase(t,cid,thing+" "+seq2)
@@ -1476,23 +1464,12 @@ def graph_restriction_phrase(t,pid,phrase):
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
 
-        # blanket can/dos with no exceptions
-        #try:
-        #    th,rw,act = dd.re_restriction_cando.search(phrase).groups()
-        #    rsid = t.add_node(pid,'restriction-phrase')
-        #    return graph_phrase(
-        #        t,t.add_node(rsid,'rstr-restriction',value=rw+'-not'),th+" "+act
-        #    )
-        #except AttributeError as e:
-        #    if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-        #    else: raise
-
     # now check conjunctions of restrictions
     try:
-        act,rstr1,conj,rstr2 = dd.re_only_conjunction.search(phrase).groups()
+        act,rstr1,op,rstr2 = dd.re_conjoined_restriction_only.search(phrase).groups()
         rsid = t.add_node(pid,'restriction-phrase')
         graph_phrase(t,t.add_node(rsid,'rstr-effect'),act)
-        cid = t.add_node(rsid,'conjunction',value=conj,itype='rstr-restriction')
+        cid = t.add_node(rsid,'conjunction',value=op,itype='rstr-restriction')
         graph_restriction_phrase(t,cid,rstr1)
         graph_restriction_phrase(t,cid,rstr2)
         return rsid
@@ -1698,28 +1675,30 @@ def graph_delayed_tgr(t,pid,clause):
 ## ACTION PHRASE
 ####
 
-def graph_action_conj_phrase(t,pid,line):
+def graph_conjoined_phrase(t,pid,line):
     """
-    graphs the conjunctipn of (3 or more) action clauses in line
+    graphs the conjunctipn of (2 or more) phrases in line
     :param t: the tree
     :param pid: the parent id
     :param line: text to graph
     :return: node id or None on failure
     """
+    # 3 or more phrases (generally action clauses)
     try:
         # try implied first
         th = ac1 = ac2 = ac3 = ac4 = op = None
-        m = dd.re_act_phrase_conjunction_implied.search(line)
+        m = dd.re_conjoined_act_phrase_implied.search(line)
         if m: ac1,ac2,ac3,op,ac4 = m.groups()
 
         # if not check common subject
         if not m:
-            m = dd.re_act_phrase_conjunction_common.search(line)
+            m = dd.re_conjoined_act_phrase_common.search(line)
             if m: th,ac1,ac2,ac3,op,ac4 = m.groups()
 
         # and if not check default
         if not m:
-            ac1,ac2,ac3,op,ac4 = dd.re_act_phrase_conjunction.search(line).groups()
+            m = dd.re_conjoined_act_phrase_distinct.search(line)
+            ac1,ac2,ac3,op,ac4 = m.groups()
 
         # add the conjunction and children
         cid = t.add_node(pid,'conjunction',value=op,itype='phrase')
@@ -1727,6 +1706,17 @@ def graph_action_conj_phrase(t,pid,line):
         graph_phrase(t,cid,th+" "+ac2 if th else ac2)
         graph_phrase(t,cid,th+" "+ac3 if th else ac3)
         graph_phrase(t,cid,th+" "+ac4 if th else ac4)
+        return cid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
+
+    # check for bi-conjunction
+    try:
+        phrase1,phrase2 = dd.re_conjoined_phrase_dual.search(line).groups()
+        cid = t.add_node(pid,'conjunction',value='and',itype='phrase')
+        graph_phrase(t,cid,phrase1)
+        graph_phrase(t,cid,phrase2)
         return cid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -1790,10 +1780,10 @@ def graph_action_clause_ex(t,pid,phrase):
 
     # subjects are specified for both actions
     try:
-        left,op,right = dd.re_conj_action_unique_clause.search(phrase).groups()
+        act1,op,act2 = dd.re_conjoined_act_clause_unique.search(phrase).groups()
         cid = t.add_node(pid,'conjunction',value=op,itype='action-clause')
-        graph_action_clause(t,cid,left)
-        graph_action_clause(t,cid,right)
+        graph_action_clause(t,cid,act1)  # TODO: graph as action_clause or phrase
+        graph_action_clause(t,cid,act2)
         return cid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -1801,13 +1791,13 @@ def graph_action_clause_ex(t,pid,phrase):
 
     # then check for those with a common thing
     try:
-        thing,left,op,right = dd.re_conj_action_common_clause.search(phrase).groups()
-        if thing:
-            left = thing + " " + left
-            right = thing + " " + right
+        th,ac1,op,ac2 = dd.re_conjoined_act_clause_common.search(phrase).groups()
+        if th:
+            ac1 = th + " " + ac1
+            ac2 = th + " " + ac2
         cid = t.add_node(pid,'conjunction',value=op,itype="action-clause")
-        graph_action_clause(t,cid,left)
-        graph_action_clause(t,cid,right)
+        graph_action_clause(t,cid,ac1) # TODO: graph as action_clause or phrase
+        graph_action_clause(t,cid,ac2)
         return cid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
