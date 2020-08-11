@@ -1547,3 +1547,7 @@ re_your_opponents = re.compile(r"xp<you suffix='s> xp<opponent suffix=s>")
 # d. you don't control (Aether tradewinds) and don't own (Agent of Treachery)
 re_both_ownctrl = re.compile(r"both (xc<own∧control>)")
 re_neither_ownctrl = re.compile(r"neither xc<own> nor xc<control>")
+
+# action word prefixs
+#  either a form of 'to be' 'action-word' or 'to' 'action-word'
+re_prefix_aw = re.compile(r"((?:xa|pr)<(?:is|be|to)[^>]*>) ((?:xa|ka)<[^>]+>)")

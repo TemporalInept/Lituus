@@ -625,6 +625,10 @@ def third_pass(txt):
     # look at 'abnormal' possessives (own, control)
     ntxt = mtgl.re_both_ownctrl.sub(r"\1",ntxt)
     ntxt = mtgl.re_neither_ownctrl.sub(r"xa<do> cn<not> xc<own∨control>",ntxt)
+
+    # combine prefix action words of the form 'to be' action word (i.e. be cast)
+    # and 'to' action word (i.e. to cast)
+    ntxt = mtgl.re_prefix_aw.sub(lambda m: _prefixed_act_word_(m),ntxt)
     return ntxt
 
 ####
@@ -1187,4 +1191,17 @@ def _join_ability_(m):
     if not atype: atype = 'bands-with-other'
     tid,val,attr = mtgltag.untag(m.group(3))
     attr['type'] = atype
+    return mtgltag.retag(tid,val,attr)
+
+def _prefixed_act_word_(m):
+    """
+     merges prefix with action word as a hyphenated value
+    :param m: the regex.Match object
+    :return: merged prefix and action word tag
+    """
+    pw,aw = m.groups()
+    pval = mtgltag.tag_val(pw)
+    tid,val,attr = mtgltag.untag(aw)
+    if pval == 'is' or pval == 'be': attr['prefix'] = 'to-be'
+    else: attr['prefix'] = pval
     return mtgltag.retag(tid,val,attr)

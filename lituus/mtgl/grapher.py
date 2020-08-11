@@ -377,16 +377,16 @@ def graph_phrase(t,pid,line,i=0):
             # if the iteration is less than one we have to run it through again
             # or oracle text with only one sentence will not be graphed
             if i < 1: return graph_phrase(t,pid,line,i+1)
-            else:
+            else: return graph_clause(t,pid,line)
                 # split the phrase into clauses (by comma) - we have to run the
                 # individual clauses through graph_phrase first NOTE: the clause
                 # split removes any 'ands'
-                if mtgl.CMA not in line: return graph_clause(t,pid,line)
-                else:
-                    cid = None
-                    for clause in [x.strip() for x in dd.re_clause.split(line) if x]:
-                        cid = graph_phrase(t,pid,clause)
-                    return cid # return the last one
+                #if mtgl.CMA not in line: return graph_clause(t,pid,line)
+                #else:
+                #    cid = None
+                #    for clause in [x.strip() for x in dd.re_clause.split(line) if x]:
+                #        cid = graph_phrase(t,pid,clause)
+                #    return cid # return the last one
 
 def graph_clause(t,pid,clause):
     """
@@ -1808,8 +1808,8 @@ def graph_action_clause_ex(t,pid,phrase):
         # unpack the clause
         thing,abw,cnd,aw,ap = dd.re_action_clause.search(phrase).groups()
 
-        # check for a restricted action i.e. "can not", "do not"
         if abw:
+            # check for a restricted action i.e. "can not", "do not"
             aid = t.add_node(pid,'restriction-phrase')
             reid = t.add_node(
                 aid,'restriction-effect',value=abw+"-"+cnd if cnd else abw
@@ -1818,14 +1818,14 @@ def graph_action_clause_ex(t,pid,phrase):
             if ap: phrase = phrase + " " + ap
             graph_action_clause(t,reid,phrase)
         else:
-            # TODO: still need to handle stand-alone conditionals
-            #if cnd: print("{} {} {}\n".format(t._name,cnd,phrase))
+            # TODO: we are only seeing one card (Escaped Shapeshifter) with a
+            # conditional precededing the action word that is not also preceded
+            # by 'can' or 'do'
             if cnd: assert(cnd == 'not')
             aid = t.add_node(pid,'action-clause')
             if thing: graph_thing(t,t.add_node(aid,'act-subject'),thing)
-            #apid = t.add_node(aid,cnd) if cnd else aid
             apid = t.add_node(aid,'act-predicate')
-            awid,val = _graph_action_word_(t,apid,"cn<not> "+aw if cnd else aw)
+            awid,val = _graph_action_word_(t,apid,aw if not cnd else 'not '+aw)
             if ap: graph_action_param(t,aid,val,ap)
         return aid
     except lts.LituusException as e:
@@ -1923,6 +1923,9 @@ def graph_thing(t,pid,clause):
         # NOTE: have only seen one or two things but just in case we check for
         # a conjunction of upto three
         thing1,thing2,op,thing3 = dd.re_thing_clause.search(clause).groups()
+        if (thing1 or thing2) and not op:
+            # TODO: this is a hack for now, re_thing_clause needs to be redone
+            raise lts.LituusException(lts.EPTRN, "Not a thing {}".format(clause))
         assert(not thing1) # for now raise an error if there are 3 things
 
         # if there are two things and the second thing has quantifiers, the
@@ -2207,7 +2210,9 @@ def graph_phase_clause(t,pid,clause):
         if xq: t.add_node(tsid,'quantifier',value=xq)
         phid = t.add_node(tsid,'phase',value=phase)
         try:
-            if thing: graph_thing(t,t.add_node(phid,'whose'),thing)
+            if thing:
+                # TODO: Crystalline Resonance
+                graph_thing(t,t.add_node(phid,'whose'),thing)
         except lts.LituusException as e:
             if e.errno == lts.EPTRN:
                 t.add_node(phid,'dump-huff',tograph=thing)
@@ -2339,17 +2344,17 @@ def _graph_action_word_(t,pid,aw):
     :param aw: the action word(s) to graph
     :return: a tuple t = (node-id,aw-value)
     """
-    # we could have a single token, the action word or a prefixed action word
-    # i.e. "to be" action-word
     try:
-        pre,neg,wd = dd.re_action_word.search(aw).groups()
+        # TODO: what about suffixes
+        # extract negation if present
+        neg,wd = dd.re_action_word.search(aw).groups()
+
         tid,val,attr = mtgltag.untag(wd)
         awid = t.add_node(pid,dd.TID[tid])
         avid = t.add_node(awid,val)
-        if pre:
-            if pre == 'be' or pre == 'is': t.add_attr(avid,'prefix','to-be')
-        elif neg:
-            t.add_attr(avid,'prefix','not')
+        assert(not ('prefix' in attr and neg))
+        if 'prefix' in attr: t.add_attr(avid,'prefix',attr['prefix'])
+        elif neg: t.add_attr(avid,'prefix','not')
         return awid,val
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass

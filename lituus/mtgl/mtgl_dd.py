@@ -560,9 +560,10 @@ re_quant_duration_clause = re.compile(r"^(xq<[^>]+> ts<\w+>)$")
 re_act_clause_check = re.compile(
     r"((?:xa|ka|kw)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
 )
-re_action_word = re.compile(
-    r"(?:(?:xa<(is|be)[^>]*>|cn<(not)>) )?((?:xa|ka|kw)<[^>]+>)"
-)
+
+# action word can be a single action word or negated
+# TODO: the only card I found with a negated action is Escaped Shapeshifter
+re_action_word = re.compile(r"(?:([^>]+) )?((?:xa|ka|kw)<[^>]+>)")
 
 # conjunction of actions
 # 1.a where the subject is the same and there are exactly two actions
@@ -591,7 +592,7 @@ re_conjoined_act_clause_unique = re.compile(
 #  NOTE: have to make sure that the action(s) are not preceded by another action
 re_action_clause = re.compile(
     r"^(?:([^,|^\.]*?) )?(?:xa<(can|do)> )?(?:cn<(not)> )?"
-     r"(?<!(?:ka|xa)<[^>]+>.*)((?:xa<(?:is|be)[^>]*> )?(?:xa|ka|kw)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
+     r"(?<!(?:ka|xa)<[^>]+>.*)((?:xa|ka|kw)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
 )
 
 # 2.a tap or untap is a special phrasing
@@ -853,7 +854,7 @@ re_cast_apc_nocost = re.compile(
 # As an additional cost to cast [thing], [add-cost] see Abjure
 re_add_cost_check = re.compile(r"xq<a∧additional> xo<cost>")
 re_add_cost = re.compile(
-    r"^pr<as> xq<a∧additional> xo<cost> pr<to> ka<cast> ([^,]+), ([^\.]+)\.?$"
+    r"^pr<as> xq<a∧additional> xo<cost> ka<cast prefix=to> ([^,]+), ([^\.]+)\.?$"
 )
 
 ## MODAL PHRASES
@@ -1240,7 +1241,7 @@ re_qst2 = re.compile(
     r"(?: ([^\.]+))?\.?$"
 )
 
-# handles 1 to 3 things
+# handles 1 to 3 things # TODO: not strict enough
 re_thing_clause = re.compile(
     r"^(?:((?:nu<[^>]+> )?(?:xq<[^>]+> )?(?:(?:xs|st)<[^>]+> )?"
      r"(?:ob|xp|xo|zn|ef)<[^>]+>(?: [^\.]+?)?), )?"
@@ -1261,7 +1262,7 @@ re_consecutive_things = re.compile(
      r"((?:ob|xp|xo|zn|ef)<[^>]+>) ((?:ob|xp|xo|zn|ef)<[^>]+>)$"
 )
 
-# Qualifying clauses for exapmple with flying
+# Qualifying clauses for example with flying
 
 # with/without can have one of the following forms
 #  1. with [keyword] - ability clause i.e. with flying (have to check for a
