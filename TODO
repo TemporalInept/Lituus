@@ -185,15 +185,8 @@ the phrase upto shuffle is a thing (player)
 
 244. phrases of the form OPERATOR THING'S ATTRIBUTE
 
-246. Finish graphing keyword actions
- double, exchange, play, reveal, search
-
 247. Start graphing lituus actions:
     'put','remove','distribute','get','return','draw','move','look','pay','deal','gain','attack','defend','unblock','block','enter','leave','choose','die','spend','unspend','take','reduce','trigger','prevent','declare','have','switch','assign','tie','skip','flip','cycle','phase','become','share','turn','produce','round','resolve','do','repeat','change','bid','select','reselect','begin','separate','note','reorder','copy','named','cost',
-
-249. have to standarize conjunctions. conjunctions of things have item intermeditary nodes because the second thing may have quanitifiers but no other conjunctions do
-
-251. Go back and simplify re in mtgl, i.e. chains can be greatly simplified
 
 252. Something is going wrong now with graphing action-clauses, see Fossil Find
 
@@ -326,7 +319,6 @@ the first is comming from the if-would-instead, the second from the skip
 
 338. See Sworn Defender, the first sequence-phrase is not being graphed
 
-339. Standarize naming conventions of conjunction regex
- re_conjoined_<type>_phrase_<additional>?
+340. See Price of Betrayal, because we're splitting phrases by commas, we're getting a clause = or xp<opponent>. instead of it being conjoined in the parameter of remove
 
 

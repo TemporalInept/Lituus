@@ -13,7 +13,7 @@ Tags MTG oracle text in the mtgl format
 #__name__ = 'tagger'
 __license__ = 'GPLv3'
 __version__ = '0.1.8'
-__date__ = 'June 2020'
+__date__ = 'August 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -292,7 +292,7 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_status_face.sub(r"st<face amplifier=\1>",ntxt)
     ntxt = mtgl.re_mod_face.sub(r"xm<face amplifier=\1>",ntxt)
 
-    # turn could be a lituus action and is some cases an object
+    # turn could be a lituus action and in some cases an object
     ntxt = mtgl.re_turn_action.sub("xa",ntxt)
 
     # exile is a zone if preceded by a preposition
@@ -557,12 +557,11 @@ def chain_other(txt):
 def merge(txt):
     """
     Many objects are followed by additional criteria:
-     1. with ATTR
-     2. with keyword(s)
+     1. with keyword(s)
     :param txt: tagged, chained and reified txt with deconflicted status
     :return: objects with following critieria merged
     """
-    ntxt = mtgl.re_obj_with_kw.sub(lambda m: _obj_with__(m),txt)
+    ntxt = mtgl.re_obj_with_kw.sub(lambda m: _obj_with_(m),txt)
     return ntxt
 
 def postprocess(txt):
@@ -700,9 +699,12 @@ def _ptchain_(m):
     """
     # get the two p/ts and unpack the value
     ch1,ch2 = m.groups()
-    pt1 = mtgltag.tag_attr(ch1)['val']
-    pt2 = mtgltag.tag_attr(ch2)['val']
-    return mtgltag.retag('ch','p/t',{'val':pt1 + mtgl.OR + pt2})
+    try:
+        pt1 = mtgltag.tag_attr(ch1)['val']
+        pt2 = mtgltag.tag_attr(ch2)['val']
+        return mtgltag.retag('ch','p/t',{'val':pt1 + mtgl.OR + pt2})
+    except lts.LituusException:
+        return m.group()
 
 def _chain_check_(m):
     """
@@ -1073,7 +1075,7 @@ def _align_type_(m):
     # TODO: make sure we won't see attributes on the preceding characteristics
     return mtgltag.retag('ch',val,attr)
 
-def _obj_with__(m):
+def _obj_with_(m):
     """
     merges object and trailing 'with' clause
     :param m: the regex.match object

@@ -1,19 +1,17 @@
 #!/usr/bin/env python
 """ mtgl.py
 Copyright (C) 2019  Temporal Inept (temporalinept@mail.com)
-
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version.
-
 Defines regexes,strings and helper functions used in the mtgl format
 """
 
 # __name__ = 'mtgl'
 __license__ = 'GPLv3'
-__version__ = '0.1.9'
-__date__ = 'July 2020'
+__version__ = '0.1.10'
+__date__ = 'August 2020'
 __author__ = 'Temporal Inept'
 __maintainer__ = 'Temporal Inept'
 __email__ = 'temporalinept@mail.com'
@@ -27,22 +25,18 @@ import lituus as lts
 """
  Defines a series of regular of expressions and string replacements for tagging
  of MTG words and phrases.
-
  Once tagged there are several combinations
   Entity: a player (xp), a mtg object (ob) or a lituus object (xo)
   Thing: an Entity, or a zone (zn)
   Property: a characteristic (ch) or a lituus characteristic (xc)
-
  Mana symbols (energy, tap and untap) are already enclosed by braces '{' and '}', 
  continue this concept using '<' and '>' to tag important words. All text is 
  lowered  cased. Then special words as defined in the Magic: The Gathering 
  Comprehensive Rules (22 Jan 2020) are tagged in addition to words that are common 
  throughout mtg card oracles. 
-
  Each tag is a two letter identifier followed by a '<', the word and a '>' 
  Identifiers beggining with 'x', specifies words that lituus treats as special or 
  common enough to warrant being tagged
-
   Keyword Actions (701.2 through 701.43) = ka<KEYWORD ACTION>
   Keywords (702.2 through 702.136) = kw<KEYWORD>
   Ability Words (207.2c} = aw<ABILITY WORD>
@@ -54,14 +48,12 @@ import lituus as lts
   Status (110.6) = st<STATUS>
   Numbers (107.1, 107.3) (not inside mana symbols) = nu<NUMBER>
   Trigger Preambles (603.1) tp<TRIGGER>
-
  English
   Prepositions pr<PREPOSITION>
   Demonstratives dm<DEMONSTRATIVE>
   Sequence sq<SEQUENCE>
   Comparison Operator op<COMPARISON>
   Conditional cn<CONDITONAL>
-
  Special lituus tags
   Lituus Action = xa<LITUUS ACTION>
   Lituus Chacteristics = xc<LITUUS CHARACTERISTIC>
@@ -71,7 +63,6 @@ import lituus as lts
   Lituus Modifiers = xm<LITUUS MODIFIER>
   Lituus Thing = xt<LITUUS THING>
   Lituus Attribute = xr<META-CHARACTERISTIC>
-
 Ultimately, the intent is to break oracle text into three main components:
  Things - tanglible entities that can be interacted with
  Attributes - properties of Things
@@ -886,9 +877,7 @@ re_ch_pt = re.compile(r"(\+|-)?nu<(\d+|x|y|z)>/(\+|-)?nu<(\d+|x|y|z)>(?! counter
 
 # meta 'attribute' values see Rathi Intimidator picks out three values 1) the
 # attribute, 2) the operator and 3) the value of the attribute
-re_attr_val = re.compile(
-    r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)> op<([⊕⋖⋗≤≥≡])> nu<(\d+|x|y|z)>"
-)
+re_attr_val = re.compile(r"xr<([^>]+)> op<([⊕⋖⋗≤≥≡])> nu<(\d+|x|y|z)>")
 
 # meta 'attribute' values see Triskaidekaphobia where a lituus object preceded
 # by a number can be instantiated as an attribute. We only want vanilla lituus
@@ -905,17 +894,14 @@ re_num_dmg = re.compile(r"nu<([^>]+)> ef<(\w*damage)>")
 re_attr_val_wd = re.compile(r"(?:xq<a> )?xc<(odd|even)> xr<([^>]+)( suffix=s)?>")
 
 # meta 'attribute' value see Repeal where no operator is present
-re_attr_val_nop = re.compile(r"xr<([\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)> nu<(\d+|x|y|z)>")
+re_attr_val_nop = re.compile(r"xr<([^>]+)> nu<(\d+|x|y|z)>")
 
 # colored will be tagged as xr<color suffix=ed> need to switch this
 re_attr_colored = re.compile(r"xr<((?:mono)?color) suffix=ed>")
 
 # ... base power and toughness X/Y i.e. Godhead of Awe then power and toughness
 # i.e Transmutation
-re_base_pt = re.compile(
-    r"base ch<power> and ch<toughness> "
-    r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
-)
+re_base_pt = re.compile(r"base ch<power> and ch<toughness> (ch<p/t[^>]*>)")
 
 # if after instantiatiating attributes we want to 'chain' cases of
 #  power and/or toughness where toughness has a value i.e. Tetsuko Umezawa,
@@ -1061,13 +1047,9 @@ re_copy_act = re.compile(r"(ob<copy( suffix=s)?>)(?= (?:xq<|xo<it>))")
 # 4. suffix=s: (see Sidis, Undead Vizier) a keyword with suffix 's' preceded by
 #  a Thing will be considered and action
 re_kicker_act = re.compile(r"(?<=was )kw<kicker suffix=ed>")
-re_be_kw = re.compile(r"(?<=(?:be|xo<it>) )kw<([\w-]+?) suffix=ed>")
-re_kw_status = re.compile(r"(?<=is )kw<([\w-]+?) suffix=ed>")
-re_kw_action = re.compile(
-    r"(?<=(?:xp|ob|xo)<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*> )"
-    r"kw<([\w-]+?) suffix=s>"
-)
+re_be_kw = re.compile(r"(?<=(?:be|xo<it>) )kw<([^>]+?) suffix=ed>")
+re_kw_status = re.compile(r"(?<=is )kw<([^>]+?) suffix=ed>")
+re_kw_action = re.compile(r"(?<=(?:xp|ob|xo)<[^>]+> )kw<([^>]+?) suffix=s>")
 
 # action words that are statuses
 # action words with a suffix of 'ed' that are preceded by a quantifier and
@@ -1111,19 +1093,15 @@ re_val_join = re.compile(r"(?<=[<=])({})(?=>)".format(val_join_tkns))
 # TODO: this would be better done via a regular expression vice a dict
 
 # Negated tags i.e. non-XX<...>
-re_negate_tag = re.compile(r"non-(\w\w)<(.+?)>")
+re_negate_tag = re.compile(r"non-(\w\w)<([^>]+)>")
 
 # Hanging Basic finds the supertype not followed by an explicit land
-re_hanging_basic = re.compile(
-    r"(ch<¬?basic>)(?! ch<land(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
-)
+re_hanging_basic = re.compile(r"(ch<¬?basic>)(?! ch<land[^>]*>)")
 
 # Hanging Snow finds the supertype that is followed by a land subtype (with no
 # explicit 'land' inbetween NOTE: we are only checking the FIVE basic subtypes
 re_hanging_snow = re.compile(
-    r"(ch<¬?snow>)"
-    r"(?= ch<¬?(?:forest|island|mountain|plains|swamp)"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
+    r"(ch<¬?snow>)(?= ch<¬?(?:forest|island|mountain|plains|swamp)[^>]*>)"
 )
 
 # phrases related to number of something
@@ -1148,8 +1126,7 @@ re_no_thing = re.compile(r"no(?= (?:ob|xp|xo|zn|xq))")
 # only looking at tap and flip - it will be a status only if there is a suffix
 # of 'ed' and it is not preceded by 'is'
 re_status = re.compile(
-    r"(?<!is )"
-    r"(?:[kx]a)<(un)?({}) suffix=ed>".format('|'.join(status[0:2]))
+    r"(?<!is )(?:[kx]a)<(un)?({}) suffix=ed>".format('|'.join(status[0:2]))
 )
 
 # in some cases, if 'tapped' is preceded by an 'is', it is a status but only if
@@ -1174,12 +1151,9 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 ####
 
 # turn is an action if it is followed by a 'xm' (modifier) or 'xq' (quantifier)
-# NOTE:
-#  1) only capture the 'ts' tag id IOT replace it with 'xa' lituus action
+# NOTE: only capture the 'ts' tag id IOT replace it with 'xa' lituus action
 re_turn_action = re.compile(
-    r"(ts)"
-    r"(?=<turn(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>(?:s|ing|ed|ion|'s|s')? "
-    r"x[m|q]<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
+    r"(ts)(?=<turn[^>]*>(?:s|ing|ed|ion|'s|s')? x[m|q]<[^>]+>)"
 )
 
 # turn can be considered an object if preceded by a
@@ -1193,7 +1167,7 @@ re_turn_object = re.compile(r"(xq<(?:a(?:[∧∨⊕][^>]+)?)>) ts<([^>]+)>")
 ## ZONE DECONFLICTION
 ####
 # find exile preceded by a preposition
-re_zn_exile = re.compile(r"(?<=pr<\w+?> )(ka<exile>)")
+re_zn_exile = re.compile(r"(?<=pr<[^>]+> )(ka<exile>)")
 
 ####
 ## COST DECONFLICTION
@@ -1214,11 +1188,7 @@ re_cost_mana = re.compile(
 re_cost_num = re.compile(
     r"xo<cost( suffix=s)?>(?= (?:op<[⊕⋖⋗≤≥≡]> )?nu<(?:[0-9wubrgscpx\/]+)>)"
 )
-re_cost_aa = re.compile(
-    r"(?<=(?:ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>) )"
-    r"xo<cost( suffix=s)?>"
-)
+re_cost_aa = re.compile(r"(?<=ob<[^>+]> )xo<cost( suffix=s)?>")
 re_cost_except = re.compile(  # Drought and Brutal Suppresion and Valiant Changeling
     r"xo<cost( suffix=s)?>(?= (?:xq<a> xq<additional>|by more than))"
 )
@@ -1288,7 +1258,7 @@ re_with_null = re.compile(r"pr<with> nu<0>")
 ####
 
 # move any suffices 'r','s','ing' 'ed' or "'s" to parameters inside tags
-re_suffix = re.compile(r"(\w\w)<(.+?)>(s'|s|ion|ing|ed|'s)")
+re_suffix = re.compile(r"(\w\w)<([^>]+)>(s'|s|ion|ing|ed|'s)")
 
 ####
 ## ALIGNMENTS
@@ -1308,29 +1278,19 @@ re_suffix = re.compile(r"(\w\w)<(.+?)>(s'|s|ion|ing|ed|'s)")
 # and Mox Amber. This is commonly artifact creature
 # NOTE: on the first type we should not see any attributes
 re_align_dual = re.compile(
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>)"
     r" (?:(and|or|and/or) )?"
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>)"
 )
 
 # 2 or more consecutive types. Cards like Warden of the First Tree and Figure of
 # Destiny, We capture it here just in case future cards display this behavior.
 # This will default to dual types as above for exactly 2 consecutive types
 re_align_n = re.compile(
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>)"
     r" (?:(and|or|and/or) )?"
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
-    r"(?: (ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>))*"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>)"
+    r"(?: (ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>))*"
 )
 
 # 205.4b ... some supertypes are closely identified with specific card types...
@@ -1343,9 +1303,8 @@ re_align_n = re.compile(
 # NOTE: We are assuming that super-type alignments are all space-delimited
 re_align_super = re.compile(
     r"(ch<¬?(?:legendary|basic|snow|world)> )+"
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[∧∨⊕→]¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
+     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
+    r"(?:[∧∨⊕→]¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))*[^>]*>)"
 )
 
 # on or more space delimited subtypes followed by a type will be aligned. We have
@@ -1365,12 +1324,8 @@ re_align_sub = re.compile(
 # hanging subtypes are those subtype characteristics that are not followed by
 # a type characteristic.
 re_hanging_subtype = re.compile(
-    r"(ch<¬?(?:" + re_sub_char.pattern + ")"
-    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
-    r"(?! ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
+    r"(ch<¬?(?:" + re_sub_char.pattern + ")[^>]*>)"
+     r"(?! ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>)"
 )
 
 # An anamoulous phrasing found in 3 cards (Assassin's Blade, Exile, Tilonalli's
@@ -1379,9 +1334,7 @@ re_hanging_subtype = re.compile(
 #  on the lookout for other tokens
 re_disjoint_ch = re.compile(
     r"(ch<(?:¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored|"
-    r"historic|legendary|basic|snow|world))>)"
-    r" (xa<.*?>) "
-    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
+     r"historic|legendary|basic|snow|world))>) (xa<[^>]+>) (ch<[^>]+>)"
 )
 
 ####
@@ -1390,11 +1343,7 @@ re_disjoint_ch = re.compile(
 ####
 
 # ... p/t X/Y or p/t A/B ...
-re_pt_chain = re.compile(
-    r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
-    r" or "
-    r"(ch<p/t(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
-)
+re_pt_chain = re.compile(r"(ch<p/t[^>]+>) or (ch<p/t[^>]+>)")
 
 # chain two or more sequential tags of the same id having the form
 #   [tid 1, ..., tid n-2] tid n-1[,] conjunction op tid n
@@ -1406,17 +1355,11 @@ def re_chain(tid):
     :return: regex.Pattern
     """
     return re.compile(
-        r"({0}<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-        r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>, )*"
-        r"({0}<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-        r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
-        r",? (and|or|and/or) "
-        r"({0}<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-        r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)".format(tid)
+        r"({0}<[^>]+>, )*({0}<[^>]+>),? (and|or|and/or) ({0}<[^>]+>)".format(tid)
     )
 
 # above not working for quantifiers TODO: why
-re_chain_quantifiers = re.compile(r"xq<\w+> xq<\w+>( xq<\w+>)*")
+re_chain_quantifiers = re.compile(r"xq<[^>]+> xq<[^>]+>( xq<[^>]+>)*")
 
 # a subset of the conjunction_chain that matches only color chains
 re_clr_conjunction_chain = re.compile(
@@ -1426,7 +1369,7 @@ re_clr_conjunction_chain = re.compile(
     r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>)"
 )
 
-# currently only 1 card I found with this pattern, Seize the Soul, Destroy target
+# currently only 1 card found with this pattern, Seize the Soul, Destroy target
 # nonwhite, nonblack creature.
 re_clr_conjunction_chain_special = re.compile(
     r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>), "
@@ -1438,36 +1381,26 @@ re_clr_conjunction_chain_special = re.compile(
 re_clr_conj_type = re.compile(
     r"ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored))>"
     r" (and|or|and\or) "
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>)"
 )
 
 # a subset of the conjunction_chain that matches only type chains
 re_type_conjunction_chain = re.compile(
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>, )*"
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>, )*"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>)"
     r",? (and|or|and/or) "
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>)"
 )
 
 # color type pairs where the pair is not preceded by or followed by a characteristic
 # matches the color value and the type tag
 re_clr_type_chain = re.compile(
-    r"(?<!ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*> )"
+    r"(?<!ch<[^>]+> )"
     r"(?:ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)"
     r"(?:[∧∨⊕]¬?(?:white|blue|black|green|red))*)>)"
     r" "
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\+\-/\w∧∨⊕⋖⋗≤≥≡→¬']+?)*"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
-    r"(?! ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
+    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>)"
+    r"(?! ch<[^>]+>)"
 )
 
 # phrases of the form CHAR, TYPE[...] where CHAR is predominately a type except
@@ -1478,16 +1411,19 @@ re_conjunction_chain_special = re.compile(
     r"ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored|"
     r"artifact|creature|enchantment|instant|land|planeswalker|sorcery|tribal|"
     r"historic|legendary|basic|snow|world))>"
-    r","
-    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
-    r"(?:, (and|or|and/or))?"
+    r", (ch<[^>]+>)(?:, (and|or|and/or))?"
 )
 
 # Price of Betrayal is an exception handled here
+# NOTE: after above Price of Betrayal will look like
+#  ... ob<permanent characteristics=artifact∧creature>,
+#    ob<permanent characteristics=planeswalker>, or xp<opponent>.
+# we will have one characteristic that is anded and one not. Additionally the last
+# object on the right of the conjuunction operator is a player so it won't be joined
 re_pob_chain = re.compile(
     r"ch<(¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))"
     r"[∧∨⊕](¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))>"
-    r","
+    r", "
     r"ch<(¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery))>"
     r"(?:, (and|or|and/or))"
 )
@@ -1498,8 +1434,6 @@ re_pob_chain = re.compile(
 
 # Phrases of the form [SUPER] [P/T] [COLOR] TYPE [OBJECT]. This requires colors
 # types have been chained and aligned
-# NOTE: have to account for wrapped types and include an optional '(' inside the
-#  opening tag bracket '<'
 re_reify_phrase = re.compile(
     # optional super-type (value only)
     r"(?:ch<(¬?legendary|basic|snow|world)> )?"
@@ -1509,36 +1443,24 @@ re_reify_phrase = re.compile(
     r"(?:ch<(¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)"
     r"(?:[∧∨⊕]¬?(?:white|blue|black|green|red))*)> )?"
     # mandatory type characteristic
-    r"(ch<\(?¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)"
-    r"(?:[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)?"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
+    r"(ch<\(?¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>)"
     # optional object
-    r"(?: (ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-     r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>))?"
+    r"(?: (ob<[^>]+>))?"
 )
 
 # after above we have some non-type characteristics followed by an object i.e.
 # Unmask. The characteristic may be complex but will not have an attribute dict.
 # matches the tag-value of the characteristic and the complete tag of the object
-re_reify_single = re.compile(
-    r"ch<(¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)>"
-    r" "
-    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
-)
+re_reify_single = re.compile(r"ch<([^>]+)> (ob<[^>]+>)")
 
 # finds singleton characteristics left over after reify_phrase, reify_single
 # these can reified into an attribute
-re_reify_singleton_char = re.compile(
-    r"(ch<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
-)
+re_reify_singleton_char = re.compile(r"(ch<[^>]+>)")
 
-# finds two consecutive objects. This may be permanent card i.e. Celestial Gatekeeper
-# possesive i.e Teferi's Response or nontoken permanent i.e. City in a Bottle
-re_consecutive_obj = re.compile(
-    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
-    r" "
-    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
-)
+# finds two consecutive space delimited objects. This may be permanent card i.e.
+# Celestial Gatekeeper possesive i.e Teferi's Response or nontoken permanent i.e.
+# City in a Bottle
+re_consecutive_obj = re.compile(r"(ob<[^>]+>) (ob<[^>]+>)")
 
 ####
 ## MISC POST CHAIN OPERATIONS
@@ -1550,41 +1472,21 @@ re_no2num = re.compile(r"(no)(?= ob<)")
 # find phrases of the form ATTR OP with no following number
 re_uninit_attr = re.compile(
     r"xr<(p/t|everything|text|name|mana cost|cmc|power|toughness|"
-    r"color_identity|color|type)>"
-    r" op<(.)>"
-    r"(?! nu)"
+    r"color_identity|color|type)> op<(.)>(?! nu)"
 )
 
 ####
 ## MERGE
 ####
 
-# phrases of the form OBJECT with ATTR
-# TODO: if there is an 'and' it screws everything up see Soul Separator
-re_obj_with_attr = re.compile(
-    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
-    r" pr<with> "
-    r"xr<(p/t|everything|text|name|mana cost|cmc|power|toughness|"
-     r"color_identity|color|type) val=(.)(\w*?)>"
-    #r"xr<(p/t|everything|text|name|mana cost|cmc|power|toughness|"
-    # r"color_identity|color|type) val=(.)(\w*?)>"
-)
-
 # phrases of the form OBJECT with KEYWORD (assumes chained keywords)
-re_obj_with_kw = re.compile(
-    r"(ob<(?:¬?[\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)"
-    r"(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\('\)]+?)*>)"
-    r" pr<with> "
-    r"kw<([\w-]+)>"
-)
+re_obj_with_kw = re.compile(r"(ob<[^>]+>) pr<with> kw<([^>]+)>")
 
 # abilities can be preceded by mana, triggered, activated and in one case "bands
 # with other"
 # NOTE: Assumes that statuses have had their stem and suffix combined
 re_ability_type = re.compile(
-    r"(?:(?:xs|xo)<(\w+)>|(\"bands pr<with> xq<other>\")) "
-     r"(ob<ability(?: suffix=\w?)?>)"
+    r"(?:(?:xs|xo)<(\w+)>|(\"bands pr<with> xq<other>\")) (ob<ability[^>]*>)"
 )
 
 ####
@@ -1592,9 +1494,7 @@ re_ability_type = re.compile(
 ####
 
 # find cost preceded by a keyword i.e. Rafter Demon
-re_cost_type = re.compile(
-    r"(kw<[\w-]+>) (xo<cost(?: [\w\+\-/=¬∧∨⊕⋖⋗≤≥≡⇔→'\(\)]+?)*>)"
-)
+re_cost_type = re.compile(r"(kw<[\w-]+>) (xo<cost[^>]*>)")
 
 # find punctuation immediately followed by quotations
 re_encl_punct = re.compile(r"([\.\,])(\'\"|\'|\")")
@@ -1647,8 +1547,3 @@ re_your_opponents = re.compile(r"xp<you suffix='s> xp<opponent suffix=s>")
 # d. you don't control (Aether tradewinds) and don't own (Agent of Treachery)
 re_both_ownctrl = re.compile(r"both (xc<own∧control>)")
 re_neither_ownctrl = re.compile(r"neither xc<own> nor xc<control>")
-#re_dont_ownctrl = re.compile(r"xa<do> cn<not> xc<own>")
-
-# Finds phrases of the form {n} more|less for cost increase/reduction one or more
-# mana symbols followed by a qualifier
-# re_mc_qualifier = re.compile(r"((?:{(?:[0-9wubrgscpx\/]+)})+) xl<(more|less)>")
