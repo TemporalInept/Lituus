@@ -310,14 +310,14 @@ word_hacks = {
     "resolved":"resolveed","resolving":"resolveing",
     "did":"doed","does":"dos",
     "controlled":"controled",
-    "once":"1 time",
+    "caused":"causeed",
+    "once":"1 time", "twice":"2 times",
     # status related
     "tapping":"taping","tapped":"taped","untapping":"untaped","untapped":"untaped",
     "flipping":"fliping","flipped":"fliped",
     "phased":"phaseed",
     "kicked":"kickered",
-    # twice
-    "twice":"2 times",
+
 }
 word_hack_tkns = '|'.join(word_hacks.keys())
 re_word_hack = re.compile(r"\b({})\b".format(word_hack_tkns))
@@ -653,7 +653,7 @@ lituus_actions = [  # words not defined in the rules but important any way
     'switch','assign','win','lose','tie','skip','flip','cycle','phase','become',
     'share','turn','produce','round','resolve','do','repeat','change','bid',
     'select','reselect','begin','separate','note','reorder','remain','can',
-    'count','divide',
+    'count','divide','cause',
     'copy',  # will have already been tagged?
     'named',  # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
