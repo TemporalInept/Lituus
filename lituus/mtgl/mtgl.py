@@ -517,9 +517,8 @@ re_num_op = re.compile(r"(nu<(?:\d+|x|y|z)>) or (greater|less|more|fewer)")
 
 # prepositions (check for ending tags)
 prepositions = [
-    'on top of','up to','on bottom of','from','to','into','in','on','out','under',
-    'onto','top of','top','bottom of','bottom','without','with','for','up','down',
-    'by','as though','as','of',
+    'top','bottom','up to','from','to','into','in','on','out','under','onto',
+    'without','with','for','up','down','by','as though','as','of',
 ]
 re_prep = re.compile(r"\b(?<!<[^>]*)({})\b(?!>)".format('|'.join(prepositions)))
 
