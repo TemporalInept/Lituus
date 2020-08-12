@@ -250,7 +250,7 @@ word_hacks = {
     # contractions
     "can't":"can not","don't":"do not","didn't":"doed not","it's":"it is",
     "isn't":"is not","haven't":"have not","hasn't":"have not","aren't":"are not",
-    "you're":"you are","couldn't":"could not","they're":"they are",
+    "you're":"you are","couldn't":"could not","they're":"they are",'their':"they's",
     "doesn't":"dos not","you've":"you have","your":"you's","that's":"that is",
     "wasn't":"was not","weren't":"were not",
     # special
@@ -368,9 +368,9 @@ re_saga_chapter = re.compile(r"\n([iv]+[,iv]*) — ")
 # TODO:  combine "that is" and "that are" as a  single  quantifier?
 lituus_quantifiers = [
     'a','target','each','all','any','every','another','other than','other','this',
-    'that','additional','those','these','their','the','extra','first','second',
-    'third','fourth','fifth','sixth','seventh','eighth','ninth','tenth','half',
-    'new','single','same','different','next','last','opening','which',"chosen",
+    'that','additional','those','these','the','extra','first','second','third',
+    'fourth','fifth','sixth','seventh','eighth','ninth','tenth','half','new',
+    'single','same','different','next','last','opening','which',"chosen",
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
