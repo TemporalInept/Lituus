@@ -251,7 +251,7 @@ def graph_triggered(t,pid,line):
 
     # run of the mill triggered ability
     try:
-        tp,cond,effect,istr = dd.re_tgr_line.search(line).groups()
+        tp,cond,effect,instr = dd.re_tgr_line.search(line).groups()
         taid = t.add_node(pid,'triggered-ability')
         t.add_node(taid,'triggered-preamble',value=tp)
 
@@ -263,9 +263,9 @@ def graph_triggered(t,pid,line):
             effect = ceffect + ", " + effect
 
         # finish up and return
-        graph_phrase(t, t.add_node(taid, 'triggered-condition'), cond)
+        graph_phrase(t, t.add_node(taid,'triggered-condition'),cond)
         graph_phrase(t,t.add_node(taid,'triggered-effect'),effect)
-        if istr: graph_phrase(t,t.add_node(taid,'triggered-instruction'),istr)
+        if instr: graph_phrase(t,t.add_node(taid,'triggered-instruction'),instr)
         return taid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -311,7 +311,6 @@ def graph_phrase(t,pid,line,i=0):
     :param i: iteration count to avoid infinite recursion
     """
     # check for activated /triggered ability and complex phrases
-    #if dd.re_complex_tgr_check.search(line): graph_complex_triggered(t,pid,line)
     if _activated_check_(line): return graph_activated(t,pid,line)
     elif dd.re_tgr_check.search(line): return graph_triggered(t,pid,line)
     elif dd.re_complex_tgr_check.search(line): graph_complex_triggered(t,pid,line)
@@ -1202,9 +1201,10 @@ def graph_sequence_phrase(t,pid,line):
     if dd.re_time_check_start.search(line) or dd.re_time_check_end.search(line):
         # starts (or ends) wih a turn-structure
         try:
-            m = dd.re_sequence_turn_structure1.search(line)
-            if m: phase,cls = m.groups()
-            else: cls,phase = dd.re_sequence_turn_structure2.search(line).groups()
+            #m = dd.re_sequence_turn_structure1.search(line)
+            #if m: phase,cls = m.groups()
+            #else: cls,phase = dd.re_sequence_turn_structure2.search(line).groups()
+            phase,cls = dd.re_sequence_turn_structure1.search(line).groups()
             sid = t.add_node(pid,'sequence-phrase')
             graph_phrase(t,t.add_node(sid,'seq-condition',value='when'),phase)
             graph_phrase(t,t.add_node(sid,'seq-effect'),cls)
@@ -2095,6 +2095,7 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'bid': pass  # TODO
     elif aw == 'block': pass  # TODO
     elif aw == 'can': pass  # TODO
+    elif aw == 'cause': pass # TODO
     elif aw == 'change': pass  # TODO
     elif aw == 'choose': pass  # TODO
     elif aw == 'copy': pass  # TODO

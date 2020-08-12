@@ -98,11 +98,8 @@ re_act_line = re.compile(r"^(.+?): (.+?)(?:\. ([^.]+))?\.?$")
 #  [When/Whenever/At] [condition] [triggered-ability]
 #  (Wildfire Devils) have conjoined conditions
 #  [When/Whenever/At] [condition] and|or [When/Whenever/At] [condition] ...
-# NOTE: since we are basing our deliniation of the individual 'components',
-#  have to build in checks for periods that are inclosed in double parenthesis
-#  and single, double parenthesis (Reef Worm)
 re_tgr_check = re.compile(r"^(tp<\w+>)")
-re_tgr_line = re.compile(r"^tp<(\w+)> ([^\.]+), ([^\.]+)(?:\. (.+))?\.?$")
+re_tgr_line = re.compile(r"^tp<(\w+)> ([^,|^\.]+), ([^\.]+)(?:\. (.+))?\.?$")
 re_embedded_tgr_line = re.compile(r"^tp<([^>+)> ([^\.]+), (tp<[^>]+> [^\.]+)\.?$")
 re_conjoined_tgr_condition_line = re.compile(
     r"^(tp<[^>]+> [^,]+) (and|or) (tp<[^>]+> [^,]+), (.+)\.?$"
@@ -122,7 +119,7 @@ re_split_tgr_condition = re.compile(r"^(.+), (cn<if> .+)$")
 # NOTE: we ensure effect does not cross sentence/clause boundaries
 re_delayed_tgr_check = re.compile(r"tp<\w+> (?:.+ )?ts<[^>]+>\.?$")
 re_delayed_tgr_clause = re.compile(
-    r"([^,|^\.]+) tp<(\w+)> ((?:[^\.]+ )?ts<[^>]+>)\.?$"
+    r"^S([^,|^\.]+) tp<(\w+)> ((?:[^\.]+ )?ts<[^>]+>)\.?$"
 )
 
 # conjunction of phrases (See Giant Oyster)

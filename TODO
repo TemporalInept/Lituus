@@ -313,10 +313,6 @@ the first is comming from the if-would-instead, the second from the skip
 
 333. See Repeated Reverbation "when you next cast"
 
-334. Qarsi Deceiver "spend this mana only to cast"
-
-335. Add 'to' as a prefix to action words i.e. "to cast"
-
 338. See Sworn Defender, the first sequence-phrase is not being graphed
 
 340. See Price of Betrayal, because we're splitting phrases by commas, we're getting a clause = or xp<opponent>. instead of it being conjoined in the parameter of remove
@@ -324,6 +320,6 @@ the first is comming from the if-would-instead, the second from the skip
 
 341. See if there are any "remove ... from the game" in oracle text, if so can we just replace with exile?
 
-344.
+344. Having fixed Crystalline Resonance triggered ability graphing - need to make sure it did not break other cards, same goes for the sequences (turn_structure2 is currently commented out)
 
 
