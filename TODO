@@ -322,4 +322,10 @@ the first is comming from the if-would-instead, the second from the skip
 
 344. Having fixed Crystalline Resonance triggered ability graphing - need to make sure it did not break other cards, same goes for the sequences (turn_structure2 is currently commented out)
 
+345. In mana nodes, instead of quantity specifying the number of symbols should change to CMC
 
+346. in grapher, _graph_ap_add_ and _graph_mana_string need a lot of work
+
+347. Removed boundary check (comma) in re_action_clause in action-parameters expression, monitor to make sure nothing breaks
+
+348. Do we really need the act-parameter node? 

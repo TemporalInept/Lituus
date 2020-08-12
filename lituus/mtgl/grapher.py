@@ -1926,21 +1926,33 @@ def graph_thing(t,pid,clause):
         if (thing1 or thing2) and not op:
             # TODO: this is a hack for now, re_thing_clause needs to be redone
             raise lts.LituusException(lts.EPTRN, "Not a thing {}".format(clause))
-        assert(not thing1) # for now raise an error if there are 3 things
 
-        # if there are two things and the second thing has quantifiers, the
-        # quanitifiers in the first thing only apply to the first thing otherwise
-        # they will apply to both things.
         # we will always need thing clause 3 unpacked
+        n1 = xq1 = st1 = th1 = dh1 = None
+        n2 = xq2 = st2 = th2 = dh2 = None
         n3,xq3,st3,th3,dh3 = dd.re_qst2.search(thing3).groups()
+
+        # if there is a thing1 there will be a thing2 likewise, if there is no
+        # thing2 there is not thing1
         if thing2:
+            # unpack thing2 and if thing1 is present, unpack it too
             n2,xq2,st2,th2,dh2 = dd.re_qst2.search(thing2).groups()
+            if thing1: n1,xq1,st1,th1,dh1 = dd.re_qst2.search(thing1).groups()
+
+            # determien if we will use common qualifying terms or not
             if n3 or xq3 or st3:
                 # if there are two (or more) things and the last thing has
                 # qualifying terms (i.e. a quantifier) we need to create a
                 # conjunction of thing clauses where each thing clause has their
                 # own qualifying tmers
                 rid = t.add_node(pid,'conjunction',value=op,itype='thing-clause')
+                if thing1:
+                    tcid1 = t.add_node(rid,'thing-clause') # thing clause 1
+                    if n1: t.add_node(tcid1,'number',value=n1)
+                    if xq1: t.add_node(tcid1,'quantifier',value=xq1)
+                    if st1: t.add_node(tcid1,'status',value=st1)
+                    thid1 = _graph_object_(t,t.add_node(tcid1,'thing'),th1)
+                    if dh1: t.add_node(thid1,'dump-huff', tograph=dh1)
                 tcid2 = t.add_node(rid,'thing-clause') # thing clause 2
                 if n2: t.add_node(tcid2,'number',value=n2)
                 if xq2: t.add_node(tcid2,'quantifier',value=xq2)
@@ -1962,9 +1974,12 @@ def graph_thing(t,pid,clause):
                 if xq2: t.add_node(rid,'quantifier',value=xq2)
                 if st2: t.add_node(rid,'status',value=st2)
                 cid = t.add_node(rid,'conjunction',value=op,itype='thing')
+                if thing1:
+                    thid1 =  _graph_object_(t,t.add_node(cid,'thing'),th1)
+                    if dh1: t.add_node(thid1,'dump-huff',tograph=dh1)
                 thid2 = _graph_object_(t,t.add_node(cid,'thing'),th2)
-                thid3 = _graph_object_(t,t.add_node(cid,'thing'),th3)
                 if dh2: t.add_node(thid2,'dump-huff',tograph=dh2)
+                thid3 = _graph_object_(t,t.add_node(cid,'thing'),th3)
                 if dh3: t.add_node(thid3,'dump-huff',tograph=dh3)
         else:
             # only one thing clause
@@ -2713,19 +2728,22 @@ def _graph_ap_meld_(t,pid,phrase):
 ## Lituus Actions
 
 def _graph_ap_add_(t,pid,phrase):
+    # TODO: should we be graphing mana
     # the simplest is a mana string or mana string conjunction
+    #oid = graph_thing(t, t.add_node(apid, 'act-direct-object'), 'xo<them>')
     if dd.re_mana_check.search(phrase):
-        mid = _graph_mana_string_(t,pid,phrase)
+        mid = _graph_mana_string_(t,t.add_node(pid,'act-direct-object'),phrase)
         if mid: return mid
 
     # now have to check for complex phrasing
     # additional number of mana
     try:
         xq,num,cls = dd.re_nadditional_mana.search(phrase).groups()
-        mid = t.add_node(pid,'mana',quantity=num)
-        t.add_node(mid,'quantifier',value=xq)
+        doid = t.add_node(pid,'act-direct-object')
+        mid = t.add_node(doid,'mana',quantity=num)
+        if xq: t.add_node(mid,'quantifier',value=xq)
         t.add_node(mid,'mana-qualifier',tograph=cls) # TODO
-        return mid
+        return doid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
@@ -2733,9 +2751,10 @@ def _graph_ap_add_(t,pid,phrase):
     # {X} clause
     try:
         ms,cls = dd.re_mana_trailing.search(phrase).groups()
-        mid = _graph_mana_string_(t,pid,ms)
+        doid = t.add_node(pid,'act-direct-object')
+        mid = _graph_mana_string_(t,doid,ms)
         t.add_node(mid,'mana-qualifier',tograph=cls) # TODO
-        return mid
+        return doid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
@@ -2743,10 +2762,11 @@ def _graph_ap_add_(t,pid,phrase):
     # amount of {X} clause
     try:
         ms,cls = dd.re_amount_of_mana.search(phrase).groups()
-        mid = t.add_node(pid,'amount-of')
+        doid = t.add_node(pid,'act-direct-object')
+        mid = t.add_node(doid,'mana',value='amount-of')
         _graph_mana_string_(t,mid,ms)
         t.add_node(mid,'mana-qualifier',tograph=cls)
-        return mid
+        return doid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
@@ -2754,10 +2774,11 @@ def _graph_ap_add_(t,pid,phrase):
     # that much {x}
     try:
         ms,cls = dd.re_that_much_mana.search(phrase).groups()
-        mid = t.add_node(pid,'that-much')
-        _graph_mana_string_(t,mid,ms)
+        doid = t.add_node(pid,'act-direct-object')
+        mid = t.add_node(doid,'mana',value='that-much')
+        _graph_mana_string_(t,doid,ms)
         if cls: t.add_node(mid,'mana-qualifier',tograph=cls)
-        return mid
+        return doid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
