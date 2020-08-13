@@ -1821,6 +1821,24 @@ def graph_action_clause_ex(t,pid,phrase):
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
 
+    # do the same
+    aid = None
+    try:
+        ply,prep,thing = dd.re_do_the_same_action_clause.search(phrase).groups()
+        aid = t.add_node(pid,'action-clause')
+        if ply: graph_thing(t,t.add_node(aid,'act-subject'),ply)
+        apid = t.add_node(aid, 'act-predicate')
+        _,val = _graph_action_word_(t,apid,'xa<repeat>') #TODO is repeat, the best to use her?
+        apid = t.add_node(aid,'action-parameter')
+        graph_thing(t,t.add_node(apid,'act-prep-object',value=prep),thing)
+        return aid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN and aid: t.del_node(aid)
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
+
+    # 'traditional' action clause
     aid = None
     try:
         # unpack the clause

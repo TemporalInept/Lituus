@@ -592,15 +592,23 @@ re_action_clause = re.compile(
      r"((?:xa|ka|kw)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
 )
 
-# 2.a tap or untap is a special phrasing
+# 2.a tap or untap is a special phrasing i.e. Twiddle
 re_tq_action_clause = re.compile(
     r"^(?:([^,|^\.]*?) )?(ka<tap> or ka<untap>) ([^,|^\.]+)\.?$"
+)
+
+# 2.c do the same is another special phrasing i.e. Guild Fued (only 5 cards as
+# of IKO)
+# [player]? do the same [preposition] [thing]
+re_do_the_same_action_clause = re.compile(
+    r"^(?:([^,|^\.]*xp<[^>]+>) )?xa<do[^>]*> xq<the∧same> pr<([^>]+)> ([^,|^\.]+)\.?$"
 )
 
 #  3. an exception is control/own phrases of the form i.e. Synod Centurion
 #   [player] [own|control] [clause]
 #  will also be treated as action clause. NOTE: IOT not match "you control" and
 #  the like, requires at least one character following the own/control tag
+# TODO: relook at this after changing own|control tagging
 re_action_ply_poss = re.compile(
     r"^((?:xq<[^>]+> )?(?:xs<[^>]+> )?xp<[^>]+>) "
      r"xc<(own|control)(?: suffix=s)?>(?: ([^\.]+))\.?$"
@@ -1007,13 +1015,8 @@ re_player_may = re.compile(
 #   Gilded drake is an exception in that it has "do not or can not" and it has
 #   a action clause prior to the comma
 # NOTE: this is a subset of re_if_cond_act but it requires special handling
-#re_conjoined_if_ply_cando = re.compile(
-#    r"^cn<if> ([^,|^\.]*xp<[^>]+>) "
-#    r"xa<(can|do)>(?: cn<(not)>)?, "
-#    r"([^\.]+)\.?$"
-#)
 re_if_ply_cando = re.compile(
-    r"^cn<if> ([^,|^\.]*xp<[^>]+>) xa<(can|do)>(?: cn<(not)>)?, ([^\.]+)\.?$"
+    r"^cn<if> ([^,|^\.]*xp<[^>]+>) xa<(can|do)[^>]*>(?: cn<(not)>)?, ([^\.]+)\.?$"
 )
 
 # b) if [condition], [action] i.e Ordeal of Thassa
