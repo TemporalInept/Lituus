@@ -588,8 +588,8 @@ re_conjoined_act_clause_unique = re.compile(
 #   [thing]? [can|do]? [conditional]? [action-word] [action-parameters]
 #  NOTE: have to make sure that the action(s) are not preceded by another action
 re_action_clause = re.compile(
-    r"^(?:([^,|^\.]*?) )?(?:xa<(can|do)> )?(?:cn<(not)> )?"
-     r"(?<!(?:ka|xa)<[^>]+>.*)((?:xa|ka|kw)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
+    r"^(?:([^,|^\.]+?) )?(?:xa<(can|do)[^>]*> )?(?:cn<(not)> )?"
+     r"((?:xa|ka|kw)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
 )
 
 # 2.a tap or untap is a special phrasing
@@ -993,32 +993,49 @@ re_may_as_though = re.compile(
 )
 
 # contains 'may' [player] may [action] i.e. Ad Nauseam
-#  NOTE: This also covers [player] may have [effect] such as browbeat
+#  NOTE: This also covers [player] may have [effect] such as Browbeat
 re_player_may = re.compile(
     r"^((?:[^,|\.]+)?xp<[^>]+>(?:[^,|\.]+)?) "
      r"cn<may> ([x|k]a<\w+>(?:[^\.]+))\.?$"
 )
 
 # starts with if
-#  a) if [condition], [action] i.e Ordeal of Thassa
-#   this includes subsets like
-#     if [player] does [not]? [action] i.e. Decree of Justice
-#     if [player] cannot, [action] i.e. Brain Pry
-#  b) if [condition], [action]. otherwise, [action] i.e Advice from the Fae
+
+# a) if [player] can|do [not]?, [action] i.e. Decree of Justice, Brain Pry
+#  if [player] can|do not?, [effect]
+# TODO:
+#   Gilded drake is an exception in that it has "do not or can not" and it has
+#   a action clause prior to the comma
+# NOTE: this is a subset of re_if_cond_act but it requires special handling
+#re_conjoined_if_ply_cando = re.compile(
+#    r"^cn<if> ([^,|^\.]*xp<[^>]+>) "
+#    r"xa<(can|do)>(?: cn<(not)>)?, "
+#    r"([^\.]+)\.?$"
+#)
+re_if_ply_cando = re.compile(
+    r"^cn<if> ([^,|^\.]*xp<[^>]+>) xa<(can|do)>(?: cn<(not)>)?, ([^\.]+)\.?$"
+)
+
+# b) if [condition], [action] i.e Ordeal of Thassa
+re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
+
+# c) if [condition], [action]. otherwise, [action] i.e Advice from the Fae
 #   NOTE: we need to catch this prior to lines being broken down into sentences
 #   so we catch previous sentences if present
-#  c) [action] if [condition] i.e. Ghastly Demise
-#  d) hanging if would i.e. Whip of Erebos (same as below)
-#  e) hanging if (fragmentary, that is, there is no effect) these are generally
-#   part of a higher level construct such as a triggered effect i.e. Nim Abomination
-#   if [condition]
-re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
 re_if_otherwise = re.compile(
     r"^(?:(.+?\.) )?cn<if> ([^,|^\.]+), ([^\.]+)\. "
      r"cn<otherwise>, ([^\.]+)\.?(?: ([^\.]+)\.?)?$"
 )
+
+# d) [action] if [condition] i.e. Ghastly Demise
 re_act_if_cond = re.compile(r"^([^,|^\.]+),? cn<if> ([^,|\.]+)\.?$")
+
+# e) hanging if would
 re_if_would = re.compile(r"^cn<if> ([^,|^\.]+) cn<would> ([^,|^\.]+)\.?$")
+
+# f) hanging if (fragmentary, that is, there is no effect) these are generally
+#  part of a higher level construct such as a triggered effect i.e. Nim Abomination
+#   if [condition]
 re_if_cond = re.compile(r"^cn<if> ([^\.]+)\.?$")
 
 # contains unless
@@ -1078,7 +1095,7 @@ re_restriction_cando_unless = re.compile(
 re_restriction_would_cando = re.compile(
     r"^([^,|^\.]+) xq<that> cn<would> ([^,|\.]+) xa<(can|do)> cn<not> ([^,|\.]+)\.?$"
 )
-re_restriction_cando = re.compile(
+re_restriction_cando = re.compile( # TODO: NOT BEING USD
     r"^([^,|^\.]+) xa<(can|do)> cn<not> ([kx]a<[^>]+>.*)\.?$"
 )
 

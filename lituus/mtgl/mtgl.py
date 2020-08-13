@@ -1539,14 +1539,16 @@ re_etb = re.compile(r"xa<enter( [^>]+)?> xq<the> zn<battlefield>")
 # your opponents can be combined
 re_your_opponents = re.compile(r"xp<you suffix='s> xp<opponent suffix=s>")
 
-# own, control related
+# own, control related - We want to remove "do not" replaceing it with the negation
+# sign and standarize others
 # a. both own and control (Graf Rats) -can remove 'both'
 # b. neither own nor control (Conjured Currency) -replace neither with "do not"
 # c you control but do not own (Thieving Amalgam) -and the own & control negating control
-# d. TODO: you don't control (Aether tradewinds) and don't own (Agent of Treachery)
+# d. you don't control (Aether tradewinds) and don't own (Agent of Treachery)
 re_both_ownctrl = re.compile(r"both (xc<own∧control>)")
 re_neither_ownctrl = re.compile(r"neither xc<own> nor xc<control>")
 re_own_not_ctrl = re.compile(r"xc<control> but xa<do> cn<not> xc<own>")
+re_dont_ownctrl = re.compile(r"xa<do[^>]*> cn<not> xc<(own|control)>")
 
 # action word prefixs
 #  either a form of 'to be' 'action-word' or 'to' 'action-word'

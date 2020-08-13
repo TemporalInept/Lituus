@@ -194,8 +194,6 @@ the phrase upto shuffle is a thing (player)
 
 257. Have to handjam Game of Chaos with ka<double> xq<the> xo<life> stakes pr<with> xq<each> xa<flip>
 
-258. you control but don't own Herald of Leshrac, Thieving Amalgam
-
 259 rewrite ability words like Spell mastery, removing the underscore (see Dark Dabbling)
 
 260. do something with trailing qualifiers see Loyal Pegasus
@@ -328,4 +326,12 @@ the first is comming from the if-would-instead, the second from the skip
 
 347. Removed boundary check (comma) in re_action_clause in action-parameters expression, monitor to make sure nothing breaks
 
-348. Do we really need the act-parameter node? 
+348. Do we really need the act-parameter node?
+
+349. See Gilded Drake should we tag 'make' and 'illegal'
+
+350. Have to go through mtgl and check all ending borders for example lituus actions were not being tagged because of a doulbe quote (") following the word
+
+
+
+ 

@@ -622,9 +622,11 @@ def third_pass(txt):
     ntxt = mtgl.re_etb.sub(r"xa<etb\1>",ntxt)
     ntxt = mtgl.re_your_opponents.sub(r"xp<opponent suffix=s>",ntxt) # for grapher
 
-    # look at 'abnormal' possessives (own, control)
+    # fix possessives (own, control) using logic symbols instead of tokens
     ntxt = mtgl.re_both_ownctrl.sub(r"\1",ntxt)
-    ntxt = mtgl.re_neither_ownctrl.sub(r"xa<do> cn<not> xc<own∨control>",ntxt)
+    ntxt = mtgl.re_neither_ownctrl.sub(r"xc<¬own∧¬control>", ntxt)
+    ntxt = mtgl.re_own_not_ctrl.sub(r"xc<own∧¬control>",ntxt)
+    ntxt = mtgl.re_dont_ownctrl.sub(r"xc<¬\1>",ntxt)
 
     # combine prefix action words of the form 'to be' action word (i.e. be cast)
     # and 'to' action word (i.e. to cast)
