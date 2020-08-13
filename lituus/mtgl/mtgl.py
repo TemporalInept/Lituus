@@ -660,7 +660,7 @@ lituus_actions = [  # words not defined in the rules but important any way
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|:|\.|,|\s|\n)".format(la_tkns)
+    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|:|\.|,|\s|\n|\")".format(la_tkns)
 )
 
 # because target is primarily a quantifier we will only tag the verb version
@@ -1540,12 +1540,13 @@ re_etb = re.compile(r"xa<enter( [^>]+)?> xq<the> zn<battlefield>")
 re_your_opponents = re.compile(r"xp<you suffix='s> xp<opponent suffix=s>")
 
 # own, control related
-# a. both own and control can remove the both
-# b. neither own nor control (Conjured Currency)
-# c TODO: you control but do not own (Thieving Amalgam)
-# d. you don't control (Aether tradewinds) and don't own (Agent of Treachery)
+# a. both own and control (Graf Rats) -can remove 'both'
+# b. neither own nor control (Conjured Currency) -replace neither with "do not"
+# c you control but do not own (Thieving Amalgam) -and the own & control negating control
+# d. TODO: you don't control (Aether tradewinds) and don't own (Agent of Treachery)
 re_both_ownctrl = re.compile(r"both (xc<own∧control>)")
 re_neither_ownctrl = re.compile(r"neither xc<own> nor xc<control>")
+re_own_not_ctrl = re.compile(r"xc<control> but xa<do> cn<not> xc<own>")
 
 # action word prefixs
 #  either a form of 'to be' 'action-word' or 'to' 'action-word'
