@@ -332,6 +332,20 @@ the first is comming from the if-would-instead, the second from the skip
 
 350. Have to go through mtgl and check all ending borders for example lituus actions were not being tagged because of a doulbe quote (") following the word
 
+351. 'decision-point' in if_thing_cando graphing needs to be renamed to something more fitting
+
+352. have to look at stuff like "could action" or will it only be related to 'could target'
+
+353. See Wall of Shadows, a lot wrong with the graphing 
+ 1. 'can' is being graphed as a restriction
+ 2. target of spells that can target only Walls or of abilities that can target only Walls. This should be:
+  target-of
+   conjunction 'or'
+    spells ...
+    abilities ...
+
+.
+
 
 
  

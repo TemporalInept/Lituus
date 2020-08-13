@@ -1016,8 +1016,8 @@ re_activation_cost = re.compile(r"ka<activate suffix=ion> xo<cost( suffix=s)?>")
 # "target and that target" - here both are objects
 re_target_sc = re.compile(r"xq<target> and xq<that> xq<target>")
 
-# that target (aside from above) and could target are references to an action
-re_target_act = re.compile(r"(?<=(?:xq<that>|cn<could>) )(xq<target>)")
+# that target (aside from above), could target and can target are references to an action
+re_target_act = re.compile(r"(?<=(?:xq<that>|cn<could>|xa<can>) )(xq<target>)")
 
 # Find target quantifier that is not followed by an mtg object, a status or
 # a player/opponent - these are objects
