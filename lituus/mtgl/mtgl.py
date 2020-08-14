@@ -370,7 +370,8 @@ lituus_quantifiers = [
     'a','target','each','all','any','every','another','other than','other','this',
     'that','additional','those','these','the','extra','first','second','third',
     'fourth','fifth','sixth','seventh','eighth','ninth','tenth','half','new',
-    'single','same','different','next','last','opening','which',"chosen",
+    'single','same','different','next','last','opening','which',"chosen",'both',
+    'either',
 ]
 quantifier_tkns = '|'.join(lituus_quantifiers)
 re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
@@ -1549,7 +1550,7 @@ re_your_opponents = re.compile(r"xp<you suffix='s> xp<opponent suffix=s>")
 # b. neither own nor control (Conjured Currency) -replace neither with "do not"
 # c you control but do not own (Thieving Amalgam) -and the own & control negating control
 # d. you don't control (Aether tradewinds) and don't own (Agent of Treachery)
-re_both_ownctrl = re.compile(r"both (xc<own∧control>)")
+re_both_ownctrl = re.compile(r"xq<both> (xc<own∧control>)")
 re_neither_ownctrl = re.compile(r"neither xc<own> nor xc<control>")
 re_own_not_ctrl = re.compile(r"xc<control> but xa<do> cn<not> xc<own>")
 re_dont_ownctrl = re.compile(r"xa<do[^>]*> cn<not> xc<(own|control)>")
