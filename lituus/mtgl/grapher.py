@@ -1084,11 +1084,12 @@ def graph_modal_phrase(t,pid,line):
     # try 'normal' phrasing first (700.2)
     try:
         # unpack the phrase
-        num,opts = dd.re_modal_phrase.search(line).groups()
+        num,ex,opts = dd.re_modal_phrase.search(line).groups()
 
         # add a modal node and nodes for each of the choices
         mid = t.add_node(pid,'modal')
-        cid = t.add_node(mid,'choose',number=num)
+        if ex: t.add_node(mid,'choose',number=mtgl.GE+num)
+        else: t.add_node(mid,'choose',number=num)
         for opt in [x for x in dd.re_opt_delim.split(opts) if x]:
             # have to split the opt on semi-colon to see if there are option
             # instructions
@@ -1104,10 +1105,8 @@ def graph_modal_phrase(t,pid,line):
 
     # then with instructions (700.2d) on choices
     try:
-        # unpack the phrase
+        # unpack the phrase, add a modal node & nodes for each of the choices
         num,instr,opts = dd.re_modal_phrase_instr.search(line).groups()
-
-        # add a modal node and nodes for each of the choices
         mid = t.add_node(pid,'modal')
         cid = t.add_node(mid,'choose',quantity=num)
         graph_phrase(t,t.add_node(mid,'instructions'),instr)

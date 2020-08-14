@@ -869,11 +869,13 @@ re_add_cost = re.compile(
 # And, 700.2d defines modal spells allowing players to the same mode more than
 # once, these will have the phrase “You may choose the same mode more than once.”
 # See Mystic Confluence and have the form:
-# choose [operator]? [number]. [Instructions] (•[choice])+
-# Vindictive Lich is an exception where the instructions differ and the number
+#   choose [operator]? [number]. [Instructions] (•[choice])+
+# See Vindictive Lich for an exception where the instructions differ and the number
 # includes an operator
+# NOTE: Some cards i.e. Arful Takedown have the form:
+#  choose [number] or both. [Instructions] (•[choice])+
 re_modal_check = re.compile(r"^xa<choose> nu<([^>]+)>.+•")
-re_modal_phrase = re.compile(r"^xa<choose> nu<([^>]+)> —([^\.]+)\.?$")
+re_modal_phrase = re.compile(r"^xa<choose> nu<([^>]+)>(?: or xq<(both)> )?—([^\.]+)\.?$")
 re_modal_phrase_instr = re.compile(r"^xa<choose> nu<([^>]+)>\. ([^•]+) ([^\.]+)\.?$")
 re_opt_delim = re.compile(r" ?•")
 
