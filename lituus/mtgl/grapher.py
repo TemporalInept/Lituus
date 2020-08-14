@@ -1271,6 +1271,7 @@ def graph_sequence_phrase(t,pid,line):
 
         # and effect-sequence-condition
         try:
+
             act,seq,cond = dd.re_sequence_effect_cond.search(line).groups()
             sid = t.add_node(pid,'sequence-phrase')
             graph_phrase(
@@ -1302,22 +1303,22 @@ def graph_conditional_phrase(t,pid,line):
             if m: xq,cond,act = m.groups()
             else: act,xq,cond = dd.re_for_each_cond_mid.search(line).groups()
             if xq: cond = "xq<{}> ".format(xq) + cond # add quantifier back if present
-            ccid = t.add_node(pid,'conditional-phrase')
-            graph_phrase(t,t.add_node(ccid,'cond-condition',value='for-each'),cond)
-            graph_phrase(t,t.add_node(ccid,'cond-effect'),act)
-            return ccid
+            cid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(cid,'cond-condition',value='for-each'),cond)
+            graph_phrase(t,t.add_node(cid,'cond-effect'),act)
+            return cid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
     elif 'cn<if>' in line:
-        # check first for special case if-ply-can|do
+        # check first for special cases if-thing-can|do
         cid = None
         try:
-            ply,aw,neg,effect = dd.re_if_ply_cando.search(line).groups()
+            thing,aw,neg,effect = dd.re_if_thing_cando.search(line).groups()
             cid = t.add_node(pid,'conditional-phrase')
             ccid = t.add_node(cid,'cond-condition',value='if')
             dpid = t.add_node(ccid,'decision-point',value=aw + "-not" if neg else aw)
-            graph_thing(t,dpid,ply)
+            graph_thing(t,dpid,thing)
             graph_phrase(t,t.add_node(cid,'cond-effect'),effect)
             return cid
         except lts.LituusException as e:
@@ -1325,6 +1326,32 @@ def graph_conditional_phrase(t,pid,line):
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
             else: raise
+
+        # check for if ables
+        if ' able' in line:
+            try:
+                effect = dd.re_if_able.search(line).group(1)
+                cid = t.add_node(pid,'conditional-phrase')
+                t.add_node(cid,'cond-condition',value='if-able')
+                graph_phrase(t,t.add_node(cid,'cond-effect'),effect)
+                return cid
+            except AttributeError as e:
+                if e.__str__() == "'NoneType' object has no attribute 'group'": pass
+                else: raise
+
+            try:
+                # For these we create a conjunction of conditions the first
+                # being if-able, the second being 'unless
+                effect,ucond = dd.re_if_able_unless.search(line).groups()
+                cid = t.add_node(pid,'conditional-phrase')
+                ccid = t.add_node(cid,'conjunction',value='and',itype='cond-condition')
+                t.add_node(ccid,'cond-condition',value='if-able')
+                graph_phrase(t,t.add_node(ccid,'cond-condition',value='unless'),ucond)
+                graph_phrase(t,t.add_node(cid,'cond-effect'),effect)
+                return cid
+            except AttributeError as e:
+                if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+                else: raise
 
         # if condition action
         try:
@@ -1379,14 +1406,9 @@ def graph_conditional_phrase(t,pid,line):
 
         # action if condition
         try:
-            # one possibility is a "if able", handle these differently
             act,cond = dd.re_act_if_cond.search(line).groups()
             cid = t.add_node(pid,'conditional-phrase')
-            if cond == 'able':
-                # TODO: what card is this
-                t.add_node(cid,'cond-condition',value='if-able')
-            else:
-                graph_phrase(t,t.add_node(cid,'cond-condition',value='if'),cond)
+            graph_phrase(t,t.add_node(cid,'cond-condition',value='if'),cond)
             graph_phrase(t,t.add_node(cid,'cond-effect'),act)
             return cid
         except AttributeError as e:
@@ -1844,24 +1866,26 @@ def graph_action_clause_ex(t,pid,phrase):
         # unpack the clause
         thing,abw,cnd,aw,ap = dd.re_action_clause.search(phrase).groups()
 
-        if abw:
+        if abw and cnd:
             # check for a restricted action i.e. "can not", "do not"
             aid = t.add_node(pid,'restriction-phrase')
-            reid = t.add_node(
-                aid,'restriction-effect',value=abw+"-"+cnd if cnd else abw
-            )
+            reid = t.add_node(aid,'restriction-effect',value=abw+"-"+cnd)
+            # TDOO: commented out   #aid,'restriction-effect',value=abw+"-"+cnd if cnd else abw
             phrase = thing + " " + aw if thing else aw
             if ap: phrase = phrase + " " + ap
             graph_action_clause(t,reid,phrase)
         else:
-            # TODO: we are only seeing one card (Escaped Shapeshifter) with a
-            #  conditional precededing the action word that is not also preceded
-            #  by 'can' or 'do'
+            # TODO: we are only seeing few cards with a conditional precededing
+            #  the action word that is not also preceded by 'can' or 'do'
             if cnd: assert(cnd == 'not')
             aid = t.add_node(pid,'action-clause')
             if thing: graph_thing(t,t.add_node(aid,'act-subject'),thing)
             apid = t.add_node(aid,'act-predicate')
-            awid,val = _graph_action_word_(t,apid,aw if not cnd else 'not '+aw)
+
+            # before graph the action word, have to add any present prefixes
+            if abw: aw = abw + ' ' + aw
+            elif cnd: aw = cnd + ' ' + aw
+            awid,val = _graph_action_word_(t,apid,aw)
             if ap: graph_action_param(t,aid,val,ap)
         return aid
     except lts.LituusException as e:
@@ -2399,14 +2423,14 @@ def _graph_action_word_(t,pid,aw):
     try:
         # TODO: what about suffixes
         # extract negation if present
-        neg,wd = dd.re_action_word.search(aw).groups()
+        pw,wd = dd.re_action_word.search(aw).groups()
 
         tid,val,attr = mtgltag.untag(wd)
         awid = t.add_node(pid,dd.TID[tid])
         avid = t.add_node(awid,val)
-        assert(not ('prefix' in attr and neg))
-        if 'prefix' in attr: t.add_attr(avid,'prefix',attr['prefix'])
-        elif neg: t.add_attr(avid,'prefix','not')
+        if 'prefix' in attr and pw: t.add_attr(avid,'prefix',pw+'-'+attr['prefix'])
+        elif 'prefix' in attr: t.add_attr(avid,'prefix',attr['prefix'])
+        elif pw: t.add_attr(avid,'prefix',pw)
         return awid,val
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass

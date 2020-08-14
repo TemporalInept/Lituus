@@ -1536,6 +1536,10 @@ re_mill = re.compile(
 # etb
 re_etb = re.compile(r"xa<enter( [^>]+)?> xq<the> zn<battlefield>")
 
+# [thinb] able to block [thing] do so is difficult for the grapher
+# NOTE: prefixes have not been applied to action verbs yet
+re_able_to_block = re.compile(r"(.+) able pr<to> xa<block> (.+) xa<do> so")
+
 # your opponents can be combined
 re_your_opponents = re.compile(r"xp<you suffix='s> xp<opponent suffix=s>")
 

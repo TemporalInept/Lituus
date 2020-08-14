@@ -628,6 +628,9 @@ def third_pass(txt):
     ntxt = mtgl.re_own_not_ctrl.sub(r"xc<own∧¬control>",ntxt)
     ntxt = mtgl.re_dont_ownctrl.sub(r"xc<¬\1>",ntxt)
 
+    # rewrite able to block IOT facilitate graphing
+    ntxt = mtgl.re_able_to_block.sub(r"\1 xa<block> \2 cn<if> able",ntxt)
+
     # combine prefix action words of the form 'to be' action word (i.e. be cast)
     # and 'to' action word (i.e. to cast)
     ntxt = mtgl.re_prefix_aw.sub(lambda m: _prefixed_act_word_(m),ntxt)

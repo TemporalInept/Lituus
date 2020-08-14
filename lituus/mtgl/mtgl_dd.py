@@ -558,8 +558,8 @@ re_act_clause_check = re.compile(
     r"((?:xa|ka|kw)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
 )
 
-# action word can be a single action word or negated
-# TODO: the only card I found with a negated action is Escaped Shapeshifter
+# action word can be a single action word or preceded by not or can
+# the only card I found with a negated action is Escaped Shapeshifter
 re_action_word = re.compile(r"(?:([^>]+) )?((?:xa|ka|kw)<[^>]+>)")
 
 # conjunction of actions
@@ -954,11 +954,11 @@ re_sequence_then = re.compile(
 # sequence condition i.e. Shriveling Rot
 # [sequence] [condition], [action]
 # these range from simple "until end of turn, ..." (Oko, the Trickster) to more
-# complex "as long as it is your turn" (Hardy Veteran) and cover none phase/step
+# complex "as long as it is your turn" (Hardy Veteran) and cover phase/step
 # related as well i.e. Hungering Yeti.
 #  NOTE we also look for optional for in front i.e. Release to the Wind
 re_sequence_cond_effect = re.compile(
-    r"^(?:pr<for> )?sq<([^>]+)> ([^,]+), ([^\.]+)\.?$"
+    r"^(?:pr<for> )?sq<([^>]+)> ([^,|^\.]+), ([^\.]+)\.?$"
 )
 
 # effect sequence condition (variation of above)
@@ -1009,20 +1009,35 @@ re_player_may = re.compile(
 
 # starts with if
 
-# a) if [player] can|do [not]?, [action] i.e. Decree of Justice, Brain Pry
+# a) if [thing] can|do [not]?, [action] i.e. Decree of Justice, Brain Pry
 #  if [player] can|do not?, [effect]
 # TODO:
 #   Gilded drake is an exception in that it has "do not or can not" and it has
 #   a action clause prior to the comma
-# NOTE: this is a subset of re_if_cond_act but it requires special handling
-re_if_ply_cando = re.compile(
-    r"^cn<if> ([^,|^\.]*xp<[^>]+>) xa<(can|do)[^>]*>(?: cn<(not)>)?, ([^\.]+)\.?$"
+# NOTE:
+#  1. this is a subset of re_if_cond_act but it requires special handling
+#  2. In almost all cases the thing is a player however sometimes (Condundrum
+#   Sphinx) it is an object
+re_if_thing_cando = re.compile(
+    r"^cn<if> ([^,|^\.]*(?:ob|xo|xp)<[^>]+>) "
+     r"xa<(can|do)[^>]*>(?: cn<(not)>)?, ([^\.]+)\.?$"
 )
 
-# b) if [condition], [action] i.e Ordeal of Thassa
+# b) if-able phrasings
+#  b.1 ends with "if able" i.e. Monstrous Carabid In these cases, the condition
+#  is 'if able'
+#   [effect] if able
+re_if_able = re.compile(r"^([^,|^\.]+) cn<if> able\.?$")
+
+# b.2 if able unless is in the middle i.e. Reckless Cohort
+re_if_able_unless = re.compile(
+    r"^([^,|^\.]+) cn<if> able cn<unless> ([^,|^\.]+)\.?$"
+)
+
+# c) if [condition], [action] i.e Ordeal of Thassa
 re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
 
-# c) if [condition], [action]. otherwise, [action] i.e Advice from the Fae
+# d) if [condition], [action]. otherwise, [action] i.e Advice from the Fae
 #   NOTE: we need to catch this prior to lines being broken down into sentences
 #   so we catch previous sentences if present
 re_if_otherwise = re.compile(
@@ -1030,13 +1045,13 @@ re_if_otherwise = re.compile(
      r"cn<otherwise>, ([^\.]+)\.?(?: ([^\.]+)\.?)?$"
 )
 
-# d) [action] if [condition] i.e. Ghastly Demise
+# e) [action] if [condition] i.e. Ghastly Demise
 re_act_if_cond = re.compile(r"^([^,|^\.]+),? cn<if> ([^,|\.]+)\.?$")
 
-# e) hanging if would
+# f) hanging if would
 re_if_would = re.compile(r"^cn<if> ([^,|^\.]+) cn<would> ([^,|^\.]+)\.?$")
 
-# f) hanging if (fragmentary, that is, there is no effect) these are generally
+# g) hanging if (fragmentary, that is, there is no effect) these are generally
 #  part of a higher level construct such as a triggered effect i.e. Nim Abomination
 #   if [condition]
 re_if_cond = re.compile(r"^cn<if> ([^\.]+)\.?$")
