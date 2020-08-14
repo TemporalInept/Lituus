@@ -411,7 +411,7 @@ objects = [  # objects 109.1 NOTE target can also be an object (115.1)
 ]
 obj_tkns = '|'.join(objects)
 re_obj = re.compile(
-    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(obj_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(obj_tkns)
 )
 
 # keep suffix but check word boundary in beginning
@@ -424,7 +424,7 @@ lituus_objects = [  # lituus objects
 ]
 lobj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
-    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(lobj_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(lobj_tkns)
 )
 
 # lituus players - keep suffix but check word boundary in beginning
@@ -433,7 +433,7 @@ lituus_players = [
 ]
 ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
-    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(ply_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(ply_tkns)
 )
 
 ####
@@ -530,7 +530,7 @@ sequences = [
 ]
 seq_tkns = '|'.join(sequences)
 re_seq = re.compile(
-    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(seq_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(seq_tkns)
 )
 
 ####
@@ -594,7 +594,7 @@ ability_words = [  # ability words 207.2c Updated 25-May-20 with IKO
 ]
 aw_tkns = '|'.join(ability_words)
 re_aw = re.compile(
-    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(aw_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(aw_tkns)
 )
 
 keyword_actions = [  # (legal) Keyword actions 701.2 - 701.43 Updated IKO 25-May-20
@@ -607,7 +607,7 @@ keyword_actions = [  # (legal) Keyword actions 701.2 - 701.43 Updated IKO 25-May
 ]
 kwa_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
-    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(kwa_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(kwa_tkns)
 )
 
 keywords = [  # (legal) Keyword Abilties 702.2 - 702,139 Updated IKO 25-May-20
@@ -637,7 +637,7 @@ kw_tkns = '|'.join(keywords)
 re_kw = re.compile(
     # NOTE: we have to add checks for the long hyphen and end of string to
     # ensure we tag all keywords
-    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(kw_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(kw_tkns)
 )
 
 lituus_actions = [  # words not defined in the rules but important any way
@@ -654,7 +654,7 @@ lituus_actions = [  # words not defined in the rules but important any way
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(la_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(la_tkns)
 )
 
 # because target is primarily a quantifier we will only tag the verb version
@@ -670,7 +670,7 @@ re_lituus_target_verb = re.compile(r'\btarget(s|ing|ed)\b')
 effects = ["combat damage","damage","effect"]
 eff_tkns = '|'.join(effects)
 re_effect = re.compile(
-    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(eff_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(eff_tkns)
 )
 
 ####
@@ -860,7 +860,7 @@ char_tkns = '|'.join(
     sub_characteristics
 )
 re_ch = re.compile(
-    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(char_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(char_tkns)
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
@@ -906,7 +906,7 @@ lituus_characteristics = [
 ]
 lch_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
-    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(lch_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(lch_tkns)
 )
 
 ####
@@ -920,7 +920,7 @@ zones = [
 ]
 zn_tkns = '|'.join(zones)
 re_zone = re.compile(
-    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(zn_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(zn_tkns)
 )
 
 ####
