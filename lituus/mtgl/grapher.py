@@ -2192,6 +2192,7 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'move': pass  # TODO
     elif aw == 'named': pass  # TODO
     elif aw == 'note': pass  # TODO
+    elif aw == 'pair': pass # TODO
     elif aw == 'pay': pass  # TODO
     elif aw == 'phase': pass  # TODO
     elif aw == 'prevent': pass  # TODO

@@ -411,7 +411,7 @@ objects = [  # objects 109.1 NOTE target can also be an object (115.1)
 ]
 obj_tkns = '|'.join(objects)
 re_obj = re.compile(
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|.|,|\n|s)".format(obj_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(obj_tkns)
 )
 
 # keep suffix but check word boundary in beginning
@@ -422,18 +422,18 @@ lituus_objects = [  # lituus objects
     'life','symbol','rest','monarch','pile','team','mode','level','value','number',
     'him','her','loyalty',
 ]
-lituus_obj_tkns = '|'.join(lituus_objects)
+lobj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|.|,|\n|s)".format(lituus_obj_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(lobj_tkns)
 )
 
 # lituus players - keep suffix but check word boundary in beginning
 lituus_players = [
     'you','opponent','teammate','player','owner','controller','they',
 ]
-lituus_ply_tkns = '|'.join(lituus_players)
+ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|.|,|\n|s)".format(lituus_ply_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(ply_tkns)
 )
 
 ####
@@ -450,12 +450,7 @@ re_phase = re.compile(r"\b({}) phase".format('|'.join(phases)))
 # additional checks.
 #  1. preceded by a quantifier this, each or that
 #  2. preceded by a sequence (NOTE: they have not been tagged yet)
-# TODO:cannot remember why this all necessary, shouldn't we just be able to
-#  check that it is not followed by damage
-re_combat_phase = re.compile(
-    #r"(?<=(?:(?:xq<\w+?>)|during|before|after) )combat(?! damage)"
-    r"combat(?! damage)"
-)
+re_combat_phase = re.compile(r"combat(?! damage)")
 
 # steps
 # 501.1 beginning phase steps - untap, upkeep, draw
@@ -466,8 +461,6 @@ re_combat_phase = re.compile(
 #  multiple things (i.e. untap, draw, end), there are two regexs
 steps1 = ['untap','draw','end','combat damage']  # must be followed by 'step'
 steps2 = [  # may or may not be followed by 'step'
-    #'upkeep','beginning of combat','declare attackers',
-    #'declare blockers','end of combat','cleanup',
     'upkeep','declare attackers','declare blockers','cleanup',
 ]
 re_step1 = re.compile(r"\b({}) step".format('|'.join(steps1)))
@@ -537,7 +530,7 @@ sequences = [
 ]
 seq_tkns = '|'.join(sequences)
 re_seq = re.compile(
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|.|,|\n| |$)".format(seq_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(seq_tkns)
 )
 
 ####
@@ -601,7 +594,7 @@ ability_words = [  # ability words 207.2c Updated 25-May-20 with IKO
 ]
 aw_tkns = '|'.join(ability_words)
 re_aw = re.compile(
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|\.|,|\s|\n|—|$)".format(aw_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(aw_tkns)
 )
 
 keyword_actions = [  # (legal) Keyword actions 701.2 - 701.43 Updated IKO 25-May-20
@@ -612,9 +605,9 @@ keyword_actions = [  # (legal) Keyword actions 701.2 - 701.43 Updated IKO 25-May
     'manifest','support','investigate','meld','goad','exert','explore','surveil',
     'adapt','amass','mill',
 ]
-kw_act_tkns = '|'.join(keyword_actions)
+kwa_tkns = '|'.join(keyword_actions)
 re_kw_act = re.compile(
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|\.|,|\s|\n|—|$)".format(kw_act_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(kwa_tkns)
 )
 
 keywords = [  # (legal) Keyword Abilties 702.2 - 702,139 Updated IKO 25-May-20
@@ -644,7 +637,7 @@ kw_tkns = '|'.join(keywords)
 re_kw = re.compile(
     # NOTE: we have to add checks for the long hyphen and end of string to
     # ensure we tag all keywords
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|\.|,|\s|—|\n|$)".format(kw_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(kw_tkns)
 )
 
 lituus_actions = [  # words not defined in the rules but important any way
@@ -661,7 +654,7 @@ lituus_actions = [  # words not defined in the rules but important any way
 ]
 la_tkns = '|'.join(lituus_actions)
 re_lituus_act = re.compile(
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|:|\.|,|\s|\n|\")".format(la_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(la_tkns)
 )
 
 # because target is primarily a quantifier we will only tag the verb version
@@ -677,7 +670,7 @@ re_lituus_target_verb = re.compile(r'\btarget(s|ing|ed)\b')
 effects = ["combat damage","damage","effect"]
 eff_tkns = '|'.join(effects)
 re_effect = re.compile(
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|.|,|s|\n)".format(eff_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(eff_tkns)
 )
 
 ####
@@ -731,9 +724,7 @@ subtype_land_characteristics = [
     "desert","forest","gate","island","lair","locus","mine","mountain",
     "plains","power-plant","swamp","tower","urza’s",
 ]
-re_subtype_land_char = re.compile(
-    r"{}".format('|'.join(subtype_land_characteristics))
-)
+re_subtype_land_char = re.compile(r"{}".format('|'.join(subtype_land_characteristics)))
 
 # 205.3j planeswalker types
 subtype_planeswalker_characteristics = [
@@ -869,7 +860,7 @@ char_tkns = '|'.join(
     sub_characteristics
 )
 re_ch = re.compile(
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|\.|,|\s|\b)".format(char_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(char_tkns)
 )
 
 # seperate procedure for tagging p/t has to be done after numbers are tagged
@@ -913,9 +904,9 @@ re_combine_pt = re.compile(r"xr<power> (and|or|and/or) xr<toughness val=([^>]+)>
 lituus_characteristics = [
     'life total','control','own','life','hand size','devotion','odd','even',
 ]
-lituus_ch_tkns = '|'.join(lituus_characteristics)
+lch_tkns = '|'.join(lituus_characteristics)
 re_lituus_ch = re.compile(
-    r"\b(?<!<[^>]*)({})(?=s|ing|ed|ion|'s|s'|:|.|,| )".format(lituus_ch_tkns)
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(lch_tkns)
 )
 
 ####
@@ -928,7 +919,9 @@ zones = [
     'anywhere','zone',
 ]
 zn_tkns = '|'.join(zones)
-re_zone = re.compile(r"\b(?<!<[^>]*)({})(?=s|:|\.|,| )".format(zn_tkns))
+re_zone = re.compile(
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"| |$))".format(zn_tkns)
+)
 
 ####
 ## STATUS
