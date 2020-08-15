@@ -69,8 +69,6 @@ xr<power> op<≡> xq<that> ob<card suffix='s> xr<p/t> op<≡> xq<that> ob<card s
 
 183. See Aquamorph Entity has two replacement effect clauses ETB and turned face up
 
-188. should be tagging 'life'
-
 190. Need a better way of labeling nodes related to APC. We want an easy way to search for alternate/reduced costs
 
 191. only during restrictions...
@@ -328,7 +326,7 @@ the first is comming from the if-would-instead, the second from the skip
 
 348. Do we really need the act-parameter node?
 
-349. See Gilded Drake should we tag 'make' and 'illegal'
+349. See Gilded Drake should we tag 'illegal'
 
 351. 'decision-point' in if_thing_cando graphing needs to be renamed to something more fitting
 
@@ -344,7 +342,7 @@ the first is comming from the if-would-instead, the second from the skip
 
 354. See Noble Quarry the or is a conjunction of things not action clauses
 
-356. Sequencing still needs work see Incite War, 'this turn' not being graphed as a sequence, Peema Aether-Seer is same as is Alluring Scent
+356. Sequencing still needs work see Incite War, 'this turn' not being graphed as a sequence, Peema Aether-Seer is same as is Alluring Scent (likely due to #344)
 
 357. Deadly Allure graphing is all jacked up
 

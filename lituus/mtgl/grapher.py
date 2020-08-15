@@ -1311,20 +1311,20 @@ def graph_conditional_phrase(t,pid,line):
             else: raise
     elif 'cn<if>' in line:
         # check first for special cases if-thing-can|do
-        cid = None
-        try:
-            thing,aw,neg,effect = dd.re_if_thing_cando.search(line).groups()
-            cid = t.add_node(pid,'conditional-phrase')
-            ccid = t.add_node(cid,'cond-condition',value='if')
-            dpid = t.add_node(ccid,'decision-point',value=aw + "-not" if neg else aw)
-            graph_thing(t,dpid,thing)
-            graph_phrase(t,t.add_node(cid,'cond-effect'),effect)
-            return cid
-        except lts.LituusException as e:
-            if e.errno == lts.EPTRN and cid: t.del_node(cid)
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
+        #cid = None
+        #try:
+        #    thing,aw,neg,effect = dd.re_if_thing_cando.search(line).groups()
+        #    cid = t.add_node(pid,'conditional-phrase')
+        #    ccid = t.add_node(cid,'cond-condition',value='if')
+        #    dpid = t.add_node(ccid,'decision-point',value=aw + "-not" if neg else aw)
+        #    graph_thing(t,dpid,thing)
+        #    graph_phrase(t,t.add_node(cid,'cond-effect'),effect)
+        #    return cid
+        #except lts.LituusException as e:
+        #    if e.errno == lts.EPTRN and cid: t.del_node(cid)
+        #except AttributeError as e:
+        #    if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        #    else: raise
 
         # check for if ables
         if ' able' in line:
@@ -2162,6 +2162,7 @@ def graph_action_param(t,pid,aw,param):
 
     # then lituus actions
     if aw == 'add': return _graph_ap_add_(t,pid,param)
+    elif aw == 'affect': pass # TODO
     elif aw == 'assign': pass  # TODO
     elif aw == 'attack': pass  # TODO
     elif aw == 'become': pass  # TODO
@@ -2186,9 +2187,11 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'flip': pass  # TODO
     elif aw == 'gain': pass  # TODO
     elif aw == 'get':  pass  # TODO
+    elif aw == 'guess': pass # TODO
     elif aw == 'have': pass  # TODO
     elif aw == 'leave': pass  # TODO
     elif aw == 'look': pass  # TODO
+    elif aw == 'made': pass # TODO
     elif aw == 'move': pass  # TODO
     elif aw == 'named': pass  # TODO
     elif aw == 'note': pass  # TODO

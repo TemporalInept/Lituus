@@ -1017,8 +1017,9 @@ re_player_may = re.compile(
 #   Gilded drake is an exception in that it has "do not or can not" and it has
 #   a action clause prior to the comma
 # NOTE:
-#  1. this is a subset of re_if_cond_act but it requires special handling
-#  2. In almost all cases the thing is a player however sometimes (Condundrum
+#  1. in almost all cases, the cando contition applies to a previous clause
+#  2. this is a subset of re_if_cond_act but it requires special handling
+#  3. In almost all cases the thing is a player however sometimes (Condundrum
 #   Sphinx) it is an object
 re_if_thing_cando = re.compile(
     r"^cn<if> ([^,|^\.]*(?:ob|xo|xp)<[^>]+>) "
