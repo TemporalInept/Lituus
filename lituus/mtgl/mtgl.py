@@ -649,7 +649,7 @@ lituus_actions = [  # words not defined in the rules but important any way
     'switch','assign','win','lose','tie','skip','flip','cycle','phase','become',
     'share','turn','produce','round','resolve','do','repeat','change','bid',
     'select','reselect','begin','separate','note','reorder','remain','can',
-    'count','divide','cause','pair','guess','made','affect',
+    'count','divide','cause','pair','guess','make','affect',
     'copy',  # will have already been tagged?
     'named',  # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object

@@ -558,19 +558,18 @@ re_act_clause_check = re.compile(
     r"((?:xa|ka|kw)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
 )
 
-# action word can be a single action word or preceded by not or can
-# the only card I found with a negated action is Escaped Shapeshifter
-re_action_word = re.compile(r"(?:([^>]+) )?((?:xa|ka|kw)<[^>]+>)")
+## Simple (two) conjunctions - three variations
 
-# conjunction of actions
-# 1.a where the subject is the same and there are exactly two actions
-#  i.e. Lost Auramancers
-#    [thing] [action] and [action]
-re_conjoined_act_clause_common = re.compile(
-    r"^(?:([^,|^\.]*?) )?"
-    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?) "
-    r"(and|or|and/or) "
-    r"((?:xa|ka)<[^>]+>(?: [^,|^\.]+)?)\.?$"
+# 1. a conjunction of predicates (possibly negated) with a common (or implied)
+# subject and parameters i.e. Twiddle
+#  [thing] [predicate1] [not1]? and|or [predicate2] [not]? [parameters]
+# NOTE: for now we are assuming that there will always be a subject and parameters
+re_conjoined_act_predicate = re.compile(
+    r"^"
+    r"([^,|^\.]+) "
+    r"((?:xa|ka|kw)<[^>]+>)(?: cn<(not)>)? (and|or|and/or) ((?:xa|ka|kw)<[^>]+>)(?: cn<(not)>)?"
+    r" ([^,|^\.]+)"
+    r"\.?$"
 )
 
 # 1.b where the subjects are different for each action i.e Abyssal Persecuter
@@ -584,6 +583,15 @@ re_conjoined_act_clause_unique = re.compile(
     r"([^,|^\.]*(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
 
+# conjunction of actions
+# 1.c where the subject is the same and there are exactly two actions
+#  i.e. Lost Auramancers
+#    [thing] [action] and [action]
+re_conjoined_act_clause_common = re.compile(
+    r"^(?:([^,|^\.]*?) )?((?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?) "
+    r"(and|or|and/or) ((?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?)\.?$"
+)
+
 #  2. singular
 #   [thing]? [can|do]? [conditional]? [action-word] [action-parameters]
 #  NOTE: have to make sure that the action(s) are not preceded by another action
@@ -592,10 +600,10 @@ re_action_clause = re.compile(
      r"((?:xa|ka|kw)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
 )
 
-# 2.a tap or untap is a special phrasing i.e. Twiddle
-re_tq_action_clause = re.compile(
-    r"^(?:([^,|^\.]*?) )?(ka<tap> or ka<untap>) ([^,|^\.]+)\.?$"
-)
+## 2.a tap or untap is a special phrasing i.e. Twiddle
+#re_tq_action_clause = re.compile(
+#    r"^(?:([^,|^\.]*?) )?(ka<tap> or ka<untap>) ([^,|^\.]+)\.?$"
+#)
 
 # 2.c do the same is another special phrasing i.e. Guild Fued (only 5 cards as
 # of IKO)
@@ -613,6 +621,10 @@ re_action_ply_poss = re.compile(
     r"^((?:xq<[^>]+> )?(?:xs<[^>]+> )?xp<[^>]+>) "
      r"xc<(own|control)(?: suffix=s)?>(?: ([^\.]+))\.?$"
 )
+
+# action word can be a single action word or preceded by not or can
+# the only card I found with a negated action is Escaped Shapeshifter
+re_action_word = re.compile(r"(?:([^>]+) )?((?:xa|ka|kw)<[^>]+>)")
 
 ####
 ## REPLACEMENT EFFECTS (614)

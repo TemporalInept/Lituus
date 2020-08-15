@@ -1798,24 +1798,33 @@ def graph_action_clause_ex(t,pid,phrase):
     """
     # check for 'tap or untap' phrases as they need to be handled differently before
     # processing 'normal' action clauses
-    aid = None
-    try:
-        ply, _, obj = dd.re_tq_action_clause.search(phrase).groups()
-        aid = t.add_node(pid,'action-clause')
-        graph_thing(t,t.add_node(aid,'act-subject'),ply)
-        apid = t.add_node(t.add_node(aid,'act-predicate'),"ka<tap∨untap>")
-        try:  # TODO: this is just a hack for now
-            graph_thing(t,t.add_node(aid,'act-object'),obj)
-        except lts.LituusException as e:
-            graph_phrase(t,t.add_node(aid,'act-parameters'),apid,obj)
-        return aid
-    except lts.LituusException as e:
-        if e.errno == lts.EPTRN and aid: t.del_node(aid)
-    except AttributeError as e:
-        if e.__str__() == "'NoneType' object has no attribute 'groups'":
-            pass
-        else:
-            raise
+    # TODO: this is too generic Gilded Drake has the same form but the conjoined
+    #  predicates are do|can
+    # TODO: if this commented out, the act-parameter is assigned to the last clause only
+    #aid = None
+    #try:
+    #    ply, _, obj = dd.re_tq_action_clause.search(phrase).groups()
+    #    aid = t.add_node(pid,'action-clause')
+    #    graph_thing(t,t.add_node(aid,'act-subject'),ply)
+    #    apid = t.add_node(t.add_node(aid,'act-predicate'),"ka<tap∨untap>")
+    #    try:  # TODO: this is just a hack for now
+    #        graph_thing(t,t.add_node(aid,'act-object'),obj)
+    #    except lts.LituusException as e:
+    #        graph_phrase(t,t.add_node(aid,'act-parameters'),apid,obj)
+    #    return aid
+    #except lts.LituusException as e:
+    #    if e.errno == lts.EPTRN and aid: t.del_node(aid)
+    #except AttributeError as e:
+    #    if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+    #    else: raise
+
+    # have to check for conjuctions first. There are three types:
+    #  1. conjunction of predicates w/ a common (or implied) subject and parameters
+    #  2. conjunction of action clause (subject is specified for each)
+    #  3. conjunction of (two) actions where the subject is the same
+
+    # conjunction of predicates
+
 
     # subjects are specified for both actions
     try:
@@ -1828,7 +1837,7 @@ def graph_action_clause_ex(t,pid,phrase):
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
 
-    # then check for those with a common thing
+    # check for those with a common subject
     try:
         th,ac1,op,ac2 = dd.re_conjoined_act_clause_common.search(phrase).groups()
         if th:
@@ -1843,33 +1852,34 @@ def graph_action_clause_ex(t,pid,phrase):
         else: raise
 
     # do the same
-    aid = None
-    try:
-        ply,prep,thing = dd.re_do_the_same_action_clause.search(phrase).groups()
-        aid = t.add_node(pid,'action-clause')
-        if ply: graph_thing(t,t.add_node(aid,'act-subject'),ply)
-        apid = t.add_node(aid, 'act-predicate')
-        _,val = _graph_action_word_(t,apid,'xa<repeat>') #TODO is repeat, the best to use her?
-        apid = t.add_node(aid,'action-parameter')
-        graph_thing(t,t.add_node(apid,'act-prep-object',value=prep),thing)
-        return aid
-    except lts.LituusException as e:
-        if e.errno == lts.EPTRN and aid: t.del_node(aid)
-    except AttributeError as e:
-        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-        else: raise
+    #aid = None
+    #try:
+    #    ply,prep,thing = dd.re_do_the_same_action_clause.search(phrase).groups()
+    #    aid = t.add_node(pid,'action-clause')
+    #    if ply: graph_thing(t,t.add_node(aid,'act-subject'),ply)
+    #    apid = t.add_node(aid, 'act-predicate')
+    #    _,val = _graph_action_word_(t,apid,'xa<repeat>') #TODO is repeat, the best to use her?
+    #    apid = t.add_node(aid,'action-parameter')
+    #    graph_thing(t,t.add_node(apid,'act-prep-object',value=prep),thing)
+    #    return aid
+    #except lts.LituusException as e:
+    #    if e.errno == lts.EPTRN and aid: t.del_node(aid)
+    #except AttributeError as e:
+    #    if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+    #    else: raise
 
     # 'traditional' action clause
     aid = None
     try:
         # unpack the clause
         thing,abw,cnd,aw,ap = dd.re_action_clause.search(phrase).groups()
+        if abw or cnd:
+            print(t._name,abw,cnd,aw,ap)
 
         if abw and cnd:
             # check for a restricted action i.e. "can not", "do not"
             aid = t.add_node(pid,'restriction-phrase')
             reid = t.add_node(aid,'restriction-effect',value=abw+"-"+cnd)
-            # TDOO: commented out   #aid,'restriction-effect',value=abw+"-"+cnd if cnd else abw
             phrase = thing + " " + aw if thing else aw
             if ap: phrase = phrase + " " + ap
             graph_action_clause(t,reid,phrase)
@@ -2169,7 +2179,7 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'begin': pass  # TODO
     elif aw == 'bid': pass  # TODO
     elif aw == 'block': pass  # TODO
-    elif aw == 'can' or aw =='do': print(t._name,pid,aw,param) #pass  # TODO
+    elif aw == 'can' or aw =='do': pass # print(t._name,pid,aw,param) #pass  # TODO
     elif aw == 'cause': pass # TODO
     elif aw == 'change': pass  # TODO
     elif aw == 'choose': pass  # TODO
