@@ -1824,7 +1824,13 @@ def graph_action_clause_ex(t,pid,phrase):
     #  3. conjunction of (two) actions where the subject is the same
 
     # conjunction of predicates
-
+    try:
+        th,a1,n1,op,a2,n2,ap = dd.re_conjoined_act_predicate.search(phrase).groups()
+        print("{} {}/{}/{}".format(t._name,a1,op,a2))
+        return None
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
 
     # subjects are specified for both actions
     try:
@@ -1873,8 +1879,7 @@ def graph_action_clause_ex(t,pid,phrase):
     try:
         # unpack the clause
         thing,abw,cnd,aw,ap = dd.re_action_clause.search(phrase).groups()
-        if abw or cnd:
-            print(t._name,abw,cnd,aw,ap)
+        #if abw or cnd: print(t._name,abw,cnd,aw,ap)
 
         if abw and cnd:
             # check for a restricted action i.e. "can not", "do not"

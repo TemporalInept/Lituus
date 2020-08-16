@@ -564,10 +564,11 @@ re_act_clause_check = re.compile(
 # subject and parameters i.e. Twiddle
 #  [thing] [predicate1] [not1]? and|or [predicate2] [not]? [parameters]
 # NOTE: for now we are assuming that there will always be a subject and parameters
+# TODO: handle stuff like Changleing Outcast "can't block and can't be blocked"
 re_conjoined_act_predicate = re.compile(
     r"^"
     r"([^,|^\.]+) "
-    r"((?:xa|ka|kw)<[^>]+>)(?: cn<(not)>)? (and|or|and/or) ((?:xa|ka|kw)<[^>]+>)(?: cn<(not)>)?"
+    r"((?:xa|ka)<[^>]+>)(?: cn<(not)>)? (and|or|and/or) ((?:xa|ka)<[^>]+>)(?: cn<(not)>)?"
     r" ([^,|^\.]+)"
     r"\.?$"
 )

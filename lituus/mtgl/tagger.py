@@ -507,7 +507,7 @@ def deconflict_tags2(txt):
     # combat related
     ntxt = mtgl.re_combat_status_chain.sub(lambda m: _combat_status_chain_(m),ntxt)
     ntxt = mtgl.re_combat_status.sub(r"xs<\1 suffix=ing>",ntxt)
-    ntxt = mtgl.re_blocked_status.sub(r"xs<\1block suffix=ed>",ntxt)
+    #ntxt = mtgl.re_blocked_status.sub(r"xs<\1block suffix=ed>",ntxt)
 
     # activated and triggered, first chain the 5 'or' conjunctions
     ntxt = mtgl.re_ab_type_chain.sub(r"xs<activate∨trigger suffix=ed>",ntxt)
@@ -620,6 +620,7 @@ def third_pass(txt):
         ),txt
     )
     ntxt = mtgl.re_etb.sub(r"xa<etb\1>",ntxt)
+    ntxt = mtgl.re_ltb.sub(r"xa<ltb\1>",ntxt)
     ntxt = mtgl.re_your_opponents.sub(r"xp<opponent suffix=s>",ntxt) # for grapher
 
     # fix possessives (own, control) using logic symbols instead of tokens
@@ -1204,9 +1205,13 @@ def _prefixed_act_word_(m):
     :param m: the regex.Match object
     :return: merged prefix and action word tag
     """
-    pw,aw = m.groups()
+    pw,neg,aw = m.groups()
     pval = mtgltag.tag_val(pw)
     tid,val,attr = mtgltag.untag(aw)
     if pval == 'is' or pval == 'be': attr['prefix'] = 'to-be'
     else: attr['prefix'] = pval
-    return mtgltag.retag(tid,val,attr)
+
+    # prepend cn<not> if present
+    ret = mtgltag.retag(tid,val,attr)
+    if neg: ret = neg + ' ' + ret
+    return ret

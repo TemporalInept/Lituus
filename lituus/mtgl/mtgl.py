@@ -983,17 +983,19 @@ re_combat_status_chain = re.compile(
 
 # the remainder of attacking, blocking, and defending will be considered statuses
 # unless they are preceded by an is/not or a Thing or followed by a "does not"
-# (Johan) and (un)blocked will be always be considered a status if not preced by
-# is/is not
+# (Johan) and
+#
 re_combat_status = re.compile(
     r"(?<!(?:(?:ob|xo|xp)<\w+?>|is|are|was|be)(?: cn<not>)? )"
     r"xa<((?:un|¬)?attack|block|defend) suffix=ing>"
     r"(?! does cn<not>)"
 )
-re_blocked_status = re.compile(
-    r"(?<!(is|are|was|be)(?: cn<not>)? )"
-    r"xa<(un)?block suffix=ed>"
-)
+# TODO: commented out for now (un)blocked will be always be considered a status
+#  if not preced by is/is not
+#re_blocked_status = re.compile(
+#    r"(?<!(xa<(?:is|be|become)[^>]*>)(?: cn<not>)? )"
+#    r"xa<(un)?block suffix=ed>"
+#)
 
 # activated/triggered
 # finds the phrase "activated or triggered i.e. Stifle (5 total)
@@ -1529,8 +1531,9 @@ re_mill = re.compile(
     r"pr<of> (xp|xq)<[^>]+> zn<library> pr<into> (xp|xq)<[^>]+> zn<graveyard>"
 )
 
-# etb
+# etb and ltb (NOTE: matching any suffix which should only be 'tense'
 re_etb = re.compile(r"xa<enter( [^>]+)?> xq<the> zn<battlefield>")
+re_ltb = re.compile(r"xa<leave( [^>]+)?> xq<the> zn<battlefield>")
 
 # [thinb] able to block [thing] do so is difficult for the grapher
 # NOTE: prefixes have not been applied to action verbs yet
@@ -1552,4 +1555,6 @@ re_dont_ownctrl = re.compile(r"xa<do[^>]*> cn<not> xc<(own|control)>")
 
 # action word prefixs
 #  either a form of 'to be' 'action-word' or 'to' 'action-word'
-re_prefix_aw = re.compile(r"((?:xa|pr)<(?:is|be|to)[^>]*>) ((?:xa|ka)<[^>]+>)")
+re_prefix_aw = re.compile(
+    r"((?:xa|pr)<(?:is|be|become|to)[^>]*>) (?:(cn<not>) )?((?:xa|ka)<[^>]+>)"
+)
