@@ -1825,8 +1825,8 @@ def graph_action_clause_ex(t,pid,phrase):
 
     # conjunction of predicates
     try:
-        th,a1,n1,op,a2,n2,ap = dd.re_conjoined_act_predicate.search(phrase).groups()
-        print("{} {}/{}/{}".format(t._name,a1,op,a2))
+        th,a1,a2,ap = dd.re_conjoined_act_predicate.search(phrase).groups()
+        print("{} {}/{} == {}".format(t._name,a1,a2,ap))
         return None
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -2721,6 +2721,9 @@ def _graph_ap_clash_(t,pid,phrase):
     return None
 
 def _graph_ap_vote_(t,pid,phrase):
+    # TODO: have retagged vote in tagger, for now return default ungraphed
+    return t.add_node(pid,'act-parameter',tograph=phrase)
+
     # vote 701.32 - three forms
     fid = None
 

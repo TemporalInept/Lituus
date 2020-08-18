@@ -1558,3 +1558,27 @@ re_dont_ownctrl = re.compile(r"xa<do[^>]*> cn<not> xc<(own|control)>")
 re_prefix_aw = re.compile(
     r"((?:xa|pr)<(?:is|be|become|to)[^>]*>) (?:(cn<not>) )?((?:xa|ka)<[^>]+>)"
 )
+
+# related to voting/votes
+re_vote_check = re.compile(r"ka<vote[^>]*>")
+
+# named votes i.e. Magister of Worth 'grace' and 'condemnation
+# 1: extract the two named candidates
+re_vote_candidates = re.compile(
+    r"starting pr<with> xp<you>, xq<each> xp<player> ka<vote suffix=s> pr<for> "
+    r"([^\.]+) or ([^\.]+)."
+)
+
+# 2: grab the whole sub-phrase 'candidate1 or candidate2'
+re_vote_choice = re.compile(
+    r"(?<=starting pr<with> xp<you>, xq<each> xp<player> ka<vote suffix=s> pr<for> )"
+    r"([^\.]+ or [^\.]+.)"
+)
+
+# deconflict 'vote' as an object
+# 1. vote preceded by a candidate
+# 2. candidate followed by 'gets more'
+# 3. any vote preceded by a quantifier or qualifier
+def vote_obj1(tkn): return re.compile(r"{} ka<vote>".format(tkn))
+def vote_obj2(tkn): return re.compile("{}(?= xa<get suffix=s> xl<more>)".format(tkn))
+re_vote_obj3 = re.compile(r"(?<=(?:xl|xq)<[^>]*> )ka<vote([^>]*)>")

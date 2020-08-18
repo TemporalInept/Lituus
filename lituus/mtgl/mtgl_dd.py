@@ -566,11 +566,9 @@ re_act_clause_check = re.compile(
 # NOTE: for now we are assuming that there will always be a subject and parameters
 # TODO: handle stuff like Changleing Outcast "can't block and can't be blocked"
 re_conjoined_act_predicate = re.compile(
-    r"^"
-    r"([^,|^\.]+) "
-    r"((?:xa|ka)<[^>]+>)(?: cn<(not)>)? (and|or|and/or) ((?:xa|ka)<[^>]+>)(?: cn<(not)>)?"
-    r" ([^,|^\.]+)"
-    r"\.?$"
+    r"^([^,|^\.]+?) "
+    r"((?:(?:xa|ka)<[^>]+>)(?: cn<not>)?){1} or ((?:(?:xa|ka)<[^>]+>)(?: cn<not>)?){1}"
+    r" ([^,|^\.]+)\.?$"
 )
 
 # 1.b where the subjects are different for each action i.e Abyssal Persecuter

@@ -603,9 +603,9 @@ def postprocess(txt):
 
 def third_pass(txt):
     """
-    performs a third/final pass of the oracle txt, working on common phrases,
-    replacing them with defined keyword actions or common slang or easier to process
-    forms
+    performs a third/final pass of the oracle txt, working primarily on common
+    phrases, replacing them with defined keyword actions, common slang or
+    easier to process forms
     :param txt: second pass tagged oracle txt
     :return: tagged oracle text
     """
@@ -635,6 +635,36 @@ def third_pass(txt):
     # combine prefix action words of the form 'to be' action word (i.e. be cast)
     # and 'to' action word (i.e. to cast)
     ntxt = mtgl.re_prefix_aw.sub(lambda m: _prefixed_act_word_(m),ntxt)
+
+    # deconflict/retag voting
+    if mtgl.re_vote_check.search(ntxt): ntxt = deconflict_vote(ntxt)
+
+    return ntxt
+
+def deconflict_vote(txt):
+    """
+     deconflict vote in txt as an object vice action
+    :param txt: taggec oracle txt (has been verfied as containing votes)
+    :return: deconflicted vote tagged text
+    """
+    ntxt = txt
+
+    # handle 'named' candidates, tagging each as a vote object
+    try:
+        c1,c2 = mtgl.re_vote_candidates.search(txt).groups()
+        nc1 = _tag_vote_candidate_(c1)
+        nc2 = _tag_vote_candidate_(c2)
+        ntxt = mtgl.re_vote_choice.sub(r"{} or {}.".format(nc1,nc2),txt)
+        ntxt = mtgl.vote_obj1(c1).sub(nc1,ntxt)
+        ntxt = mtgl.vote_obj1(c2).sub(nc2,ntxt)
+        ntxt = mtgl.vote_obj2(c1).sub(nc1,ntxt)
+        ntxt = mtgl.vote_obj2(c2).sub(nc2,ntxt)
+    except AttributeError:
+        pass
+
+    # deconflict remaining votes as object vs action
+    ntxt = mtgl.re_vote_obj3.sub(r"xo<vote\1>",ntxt)
+
     return ntxt
 
 ####
@@ -1215,3 +1245,17 @@ def _prefixed_act_word_(m):
     ret = mtgltag.retag(tid,val,attr)
     if neg: ret = neg + ' ' + ret
     return ret
+
+def _tag_vote_candidate_(c):
+    """
+     given candidate c returns the tag xo<vote candidate=c1> where c1 is is
+     untagged as necessary
+    :param c:
+    :return:
+    """
+    candidate = c
+    if mtgltag.tkn_type(c) == mtgltag.MTGL_TAG:
+        tid,val,attr = mtgltag.untag(c)
+        if 'suffix' in attr: val += attr['suffix'] # TODO: use _join_suffix_ like fct
+        candidate = val
+    return mtgltag.retag('xo','vote',{'candidate':candidate})
