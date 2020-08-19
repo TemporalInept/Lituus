@@ -452,7 +452,7 @@ re_phase = re.compile(r"\b({}) phase".format('|'.join(phases)))
 # additional checks.
 #  1. preceded by a quantifier this, each or that
 #  2. preceded by a sequence (NOTE: they have not been tagged yet)
-re_combat_phase = re.compile(r"combat(?! damage)")
+re_combat_phase = re.compile(r"\b(?<!<[^>]*)combat(?! damage)")
 
 # steps
 # 501.1 beginning phase steps - untap, upkeep, draw
@@ -1223,7 +1223,7 @@ misstag_tkns = '|'.join(misstag.keys())
 re_misstag = re.compile(r"({})".format(misstag_tkns))
 
 # from combat find untagged combat preceded by from
-re_from_combat = re.compile(r"(?<=pr<from> )combat")
+re_from_combat = re.compile(r"(?<=pr<from> )ts<combat>")
 
 # finds phrase tapped and attacking (suffixes have not been handled yet)
 # re_tna = re.compile(r"(?<=st<tapped> and )(xa)(?=<attack>ing)")
