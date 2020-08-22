@@ -534,6 +534,9 @@ def deconflict_tags2(txt):
     # action words that can be converted to status' i.e. sacrificed
     ntxt = mtgl.re_action_status.sub(r"xs<\1>",ntxt)
 
+    # combine any two consecutive turn structures unless the first is possessive
+    ntxt = mtgl.re_consecutive_ts.sub(r"ts<\1>",ntxt)
+
     return ntxt
 
 def chain_other(txt):
