@@ -1055,6 +1055,9 @@ re_action_status = re.compile(
     r"(?<=xq<[^>]+> )(?:ka|xa)<([^ ]+ suffix=ed)>(?= ob<[^>]+>)"
 )
 
+# consecutive (non-possessive) turn structures i.e. Dwarven Sea Clan
+re_consecutive_ts = re.compile(r"ts<(\w+)> ts<step>")
+
 ####
 ## MID-PASS CLEANUP
 ####
