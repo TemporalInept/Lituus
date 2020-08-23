@@ -1058,6 +1058,9 @@ re_action_status = re.compile(
 # consecutive (non-possessive) turn structures i.e. Dwarven Sea Clan
 re_consecutive_ts = re.compile(r"ts<(\w+)> ts<step>")
 
+# declare attackers|blockers
+re_declare_step = re.compile(r"xa<declare> xo<([^>]+) suffix=s> ts<step>")
+
 ####
 ## MID-PASS CLEANUP
 ####
