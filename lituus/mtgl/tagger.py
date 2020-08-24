@@ -536,7 +536,7 @@ def deconflict_tags2(txt):
 
     # combine some phases/steps
     #  1. any two consecutive turn structures unless the first is possessive
-    #  2. declare attacker|blocker ste
+    #  2. declare attacker|blocker step
     ntxt = mtgl.re_consecutive_ts.sub(r"ts<\1>",ntxt)
     ntxt = mtgl.re_declare_step.sub(r"ts<declare-\1s>",ntxt)
 
