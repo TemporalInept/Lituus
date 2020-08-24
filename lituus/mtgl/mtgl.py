@@ -1059,7 +1059,7 @@ re_action_status = re.compile(
 re_consecutive_ts = re.compile(r"ts<(\w+)> ts<step>")
 
 # declare attackers|blockers
-re_declare_step = re.compile(r"xa<declare> xo<([^>]+) suffix=s> ts<step>")
+re_declare_step = re.compile(r"xa<declare> xo<([^>]+?) suffix=s> ts<step>")
 
 ####
 ## MID-PASS CLEANUP
