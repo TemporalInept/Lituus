@@ -148,9 +148,9 @@ def graph_line(t,pid,line,ctype=None):
     # where clause) will mess up graphing
     # find all enclosed quotes and graph them separately under an unrooted node
     # then do the same with variable numbers and variable mana
+    # TODO: add checks for these
     line = dd.re_enclosed_quote.sub(lambda m: _enclosed_quote_(t,m),line)
-    line = dd.re_variable_val.sub(lambda m: _variable_val_(t,m),line)
-    line = dd.re_variable_mana.sub(lambda m: _variable_mana_(t,m),line)
+    line = _graph_variable_(t,line)
 
     # Ability lines can be one of
     #  112.3a Spell = instant or sorcery,
@@ -342,9 +342,9 @@ def graph_phrase(t,pid,line,i=0):
             rid = graph_exception_phrase(t, pid, line)
             if rid: return rid
 
-        # sequences
-        if _sequence_check_(line):
-            rid = graph_sequence_phrase(t,pid,line)
+        # delayed triggers
+        if dd.re_delayed_tgr_check.search(line):
+            rid = graph_delayed_tgr(t,pid,line)
             if rid: return rid
 
         # condition phrases
@@ -356,9 +356,9 @@ def graph_phrase(t,pid,line,i=0):
             rid = graph_optional_phrase(t,pid,line)
             if rid: return rid
 
-        # delayed triggers
-        if dd.re_delayed_tgr_check.search(line):
-            rid = graph_delayed_tgr(t,pid,line)
+        # sequences
+        if _sequence_check_(line):
+            rid = graph_sequence_phrase(t,pid,line)
             if rid: return rid
 
         # multiple comjoined action clause phrases
@@ -394,20 +394,20 @@ def graph_clause(t,pid,clause):
     :param pid: parent of the line
     :param clause: the text to graph
     """
+    # turn structures
+    if dd.re_ts_check.search(clause):
+        rid = graph_turn_structure(t,pid,clause)
+        if rid: return rid
+
     # action clauses
     if dd.re_act_clause_check.search(clause):
         rid = graph_action_clause(t,pid,clause)
         if rid: return rid
 
-    # sequencing
-    if dd.re_sequence_clause_check.search(clause):
-        rid = graph_sequence_clause(t,pid,clause)
-        if rid: return rid
-
     # phase clauses
-    if dd.re_phase_clause_check.search(clause):
-        rid = graph_phase_clause(t,pid,clause)
-        if rid: return rid
+    #if dd.re_phase_clause_check.search(clause):
+    #    rid = graph_phase_clause(t,pid,clause)
+    #    if rid: return rid
 
     return t.add_node(pid,'clause',tograph=clause)
 
@@ -1160,128 +1160,194 @@ def graph_sequence_phrase(t,pid,line):
     :param line: text to graph
     :return: node id or None
     """
-    # before checking for 'normal' sequence phrases, check for a effect as condition
-    # phrase (i.e. Trueheart Twins)
-    if dd.re_sequence_as_cond_check.search(line):
-        try:
-            effect,cond = dd.re_sequence_as_cond.search(line).groups()
-            sid = t.add_node(pid,'sequence-phrase')
-            graph_phrase(t,t.add_node(sid,'seq-condition',value='as'),cond)
-            graph_phrase(t,t.add_node(sid,'seq-effect'),effect)
-            return sid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
-
-    # check for dual sequences. there are not many but they need to be taking care
-    # of before the comma is handled incorrectly
+    # 'then' sequences are the simplest -take care of them first
     try:
-        cond1,cond2 = dd.re_dual_sequence.search(line).groups()
-        cid = t.add_node(pid,'conjunction',value='and',itype='sequence-phrase')
-        graph_phrase(t,cid,cond1)
-        graph_phrase(t,cid,cond2)
-        return cid
+        pre,post,again = dd.re_seq_then.search(line).groups()
+        if pre: graph_phrase(t,pid,pre)
+        sid = t.add_node(pid,'sequence-phrase')
+        if again: t.add_node(sid,'seq-condition',value='then-again')
+        else: t.add_node(sid,'seq-condition',value='then')
+        graph_phrase(t,t.add_node(sid,'seq-effect'),post)
+        return sid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
 
-    # check for conjoined sequences
+    # do the same for dual comma separated sequences
     try:
-        thing,seq1,op,seq2 = dd.re_conjoined_seq_phrase.search(line).groups()
-        cid = t.add_node(pid,'conjunction',value=op,itype='sequence-phrase')
-        graph_phrase(t,cid,thing+" "+seq1)
-        graph_phrase(t,cid,thing+" "+seq2)
-        return cid
+        seq1,cls1,seq2,cls2 = dd.re_seq_dual.search(line).groups()
+        sid = t.add_node(pid,'sequence-phrase')
+        cid = t.add_node(sid,'conjunction',value='and',itype='seq-condition')
+        graph_clause(t,t.add_node(cid,'seq-condtion',value=seq1),cls1)
+        graph_clause(t,t.add_node(cid,'seq-condtion',value=seq2),cls2)
+        return sid
     except AttributeError as e:
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
 
-    # check time first, followed by sequence
-    if dd.re_time_check_start.search(line) or dd.re_time_check_end.search(line):
-        # starts (or ends) wih a turn-structure
-        try:
-            #m = dd.re_sequence_turn_structure1.search(line)
-            #if m: phase,cls = m.groups()
-            #else: cls,phase = dd.re_sequence_turn_structure2.search(line).groups()
-            phase,cls = dd.re_sequence_turn_structure1.search(line).groups()
+    # look at conjoined turn structure
+    try:
+        # two possiblities:
+        #  a) the turn structures differ. split by the 'and' pass back each side
+        #  through graph phase
+        #  b) the turn structures is the same. graph it one time and reconjoin the
+        #  clauses under a seq-effect
+        cls1,seq1,cls2,seq2 = dd.re_conjoined_seq.search(line).groups()
+        if seq1 != seq2:
+            cid = t.add_node(pid,'conjunction',value='and',itype='phrase')
+            graph_phrase(t,cid,cls1+" "+seq1)
+            graph_phrase(t,cid,cls2+" "+seq2)
+            return cid
+        else:
+            # add the sequence phrase node and seq condition node
             sid = t.add_node(pid,'sequence-phrase')
-            graph_phrase(t,t.add_node(sid,'seq-condition',value='when'),phase)
-            graph_phrase(t,t.add_node(sid,'seq-effect'),cls)
+            sqid = t.add_node(sid,'seq-condition')
+            try:
+                # is sequence a turn structure or a when clause?
+                seq,cls = dd.re_seq_when_clause.search(seq1).groups()
+                t.add_attr(sqid,'value',seq)
+                graph_turn_structure(t,sqid,cls) # will always be a turn structure
+            except AttributeError:
+                graph_turn_structure(t,sqid,seq1)
+            graph_phrase(t,t.add_node(sid,'seq=effect'),cls1+" and "+cls2)
             return sid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
 
-        # ends with a sequence
+    # multiple and/or special sequence phrasing
+
+    # for the first time each turn
+    try:
+        # TODO: don't like this, the cls is really part of the condition
+        cls,ph = dd.re_seq_first_time.search(line).groups()
+        sid = t.add_node(pid,'sequence-phrase')
+        graph_turn_structure(t,t.add_node(sid,'seq-condition',value="first-time"),ph)
+        graph_phrase(t,t.add_node(sid,'seq-effect'),cls)
+        return sid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
+
+    # until-phase-effect
+    try:
+        seq,phase,effect = dd.re_seq_until_phase.search(line).groups()
+        sid = t.add_node(pid,'sequence-phrase')
+        graph_turn_structure(t,t.add_node(sid,'seq-condition',value=seq),phase)
+        graph_phrase(t,t.add_node(sid,'seq-effect'),effect)
+        return sid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
+
+    # special sequence words during, as-long-as, until, after that may have
+    # a) an effect
+    # b) a turn-structure as condition
+    try:
+        effect,seq,cond = dd.re_seq_effect_cond.search(line).groups()
+        sid = t.add_node(pid,'sequence-phrase')
+        graph_phrase(t,t.add_node(sid,'seq-condition',value=seq.replace('_','-')),cond)
+        if effect: graph_phrase(t,t.add_node(sid,'seq-effect'),effect)
+        return sid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
+
+    # beginning/end of phase
+    try:
+        seq,phase = dd.re_seq_terminal_phase.search(line).groups()
+        sid = t.add_node(pid,'sequence-phrase')
+        graph_turn_structure(t,t.add_node(sid,'seq-condition',value=seq),phase)
+        return sid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
+
+    # clause "while" turn structure
+    try:
+        effect,phase = dd.re_seq_phase_end.search(line).groups()
+        sid = t.add_node(pid,'sequence-phrase')
+        graph_turn_structure(t,t.add_node(sid,'seq-condition'),phase)
+        if effect: graph_phrase(t,t.add_node(sid,'seq-effect'),effect)
+        return sid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
+
+    if mtgl.PER in line: return None
+    elif re.compile(r"^(?:(?:xq|xp)<[^>]+> )?ts<[^>]+>$").search(line): return None
+    else: return t.add_node(pid,'sequence-phrase',tograph=line)
+
+# TODO: move to clause/thing graphing section
+def graph_turn_structure(t,pid,clause):
+    """
+     graphs a turn structure clause
+    :param t: the tree
+    :param pid: parent id
+    :param clause: clause to graph
+    :return: the node of the subtree or None
+    """
+    # basic turn structure format
+    try:
+        ply,xq,ts = dd.re_turn_structure_basic.search(clause).groups()
+        tsid = t.add_node(pid,'turn-structure')
+        if xq: t.add_node(tsid,'quantifier',value=xq)
+
+        # before continuing, we need to check if this is a phase or step so we
+        # can label the node accordingly
+        ts = mtgltag.tag_val(ts)
+        lbl = 'phase' if ts in dd.MTG_PHASES else 'step'
+        phid = t.add_node(tsid,lbl,value=ts)
+        if ply:
+            try:
+                graph_thing(t,t.add_node(phid,'whose'),ply)
+            except lts.LituusException as e: # should not get here
+                graph_clause(t,t.add_node(phid,'whose'),ply)
+        return tsid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
+
+    # steps of phases TODO: don't like how steps are graphed under an 'at' node
+    # For the next two, because we get two turn structures, the step and phase,
+    # graph each recursively.
+    try:
+        phid = None
+        phase,step = dd.re_turn_structure_step.search(clause).groups()
+        tsid = graph_turn_structure(t,pid,phase)
         try:
-            # TODO: Fragmentery - should be moved to clause graphing perhaps graph_
-            #  phase_clause
-            m = dd.re_sequence_time1.search(line)
-            if m: seq,phase = m.groups()
-            else:
-                # need to move the player in front of the phase to make it
-                # the same wording as sequence_time1
-                seq,phase,ply = dd.re_sequence_time2.search(line).groups()
-                phase = ply + " " + phase
-            sid = t.add_node(pid,'sequence-phrase')
-            cid = t.add_node(sid,'seq-condition',value='when')
-            t.add_node(cid,'time',value=seq)
-            graph_phrase(t,cid,phase)
-            return sid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
-    # TODO: can we elif the below
-    if dd.re_sequence_check.search(line):
-        # look for "then [phrase]" IOT remove the 'then'
+            phid = t.findall('phase',tsid)[0]
+        except IndexError:
+            raise lts.LituusException(lts.ETREE,"No phase node under {}".format(tsid))
+        graph_turn_structure(t,t.add_node(phid,'at'),step)
+        return tsid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
+
+    try:
+        phid = None
+        step,ply,phase = dd.re_turn_structure_player_step.search(clause).groups()
+
+        # graph the phase and get the phase node id
+        tsid = graph_turn_structure(t,pid,phase)
         try:
-            phrase = dd.re_then_sequence.search(line).group(1)
-            return graph_phrase(t,pid,phrase)
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'group'": pass
-            else: raise
+            phid = t.findall('phase',tsid)[0]
+        except IndexError:
+            raise lts.LituusException(lts.ETREE,"No phase node under {}".format(tsid))
 
+        # add the player and step under the phase node with appropriate i-nodes
         try:
-            # we're removing the 'then' as the pre and post will be graphed
-            # sequentially implying the 'then'
-            pre,post,again = dd.re_sequence_then.search(line).groups()
-            if pre: graph_phrase(t,pid,pre)
-            if not again: return graph_phrase(t,pid,post)
-            else:
-                sid = t.add_node(pid,'sequence-phrase')
-                graph_phrase(t,t.add_node(sid,'seq-effect',value='again'),post)
-                return sid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
+           graph_thing(t,t.add_node(phid,'whose'),ply)
+        except lts.LituusException as e: # should not get here
+           graph_clause(t,t.add_node(phid,'whose'),ply)
+        graph_turn_structure(t,t.add_node(phid,'at'),step)
+        return tsid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
 
-        # then sequence-condition-effect
-        try:
-            seq,cond,act = dd.re_sequence_cond_effect.search(line).groups()
-            sid = t.add_node(pid,'sequence-phrase')
-            graph_phrase(
-                t,t.add_node(sid,'seq-condition',value=seq.replace('_','-')),cond
-            )
-            graph_phrase(t,t.add_node(sid,'seq-effect'),act)
-            return sid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
-
-        # and effect-sequence-condition
-        try:
-
-            act,seq,cond = dd.re_sequence_effect_cond.search(line).groups()
-            sid = t.add_node(pid,'sequence-phrase')
-            graph_phrase(
-                t,t.add_node(sid,'seq-condition',value=seq.replace('_','-')),cond
-            )
-            graph_phrase(t,t.add_node(sid,'seq-effect'),act)
-            return sid
-        except AttributeError as e:
-            if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-            else: raise
-
+    return t.add_node(pid,'turn-structure',tograph=clause)
     return None
 
 ####
@@ -1558,15 +1624,12 @@ def graph_restriction_phrase(t,pid,phrase):
 
         # only-[sequence]
         try:
-            act,seq,phase = dd.re_restriction_phase.search(phrase).groups()
+            act,seq = dd.re_restriction_phase.search(phrase).groups()
             if mtgt.node_type(pid) == 'conjunction': rsid = pid
             else: rsid = t.add_node(pid,'restriction-phrase')
             if act: graph_phrase(t,t.add_node(rsid,'rstr-effect'),act)
             rrid = t.add_node(rsid,'rstr-restriction',value='only')
-            scid = t.add_node(
-                t.add_node(rrid,'sequence-phrase'),'seq-condition',value='during'
-            )
-            graph_phrase(t,scid,phase)
+            graph_sequence_phrase(t,rrid,seq)
             return rsid
         except AttributeError as e:
             if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
@@ -1824,13 +1887,16 @@ def graph_action_clause_ex(t,pid,phrase):
     #  3. conjunction of (two) actions where the subject is the same
 
     # conjunction of predicates
-    try:
-        th,a1,a2,ap = dd.re_conjoined_act_predicate.search(phrase).groups()
-        print("{} {}/{} == {}".format(t._name,a1,a2,ap))
-        return None
-    except AttributeError as e:
-        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-        else: raise
+    #try:
+    #    # we not only have to use regex, have to do additional checks for these
+    #    # types of conjunctions
+    #    th,a1,a2,ap = dd.re_conjoined_act_predicate.search(phrase).groups()
+    #    #if _confirm_conjoined_act_predicate_(a1,a2,ap):
+    #    #    if a1 != "ka<tap>" and ap is not None: print("{} {}/{} == {}".format(t._name,a1,a2,ap))
+    #    return None
+    #except AttributeError as e:
+    #    if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+    #    else: raise
 
     # subjects are specified for both actions
     try:
@@ -1875,11 +1941,12 @@ def graph_action_clause_ex(t,pid,phrase):
     #    else: raise
 
     # 'traditional' action clause
+    # TODO: dropping the suffixes especially 'ed' is going to lead to misstranlations
+    #  i.e did not attack is different from do not attack
     aid = None
     try:
         # unpack the clause
         thing,abw,cnd,aw,ap = dd.re_action_clause.search(phrase).groups()
-        #if abw or cnd: print(t._name,abw,cnd,aw,ap)
 
         if abw and cnd:
             # check for a restricted action i.e. "can not", "do not"
@@ -2103,28 +2170,6 @@ def graph_attribute_clause(t,pid,clause):
         return graph_phrase(t,t.add_node(pid,'attribute'),clause)
     return None
 
-# TODO: is this really necessary?
-def graph_duration(t,pid,clause):
-    """
-    graphs a duration clause
-    :param t: the tree
-    :param pid: parent id
-    :param clause: the duration clause to graph
-    :return:  node id of the duration subtree or None
-    """
-    # a simple phrasing [quantifier] [turn-structure] defines a 'when' clause
-    # i.e. next turn, each turn, this turn etc
-    try:
-        phase = dd.re_quant_duration_clause.search(clause).group(1)
-        wid = t.add_node(pid,'when')
-        graph_phase_clause(t,wid,phase)
-        return wid
-    except AttributeError as e:
-        if e.__str__() == "'NoneType' object has no attribute 'group'": pass
-        else: raise
-
-    return None
-
 def graph_action_param(t,pid,aw,param):
     """
     graphs the action consisting of action word aw and its parameters
@@ -2134,49 +2179,50 @@ def graph_action_param(t,pid,aw,param):
     :param param: paremeters
     :return: the graphed action node or None
     """
+    rid = None
     # starting with mtg defined keyword actions
     # The following do not have parameters (proliferate,populate,investigate,
     #  explore)
     # The following are not considered (Planeswalk, Set in Motion, Abandon,Assemble)
-    if aw == 'activate': return _graph_ap_thing_(t,pid,param) # 701.2
-    elif aw == 'attach': return _graph_ap_attach_(t,pid,param) # 701.3
-    elif aw == 'unattach': return _graph_ap_thing_(t,pid,param) # 701.3d
-    elif aw == 'cast': return _graph_ap_thing_(t,pid,param) # 701.4
-    elif aw == 'counter': return _graph_ap_thing_(t,pid,param) # 701.5
-    elif aw == 'create': return _graph_ap_thing_(t,pid,param)  # 701.6
-    elif aw == 'destroy': return _graph_ap_thing_(t,pid,param) # 701.7
-    elif aw == 'discard': return _graph_ap_thing_(t,pid,param) # 701.8
-    elif aw == 'double': return _graph_ap_double_(t,pid,param) # 701.9
-    elif aw == 'exchange': return _graph_ap_exchange_(t,pid,param) # 701.10
-    elif aw == 'exile': return _graph_ap_thing_(t,pid,param) # 701.11
-    elif aw == 'fight': return _graph_ap_fight_(t,pid,param) # 701.12
-    elif aw == 'mill': return _graph_ap_n_(t,pid,param) # 701.13
-    elif aw == 'play': return _graph_ap_thing_(t,pid,param) # 701.14
-    elif aw == 'regenerate': return _graph_ap_thing_(t,pid,param) # 701.15
-    elif aw == 'reveal': return _graph_ap_thing_(t,pid,param) # 701.16
-    elif aw == 'sacrifice': return _graph_ap_thing_(t,pid,param) # 701.17
-    elif aw == 'scry': return _graph_ap_n_(t,pid,param) # 701.18
-    elif aw == 'search': return _graph_ap_search_(t,pid,param) # 701.19
-    elif aw == 'shuffle': return _graph_ap_thing_(t,pid,param) # 701.20
-    elif aw == 'tap' or aw == 'untap': return _graph_ap_tap_(t,pid,param) # 701.21
-    elif aw == 'fateseal': return _graph_ap_n_(t,pid,param)  # 701.22
-    elif aw == 'clash': return _graph_ap_clash_(t,pid,param) # 701.23
-    elif aw == 'transform': return _graph_ap_thing_(t,pid,param) # 701.28
-    elif aw == 'detain': return _graph_ap_thing_(t,pid,param) # 701.29
-    elif aw == 'monstrosity': return _graph_ap_n_(t,pid,param)  # 701.31
-    elif aw == 'vote': return _graph_ap_vote_(t,pid,param) # 701.32
-    elif aw == 'bolster': return _graph_ap_n_(t,pid,param)  # 701.33
-    elif aw == 'manifest': return _graph_ap_thing_(t,pid,param) # 701.34
-    elif aw == 'support': return _graph_ap_n_(t,pid,param)  # 701.35
-    elif aw == 'meld': return _graph_ap_meld_(t,pid,param) # 701.37
-    elif aw == 'goad': return _graph_ap_thing_(t,pid,param) # 701.38
-    elif aw == 'exert': return _graph_ap_thing_(t,pid,param)  # 701.39
-    elif aw == 'surveil': return _graph_ap_n_(t,pid,param)  # 701.42
-    elif aw == 'adapt': return _graph_ap_n_(t,pid,param)  # 701.43
-    elif aw == 'amass': return _graph_ap_n_(t,pid,param)  # 701.44
+    if aw == 'activate': rid = _graph_ap_thing_(t,pid,param) # 701.2
+    elif aw == 'attach': rid = _graph_ap_attach_(t,pid,param) # 701.3
+    elif aw == 'unattach': rid = _graph_ap_thing_(t,pid,param) # 701.3d
+    elif aw == 'cast': rid = _graph_ap_thing_(t,pid,param) # 701.4
+    elif aw == 'counter': rid = _graph_ap_thing_(t,pid,param) # 701.5
+    elif aw == 'create': rid = _graph_ap_thing_(t,pid,param)  # 701.6
+    elif aw == 'destroy': rid = _graph_ap_thing_(t,pid,param) # 701.7
+    elif aw == 'discard': rid = _graph_ap_thing_(t,pid,param) # 701.8
+    elif aw == 'double': rid = _graph_ap_double_(t,pid,param) # 701.9
+    elif aw == 'exchange': rid = _graph_ap_exchange_(t,pid,param) # 701.10
+    elif aw == 'exile': rid = _graph_ap_thing_(t,pid,param) # 701.11
+    elif aw == 'fight': rid = _graph_ap_fight_(t,pid,param) # 701.12
+    elif aw == 'mill': rid = _graph_ap_n_(t,pid,param) # 701.13
+    elif aw == 'play': rid = _graph_ap_thing_(t,pid,param) # 701.14
+    elif aw == 'regenerate': rid = _graph_ap_thing_(t,pid,param) # 701.15
+    elif aw == 'reveal': rid = _graph_ap_thing_(t,pid,param) # 701.16
+    elif aw == 'sacrifice': rid = _graph_ap_thing_(t,pid,param) # 701.17
+    elif aw == 'scry': rid = _graph_ap_n_(t,pid,param) # 701.18
+    elif aw == 'search': rid = _graph_ap_search_(t,pid,param) # 701.19
+    elif aw == 'shuffle': rid = _graph_ap_thing_(t,pid,param) # 701.20
+    elif aw == 'tap' or aw == 'untap': rid = _graph_ap_tap_(t,pid,param) # 701.21
+    elif aw == 'fateseal': rid = _graph_ap_n_(t,pid,param)  # 701.22
+    elif aw == 'clash': rid = _graph_ap_clash_(t,pid,param) # 701.23
+    elif aw == 'transform': rid = _graph_ap_thing_(t,pid,param) # 701.28
+    elif aw == 'detain': rid = _graph_ap_thing_(t,pid,param) # 701.29
+    elif aw == 'monstrosity': rid = _graph_ap_n_(t,pid,param)  # 701.31
+    elif aw == 'vote': rid = _graph_ap_vote_(t,pid,param) # 701.32
+    elif aw == 'bolster': rid = _graph_ap_n_(t,pid,param)  # 701.33
+    elif aw == 'manifest': rid = _graph_ap_thing_(t,pid,param) # 701.34
+    elif aw == 'support': rid = _graph_ap_n_(t,pid,param)  # 701.35
+    elif aw == 'meld': rid = _graph_ap_meld_(t,pid,param) # 701.37
+    elif aw == 'goad': rid = _graph_ap_thing_(t,pid,param) # 701.38
+    elif aw == 'exert': rid = _graph_ap_thing_(t,pid,param)  # 701.39
+    elif aw == 'surveil': rid = _graph_ap_n_(t,pid,param)  # 701.42
+    elif aw == 'adapt': rid = _graph_ap_n_(t,pid,param)  # 701.43
+    elif aw == 'amass': rid = _graph_ap_n_(t,pid,param)  # 701.44
 
     # then lituus actions
-    if aw == 'add': return _graph_ap_add_(t,pid,param)
+    elif aw == 'add': rid =  _graph_ap_add_(t,pid,param)
     elif aw == 'affect': pass # TODO
     elif aw == 'assign': pass  # TODO
     elif aw == 'attack': pass  # TODO
@@ -2237,32 +2283,14 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'turn': pass  # TODO
     elif aw == 'unblock': pass  # TODO
     elif aw == 'unspend': pass  # TODO
-    elif aw == 'win' or aw == 'lose': return _graph_ap_thing_(t,pid,param)
+    elif aw == 'win' or aw == 'lose': rid = _graph_ap_thing_(t,pid,param)
 
     # TODO: have to add keywords
-    if aw == 'cycle': return _graph_ap_thing_(t,pid,param)
+    elif aw == 'cycle': rid = _graph_ap_thing_(t,pid,param)
 
     # nothing found TODO: after debugging, return None
-    return t.add_node(pid,'act-parameter',tograph=param)
-
-def graph_sequence_clause(t,pid,clause):
-    """
-    graphs standalone sequence clauses
-    :param t: the tree
-    :param pid: parent id
-    :param clause: text to graph
-    :return: node id or None
-    """
-    try:
-        sq,cls = dd.re_sequence_clause.search(clause).groups()
-        sid = t.add_node(pid,'sequence',value=sq)
-        if sq == 'during': graph_phrase(t,sid,cls)
-        else: graph_clause(t,sid,cls)
-        return sid
-    except AttributeError as e:
-        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-        else: raise
-    return None
+    if rid: return rid
+    else: return t.add_node(pid,'act-parameter',tograph=param)
 
 def graph_phase_clause(t,pid,clause):
     """
@@ -2371,6 +2399,17 @@ def _enclosed_quote_(t,m):
     graph_line(t,eqid,m.group()[1:-1])
     return "nd<{} num={}>".format(*eqid.split(':'))
 
+def _graph_variable_(t,line):
+    """
+    graphs the value definition of variables in an unrooted node returning the
+    text with variable instantiated to the node-id of the value node
+    :param line:
+    :return: retagged variable
+    """
+    line = dd.re_variable_val.sub(lambda m: _variable_val_(t,m),line)
+    line = dd.re_variable_mana.sub(lambda m: _variable_mana_(t,m),line)
+    return line
+
 def _variable_val_(t,m):
     """
     graphs the value of a variable in an unrooted node returning the node-id inside
@@ -2379,16 +2418,31 @@ def _variable_val_(t,m):
     :param m: regex Match object
     :return: retagged variable
     """
+    # unpack m
+    pre,var,post,val = m.groups()
+
+    # graph the variable definition
+    vid = t.add_ur_node('variable-value')
+    graph_phrase(t,vid,val)
+
+    # untag the variable tag, add the value node-id to the attribute
+    tid,val,attr = mtgltag.untag(var)
+    attr['node-num'] = vid.split(':')[1]
+    var = mtgltag.retag(tid,val,attr)
+
+    # return the 'whole' text
+    return "{}{}{}".format(pre,var,post)
+
     # untag the tag with a variable, need the attribute dict
-    tid,val,attr = mtgltag.untag(m.group(1))
+    #tid,val,attr = mtgltag.untag(m.group(1))
 
     # graph the variable instantiation
-    vid = t.add_ur_node('variable-value')
-    graph_phrase(t,vid,m.group(2))
+    #vid = t.add_ur_node('variable-value')
+    #graph_phrase(t,vid,m.group(2))
 
     # add the variable node to the tag & return it
-    attr['node-num'] = vid.split(':')[1]
-    return mtgltag.retag(tid,val,attr)
+    #attr['node-num'] = vid.split(':')[1]
+    #return mtgltag.retag(tid,val,attr)
 
 def _variable_mana_(t,m):
     """
@@ -2491,11 +2545,12 @@ def _twi_split_(txt):
 def _activated_check_(line):
     return dd.re_act_check.search(line) and not dd.re_modal_check.search(line)
 
+# TODO drop this and just use re_sequence_check?
 def _sequence_check_(line):
     if dd.re_sequence_check.search(line): return True
-    if dd.re_time_check_start.search(line): return True
-    if dd.re_time_check_end.search(line): return True
-    if dd.re_sequence_as_cond_check.search(line): return True
+    #if dd.re_time_check_start.search(line): return True
+    #if dd.re_time_check_end.search(line): return True
+    #if dd.re_sequence_as_cond_check.search(line): return True
     return False
 
 def _graph_mana_string_(t,pid,phrase):
@@ -2520,6 +2575,20 @@ def _graph_mana_string_(t,pid,phrase):
         if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
     return None
+
+def _confirm_conjoined_act_predicate_(a1,a2,ap):
+    # determine based on a1 and a2 if the two predicates can be conjoined
+    if a1 == "xa<etb suffix=s>": return False
+
+    try:
+        if mtgltag.tag_val(a1) == 'attack' and mtgltag.tag_val(a2) == 'block':
+            if ap is not None:
+                if mtgltag.is_tag(ap) and mtgltag.tag_id(ap) == 'xl': return True
+            return False
+    except lts.LituusException:
+        pass
+
+    return True
 
 ####
 ## ACTIONS
@@ -2684,8 +2753,9 @@ def _graph_ap_search_(t,pid,phrase):
     except lts.LituusException as e:
         if e.errno == lts.EPTRN and aoid: t.del_node(aoid)
     except AttributeError as e:
-        if e.__str__() == "'NoneType' object has no attribute 'groups'": return None
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
         else: raise
+
     return None
 
 def _graph_ap_tap_(t,pid,phrase):

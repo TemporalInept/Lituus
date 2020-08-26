@@ -35,6 +35,16 @@ TID = {
     'ka':'keyword-action','xa':'lituus-action','kw':'keyword',
 }
 
+####
+# PHASE OR STEP
+####
+# TODO: this needs work for example
+#  should turn be considered a phase?
+#  should eot be considered a step
+MTG_PHASES = [
+    'beginning','precombat main','combat','postcombat main','ending','main','turn',
+]
+
 # use with split to break a line into sentences or clauses by the period or comma
 # where the period is not enclosed in quotes. Grabs all characters upto the period
 # Thanks to 'Jens' for the solution to this at
@@ -79,8 +89,10 @@ re_kw_line = re.compile(r"^((?:ob|xr)<[^>]+> )?(kw<[\w-]+>)")
 # complex activated (contain an 'and' or 'or'
 # 2. the conjunction operator separates two phrases, the second being a triggered
 #  ability i.e. Chaos Moon
-re_complex_tgr_check = re.compile(r"^[^,]+ (,? )?(and|or) tp<[^>]+> [^\.]+\.?$")
-re_complex_tgr = re.compile(r"^([^\,]+?[, ](and|or) )(tp<[^>]+> [^\.]+?)\.?$")
+re_complex_tgr_check = re.compile(r"^[^,]+,? (and|or) tp<[^>]+> [^\.]+\.?$")
+re_complex_tgr = re.compile(
+    r"^([^,]+),? (and|or) (tp<[^>]+> [^\.]+)\.?$"
+)
 
 # Activated (602.1, 113.3b) contains a ':' which splits the cost and effect (cannot
 # be inside double quotes) have the form:
@@ -119,7 +131,7 @@ re_split_tgr_condition = re.compile(r"^(.+), (cn<if> .+)$")
 # NOTE: we ensure effect does not cross sentence/clause boundaries
 re_delayed_tgr_check = re.compile(r"tp<\w+> (?:.+ )?ts<[^>]+>\.?$")
 re_delayed_tgr_clause = re.compile(
-    r"^S([^,|^\.]+) tp<(\w+)> ((?:[^\.]+ )?ts<[^>]+>)\.?$"
+    r"^([^,|^\.]+) tp<(\w+)> ((?:[^\.]+ )?ts<[^>]+>)\.?$"
 )
 
 # conjunction of phrases (See Giant Oyster)
@@ -142,11 +154,17 @@ re_enclosed_quote = re.compile(r'\"([^\"]+)\"') # drop the last period
 # variable instantiates have the form
 # [variable|variable attribute], where nu<x|y> is [instantiation]
 # NOTE: have to stop on a period, comma, end of line or 'and'
+# For certain cases (Magus of the Mind), we have to graph everything prior to
+# the variable and after the variable IOT to return it
+re_variable_val = re.compile(
+    r"^(.*?)"
+    r"(nu<\w>|xr<[^>]+ val=\w>|\w\w<[^>]+ quantity=\w>)"
+    r"([^,]*?), where nu<\w> xa<is> ([^\.|,]+?)"
+    r"(?=(?:\.|,| and|$))"
+)
+
 # mana instantiates have the form (see Spell Rupture)
 # {X}, where nu<x> is [instantiation]
-re_variable_val = re.compile(
-    r"(nu<\w>|xr<[^>]+ val=≡\w>), where nu<\w> xa<is> ([^\.|,]+?)(?=(?:\.|,| and|$))"
-)
 re_variable_mana = re.compile(
     r"({x}), where nu<\w> xa<is> ([^\.|,]+?)(?=(?:\.|,| and|$))"
 )
@@ -562,13 +580,14 @@ re_act_clause_check = re.compile(
 
 # 1. a conjunction of predicates (possibly negated) with a common (or implied)
 # subject and parameters i.e. Twiddle
-#  [thing] [predicate1] [not1]? and|or [predicate2] [not]? [parameters]
-# NOTE: for now we are assuming that there will always be a subject and parameters
+#  [thing] [predicate1] [not1]? and|or [predicate2] [not]? [parameters]?
+# NOTE: for now we are assuming that there will always be a subject but parameters
+#  may be empty
 # TODO: handle stuff like Changleing Outcast "can't block and can't be blocked"
 re_conjoined_act_predicate = re.compile(
     r"^([^,|^\.]+?) "
     r"((?:(?:xa|ka)<[^>]+>)(?: cn<not>)?){1} or ((?:(?:xa|ka)<[^>]+>)(?: cn<not>)?){1}"
-    r" ([^,|^\.]+)\.?$"
+    r"(?: ([^,|^\.]+))?\.?$"
 )
 
 # 1.b where the subjects are different for each action i.e Abyssal Persecuter
@@ -638,8 +657,8 @@ re_action_word = re.compile(r"(?:([^>]+) )?((?:xa|ka|kw)<[^>]+>)")
 # and may be followed by an optional instead
 re_repl_time_turn_check = re.compile(r"^[^,]+ sq<\w+>.+cn<would>.+ts<\w+>,")
 re_repl_time_turn = re.compile(
-    r"^([^,]+sq<(?:\w+)>) (.+) cn<would> (.+) ([^,]+ts<\w+>), "
-     r"([^\.]+?)(?: (cn<instead>))?\.?$"
+    r"^([^,|^\.]+sq<(?:\w+)>) ([^,|^\.]+) cn<would> ([^,|^\.]+) ([^,|^\.]+ts<\w+>), "
+     r"([^,|^\.]+?)(?: (cn<instead>))?\.?$"
 )
 
 ## INSTEAD CLAUSES (614.1a)
@@ -912,89 +931,71 @@ re_chapter_delim = re.compile(r"(i[iv]*(?:, i[iv]+)*) — ")
 ####
 
 # sequences
-#  Checks
-#   a - any phrase with a sequence will be considered a sequence phrase
-#   b - for time, if the phrase ends with a turn-structure or starts w/ the form
-#   [quanitifier] [turn-structure], ...
-re_sequence_check = re.compile(r"sq<[^>]+>")
-re_time_check_start = re.compile(r"^xq<[^>]+> ts<[^>]+>,")
-re_time_check_end = re.compile(r"ts<([^>]+)>$")
+#  Checks - any line with a sequence tag will be considered a sequence
+re_sequence_check = re.compile(r"(?:ts|sq)<[^>]+>")
 
-# dual - [sequence-clause], [sequence-clause] i.e. Temple Elder
-re_dual_sequence = re.compile(r"^(sq<[^>]+> [^,]+), (sq<[^>]+> [^\.]+)\.?$")
-
-# conjoined see Teleportal very limited but has to be handled carefully. These
-# are two conjoined sequence phrases that have a common subject
-#  [thing] [sequence-clause] and [sequence-clause] i.e. Rhona's Stalwart
-re_conjoined_seq_phrase = re.compile(
-    r"^([^\.]+?(?:ob|xo|xp)<[^>]+>) ([^\.]+?(?:xq|sq)<[^>]+> ts<[^>]+>)"
-    r" (and|or|and/or) "
-    r"([^\.]+?(?:xq|sq)<[^>]+> ts<[^>]+>)\.$"
+# 'then' flow of actions has the forms
+# [action]?,? then [action] again?
+#  Roalesk, Apex Hybrid has a terminating 'again'
+#  Barishi is a action-then-action w/o comma, Entomb is a action-then-action w/ comma
+#  Endless Horizons does not have an initial action
+re_seq_then = re.compile(
+    r"^(?:([^,|^\.]+),? )?sq<then> ([^,|^\.]+?)(?: (sq<again>))?\.?$"
 )
 
-# turn structure related
-# 1. [quantifier phase/step], [effect] i.e. Delif's Cube
-# 2. [effect] [quantifier phase/step] i.e. Taigam's Strike
-re_sequence_turn_structure1 = re.compile(r"^(xq<[^>]+> ts<[^>]+>), (.+)\.?$")
-re_sequence_turn_structure2 = re.compile(r"^([^,|^\.]+) (xq<[^>]+> ts<[^>]+>)\.?$")
+# dual - [sequence] [clause], [sequence] [clause] i.e. Temple Elder
+# NOTE:
+#  1. there are no effects associated with these sequences
+#  2. these are generally of the form "during your turn, before attackers are
+#  declared" but we will generalize as much as possible (see Blaze of Glory)
+re_seq_dual = re.compile(r"^sq<([^>]+)> ([^,]+),? sq<([^>]+)> ([^\.]+)\.?$")
 
-# 3. [quantifier] [beginning|end] of [phase/step] i.e. Agent of Masks
-# 4. [quantifier] [beginning|end] of [phase/step] on [turn-strucutre] i.e Okaun,
-#  Eye of chaos
-# NOTE: we're dropping the quantifier because it should always be 'the'
-# TODO: for #4 we are only catching phrases of the form "your turn", that is
-#  it will not match any thing that says "target player's turn" etc. So, far
-#  have not seen any phrasing of this form but need to keep it in mind
-re_sequence_time1 = re.compile(
-    r"^xq<[^>]+> sq<([^>]+)> pr<of> "
-     r"((?:xq<[^>]+> )?(?:xp<[^>]+> )?(?:xq<[^>]+> )?ts<[^>]+>)$"
-)
-re_sequence_time2 = re.compile(
-    r"^xq<[^>]+> sq<([^>]+)> pr<of> (ts<[^>]+>) pr<on> (xp<[^>]+>) ts<turn>$"
+# conjoined distinct sequence phrases
+# [clause] [turn structure],? and [clause] [turn structure]
+#  where each turn structure has the form:
+#  [quantifier] [turn-structure] or [sequence] [turn-structure]
+# There are two cases:
+#  1. the turn-structures is the same i.e. Battlegate Mimic
+#  2. the turn-structures are different i.e. Veil of Secrecy
+re_conjoined_seq = re.compile(
+    r"^([^,|^\.]+) ((?:xq|sq)<[^>]+> ts<[^>]+>),? and "
+     r"([^,|^\.]+) ((?:xq|sq)<[^>]+> ts<[^>]+>)\.?$"
 )
 
-# flow of actions
-# [action] then [action] i.e. Barishi. In some cases will be followed by an
-# 'again' i.e. Roalesk NOTE: one card Raging River has a comma following the then
-# For now we catch 'then's in order to seperate two actions in a sentence and
-# consider them to be similar to a 'period' that is the flow of actions in
-# the corresponding tree goes from left sibling to right sibling
-re_then_sequence = re.compile(r"^sq<then> ([^\.]+)\.?$")
-re_sequence_then = re.compile(
-    r"^(?:([^\.]+) )?sq<then>,? ([^\.]*?)(?: (sq<again>))?\.?$"
+# for the first time each turn i.e. Vengeful Warchief has the form
+# [clause] for the first time each turn
+# TODO: do we need to changes this for Skull Storm "for each time"
+re_seq_first_time = re.compile(
+    r"^([^,|^\.]+) pr<for> xq<the∧first> sq<time> (xq<each> ts<turn>)\.?$"
 )
 
-# sequence condition i.e. Shriveling Rot
-# [sequence] [condition], [action]
-# these range from simple "until end of turn, ..." (Oko, the Trickster) to more
-# complex "as long as it is your turn" (Hardy Veteran) and cover phase/step
-# related as well i.e. Hungering Yeti.
-#  NOTE we also look for optional for in front i.e. Release to the Wind
-re_sequence_cond_effect = re.compile(
-    r"^(?:pr<for> )?sq<([^>]+)> ([^,|^\.]+), ([^\.]+)\.?$"
+# until phase, effect have the form i.e. Volrath, the Shapeshifter
+# until [phase], [effect]
+re_seq_until_phase = re.compile(r"sq<(until)> ([^,|^\.]*ts<[^>]+>), ([^,|^\.]+)")
+
+# during, as-long-as, until, after have the form
+# [effect] for? [seq-word] [condition]
+#  NOTE: for will only appear in some as-long-as phrasing
+# during: Callous Oppressor
+# as-long-as: Angelic Field
+# until: Rage Weaver
+# after: Paradox Haze
+re_seq_effect_cond = re.compile(
+    r"^(?:([^,|^\.]+) )?(?:pr<for> )?sq<(during|as_long_as|until|after)> ([^,|^\.]+)$"
 )
 
-# effect sequence condition (variation of above)
-# [effect] [sequence] [condition] i.e. Hooded Horror
-# Generally "do something until something" or "do something as long as something"
-# Note: we don't want to grab anything where the sequence is preceded by a
-# quantifier or number (i.e. 1 time)
-re_sequence_effect_cond = re.compile(
-    r"^([^,|\.]+) (?<!(?:xq|nu)<[^>]+> )sq<([^>]+)> ([^,|^\.]+)\.?$"
+# terminal phases i.e. beginning of phase or end of phase
+# the? [beginning|end] of [phase]
+# NOTE: these are standalone sequence conditions, generally part of a triggered
+#  ability
+re_seq_terminal_phase = re.compile(
+    r"^(?:xq<the> )?sq<(beginning|end)> pr<of> ([^,|^\.]*ts<[^>]+>)$"
 )
 
-# effect as condition sequence
-#  [effect] as [condition] i.e. Trueheart Twins
-# NOTE: Both effect and condition are action clauses. however, the condition must
-#  be a simple action clause that always contain a subject, a predicates and
-#  optionally, a direct object no more and no less
-re_sequence_as_cond_check = re.compile(
-    r"pr<as> ((?:xo|xp|ob)<[^>]+> (?:xa|ka)<[^>]+>(?: (?:xo|ob)<[^>]+>)?)\.?$"
-)
-re_sequence_as_cond = re.compile(
-    r"^(.*(?:xa|ka)<[^>]+>(?: [^,|^\.]+)?) pr<as> "
-     r"((?:xo|xp|ob)<[^>]+> (?:xa|ka)<[^>]+>(?: (?:xo|ob)<[^>]+>)?)\.?$"
-)
+# clause turn-structure have the form
+#  [effect] [turn-structure] where turn-structure is simple [quanitifier] [phase]
+# NOTE: in some cases, there will be no effect see Interdict
+re_seq_phase_end = re.compile(r"^(?:([^,|^\.]+) )?(xq<[^>]+> ts<[^>]+>)$")
 
 ##
 # optionals, conditions and restrictions
@@ -1162,7 +1163,7 @@ re_restriction_anytime = re.compile(
 
 # [action] only during [phase/step] i.e. Aven Auger
 re_restriction_phase = re.compile(
-    r"^(?:([^,|\.]+) )?cn<only> sq<(\w+)> ((?:[^,|\.]+ )?ts<[^>]+>)\.?$"
+    r"^(?:([^,|\.]+) )?cn<only> (sq<[^>]+> [^,|\.]*ts<[^>]+>)\.?$"
 )
 
 # [action] only [number] times [phase/step]? i.e. Phyrexian Battleflies
@@ -1189,7 +1190,7 @@ re_only_if = re.compile(r"^(?:([^,|\.]+) )?cn<only_if> ([^,|\.]+)\.?$")
 #  [action], except for [exception] i.e. Season of the Witch
 re_exception_check = re.compile(r"cn<except>")
 re_exception_phrase = re.compile(r"(.+?), cn<except> ([^\.]+)\.?$")
-re_exclusion_phrase = re.compile(r"(?:([^\.]+) )?cn<except> pr<for> ([^\.]+)\.?$")
+re_exclusion_phrase = re.compile(r"(?:([^,|^\.]+),? )?cn<except> pr<for> ([^\.]+)\.?$")
 
 ####
 ## CLAUSES
@@ -1200,12 +1201,34 @@ re_exclusion_phrase = re.compile(r"(?:([^\.]+) )?cn<except> pr<for> ([^\.]+)\.?$
 re_sequence_clause_check = re.compile(r"^sq<[^>]+>")
 re_sequence_clause = re.compile(r"^sq<([^>]+)> ([^,|^\.]+)$")
 
-# two separate clauses conjoined by a conjunction word (will not cross boundaries
-# i.e., commas or periods
-# TODO: are we still using this
-re_ntimes = re.compile(r"^(nu<[^>]+>|xq<[^>]+>) sq<time(?: suffix=s)?>$")
-re_again = re.compile(r"^sq<(again)>$")
-re_until_phase = re.compile(r"^sq<(until)> (ts<\w+>)$")
+# a 'when' clause i.e. 'before', 'after', 'during', 'until' condition
+re_seq_when_clause = re.compile(r"^sq<(before|after|during|until)> ([^,|^\.]+)\.?$")
+
+# turn structure - similar to graphing of things
+# [player's]? [turn-structure]
+#  i.e eot, target player's turn, your turn
+re_ts_check = re.compile(r"ts<[^>]+>$") # ends with a turn structure
+
+# basic turn structure has the form
+# [player's]? [quanitifier]? [phase]
+#  Temple's Elder has a player phase form, Angel's Grace has a only a phase
+# NOTE: assuming player is basic at most a quanitifier or status and then a
+#  possessive player
+re_turn_structure_basic = re.compile(
+    r"^(?:((?:(?:xq|xs)<[^>]+> )?xp<[^>]+>) )?(?:xq<([^>]+)> )?(ts<[^>]+>)$"
+)
+
+# possessive consecutive phases have the form
+# [quantifier] turns [step] i.e. Scarab of the Unseen
+re_turn_structure_step = re.compile(
+    r"^(xq<[^>]+> ts<turn suffix='s>) (ts<[^>]+>)$"
+)
+
+# player's step has the form
+# [step] on [player's] [phase] i.e. Battering Ram
+re_turn_structure_player_step = re.compile(
+    r"^((?:xq<[^>]+> )?ts<[^>]+>) pr<on> ([^,|^\.]*xp<[^>]+>) ([^,|^\.]*ts<[^>]+>)$"
+)
 
 ####
 ## PHASES/STEPS

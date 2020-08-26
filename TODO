@@ -356,6 +356,14 @@ the first is comming from the if-would-instead, the second from the skip
  
 363. Watch out for Fires of Invention
 
-364. 
+364. catch can-nots in restriction phrase graphing? see Interdict
+
+365. Season of the Witch, graph_action_clause is mishandling the following
+ka<destroy> xq<all> st<untapped> ob<permanent characteristics=creature suffix=s> xq<that> xa<do suffix=ed> cn<not> xa<attack>
+
+366. See Interdict, is "this turn" really a direct-object of 'activate'
+
+367. 
+
 
 
