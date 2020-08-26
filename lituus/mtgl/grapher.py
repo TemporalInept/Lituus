@@ -2433,17 +2433,6 @@ def _variable_val_(t,m):
     # return the 'whole' text
     return "{}{}{}".format(pre,var,post)
 
-    # untag the tag with a variable, need the attribute dict
-    #tid,val,attr = mtgltag.untag(m.group(1))
-
-    # graph the variable instantiation
-    #vid = t.add_ur_node('variable-value')
-    #graph_phrase(t,vid,m.group(2))
-
-    # add the variable node to the tag & return it
-    #attr['node-num'] = vid.split(':')[1]
-    #return mtgltag.retag(tid,val,attr)
-
 def _variable_mana_(t,m):
     """
     graphs the value of variable mana in an unrooted node
