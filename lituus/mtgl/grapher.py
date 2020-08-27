@@ -1230,95 +1230,6 @@ def graph_sequence_phrase(t,pid,line):
 
     return None
 
-# TODO: move to clause/thing graphing section
-def graph_turn_structure(t,pid,clause):
-    """
-     graphs a turn structure clause
-    :param t: the tree
-    :param pid: parent id
-    :param clause: clause to graph
-    :return: the node of the subtree or None
-    """
-    # complex turn structure (phase preceded by a time specifier)
-    try:
-        xq1,xq2,ts = dd.re_turn_structure_complex.search(clause).groups()
-
-        # unpack the turn structure to get the val and determine if phase or step
-        # this should always be 'turn'
-        #  NOTE: stripping any attributes - have to make sure this does not have
-        #  negative effects
-        ts = mtgltag.tag_val(ts)
-        lbl = 'phase' if ts in dd.MTG_PHASES else 'step'
-
-        # graph it
-        tsid = t.add_node(pid,'turn-structure')
-        if xq2: t.add_node(tsid,'quantifier',value=xq2)
-        phid = t.add_node(tsid,lbl,value=ts)
-        whid = t.add_node(phid,'when',quantifier=xq1,value='time')
-        return tsid
-    except AttributeError as e:
-        if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
-
-    # basic turn structure format
-    try:
-        ply,xq,ts = dd.re_turn_structure_basic.search(clause).groups()
-        tsid = t.add_node(pid,'turn-structure')
-        if xq: t.add_node(tsid,'quantifier',value=xq)
-
-        # before continuing, we need to check if this is a phase or step so we
-        # can label the node accordingly
-        ts = mtgltag.tag_val(ts)
-        lbl = 'phase' if ts in dd.MTG_PHASES else 'step'
-        phid = t.add_node(tsid,lbl,value=ts)
-        if ply:
-            try:
-                graph_thing(t,t.add_node(phid,'whose'),ply)
-            except lts.LituusException as e: # should not get here
-                graph_clause(t,t.add_node(phid,'whose'),ply)
-        return tsid
-    except AttributeError as e:
-        if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
-
-    # steps of phases TODO: don't like how steps are graphed under an 'at' node
-    # For the next two, because we get two turn structures, the step and phase,
-    # graph each recursively.
-    try:
-        phid = None
-        phase,step = dd.re_turn_structure_step.search(clause).groups()
-        tsid = graph_turn_structure(t,pid,phase)
-        try:
-            phid = t.findall('phase',tsid)[0]
-        except IndexError:
-            raise lts.LituusException(lts.ETREE,"No phase node under {}".format(tsid))
-        graph_turn_structure(t,t.add_node(phid,'at'),step)
-        return tsid
-    except AttributeError as e:
-        if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
-
-    try:
-        phid = None
-        step,ply,phase = dd.re_turn_structure_player_step.search(clause).groups()
-
-        # graph the phase and get the phase node id
-        tsid = graph_turn_structure(t,pid,phase)
-        try:
-            phid = t.findall('phase',tsid)[0]
-        except IndexError:
-            raise lts.LituusException(lts.ETREE,"No phase node under {}".format(tsid))
-
-        # add the player and step under the phase node with appropriate i-nodes
-        try:
-           graph_thing(t,t.add_node(phid,'whose'),ply)
-        except lts.LituusException as e: # should not get here
-           graph_clause(t,t.add_node(phid,'whose'),ply)
-        graph_turn_structure(t,t.add_node(phid,'at'),step)
-        return tsid
-    except AttributeError as e:
-        if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
-
-    return t.add_node(pid,'turn-structure',tograph=clause)
-    return None
-
 ####
 ## CONDITION PHRASES
 ####
@@ -2101,6 +2012,96 @@ def graph_attribute_clause(t,pid,clause):
             if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
         return graph_phrase(t,t.add_node(pid,'attribute'),clause)
     return None
+
+def graph_turn_structure(t,pid,clause):
+    """
+     graphs a turn structure clause
+    :param t: the tree
+    :param pid: parent id
+    :param clause: clause to graph
+    :return: the node of the subtree or None
+    """
+    # complex turn structure (phase preceded by a time specifier)
+    try:
+        xq1,xq2,ts = dd.re_turn_structure_complex.search(clause).groups()
+
+        # unpack the turn structure to get the val and determine if phase or step
+        # this should always be 'turn'
+        #  NOTE: stripping any attributes - have to make sure this does not have
+        #  negative effects
+        ts = mtgltag.tag_val(ts)
+        lbl = 'phase' if ts in dd.MTG_PHASES else 'step'
+
+        # graph it
+        tsid = t.add_node(pid,'turn-structure')
+        if xq2: t.add_node(tsid,'quantifier',value=xq2)
+        phid = t.add_node(tsid,lbl,value=ts)
+        whid = t.add_node(phid,'when',quantifier=xq1,value='time')
+        return tsid
+    except AttributeError as e:
+        if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
+
+    # basic turn structure format
+    try:
+        ply,xq,ts = dd.re_turn_structure_basic.search(clause).groups()
+        tsid = t.add_node(pid,'turn-structure')
+        if xq: t.add_node(tsid,'quantifier',value=xq)
+
+        # before continuing, we need to check if this is a phase or step so we
+        # can label the node accordingly
+        ts = mtgltag.tag_val(ts)
+        lbl = 'phase' if ts in dd.MTG_PHASES else 'step'
+        phid = t.add_node(tsid,lbl,value=ts)
+        if ply:
+            try:
+                graph_thing(t,t.add_node(phid,'whose'),ply)
+            except lts.LituusException as e: # should not get here
+                graph_clause(t,t.add_node(phid,'whose'),ply)
+        return tsid
+    except AttributeError as e:
+        if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
+
+    # steps of phases TODO: don't like how steps are graphed under an 'at' node
+    # For the next two, because we get two turn structures, the step and phase,
+    # graph each recursively.
+    try:
+        phid = None
+        phase,step = dd.re_turn_structure_step.search(clause).groups()
+        tsid = graph_turn_structure(t,pid,phase)
+        try:
+            phid = t.findall('phase',tsid)[0]
+        except IndexError:
+            raise lts.LituusException(lts.ETREE,"No phase node under {}".format(tsid))
+        graph_turn_structure(t,t.add_node(phid,'at'),step)
+        return tsid
+    except AttributeError as e:
+        if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
+
+    try:
+        phid = None
+        step,ply,phase = dd.re_turn_structure_player_step.search(clause).groups()
+
+        # graph the phase and get the phase node id
+        tsid = graph_turn_structure(t,pid,phase)
+        try:
+            phid = t.findall('phase',tsid)[0]
+        except IndexError:
+            raise lts.LituusException(lts.ETREE,"No phase node under {}".format(tsid))
+
+        # add the player and step under the phase node with appropriate i-nodes
+        try:
+           graph_thing(t,t.add_node(phid,'whose'),ply)
+        except lts.LituusException as e: # should not get here
+           graph_clause(t,t.add_node(phid,'whose'),ply)
+        graph_turn_structure(t,t.add_node(phid,'at'),step)
+        return tsid
+    except AttributeError as e:
+        if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
+
+    return t.add_node(pid,'turn-structure',tograph=clause)
+
+    return None
+
 
 def graph_action_param(t,pid,aw,param):
     """
