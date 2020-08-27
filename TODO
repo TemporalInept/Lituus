@@ -363,7 +363,7 @@ ka<destroy> xq<all> st<untapped> ob<permanent characteristics=creature suffix=s>
 
 366. See Interdict, is "this turn" really a direct-object of 'activate'
 
-367. 
+367. replacement effects, 'repl-new-event' should be a child of 'repl-effect' rather than the other way around
 
 
 
