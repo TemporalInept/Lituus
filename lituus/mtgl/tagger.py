@@ -642,6 +642,9 @@ def third_pass(txt):
     # and 'to' action word (i.e. to cast)
     ntxt = mtgl.re_prefix_aw.sub(lambda m: _prefixed_act_word_(m),ntxt)
 
+    # remove reduant 'own'
+    ntxt = mtgl.re_ply_own_phase.sub(r"\1 \2",ntxt)
+
     # deconflict/retag voting
     if mtgl.re_vote_check.search(ntxt): ntxt = deconflict_vote(ntxt)
 

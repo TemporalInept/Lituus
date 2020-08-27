@@ -1565,6 +1565,9 @@ re_prefix_aw = re.compile(
     r"((?:xa|pr)<(?:is|be|become|to)[^>]*>) (?:(cn<not>) )?((?:xa|ka)<[^>]+>)"
 )
 
+# player's own phase (own is redudndant) - only found in Dosan and City of Solitude
+re_ply_own_phase = re.compile(r"(xp<[^>]+>) xc<own> (ts<[^>]+>)")
+
 # related to voting/votes
 re_vote_check = re.compile(r"ka<vote[^>]*>")
 
