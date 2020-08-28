@@ -957,7 +957,10 @@ re_seq_then = re.compile(
 #  1. there are no effects associated with these sequences
 #  2. these are generally of the form "during your turn, before attackers are
 #  declared" but we will generalize as much as possible (see Blaze of Glory)
-re_seq_dual = re.compile(r"^sq<([^>]+)> ([^,]+),? sq<([^>]+)> ([^\.]+)\.?$")
+re_seq_dual = re.compile(
+    r"^sq<(during|until|after|before)> ([^,]+),? "
+    r"sq<(during|until|after|before)> ([^\.]+)\.?$"
+)
 
 # conjoined distinct sequence phrases
 # [clause] [turn structure],? and [clause] [turn structure]

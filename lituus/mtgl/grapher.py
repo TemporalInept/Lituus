@@ -353,7 +353,7 @@ def graph_phrase(t,pid,line,i=0):
             if rid: return rid
 
         # sequences
-        if _sequence_check_(line):
+        if dd.re_sequence_check.search(line):
             rid = graph_sequence_phrase(t,pid,line)
             if rid: return rid
 
@@ -2462,14 +2462,6 @@ def _twi_split_(txt):
 
 def _activated_check_(line):
     return dd.re_act_check.search(line) and not dd.re_modal_check.search(line)
-
-# TODO drop this and just use re_sequence_check?
-def _sequence_check_(line):
-    if dd.re_sequence_check.search(line): return True
-    #if dd.re_time_check_start.search(line): return True
-    #if dd.re_time_check_end.search(line): return True
-    #if dd.re_sequence_as_cond_check.search(line): return True
-    return False
 
 def _graph_mana_string_(t,pid,phrase):
     try:
