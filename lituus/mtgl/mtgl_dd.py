@@ -981,9 +981,9 @@ re_seq_first_time = re.compile(
     r"^([^,|^\.]+) pr<for> xq<the∧first> sq<time> (xq<each> ts<turn>)\.?$"
 )
 
-# until phase, effect have the form i.e. Volrath, the Shapeshifter
+# until phase, effect have the form i.e. Volrath, the Shapestealer
 # until [phase], [effect]
-re_seq_until_phase = re.compile(r"sq<(until)> ([^,|^\.]*ts<[^>]+>), ([^,|^\.]+)")
+re_seq_until_phase = re.compile(r"^sq<(until)> ([^,|^\.]*ts<[^>]+>), ([^,|^\.]+)\.?$")
 
 # during, as-long-as, until, after have the form
 # [effect] for? [seq-word] [condition]
@@ -993,15 +993,8 @@ re_seq_until_phase = re.compile(r"sq<(until)> ([^,|^\.]*ts<[^>]+>), ([^,|^\.]+)"
 # until: Rage Weaver
 # after: Paradox Haze
 re_seq_effect_cond = re.compile(
-    r"^(?:([^,|^\.]+) )?(?:pr<for> )?sq<(during|as_long_as|until|after)> ([^,|^\.]+)$"
-)
-
-# terminal phases i.e. beginning of phase or end of phase
-# the? [beginning|end] of [phase]
-# NOTE: these are standalone sequence conditions, generally part of a triggered
-#  ability
-re_seq_terminal_phase = re.compile(
-    r"^(?:xq<the> )?sq<(beginning|end)> pr<of> ([^,|^\.]*ts<[^>]+>)$"
+    r"^(?:([^,|^\.]+) )?(?:pr<for> )?"
+    r"sq<(during|as_long_as|until|after|before)> ([^,|^\.]+)$"
 )
 
 # clause turn-structure have the form
@@ -1227,6 +1220,12 @@ re_ts_check = re.compile(r"ts<[^>]+>$") # ends with a turn structure
 #  does not exists as is in the oracle text
 re_turn_structure_complex = re.compile(
     r"^xq<([^>]+)> sq<time> xq<([^>]+)> (ts<[^>]+>)$"
+)
+
+# terminal phases i.e. beginning of phase or end of phase i.e. Contamination
+# the? [beginning|end] of [phase]
+re_turn_structure_terminal_phase = re.compile(
+    r"^(?:xq<the> )?sq<(beginning|end)> pr<of> ([^,|^\.]*ts<[^>]+>)$"
 )
 
 # basic turn structure has the form

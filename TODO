@@ -365,5 +365,11 @@ ka<destroy> xq<all> st<untapped> ob<permanent characteristics=creature suffix=s>
 
 367. replacement effects, 'repl-new-event' should be a child of 'repl-effect' rather than the other way around
 
+368. Look at Gaze of the Gorgon, dropping text under the triggered-effect
+
+369. Triton Tactics is getting jacked up
+
+371. 
+
 
 

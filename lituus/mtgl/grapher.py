@@ -1187,11 +1187,12 @@ def graph_sequence_phrase(t,pid,line):
     except AttributeError as e:
         if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
 
-    # until-phase-effect
+    # until-phase-effect # TODO: is this reduandant
     try:
         seq,phase,effect = dd.re_seq_until_phase.search(line).groups()
         sid = t.add_node(pid,'sequence-phrase')
-        graph_turn_structure(t,t.add_node(sid,'seq-condition',value=seq),phase)
+        #graph_turn_structure(t,t.add_node(sid,'seq-condition',value=seq),phase)
+        graph_phrase(t,t.add_node(sid,'seq-condition',value=seq),phase)
         graph_phrase(t,t.add_node(sid,'seq-effect'),effect)
         return sid
     except AttributeError as e:
@@ -1205,15 +1206,6 @@ def graph_sequence_phrase(t,pid,line):
         sid = t.add_node(pid,'sequence-phrase')
         graph_phrase(t,t.add_node(sid,'seq-condition',value=seq.replace('_','-')),cond)
         if effect: graph_phrase(t,t.add_node(sid,'seq-effect'),effect)
-        return sid
-    except AttributeError as e:
-        if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
-
-    # beginning/end of phase
-    try:
-        seq,phase = dd.re_seq_terminal_phase.search(line).groups()
-        sid = t.add_node(pid,'sequence-phrase')
-        graph_turn_structure(t,t.add_node(sid,'seq-condition',value=seq),phase)
         return sid
     except AttributeError as e:
         if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
@@ -1492,8 +1484,7 @@ def graph_restriction_phrase(t,pid,phrase):
             if mtgt.node_type(pid) == 'conjunction': rsid = pid
             else: rsid = t.add_node(pid,'restriction-phrase')
             if act: graph_phrase(t,t.add_node(rsid,'rstr-effect'),act)
-            rrid = t.add_node(rsid,'rstr-restriction',value='only')
-            graph_sequence_phrase(t,rrid,seq)
+            graph_sequence_phrase(t,t.add_node(rsid,'rstr-restriction',value='only'),seq)
             return rsid
         except AttributeError as e:
             if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
@@ -2041,6 +2032,30 @@ def graph_turn_structure(t,pid,clause):
     except AttributeError as e:
         if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
 
+    # terminal (beginning/end)
+    try:
+        seq,phase = dd.re_turn_structure_terminal_phase.search(clause).groups()
+        tsid = t.add_node(pid,'turn-structure')
+        t.add_node(tsid,'when',value=seq)
+
+        # now graph the phrase (don't want to send it back through)
+        try:
+            ply,xq,ts = dd.re_turn_structure_basic.search(phase).groups()
+            ts = mtgltag.tag_val(ts)
+            lbl = 'phase' if ts in dd.MTG_PHASES else 'step'
+            phid = t.add_node(tsid, lbl, value=ts)
+            if ply:
+                try:
+                    graph_thing(t, t.add_node(phid, 'whose'), ply)
+                except lts.LituusException as e:  # should not get here
+                    graph_clause(t, t.add_node(phid, 'whose'), ply)
+        except AttributeError as e:
+            if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
+
+        return tsid
+    except AttributeError as e:
+        if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
+
     # basic turn structure format
     try:
         ply,xq,ts = dd.re_turn_structure_basic.search(clause).groups()
@@ -2101,7 +2116,6 @@ def graph_turn_structure(t,pid,clause):
     return t.add_node(pid,'turn-structure',tograph=clause)
 
     return None
-
 
 def graph_action_param(t,pid,aw,param):
     """
