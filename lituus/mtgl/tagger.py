@@ -507,7 +507,6 @@ def deconflict_tags2(txt):
     # combat related
     ntxt = mtgl.re_combat_status_chain.sub(lambda m: _combat_status_chain_(m),ntxt)
     ntxt = mtgl.re_combat_status.sub(r"xs<\1 suffix=ing>",ntxt)
-    #ntxt = mtgl.re_blocked_status.sub(r"xs<\1block suffix=ed>",ntxt)
 
     # activated and triggered, first chain the 5 'or' conjunctions
     ntxt = mtgl.re_ab_type_chain.sub(r"xs<activate∨trigger suffix=ed>",ntxt)
@@ -534,11 +533,12 @@ def deconflict_tags2(txt):
     # action words that can be converted to status' i.e. sacrificed
     ntxt = mtgl.re_action_status.sub(r"xs<\1>",ntxt)
 
-    # combine some phases/steps
+    # combine some phases/steps & deconflict draw a step vs action
     #  1. any two consecutive turn structures unless the first is possessive
     #  2. declare attacker|blocker step
     ntxt = mtgl.re_consecutive_ts.sub(r"ts<\1>",ntxt)
     ntxt = mtgl.re_declare_step.sub(r"ts<declare-\1s>",ntxt)
+    ntxt = mtgl.re_draw_step.sub(r"\1 ts<draw>",ntxt)
 
     return ntxt
 

@@ -1061,6 +1061,9 @@ re_consecutive_ts = re.compile(r"ts<(\w+)> ts<step>")
 # declare attackers|blockers
 re_declare_step = re.compile(r"xa<declare> xo<([^>]+?) suffix=s> ts<step>")
 
+# incorrectly tagged draw
+re_draw_step = re.compile(r"(xq<[^>]+>) xa<draw>")
+
 ####
 ## MID-PASS CLEANUP
 ####
