@@ -1148,7 +1148,6 @@ re_ts_phase = re.compile(r"xa<phase>(s?)(?=\W)")
 # face can be a Status (has a hyphen) i.e. Pull from Eternity or a modifier to
 # an action i.e. Bomat Courier
 #  "...exile the top card of your library face down.", generally 'turn'
-# TODO: this is really a status
 re_status_face = re.compile(r"face-pr<(up|down)>")
 re_mod_face = re.compile(r"face pr<(up|down)>")
 
