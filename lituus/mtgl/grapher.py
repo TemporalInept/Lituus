@@ -454,10 +454,12 @@ def graph_replacement_effect(t,pid,line):
                 rid = t.add_node(pid,'optional-phrase')
                 oeid = t.add_node(rid,'opt-effect',value='may')
                 rpid = t.add_node(oeid,'replacement-effect')
-            else: rpid = t.add_node(pid,'replacement-effect')
+            else:
+                rpid = t.add_node(pid,'replacement-effect')
+                rid = rpid
             skid = t.add_node(rpid,'repl-effect',value='skip')
             if ply: graph_thing(t,skid,ply)
-            graph_phrase(t,skid,phase)
+            if not graph_turn_structure(t,skid,phase): graph_phrase(t,skid,phase)
             return rid
         except lts.LituusException as e:
             if e.errno == lts.EPTRN and rid: t.del_node(rid)
@@ -1191,7 +1193,6 @@ def graph_sequence_phrase(t,pid,line):
     try:
         seq,phase,effect = dd.re_seq_until_phase.search(line).groups()
         sid = t.add_node(pid,'sequence-phrase')
-        #graph_turn_structure(t,t.add_node(sid,'seq-condition',value=seq),phase)
         graph_phrase(t,t.add_node(sid,'seq-condition',value=seq),phase)
         graph_phrase(t,t.add_node(sid,'seq-effect'),effect)
         return sid
@@ -1210,12 +1211,30 @@ def graph_sequence_phrase(t,pid,line):
     except AttributeError as e:
         if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
 
+    # TODO: have to figure out what to do with these as some are not turn structures
+    # see Glyph of Doom
+    return None
     # clause "while" turn structure
     try:
         effect,phase = dd.re_seq_phase_end.search(line).groups()
         sid = t.add_node(pid,'sequence-phrase')
-        graph_turn_structure(t,t.add_node(sid,'seq-condition'),phase)
-        if effect: graph_phrase(t,t.add_node(sid,'seq-effect'),effect)
+        scid = t.add_node(sid,'seq-condition')
+
+        # these are catch alls, as such can incorrectly grab & graph some phrasings:
+        #  1. some cards like Paradox Haze have consecutive turn structures, we
+        #  want to handle them here as conjunctions instead of running them
+        #  through graph_phrase
+        #  2. beginning/end of phase (Putrefax) needs to be graphed in its entirety
+        #  as turn_structure
+        if effect and dd.re_turn_structure_terminal_phase.search(effect):
+            cid = t.add_node(scid,'conjunction',value='and',itype='turn-structure')
+            graph_turn_structure(t,cid,phase)
+            graph_turn_structure(t,cid,effect)
+        elif effect and dd.re_seq_phase_be_check.search(effect):
+            graph_turn_structure(t,scid,line)
+        else:
+            graph_turn_structure(t,scid,phase)
+            if effect: graph_phrase(t,t.add_node(sid,'seq-effect'),effect)
         return sid
     except AttributeError as e:
         if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
@@ -2012,6 +2031,26 @@ def graph_turn_structure(t,pid,clause):
     :param clause: clause to graph
     :return: the node of the subtree or None
     """
+    # get each-of out of the way first
+    try:
+        # NOTE: we are assuming that the phase is a basic one and
+        #  1. does not contain a quantifier or number
+        #  2. does contain a player
+        _,phase = dd.re_turn_structure_each_of.search(clause).groups()
+        ply,_,_,ts = dd.re_turn_structure_basic.search(phase).groups()
+        tsid = t.add_node(pid,'turn-structure')
+        t.add_node(tsid,'quantifier',value='each-of')
+        ts = mtgltag.tag_val(ts)
+        lbl = 'phase' if ts in dd.MTG_PHASES else 'step'
+        phid = t.add_node(tsid,lbl,value=ts)
+        try:
+            graph_thing(t,t.add_node(phid,'whose'),ply)
+        except lts.LituusException as e:  # should not get here
+            graph_clause(t,t.add_node(phid,'whose'),ply)
+        return tsid
+    except AttributeError as e:
+        if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
+
     # complex turn structure (phase preceded by a time specifier)
     try:
         xq1,xq2,ts = dd.re_turn_structure_complex.search(clause).groups()
@@ -2034,33 +2073,31 @@ def graph_turn_structure(t,pid,clause):
 
     # terminal (beginning/end)
     try:
-        seq,phase = dd.re_turn_structure_terminal_phase.search(clause).groups()
-        tsid = t.add_node(pid,'turn-structure')
-        t.add_node(tsid,'when',value=seq)
-
-        # now graph the phrase (don't want to send it back through)
-        try:
-            ply,xq,ts = dd.re_turn_structure_basic.search(phase).groups()
-            ts = mtgltag.tag_val(ts)
-            lbl = 'phase' if ts in dd.MTG_PHASES else 'step'
-            phid = t.add_node(tsid, lbl, value=ts)
-            if ply:
-                try:
-                    graph_thing(t, t.add_node(phid, 'whose'), ply)
-                except lts.LituusException as e:  # should not get here
-                    graph_clause(t, t.add_node(phid, 'whose'), ply)
-        except AttributeError as e:
-            if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
-
-        return tsid
+        # for these we'll graph a sequence phrase first. These are handled here
+        #  because of some of the complexity inside these turn structures that
+        #  we don't stripped inside graph_sequence
+        turn,seq,phase = dd.re_turn_structure_terminal_phase.search(clause).groups()
+        if not turn:
+            sid = t.add_node(pid,'sequence-phrase')
+            graph_turn_structure(t,t.add_node(sid,'seq-condition',value=seq),phase)
+            return sid
+        else:
+            # have to graph both turn structures
+            # TODO: don't like how this is graphed/handled
+            tsid = graph_turn_structure(t,pid,turn)
+            graph_turn_structure(
+                t,t.add_node(tsid,'next'),"sq<{}> pr<of> {}".format(seq,phase)
+            )
+            return tsid
     except AttributeError as e:
         if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
 
     # basic turn structure format
     try:
-        ply,xq,ts = dd.re_turn_structure_basic.search(clause).groups()
+        ply,xq,nu,ts = dd.re_turn_structure_basic.search(clause).groups()
         tsid = t.add_node(pid,'turn-structure')
         if xq: t.add_node(tsid,'quantifier',value=xq)
+        if nu: t.add_node(tsid,'number',value=nu)
 
         # before continuing, we need to check if this is a phase or step so we
         # can label the node accordingly
@@ -2113,7 +2150,7 @@ def graph_turn_structure(t,pid,clause):
     except AttributeError as e:
         if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
 
-    return t.add_node(pid,'turn-structure',tograph=clause)
+    #return t.add_node(pid,'turn-structure',tograph=clause)
 
     return None
 

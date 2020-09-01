@@ -370,3 +370,16 @@ ka<destroy> xq<all> st<untapped> ob<permanent characteristics=creature suffix=s>
 369. Triton Tactics is getting jacked up
 
 371. Suppress, Tangle Kelp, sequence/turn structure graphing still neds work
+
+372. Replacement effects -> skip in cards:
+Savor the Moment
+Elfhame Sanctuary
+Gibbering Descent
+
+373. Erta's Meddling - X can't be zero, everything is being dropped
+ 1. re_action_clause is catching "nu<x> xa<can> cn<not> xa<be> nu<0>"
+ 2. then trying to graph "nu<x> xa<be> nu<0>" after removing the can-not and making it a restriction
+ 3. this cannot be graphed bucuase nu<x. is not being treated as a thing
+
+374. See Glyph of Doom, the triggered effect "Destroy all creatures...", is being graphed as a sequence phrase but, the 'this turn' is actually a part of the action parameters specifying which creatures to be destroyed
+
