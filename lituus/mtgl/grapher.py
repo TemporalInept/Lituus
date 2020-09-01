@@ -1202,6 +1202,7 @@ def graph_sequence_phrase(t,pid,line):
     # special sequence words during, as-long-as, until, after that may have
     # a) an effect
     # b) a turn-structure as condition
+    print("GOT {} {}".format(pid,line))
     try:
         effect,seq,cond = dd.re_seq_effect_cond.search(line).groups()
         sid = t.add_node(pid,'sequence-phrase')

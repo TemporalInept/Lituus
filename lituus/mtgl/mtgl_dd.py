@@ -994,7 +994,7 @@ re_seq_until_phase = re.compile(r"^sq<(until)> ([^,|^\.]*ts<[^>]+>), ([^,|^\.]+)
 # after: Paradox Haze
 re_seq_effect_cond = re.compile(
     r"^(?:([^,|^\.]+) )?(?:pr<for> )?"
-    r"sq<(during|as_long_as|until|after|before)> ([^,|^\.]+)$"
+    r"sq<(during|as_long_as|until|after|before)> ([^,|^\.]+)\.?$"
 )
 
 # clause turn-structure have the form
