@@ -358,6 +358,11 @@ def _hack_cards_(jv):
             jv[cname]['text'] = jv[cname]['text'].replace(
                 "seven {R}","{R}{R}{R}{R}{R}{R}{R}"
             )
+        elif cname == 'Gilded Drake':
+            # replace "don't or cann't" with "don't" as it is relatively the same thing
+            jv[cname]['text'] = jv[cname]['text'].replace(
+                "don't or can't","don't"
+            )
 
         """
          bugs in mtgjson for Start // Finish related to side A, Start

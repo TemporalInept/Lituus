@@ -579,11 +579,10 @@ re_act_clause_check = re.compile(
 ## Simple (two) conjunctions - three variations
 
 # 1. a conjunction of predicates (possibly negated) with a common (or implied)
-# subject and parameters i.e. Twiddle
+# subject and common parameters i.e. Twiddle
 #  [thing] [predicate1] [not1]? and|or [predicate2] [not]? [parameters]?
 # NOTE: for now we are assuming that there will always be a subject but parameters
 #  may be empty
-# TODO: handle stuff like Changleing Outcast "can't block and can't be blocked"
 re_conjoined_act_predicate = re.compile(
     r"^([^,|^\.]+?) "
     r"((?:(?:xa|ka)<[^>]+>)(?: cn<not>)?){1} or ((?:(?:xa|ka)<[^>]+>)(?: cn<not>)?){1}"
@@ -1051,15 +1050,19 @@ re_if_thing_cando = re.compile(
 #  b.1 ends with "if able" i.e. Monstrous Carabid In these cases, the condition
 #  is 'if able'
 #   [effect] if able
-re_if_able = re.compile(r"^([^,|^\.]+) cn<if> able\.?$")
-
 # b.2 if able unless is in the middle i.e. Reckless Cohort
+re_if_able_check = re.compile(r"cn<if> able")
+re_if_able = re.compile(r"^([^,|^\.]+) cn<if> able\.?$")
 re_if_able_unless = re.compile(
     r"^([^,|^\.]+) cn<if> able cn<unless> ([^,|^\.]+)\.?$"
 )
 
-# c) if [condition], [action] i.e Ordeal of Thassa
-re_if_cond_act = re.compile(r"^cn<if> ([^,|^\.]+), ([^\.]+)\.?$")
+# c) if [condition] [phase]?, [action] i.e Ordeal of Thassa
+# Some cards like Kjeldoran Home Guard have a turn structure
+#  TODO: only grabbing simple turn-structure phrasing (quantifier phase)
+re_if_cond_act = re.compile(
+    r"^cn<if> ([^,|^\.]+?)(?: (xq<this> ts<[^>]+>))?, ([^\.]+)\.?$"
+)
 
 # d) if [condition], [action]. otherwise, [action] i.e Advice from the Fae
 #   NOTE: we need to catch this prior to lines being broken down into sentences
@@ -1445,7 +1448,7 @@ re_attr_of_thing = re.compile(
 
 # numbers
 re_number = re.compile(r"^nu<([^>]+)>$")
-#re_number_vanilla = re.compile(r"^nu<([0-9xyz]+)>$")
+re_number_vanilla = re.compile(r"^nu<([0-9xyz]+)>$")
 
 # attach 701.3 attach [object] to [object] where the first object is self
 re_attach_clause = re.compile(r"^([^\.]+) pr<to> ([^\.]+)$")

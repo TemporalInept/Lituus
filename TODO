@@ -376,10 +376,16 @@ Savor the Moment
 Elfhame Sanctuary
 Gibbering Descent
 
-373. Erta's Meddling - X can't be zero, everything is being dropped
- 1. re_action_clause is catching "nu<x> xa<can> cn<not> xa<be> nu<0>"
- 2. then trying to graph "nu<x> xa<be> nu<0>" after removing the can-not and making it a restriction
- 3. this cannot be graphed bucuase nu<x. is not being treated as a thing
-
 374. See Glyph of Doom, the triggered effect "Destroy all creatures...", is being graphed as a sequence phrase but, the 'this turn' is actually a part of the action parameters specifying which creatures to be destroyed
+
+375. For loot have to keep an eye on Desperate Ravings as there is a following 'at random'
+
+376. Relook mill, are need to account for non-numeric specifiers of cards i.e. that many don't think there are any but just in case 
+
+377. Still need handling of phrases that end with this turn, this combat etc
+
+378. Have to figure out how/when to handle conjunctions, see Boros Battleshaper
+
+
+
 

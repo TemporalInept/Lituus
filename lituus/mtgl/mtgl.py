@@ -1156,11 +1156,7 @@ re_mod_face = re.compile(r"face pr<(up|down)>")
 ####
 
 # turn is an action if it is followed by a 'xm' (modifier) or 'xq' (quantifier)
-#  and does not have a possessive suffix
-# NOTE: only capture the 'ts' tag id IOT replace it with 'xa' lituus action
-re_turn_action = re.compile(
-    r"(ts)(?=<turn[^>](?: suffix=s|ing|ed|ion|)?> x[m|q]<[^>]+>)"
-)
+re_turn_action = re.compile(r"ts<(turn[^>]*)>(?= (?:xm|xq)<[^>]+>)")
 
 # turn can be considered an object if preceded by a
 #  [a][conjoined quantifiers] [turn structure]

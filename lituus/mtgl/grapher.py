@@ -306,6 +306,8 @@ def graph_phrase(t,pid,line,i=0):
     :param line: the text to graph
     :param i: iteration count to avoid infinite recursion
     """
+    #if re.compile(r"^([^,|\.]+) and ([^,|\.]+)\.?$").search(line):
+    #    print(t._name,line)
     # check for activated /triggered ability and complex phrases
     if _activated_check_(line): return graph_activated(t,pid,line)
     elif dd.re_tgr_check.search(line): return graph_triggered(t,pid,line)
@@ -1212,32 +1214,32 @@ def graph_sequence_phrase(t,pid,line):
         if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
 
     # TODO: have to figure out what to do with these as some are not turn structures
-    # see Glyph of Doom
-    return None
-    # clause "while" turn structure
-    try:
-        effect,phase = dd.re_seq_phase_end.search(line).groups()
-        sid = t.add_node(pid,'sequence-phrase')
-        scid = t.add_node(sid,'seq-condition')
+    #  see Glyph of Doom
 
-        # these are catch alls, as such can incorrectly grab & graph some phrasings:
-        #  1. some cards like Paradox Haze have consecutive turn structures, we
-        #  want to handle them here as conjunctions instead of running them
-        #  through graph_phrase
-        #  2. beginning/end of phase (Putrefax) needs to be graphed in its entirety
-        #  as turn_structure
-        if effect and dd.re_turn_structure_terminal_phase.search(effect):
-            cid = t.add_node(scid,'conjunction',value='and',itype='turn-structure')
-            graph_turn_structure(t,cid,phase)
-            graph_turn_structure(t,cid,effect)
-        elif effect and dd.re_seq_phase_be_check.search(effect):
-            graph_turn_structure(t,scid,line)
-        else:
-            graph_turn_structure(t,scid,phase)
-            if effect: graph_phrase(t,t.add_node(sid,'seq-effect'),effect)
-        return sid
-    except AttributeError as e:
-        if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
+    # clause "while" turn structure
+    #try:
+    #    effect,phase = dd.re_seq_phase_end.search(line).groups()
+    #    sid = t.add_node(pid,'sequence-phrase')
+    #    scid = t.add_node(sid,'seq-condition')
+    #
+    #    # these are catch alls, as such can incorrectly grab & graph some phrasings:
+    #    #  1. some cards like Paradox Haze have consecutive turn structures, we
+    #    #  want to handle them here as conjunctions instead of running them
+    #    #  through graph_phrase
+    #    #  2. beginning/end of phase (Putrefax) needs to be graphed in its entirety
+    #    #  as turn_structure
+    #    if effect and dd.re_turn_structure_terminal_phase.search(effect):
+    #        cid = t.add_node(scid,'conjunction',value='and',itype='turn-structure')
+    #        graph_turn_structure(t,cid,phase)
+    #        graph_turn_structure(t,cid,effect)
+    #    elif effect and dd.re_seq_phase_be_check.search(effect):
+    #        graph_turn_structure(t,scid,line)
+    #    else:
+    #        graph_turn_structure(t,scid,phase)
+    #        if effect: graph_phrase(t,t.add_node(sid,'seq-effect'),effect)
+    #    return sid
+    #except AttributeError as e:
+    #    if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
 
     return None
 
@@ -1283,7 +1285,7 @@ def graph_conditional_phrase(t,pid,line):
         #    else: raise
 
         # check for if ables
-        if ' able' in line:
+        if dd.re_if_able_check.search(line):
             try:
                 effect = dd.re_if_able.search(line).group(1)
                 cid = t.add_node(pid,'conditional-phrase')
@@ -1306,11 +1308,19 @@ def graph_conditional_phrase(t,pid,line):
             except AttributeError as e:
                 if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
 
+            # TODO: for now, if there is an 'if able' but it does not match above
+            #  return None, we don't want this to be graphed by the below
+            return None
+
         # if condition action
         try:
-            cond,effect = dd.re_if_cond_act.search(line).groups()
+            cond,phase,effect = dd.re_if_cond_act.search(line).groups()
             cid = t.add_node(pid,'conditional-phrase')
-            graph_phrase(t,t.add_node(cid,'cond-condition',value='if'),cond)
+            ccid = t.add_node(cid,'cond-condition',value='if')
+            if phase: # TODO: not sure if I like this graphing
+                sid = t.add_node(ccid,'sequence-phrase')
+                graph_turn_structure(t,t.add_node(sid,'seq-condition'),phase)
+            graph_phrase(t,ccid,cond)
             graph_phrase(t,t.add_node(cid,'cond-effect'),effect)
             return cid
         except AttributeError as e:
@@ -1748,16 +1758,21 @@ def graph_action_clause_ex(t,pid,phrase):
     #  3. conjunction of (two) actions where the subject is the same
 
     # conjunction of predicates
-    #try:
-    #    # we not only have to use regex, have to do additional checks for these
-    #    # types of conjunctions
-    #    th,a1,a2,ap = dd.re_conjoined_act_predicate.search(phrase).groups()
-    #    #if _confirm_conjoined_act_predicate_(a1,a2,ap):
-    #    #    if a1 != "ka<tap>" and ap is not None: print("{} {}/{} == {}".format(t._name,a1,a2,ap))
-    #    return None
-    #except AttributeError as e:
-    #    if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-    #    else: raise
+    try:
+        # we not only have to use regex, have to do additional checks for these
+        # types of conjunctions
+        thing,a1,a2,ap = dd.re_conjoined_act_predicate.search(phrase).groups()
+        if _confirm_conjoined_act_predicate_(a1,a2,ap):
+            aid = t.add_node(pid,'action-clause')
+            graph_thing(t,t.add_node(aid,'act-subject'),thing)
+            cid = t.add_node(aid,'conjunction',value='or',itype='act-predicate')
+            awid,val = _graph_action_word_(t,t.add_node(cid,'act-predicate'),a1)
+            _,_= _graph_action_word_(t,t.add_node(cid,'act-predicate'),a2)
+            if ap: graph_action_param(t,aid,val,ap) # pass the first aw value
+            return aid
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
 
     # subjects are specified for both actions
     try:
@@ -1822,7 +1837,7 @@ def graph_action_clause_ex(t,pid,phrase):
             if thing: graph_thing(t,t.add_node(aid,'act-subject'),thing)
             apid = t.add_node(aid,'act-predicate')
 
-            # before graph the action word, have to add any present prefixes
+            # before graphing the action word, have to add any present prefixes
             if abw: aw = abw + ' ' + aw
             elif cnd: aw = cnd + ' ' + aw
             awid,val = _graph_action_word_(t,apid,aw)
@@ -1861,9 +1876,13 @@ def graph_thing(t,pid,clause):
     :param clause: the clause
     :return: the thing node id
     """
-    # first look at reified attributes
+    # first look at reified attributes and numbers
     if dd.re_reified_attribute.search(clause):
         rid = graph_attribute_clause(t,pid,clause)
+        if rid: return rid
+
+    if dd.re_number.search(clause):
+        rid = _graph_number_(t,pid,clause)
         if rid: return rid
 
     # could have a qtz phrase, a qst phrase or a possesive phrase - check all
@@ -2330,6 +2349,21 @@ def graph_phase_clause(t,pid,clause):
 ## PRIVATE FUNCTIONS
 ####
 
+def _enclosed_quote_(t,m):
+    """
+    graphs the contents of an enclosed quote (in m) under an unrooted node and
+    returns a tag nd<node-id> to sub in for the quoted text
+    :param t: the tree
+    :param m: regex match object
+    :return: the tagged node-id of the graphed contents
+    """
+    # create a rootless node to graph the text under (stripping the quotation
+    # marks) and return the tagged node-id
+    eqid = t.add_ur_node('enclosed-quote')
+    graph_line(t,eqid,m.group()[1:-1])
+    return "nd<{} num={}>".format(*eqid.split(':'))
+
+
 def _graph_object_(t,pid,obj):
     """
      graphs an object under pid
@@ -2366,19 +2400,19 @@ def _graph_object_(t,pid,obj):
     for k in attr: t.add_node(oid,k,value=attr[k])
     return oid
 
-def _enclosed_quote_(t,m):
-    """
-    graphs the contents of an enclosed quote (in m) under an unrooted node and
-    returns a tag nd<node-id> to sub in for the quoted text
-    :param t: the tree
-    :param m: regex match object
-    :return: the tagged node-id of the graphed contents
-    """
-    # create a rootless node to graph the text under (stripping the quotation
-    # marks) and return the tagged node-id
-    eqid = t.add_ur_node('enclosed-quote')
-    graph_line(t,eqid,m.group()[1:-1])
-    return "nd<{} num={}>".format(*eqid.split(':'))
+def _graph_number_(t,pid,tkn):
+    """  graphs a number 'nu' """
+    try:
+        tid,val,attr = mtgltag.untag(tkn)
+        assert tid == 'nu'
+        # TODO: so far all numbers have been vanilla, no attributes but keep the
+        #  below for now in case they come up or just go ahead and graph
+        #  attributes like in_graph_object_
+        if attr: print("Number Attr",t._name, attr)
+        return t.add_node(pid,'number',value=val)
+    except lts.LituusException:
+        pass
+    return None
 
 def _graph_variable_(t,line):
     """
@@ -2390,6 +2424,7 @@ def _graph_variable_(t,line):
     line = dd.re_variable_val.sub(lambda m: _variable_val_(t,m),line)
     line = dd.re_variable_mana.sub(lambda m: _variable_mana_(t,m),line)
     return line
+
 
 def _variable_val_(t,m):
     """
@@ -2539,17 +2574,25 @@ def _graph_mana_string_(t,pid,phrase):
 
 def _confirm_conjoined_act_predicate_(a1,a2,ap):
     # determine based on a1 and a2 if the two predicates can be conjoined
-    if a1 == "xa<etb suffix=s>": return False
+    if ap is None: return True # can conjoin if no parameters
 
+    # can conjoin if parameter (is a single token) has a predefined tag id
     try:
-        if mtgltag.tag_val(a1) == 'attack' and mtgltag.tag_val(a2) == 'block':
-            if ap is not None:
-                if mtgltag.is_tag(ap) and mtgltag.tag_id(ap) == 'xl': return True
-            return False
-    except lts.LituusException:
+        if mtgltag.tag_id(ap) in ['xl','kw','ef']: return True
+    except lts.LituusException: # not a single token
         pass
 
-    return True
+    # TODO: not sure if this good but if the two action words have the same attributes
+    #  i.e. suffix and prefix than they can be conjoined
+    try:
+        if mtgltag.tag_attr(a1) == mtgltag.tag_attr(a2): return True
+    except lts.LituusException:  # not a single token
+        pass
+
+    # last check is for Gilded Drake
+    if a1 == 'xa<do> cn<not>' and a2 == 'xa<can> cn<not>': return True
+
+    return False
 
 ####
 ## ACTIONS

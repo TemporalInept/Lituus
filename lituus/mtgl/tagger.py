@@ -293,7 +293,7 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_mod_face.sub(r"xm<face amplifier=\1>",ntxt)
 
     # turn could be a lituus action and in some cases an object
-    ntxt = mtgl.re_turn_action.sub("xa",ntxt)
+    ntxt = mtgl.re_turn_action.sub(r"xa<\1>",ntxt)
 
     # exile is a zone if preceded by a preposition
     ntxt = mtgl.re_zn_exile.sub("zn<exile>",ntxt)
@@ -625,11 +625,16 @@ def third_pass(txt):
             m.group(2) if m.group(2) else 'nu<1>' # if # not specified, make it 1
         ),txt
     )
+    #ntxt = mtgl.re_loot.sub(
+    #    lambda m: r"xa<loot draw={} discard={}>".format(
+    #        _loot_num_(m.group(1)),
+    #        _loot_num_(m.group(2))),
+    #    txt)
     ntxt = mtgl.re_etb.sub(r"xa<etb\1>",ntxt)
     ntxt = mtgl.re_ltb.sub(r"xa<ltb\1>",ntxt)
-    ntxt = mtgl.re_your_opponents.sub(r"xp<opponent suffix=s>",ntxt) # for grapher
 
     # fix possessives (own, control) using logic symbols instead of tokens
+    ntxt = mtgl.re_your_opponents.sub(r"xp<opponent suffix=s>",ntxt)  # for grapher
     ntxt = mtgl.re_both_ownctrl.sub(r"\1",ntxt)
     ntxt = mtgl.re_neither_ownctrl.sub(r"xc<¬own∧¬control>", ntxt)
     ntxt = mtgl.re_own_not_ctrl.sub(r"xc<own∧¬control>",ntxt)
@@ -1268,3 +1273,7 @@ def _tag_vote_candidate_(c):
         if 'suffix' in attr: val += attr['suffix'] # TODO: use _join_suffix_ like fct
         candidate = val
     return mtgltag.retag('xo','vote',{'candidate':candidate})
+
+def _loot_num_(tkn):
+    if tkn == 'xq<a>': return 1
+    else: return mtgltag.tag_val(tkn)
