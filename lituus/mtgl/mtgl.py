@@ -256,13 +256,13 @@ word_hacks = {
     # special
     'an':"a","command zone":"command",
     # plural
-    "werewolves":"werewolfs","allies":"allys","elves":"elfs","abilities":"abilitys",
-    "sorceries":"sorcerys","libraries":"librarys","armies":"armys",
-    "aurochses":"aurochss","cyclopes":"cyclops","fishes":"fishs","fungi":"fungess",
-    "homunculuses":"homunculuss","jellyfishes":"jellyfishs","leeches":"leechs",
-    "mercenaries":"mercenarys","mongeese":"mongooss","mice":"mouses","foxes":"foxs",
-    "nautiluses":"nautiluss","octopuses":"octopuss","sphinxes":"sphinxs",
-    "thalakoses":"thalokoss",
+    "wolves":"wolfs","werewolves":"werewolfs","allies":"allys","elves":"elfs",
+    "abilities":"abilitys","sorceries":"sorcerys","libraries":"librarys",
+    "armies":"armys","aurochses":"aurochss","cyclopes":"cyclops","fishes":"fishs",
+    "fungi":"fungess","homunculuses":"homunculuss","jellyfishes":"jellyfishs",
+    "leeches":"leechs","mercenaries":"mercenarys","mongeese":"mongooss",
+    "mice":"mouses","foxes":"foxs","nautiluses":"nautiluss","octopuses":"octopuss",
+    "sphinxes":"sphinxs","thalakoses":"thalokoss",
     # acronyms
     "end of turn":"eot","converted mana cost":"cmc","converted mana costs":"cmcs",
     # suffixes/tense/possessive (ing,ed,s,'s)
@@ -1539,6 +1539,13 @@ re_mill = re.compile(
     r"xa<put( suffix=\w+)?> xq<the> pr<top> (?:(nu<[^>]+>) )?ob<card[^>]*> "
     r"pr<of> (xp|xq)<[^>]+> zn<library> pr<into> (xp|xq)<[^>]+> zn<graveyard>"
 )
+
+# loot i.e. Merfolk Looter
+# [draw] [cards],? then [discard] [cards]
+#re_loot = re.compile(
+#    r"xa<draw> (xq<a>|nu<[^>]+>) ob<card(?: suffix=s)?>,? "
+#     r"sq<then> ka<discard> (xq<a>|nu<[^>]+>) ob<card(?: suffix=s)?>"
+#)
 
 # etb and ltb (NOTE: matching any suffix which should only be 'tense'
 re_etb = re.compile(r"xa<enter( [^>]+)?> xq<the> zn<battlefield>")
