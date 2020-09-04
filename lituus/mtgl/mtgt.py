@@ -169,6 +169,7 @@ class MTGTree:
             raise lts.LituusException(lts.ENODE,"No such node {}".format(nid))
 
     """ returns a list of ancestors of node nid (in no particular order) """
+    # TODO: have this return in order (DFS) from node to root
     def ancestors(self,nid):
         try:
             return [n for n in nx.ancestors(self._t,nid)]

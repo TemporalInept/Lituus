@@ -609,6 +609,16 @@ re_conjoined_act_clause_common = re.compile(
     r"(and|or|and/or) ((?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
 
+#### Singular action clauses
+
+# start with can/do have the form
+# [clause] can|do [not]? [action-clause]
+#  NOTE: In most cases, clause will be a Thing but in some i.e. Hushwing Gryff,
+#  it is an action
+re_action_cando_clause = re.compile(
+    r"^(?:([^,|^\.]+?) )?xa<(can|do)[^>]*>(?: cn<(not)>)?(?: ([^,|^\.]+))?\.?$"
+)
+
 #  2. singular
 #   [thing]? [can|do]? [conditional]? [action-word] [action-parameters]
 #  NOTE: have to make sure that the action(s) are not preceded by another action
@@ -617,12 +627,7 @@ re_action_clause = re.compile(
      r"((?:xa|ka|kw)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
 )
 
-## 2.a tap or untap is a special phrasing i.e. Twiddle
-#re_tq_action_clause = re.compile(
-#    r"^(?:([^,|^\.]*?) )?(ka<tap> or ka<untap>) ([^,|^\.]+)\.?$"
-#)
-
-# 2.c do the same is another special phrasing i.e. Guild Fued (only 5 cards as
+# 2.a do the same is another special phrasing i.e. Guild Fued (only 5 cards as
 # of IKO)
 # [player]? do the same [preposition] [thing]
 re_do_the_same_action_clause = re.compile(
@@ -677,13 +682,13 @@ re_repl_seq_bookend = re.compile(
 #  a. if [thing] would [action] or [thing] would [action], [action] instead i.e Anafenza
 #  b. if [thing] would [action], [action] instead i.e. Abandoned Sarcophagus
 #  c. if [thing] would [action], instead [action] i.e. Breathstealer's Crypt
-re_if_would2_instead = re.compile(
+re_repl_if_would2_instead = re.compile(
     r"^cn<if> (.+) cn<would> (.+) or (.+) cn<would> ([^,]+), (.+) cn<instead>\.?$"
 )
-re_if_would_instead1 = re.compile(
+re_repl_if_would_instead1 = re.compile(
     r"^cn<if> (.+) cn<would> ([^,]+), (.+) cn<instead>\.?$"
 )
-re_if_would_instead2 = re.compile(
+re_repl_if_would_instead2 = re.compile(
     r"^cn<if> (.+) cn<would> ([^,]+), cn<instead> ([^\.]+)\.?$"
 )
 
@@ -691,78 +696,78 @@ re_if_would_instead2 = re.compile(
 #  [original] that would [(action) original] (action) [replacment] instead.
 # I cannot handle these by RegEx alone as the condition and replacement are
 # separated by an action word
-re_that_would_instead = re.compile(
+re_repl_that_would_instead = re.compile(
     r"^([^,|\.]+) xq<that> cn<would> (.+) cn<instead>\.?$"
 )
 
 # that would instead variant i.e. False Dawn
 # [sequence] [thing] [action (original)] instead [action (new)]
-re_seq_that_would_instead = re.compile(
+re_repl_seq_that_would_instead = re.compile(
     r"^([^,|\.]+), (.+) xq<that> cn<would> ([^\.]+) cn<instead> ([^\.]+)\.?$"
 )
 
 # may instead (limited replacement - have only seen 3 i.e. Abundance
 # if [player] would [action], [player] may instead [action]
-re_if_may_instead = re.compile(
+re_repl_if_may_instead = re.compile(
     r"^cn<if> (.+) cn<would> ([^,]+), (.+) cn<may> cn<instead> ([^\.]+)\.?$"
 )
 
 # if instead of i.e. Pale Moon
 #   if [action], [replacement] instead of [original]
-re_if_instead_of = re.compile(
+re_repl_if_instead_of = re.compile(
     r"^(cn<if> .+), (.+) cn<instead> pr<of> ([^\.]+)\.?$"
 )
 
 # instead of if i.e. Caravan Vigil
 #  [replacement] instead of [orginal] [conditional-phrase]
-re_instead_of_if = re.compile(
+re_repl_instead_of_if = re.compile(
     r"^([^,|\.]+) cn<instead> pr<of> (.+) (cn<if> [^\.]+)\.?$"
 )
 
 # instead of i.e. Feather, the Redeemed
 #  [replacement] instead of [original]
 # NOTE: these do not have a preceeding if/would
-re_instead_of = re.compile(r"^([^,|\.]+) cn<instead> pr<of> ([^\.]+)\.?$")
+re_repl_instead_of = re.compile(r"^([^,|\.]+) cn<instead> pr<of> ([^\.]+)\.?$")
 
 # if instead i.e. Cleansing Meditation
 #   if [event/condition] instead [replacement].
 # the instead comes between the condition and the replacement
-re_if_instead = re.compile(r"^cn<if> (.+) cn<instead> ([^\.]+)\.?$")
+re_repl_if_instead = re.compile(r"^cn<if> (.+) cn<instead> ([^\.]+)\.?$")
 
 # if instead fence i.e. Nyxbloom Ancient
 #   if [event/condition], [replacement] instead
-re_if_instead_fence = re.compile(r"^cn<if> (.+), (.+) cn<instead>\.?$")
+re_repl_if_instead_fence = re.compile(r"^cn<if> (.+), (.+) cn<instead>\.?$")
 
 # instead if i.e. Crown of Empires
 #  [replacement] instead if [condition]
 # the condition and replacement are switched
-re_instead_if = re.compile(r"^([^,|\.]+) cn<instead> cn<if> ([^\.]+)\.?$")
+re_repl_instead_if = re.compile(r"^([^,|\.]+) cn<instead> cn<if> ([^\.]+)\.?$")
 
 ## SKIP CLAUSES (614.1b)
 # skip clauses i.e. Stasis (Note as of IKO, I found 49) have the form
 #  [player]? skip(s) [phase/step]
 # where if player is not present there is an implied 'you'
 # Additionaly some cards (4 total as of IKO) i.e. Fasting include an optional 'may'
-re_skip = re.compile(r"^(?:(.+?) )?(?:cn<(may)> )?xa<skip[^>]*> ([^\.]+)\.?$")
+re_repl_skip = re.compile(r"^(?:(.+?) )?(?:cn<(may)> )?xa<skip[^>]*> ([^\.]+)\.?$")
 
 ## ENTERS THE BATTLEFIELD CLAUSES (614.1c)
 # Permanent enters the battlefield with ...
 # As Permanent enters the battlefield ...
 # Permanent enters the battlefield as ...
-re_etb_repl_check = re.compile(r"xa<etb(?: suffix=s)?>")
+re_repl_etb_check = re.compile(r"xa<etb(?: suffix=s)?>")
 
 # Permanent enters the battlefield with ... i.e. Pentavus have the form
 #  [permanent] enters the battlefield with [counters]
 # these are all counters
-re_etb_with = re.compile(r"^([^,|\.]+) xa<etb(?: suffix=s)?> pr<with> ([^\.]+)\.?$")
+re_repl_etb_with = re.compile(r"^([^,|\.]+) xa<etb(?: suffix=s)?> pr<with> ([^\.]+)\.?$")
 
 # As permanent enters the battlefield ... i.e. Sewer Nemesis have the form
 #  as [thing] enters the battlefield, [event]
-re_as_etb = re.compile(r"^pr<as> ([^,|\.]+) (xa<etb(?: suffix=s)?>), ([^\.]+)\.?$")
+re_repl_as_etb = re.compile(r"^pr<as> ([^,|\.]+) (xa<etb(?: suffix=s)?>), ([^\.]+)\.?$")
 
 # Permanent enters the battlefield as ... i.e. Clone
 #  [Player may have]? [thing] enters the battlelfield as [thing]
-re_etb_as = re.compile(
+re_repl_etb_as = re.compile(
     r"^(?:([^,|\.]+) cn<may> xa<have> )?"
      r"([^,|\.]+) xa<etb(?: suffix=s)?> pr<as> ([^\.]+)\.?$"
 )
@@ -773,13 +778,13 @@ re_etb_as = re.compile(
 #  Effect Gather Specimens
 # Objects enter the battlefield ...
 #  NOTE: have to assume that after above, all remaining ETB fit this
-re_etb_status = re.compile(r"^([^,|\.]+) xa<etb(?: suffix=s)?> st<([^>]+)>\.?$")
-re_etb_1d = re.compile(r"^([^,|\.]+ xa<etb(?: suffix=s)?>)(?: ([^\.]+))?\.?$")
+re_repl_etb_status = re.compile(r"^([^,|\.]+) xa<etb(?: suffix=s)?> st<([^>]+)>\.?$")
+re_repl_etb_1d = re.compile(r"^([^,|\.]+ xa<etb(?: suffix=s)?>)(?: ([^\.]+))?\.?$")
 
 ## TURNED FACE UP (614.1e)
 # As Permanent is turned face up i.e. Gift of Doom
-re_turn_up_check = re.compile(r"xa<turn suffix=ed> xm<face amplifier=up>")
-re_turn_up = re.compile(
+re_repl_turn_up_check = re.compile(r"xa<turn suffix=ed> xm<face amplifier=up>")
+re_repl_turn_up = re.compile(
     r"^pr<as> (.+ xa<is> xa<turn suffix=ed> xm<face amplifier=up>), ([^\.]+)\.?$"
 )
 
@@ -801,7 +806,7 @@ re_repl_dmg = re.compile(r"^cn<if> (.+) cn<would> (.+), (.+)\.?$")
 # only target Abuna Acolyte
 # neither target nor source see Revealing Wind
 # except by see Insprie Awe (this is the only one I've seen
-re_prevent_dmg = re.compile(
+re_repl_prevent_dmg = re.compile(
     r"^xa<prevent> ([^,|^\.]*ef<[^>]*damage[^>]*>)"
      r" xq<that> cn<would> xa<be> xa<deal[^>]*>"
      r"(?: pr<to> ([^,|^\.]+?))?"
@@ -811,7 +816,7 @@ re_prevent_dmg = re.compile(
 
 # variation where target and source are the same i.e. Moonlight Geist has the form
 #  prevent [damage] that would be dealt to and dealt by [thing] [sequence]?
-re_prevent_dmg2 = re.compile(
+re_repl_prevent_dmg2 = re.compile(
     r"^xa<prevent> ([^,|^\.]*ef<[^>]*damage[^>]*>)"
      r" xq<that> cn<would> xa<be> xa<deal[^>]+> pr<to> and xa<deal[^>]+> pr<by>"
      r" ([^,|^\.]+?)(?: ((?:xq|sq)<[^>]+> ts<[^>]+>))?\.?$"
@@ -821,7 +826,7 @@ re_prevent_dmg2 = re.compile(
 #  Refraction Trap has a target
 #  Guard Dogs does not
 #  prevent [damage] [source] would [action] [sequence]?
-re_prevent_dmg3 = re.compile(
+re_repl_prevent_dmg3 = re.compile(
     r"^xa<prevent> ([^,|^\.]*ef<[^>]*damage[^>]*>)(?: xq<that[^>]*>)? (.+)"
     r" cn<would> xa<deal[^>]*>(?: pr<to> (.+?))?"
     r"(?: ((?:xq|sq)<[^>]+> ts<[^>]+>))?\.?$"
@@ -829,14 +834,14 @@ re_prevent_dmg3 = re.compile(
 
 # variation to prevent damage to target only, see Angel of Salvation has the form
 # prevent [damage] that would be dealt [sequence]? to [target]
-re_prevent_dmg_tgt = re.compile(
+re_repl_prevent_dmg_tgt = re.compile(
     r"^xa<prevent> ([^,|^\.]+?) xq<that> cn<would> xa<be> xa<deal[^>]*>"
      r"(?: ((?:xq|sq)<[^>]+> ts<[^>]+>))? pr<to> ([^,|^\.]+)\.?$"
 )
 
 # variation to prevent damage by source only, see Barbed Wire has the form
 # prevent [damage] that would be dealt by [source] [sequence]
-re_prevent_dmg_src = re.compile(
+re_repl_prevent_dmg_src = re.compile(
     r"^xa<prevent> ([^,|^\.]+?) xq<that> cn<would> xa<be> xa<deal[^>]*> "
      r"pr<by> ([^,|^\.]+) ((?:xq|sq)<[^>]+> ts<[^>]+>)\.?$"
 )
@@ -853,7 +858,7 @@ re_prevent_dmg_src = re.compile(
 #  and Bringer of the Red Dawn for a conditionless
 # NOTE: the action may be an alternate/reduced mana payment i.e. Ricochet Trap or
 #  other i.e. Sivvi's Valoryu76
-re_action_apc = re.compile(
+re_apc_action = re.compile(
     r"^(?:cn<if> (.+), )?([^,]+) cn<may> ([^,]+) cn<rather_than> (xa<pay> [^\.]+)\.$"
 )
 
@@ -861,19 +866,19 @@ re_action_apc = re.compile(
 # Invigorate).
 #  if [condition], rather than pay self's mana cost you may [action].
 # this is alternate phrasing of re_action_apc and always has a condition
-re_alt_action_apc = re.compile(
+re_apc_alt_action = re.compile(
     r"^cn<if> (.+), cn<rather_than> (xa<pay> [^,]+), (xp<you>) cn<may> ([^\.]+)\.?$"
 )
 
 # two alternate phrasing that do not contain a conditional
 #  rather than pay [cost], [player] may [action] see Dream Halls
-re_rather_than_may_apc = re.compile(
+re_apc_rather_than_may = re.compile(
     r"^cn<rather_than> (xa<pay> [^,]+), ([^\.]+) cn<may> ([^\.]+)\.?$"
 )
 
 # see i.e. Scourge of Nel Toth
 # [player] may [action] pr<by> [alt-cost] rather than [cost]
-re_may_rather_than_apc = re.compile(
+re_apc_may_rather_than = re.compile(
     r"^([^,]+) cn<may> ([^,]+) pr<by> (xa<pay[^>]*> [^,]+) "
      r"cn<rather_than> (xa<pay[^>]*> [^,]+)\.?$"
 )
@@ -881,14 +886,14 @@ re_may_rather_than_apc = re.compile(
 # 3rd alternate phrasing found (so far only in Bolas's Citadel)
 #  if [player] [cond], [apc] rather than [cost]
 # These are not optional apcs
-re_rather_than_mand_apc = re.compile(
+re_apc_rather_than_mand = re.compile(
     r"^cn<if> (.*xp<[^>]+>) (.+), "
      r"(xa<pay> [^,]+) cn<rather_than> (xa<pay> [^,]+)\.?$"
 )
 
 # if [condition], [you may cast object] without [paying its mana cost] i.e. Massacre
 # these are all condition based
-re_cast_apc_nocost = re.compile(
+re_apc_cast_nocost = re.compile(
     r"^cn<if> ([^,]+), ([^,]+) cn<may> ([^,]+) pr<without> ([^.]+)\.?$"
 )
 
@@ -899,6 +904,10 @@ re_add_cost_check = re.compile(r"xq<a∧additional> xo<cost>")
 re_add_cost = re.compile(
     r"^pr<as> xq<a∧additional> xo<cost> ka<cast prefix=to> ([^,]+), ([^\.]+)\.?$"
 )
+
+## option delimiter
+# used in both modal and level up
+re_opt_delim = re.compile(r" ?•")
 
 ## MODAL PHRASES
 # (700.2) modal phrases i.e. Charming Prince have two or more options in a bulleted
@@ -915,7 +924,6 @@ re_add_cost = re.compile(
 re_modal_check = re.compile(r"^xa<choose> nu<([^>]+)>.+•")
 re_modal_phrase = re.compile(r"^xa<choose> nu<([^>]+)>(?: or xq<(both)> )?—([^\.]+)\.?$")
 re_modal_phrase_instr = re.compile(r"^xa<choose> nu<([^>]+)>\. ([^•]+) ([^\.]+)\.?$")
-re_opt_delim = re.compile(r" ?•")
 
 ## LEVELER PHRASES
 # (710.2a) (NOTE: the form as specified in 710.2a has [Abilities] [P/T] whereas
@@ -940,7 +948,7 @@ re_chapter_delim = re.compile(r"(i[iv]*(?:, i[iv]+)*) — ")
 
 # sequences
 #  Checks - any line with a sequence tag will be considered a sequence
-re_sequence_check = re.compile(r"(?:ts|sq)<[^>]+>")
+re_seq_check = re.compile(r"(?:ts|sq)<[^>]+>")
 
 # 'then' flow of actions has the forms
 # [action]?,? then [action] again?
@@ -1011,77 +1019,73 @@ re_optional_check = re.compile(r"cn<may>")
 
 # conjoined optionals i.e. Hostage Taker
 #  [optional] and|or [optional]
-re_conjoined_optional_phrase = re.compile(
+re_conjoined_opt_phrase = re.compile(
     r"^((?:[^,|\.]+)?xp<[^>]+>(?:[^,|\.]+)? cn<may> [^,|\.]+)"
     r", (and|or|and/or) "
     r"((?:[^,|\.]+)?xp<[^>]+>(?:[^,|\.]+)? cn<may> [^,|\.]+)\.?$"
 )
 
 # [player] may [action] as though [action] [if [condition]]? i.e. Lone Wolf
-re_may_as_though = re.compile(
+re_opt_may_as_though = re.compile(
     r"^((?:[^,|\.]+ )?xp<[^>]+>) cn<may> (.+) pr<as_though> ([^\.]+)\.?$"
 )
 
 # contains 'may' [player] may [action] i.e. Ad Nauseam
 #  NOTE: This also covers [player] may have [effect] such as Browbeat
-re_player_may = re.compile(
+re_opt_player_may = re.compile(
     r"^((?:[^,|\.]+)?xp<[^>]+>(?:[^,|\.]+)?) "
      r"cn<may> ([x|k]a<\w+>(?:[^\.]+))\.?$"
 )
 
 # starts with if
 
-# a) if [thing] can|do [not]?, [action] i.e. Decree of Justice, Brain Pry
-#  if [player] can|do not?, [effect]
-# TODO:
-#   Gilded drake is an exception in that it has "do not or can not" and it has
-#   a action clause prior to the comma
-# NOTE:
-#  1. in almost all cases, the cando contition applies to a previous clause
-#  2. this is a subset of re_if_cond_act but it requires special handling
-#  3. In almost all cases the thing is a player however sometimes (Condundrum
-#   Sphinx) it is an object
-re_if_thing_cando = re.compile(
-    r"^cn<if> ([^,|^\.]*(?:ob|xo|xp)<[^>]+>) "
-     r"xa<(can|do)[^>]*>(?: cn<(not)>)?, ([^\.]+)\.?$"
+# for each condition see
+#  1. for each [condition], [action] i.e. From the Ashes
+#  2. [action] for each [condition] i.e. Gnaw to the Bone
+# NOTE: we check the quantifier for chains
+re_cond_for_each_start = re.compile(
+    r"pr<for> xq<each(?:[∧∨⊕]([^>]+))?> ([^,|^\.]+), ([^\.]+)\.?$"
+)
+re_cond_for_each_mid = re.compile(
+    r"^([^,|^\.]+) pr<for> xq<each(?:[∧∨⊕]([^>]+))?> ([^\.]+)\.?$"
 )
 
-# b) if-able phrasings
+# a) if-able phrasings
 #  b.1 ends with "if able" i.e. Monstrous Carabid In these cases, the condition
 #  is 'if able'
 #   [effect] if able
 # b.2 if able unless is in the middle i.e. Reckless Cohort
-re_if_able_check = re.compile(r"cn<if> able")
-re_if_able = re.compile(r"^([^,|^\.]+) cn<if> able\.?$")
-re_if_able_unless = re.compile(
+re_cond_if_able_check = re.compile(r"cn<if> able")
+re_cond_if_able = re.compile(r"^([^,|^\.]+) cn<if> able\.?$")
+re_cond_if_able_unless = re.compile(
     r"^([^,|^\.]+) cn<if> able cn<unless> ([^,|^\.]+)\.?$"
 )
 
-# c) if [condition] [phase]?, [action] i.e Ordeal of Thassa
+# b) if [condition] [phase]?, [action] i.e Ordeal of Thassa
 # Some cards like Kjeldoran Home Guard have a turn structure
 #  TODO: only grabbing simple turn-structure phrasing (quantifier phase)
-re_if_cond_act = re.compile(
+re_cond_if_cond_act = re.compile(
     r"^cn<if> ([^,|^\.]+?)(?: (xq<this> ts<[^>]+>))?, ([^\.]+)\.?$"
 )
 
-# d) if [condition], [action]. otherwise, [action] i.e Advice from the Fae
+# c) if [condition], [action]. otherwise, [action] i.e Advice from the Fae
 #   NOTE: we need to catch this prior to lines being broken down into sentences
 #   so we catch previous sentences if present
-re_if_otherwise = re.compile(
+re_cond_if_otherwise = re.compile(
     r"^(?:(.+?\.) )?cn<if> ([^,|^\.]+), ([^\.]+)\. "
      r"cn<otherwise>, ([^\.]+)\.?(?: ([^\.]+)\.?)?$"
 )
 
-# e) [action] if [condition] i.e. Ghastly Demise
-re_act_if_cond = re.compile(r"^([^,|^\.]+),? cn<if> ([^,|\.]+)\.?$")
+# d) [action] if [condition] i.e. Ghastly Demise
+re_cond_act_if_cond = re.compile(r"^([^,|^\.]+),? cn<if> ([^,|\.]+)\.?$")
 
-# f) hanging if would
-re_if_would = re.compile(r"^cn<if> ([^,|^\.]+) cn<would> ([^,|^\.]+)\.?$")
+# e) hanging if would
+re_cond_if_would = re.compile(r"^cn<if> ([^,|^\.]+) cn<would> ([^,|^\.]+)\.?$")
 
-# g) hanging if (fragmentary, that is, there is no effect) these are generally
+# f) hanging if (fragmentary, that is, there is no effect) these are generally
 #  part of a higher level construct such as a triggered effect i.e. Nim Abomination
 #   if [condition]
-re_if_cond = re.compile(r"^cn<if> ([^\.]+)\.?$")
+re_cond_if_hanging = re.compile(r"^cn<if> ([^\.]+)\.?$")
 
 # contains unless
 # The rules only mention unless in 722.6 "[A] unless [B]" However going through
@@ -1094,54 +1098,43 @@ re_if_cond = re.compile(r"^cn<if> ([^\.]+)\.?$")
 # NOTE: unless is generally part of a clause that is part of a phrase therefore
 #  we do not want to grab anything that extends to the left past a clause (",")
 #  or sentence (".") boundary
-re_action_unless = re.compile(
+re_cond_act_unless = re.compile(
     r"^((?:[^,|^\.]+ )?[kx]a<[^>]+>.+) cn<unless> ([^,|\.]+)\.?$"
 )
 
 # standalone otherwise i.e. primal empathy
-re_otherwise = re.compile(r"^cn<otherwise>, ([^\.]+)\.?$")
-
-# for each condition see
-#  1. for each [condition], [action] i.e. From the Ashes
-#  2. [action] for each [condition] i.e. Gnaw to the Bone
-# NOTE: we check the quantifier for chains
-re_for_each_cond_start = re.compile(
-    r"pr<for> xq<each(?:[∧∨⊕]([^>]+))?> ([^,|^\.]+), "
-    r"([^\.]+)\.?$"
-)
-re_for_each_cond_mid = re.compile(
-    r"^([^,|^\.]+) pr<for> xq<each(?:[∧∨⊕]([^>]+))?> ([^\.]+)\.?$"
-)
+re_cond_otherwise = re.compile(r"^cn<otherwise>, ([^\.]+)\.?$")
 
 # generic would/could phrases
 #  See Dimir Guildmange for a could, Rock Hydra for a would
 #  [thing] that? would|could not? [action]
-re_gen_cond = re.compile(
+re_cond_generic = re.compile(
     r"^([^,|^\.]+?) (?:xq<(that)> )?cn<([wc]ould)> (?:cn<(not)> )?([^,|\.]+)\.?$"
 )
+
+# as-though i.e. Rout
+# [effect] as-though [cond]
+# we treat the as-though clause as a conditional
+re_cond_as_though = re.compile(r"^([^,|\.]+) pr<as_though> ([^,|\.]+)\.?$")
+
 
 ## RESTRICTION PHRASES
 
 # but condition restrictions i.e. Haakon
 # [action],? but [condition-word] [restriction]
-re_restriction_but = re.compile(r"^(.+?),? but cn<(\w+)> ([^,|\.]+)\.?$")
+re_rstr_but = re.compile(r"^(.+?),? but cn<(\w+)> ([^,|\.]+)\.?$")
 
 # can/do not
 # two forms
 #  1. [thing] can/do not [action] unless [condition] i.e. Howlpack Wolf
 # these are a restriction with a condition
 #  2. [thing] that would [action] can/do not [action] i.e. Questing Beast
-#  3. [thing] can/do not [action] i.e. Suleiman's Legacy
-# these are blanket restriction
-re_restriction_cando_check = re.compile(r"xa<(?:can|do)> cn<not>")
-re_restriction_cando_unless = re.compile(
+re_rstr_cando_check = re.compile(r"xa<(?:can|do)> cn<not>")
+re_rstr_cando_unless = re.compile(
     r"^([^,|^\.]+) xa<(can|do)> cn<not> ([kx]a<[^>]+>.*) cn<unless> ([^,|\.]+)\.?$"
 )
-re_restriction_would_cando = re.compile(
+re_rstr_would_cando = re.compile(
     r"^([^,|^\.]+) xq<that> cn<would> ([^,|\.]+) xa<(can|do)> cn<not> ([^,|\.]+)\.?$"
-)
-re_restriction_cando = re.compile( # TODO: NOT BEING USD
-    r"^([^,|^\.]+) xa<(can|do)> cn<not> ([kx]a<[^>]+>.*)\.?$"
 )
 
 # some restrictions have a conjunction of only restrictions with the basic form
@@ -1153,14 +1146,14 @@ re_restriction_cando = re.compile( # TODO: NOT BEING USD
 # TODO: Capricopian is an exception to the pattern and is of the form
 #  only [player] may [action] and only during [timing]
 # I think only ands are present but just case check for 'or' and 'and/or'
-re_conjoined_restriction_only = re.compile(
+re_conjoined_rstr_only = re.compile(
     r"^([^,|\.]+) (cn<(?:only|only_if)> [^,|^\.]+) (and|or|and/or) "
      r"(cn<(?:only|only_if)> [^,|^\.]+)\.?"
 )
 
 # may-only see Mystic Barrier has the form
 # [thing] may [action] only [restriction]
-re_restriction_may_only = re.compile(
+re_rstr_may_only = re.compile(
     r"^([^,|\.]+) cn<may> ([^,|\.]+) cn<only> ([^,|\.]+)\.?$"
 )
 
@@ -1169,18 +1162,18 @@ re_restriction_may_only = re.compile(
 # [action] only any time [timing]
 #  see Dimir Guildmage, see Teferi Mage of Zhalfir for a restriction on opponents
 # NOTE: the timing clause contains a 'could' which will be graphed as a conditional
-re_restriction_anytime = re.compile(
+re_rstr_anytime = re.compile(
     r"^(?:([^,|\.]+) )?cn<only> xq<any> sq<time> ([^,|\.]+)\.?$"
 )
 
 # [action] only during [phase/step] i.e. Aven Auger
-re_restriction_phase = re.compile(
+re_rstr_phase = re.compile(
     r"^(?:([^,|\.]+) )?cn<only> (sq<[^>]+> [^,|\.]*ts<[^>]+>)\.?$"
 )
 
 # [action] only [number] times [phase/step]? i.e. Phyrexian Battleflies
 # Variant does not have a phase/step i.e. Stalking Leonin
-re_restriction_number = re.compile(
+re_rstr_number = re.compile(
     "^(?:([^,|\.]+) )?cn<only> nu<([^>]+)> sq<time(?:[^>]+)?>"
      "(?: ((?:[^,|\.]+ )?ts<[^>]+>))?\.?$"
 )
@@ -1189,29 +1182,24 @@ re_restriction_number = re.compile(
 #  additional phrases, clauses etc
 #  [action] only [condition]
 #  NOTE: as in Temple Elder, we do not want to break on commas
-re_restriction_only = re.compile(r"^([^\.]+) cn<only> ([^\.]+)\.?$")
+re_rstr_only = re.compile(r"^([^\.]+) cn<only> ([^\.]+)\.?$")
 
 # condition restrictions only_if i.e. Tainted Isle
 #  [action] only_if [condition]
-re_only_if = re.compile(r"^(?:([^,|\.]+) )?cn<only_if> ([^,|\.]+)\.?$")
+re_rstr_only_if = re.compile(r"^(?:([^,|\.]+) )?cn<only_if> ([^,|\.]+)\.?$")
 
 # Exception: contains except - the opposite of a restriction, it provides
 # additional abilities, characteristics or exclusions from an action
 # Two variations
 #  [action], except [exception] i.e. Lazav, the Multifarious
 #  [action], except for [exception] i.e. Season of the Witch
-re_exception_check = re.compile(r"cn<except>")
-re_exception_phrase = re.compile(r"(.+?), cn<except> ([^\.]+)\.?$")
-re_exclusion_phrase = re.compile(r"(?:([^,|^\.]+),? )?cn<except> pr<for> ([^\.]+)\.?$")
+re_excp_check = re.compile(r"cn<except>")
+re_excp_exception_phrase = re.compile(r"(.+?), cn<except> ([^\.]+)\.?$")
+re_excp_exclusion_phrase = re.compile(r"(?:([^,|^\.]+),? )?cn<except> pr<for> ([^\.]+)\.?$")
 
 ####
 ## CLAUSES
 ####
-
-# TODO: i don't like doing these twice but unlike sequence phrases, these are
-#  standalone, there are no preceding or following structures
-re_sequence_clause_check = re.compile(r"^sq<[^>]+>")
-re_sequence_clause = re.compile(r"^sq<([^>]+)> ([^,|^\.]+)$")
 
 # a 'when' clause i.e. 'before', 'after', 'during', 'until' condition
 re_seq_when_clause = re.compile(r"^sq<(before|after|during|until)> ([^,|^\.]+)\.?$")
@@ -1225,19 +1213,17 @@ re_ts_check = re.compile(r"ts<[^>]+>$") # ends with a turn structure
 # has the form: each of [phase]
 # NOTE: considered combining 'each of' as a single quantifier ("xq<each-of>") but
 #  the each applies to turns not to the player
-re_turn_structure_each_of = re.compile(r"^(xq<each> pr<of>) ([^,|^\.]*ts<[^>]+>)\.?$")
+re_ts_each_of = re.compile(r"^(xq<each> pr<of>) ([^,|^\.]*ts<[^>]+>)\.?$")
 
 # complex turn structure two variations:
 # 1. have the form i.e. Forcefield [quantifier] time [phase]
 #  NOTE: this phrasing is generated by the grapher in higher level graphing and
 #   does not exist as is in the oracle text
-re_turn_structure_complex = re.compile(
-    r"^xq<([^>]+)> sq<time> xq<([^>]+)> (ts<[^>]+>)$"
-)
+re_ts_complex = re.compile(r"^xq<([^>]+)> sq<time> xq<([^>]+)> (ts<[^>]+>)$")
 
 # terminal phases i.e. beginning of phase or end of phase i.e. Contamination
 # the? [beginning|end] of [phase]
-re_turn_structure_terminal_phase = re.compile(
+re_ts_terminal_phase = re.compile(
     r"^(?:(xq<this> ts<turn suffix='s>) xq<next> )?(?:xq<the> )?"
      r"sq<(beginning|end)> pr<of> ([^,|^\.]*ts<[^>]+>)$"
 )
@@ -1248,18 +1234,18 @@ re_turn_structure_terminal_phase = re.compile(
 #  Eater of Days has a quanitifier and number
 # NOTE: assuming player is basic - at most a quanitifier or status and then a
 #  possessive player
-re_turn_structure_basic = re.compile(
+re_ts_basic = re.compile(
     r"^(?:((?:(?:xq|xs|xo)<[^>]+> )?xp<[^>]+>) )?"
      r"(?:xq<([^>]+)> )?(?:nu<([^>]+)> )?(ts<[^>]+>)$"
 )
 
 # possessive consecutive phases have the form
 # [quantifier] turns [step] i.e. Scarab of the Unseen
-re_turn_structure_step = re.compile(r"^(xq<[^>]+> ts<turn suffix='s>) (ts<[^>]+>)$")
+re_ts_step = re.compile(r"^(xq<[^>]+> ts<turn suffix='s>) (ts<[^>]+>)$")
 
 # player's step has the form
 # [step] on [player's] [phase] i.e. Battering Ram
-re_turn_structure_player_step = re.compile(
+re_ts_player_step = re.compile(
     r"^((?:xq<[^>]+> )?ts<[^>]+>) pr<on> ([^,|^\.]*xp<[^>]+>) ([^,|^\.]*ts<[^>]+>)$"
 )
 
