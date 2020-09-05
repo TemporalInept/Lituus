@@ -1117,7 +1117,6 @@ re_cond_generic = re.compile(
 # we treat the as-though clause as a conditional
 re_cond_as_though = re.compile(r"^([^,|\.]+) pr<as_though> ([^,|\.]+)\.?$")
 
-
 ## RESTRICTION PHRASES
 
 # but condition restrictions i.e. Haakon

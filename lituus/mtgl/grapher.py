@@ -1055,7 +1055,7 @@ def graph_modal_phrase(t,pid,line):
         mid = t.add_node(pid,'modal')
         if ex: t.add_node(mid,'choose',number=mtgl.GE+num)
         else: t.add_node(mid,'choose',number=num)
-        for opt in [x for x in dd.re_modal_opt_delim.split(opts) if x]:
+        for opt in [x for x in dd.re_opt_delim.split(opts) if x]:
             # have to split the opt on semi-colon to see if there are option
             # instructions
             oid = t.add_node(mid,'option')
@@ -1387,8 +1387,17 @@ def graph_conditional_phrase(t,pid,line):
             return cid
         except AttributeError as e:
             if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
-    #elif 'pr<as_though>' in line:
-    #    if dd.re_cond_as_though.search(line): print(t._name,dd.re_cond_as_though.search(line).groups())
+    elif 'pr<as_though>' in line and not 'cn<may>' in line:
+        # NOTE: if there is a may, we want it to drop through here and be processed
+        #  by graph_optional first
+        try:
+            effect,cond = dd.re_cond_as_though.search(line).groups()
+            cid = t.add_node(pid,'conditional-phrase')
+            graph_phrase(t,t.add_node(cid,'cond-condition',value='as-though'),cond)
+            graph_phrase(t,t.add_node(cid,'cond-effect'),effect)
+            return cid
+        except AttributeError as e:
+            if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
 
     return None
 
@@ -1809,8 +1818,8 @@ def graph_action_clause_ex(t,pid,phrase):
                     if e.errno == lts.EPTRN: graph_phrase(t,poid,cls)
             if act: graph_phrase(t,poid,act) # TODO change to graph_action_clause
             return rid
-        else:
-            print(t._name,pid,phrase)
+        #else:
+        #    print(t._name,pid,phrase)
                 #print(t._name,phrase)
             #if mtgt.node_type(pid) != 'cond-condition': print(t._name,pid,phrase)
         #if cd == 'can':
