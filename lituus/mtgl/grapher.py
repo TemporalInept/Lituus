@@ -1771,21 +1771,21 @@ def graph_action_clause_ex(t,pid,phrase):
         if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
 
     # do the same
-    #aid = None
-    #try:
-    #    ply,prep,thing = dd.re_do_the_same_action_clause.search(phrase).groups()
-    #    aid = t.add_node(pid,'action-clause')
-    #    if ply: graph_thing(t,t.add_node(aid,'act-subject'),ply)
-    #    apid = t.add_node(aid, 'act-predicate')
-    #    _,val = _graph_action_word_(t,apid,'xa<repeat>') #TODO is repeat, the best to use her?
-    #    apid = t.add_node(aid,'action-parameter')
-    #    graph_thing(t,t.add_node(apid,'act-prep-object',value=prep),thing)
-    #    return aid
-    #except lts.LituusException as e:
-    #    if e.errno == lts.EPTRN and aid: t.del_node(aid)
-    #except AttributeError as e:
-    #    if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
-    #    else: raise
+    aid = None
+    try:
+        ply,prep,thing = dd.re_do_the_same_action_clause.search(phrase).groups()
+        aid = t.add_node(pid,'action-clause')
+        if ply: graph_thing(t,t.add_node(aid,'act-subject'),ply)
+        apid = t.add_node(aid, 'act-predicate')
+        _,val = _graph_action_word_(t,apid,'xa<repeat>') #TODO is repeat, the best to use her?
+        apid = t.add_node(aid,'action-parameter')
+        graph_thing(t,t.add_node(apid,'act-prep-object',value=prep),thing)
+        return aid
+    except lts.LituusException as e:
+        if e.errno == lts.EPTRN and aid: t.del_node(aid)
+    except AttributeError as e:
+        if e.__str__() == "'NoneType' object has no attribute 'groups'": pass
+        else: raise
 
     # 'traditional' action clause
     # can/do
@@ -1809,21 +1809,18 @@ def graph_action_clause_ex(t,pid,phrase):
             return poid
         elif neg:
             rid = t.add_node(pid,'restriction-phrase')
-            rsid = t.add_node(rid,'rstr-restriction')
-            poid = t.add_node(rsid,'potential',value=cd+'-not')
-            if cls: # may be a thing or a phrase
-                try:
-                    graph_thing(t,poid,cls)
-                except lts.LituusException as e:
-                    if e.errno == lts.EPTRN: graph_phrase(t,poid,cls)
-            if act: graph_phrase(t,poid,act) # TODO change to graph_action_clause
+            cls = cls + ' ' + act if cls else act
+            graph_phrase(t,t.add_node(rid,'rstr-restriction',value=cd+'-not'),cls)
             return rid
-        #else:
-        #    print(t._name,pid,phrase)
-                #print(t._name,phrase)
-            #if mtgt.node_type(pid) != 'cond-condition': print(t._name,pid,phrase)
-        #if cd == 'can':
-        #    print(t._name,t.ancestors(pid))
+        else:
+            poid = t.add_node(pid, 'potential', value=cd)
+            if cls:  # in this case, should be a thing
+                try:
+                    graph_thing(t, poid, cls)
+                except lts.LituusException as e:
+                    if e.errno == lts.EPTRN: graph_phrase(t, poid, cls)
+            if act: graph_phrase(t, poid, act)  # TODO change to graph_action_clause
+            return poid
     except AttributeError as e:
         if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
 
