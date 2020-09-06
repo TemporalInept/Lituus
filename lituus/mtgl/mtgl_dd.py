@@ -620,11 +620,11 @@ re_action_cando_clause = re.compile(
 )
 
 #  2. singular
-#   [thing]? [can|do]? [conditional]? [action-word] [action-parameters]
+#   [thing]? [[action-word] [action-parameters]
 #  NOTE: have to make sure that the action(s) are not preceded by another action
-re_action_clause = re.compile(
-    r"^(?:([^,|^\.]+?) )?(?:xa<(can|do)[^>]*> )?(?:cn<(not)> )?"
-     r"((?:xa|ka|kw)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
+re_action_clause = re.compile(r""
+    #r"^(?:([^,|^\.]+?) )?"
+     #r"((?:xa|ka|kw)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
 )
 
 # 2.a do the same is another special phrasing i.e. Guild Fued (only 5 cards as

@@ -1543,6 +1543,14 @@ re_mill = re.compile(
 #     r"sq<then> ka<discard> (xq<a>|nu<[^>]+>) ob<card(?: suffix=s)?>"
 #)
 
+# flicker i.e. Essence Flux
+# exile [thing] then return it to the battlefield [status]? under it's owner control
+re_flicker = re.compile(
+    r"ka<exile> ([^,]+),? sq<then> xa<return> ([^,|\.]+) pr<to> xq<the> "
+     r"zn<battlefield> (?:([^,|\.]+) )?pr<under> xo<it suffix='s> "
+     r"xp<owner suffix='s> xc<control>"
+)
+
 # etb and ltb (NOTE: matching any suffix which should only be 'tense'
 re_etb = re.compile(r"xa<enter( [^>]+)?> xq<the> zn<battlefield>")
 re_ltb = re.compile(r"xa<leave( [^>]+)?> xq<the> zn<battlefield>")

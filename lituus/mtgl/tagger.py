@@ -630,6 +630,12 @@ def third_pass(txt):
     #        _loot_num_(m.group(1)),
     #        _loot_num_(m.group(2))),
     #    txt)
+    ntxt = mtgl.re_flicker.sub(
+        lambda m: r"xa<flicker> {}{}".format(
+            m.group(1),
+            ' '+m.group(3) if m.group(3) else ''
+        ),txt
+    )
     ntxt = mtgl.re_etb.sub(r"xa<etb\1>",ntxt)
     ntxt = mtgl.re_ltb.sub(r"xa<ltb\1>",ntxt)
 

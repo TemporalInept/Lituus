@@ -1813,13 +1813,13 @@ def graph_action_clause_ex(t,pid,phrase):
             graph_phrase(t,t.add_node(rid,'rstr-restriction',value=cd+'-not'),cls)
             return rid
         else:
-            poid = t.add_node(pid, 'potential', value=cd)
+            poid = t.add_node(pid,'potential', value=cd)
             if cls:  # in this case, should be a thing
                 try:
-                    graph_thing(t, poid, cls)
+                    graph_thing(t,poid,cls)
                 except lts.LituusException as e:
-                    if e.errno == lts.EPTRN: graph_phrase(t, poid, cls)
-            if act: graph_phrase(t, poid, act)  # TODO change to graph_action_clause
+                    if e.errno == lts.EPTRN: graph_phrase(t,poid,cls)
+            if act: graph_phrase(t,poid,act)  # TODO change to graph_action_clause
             return poid
     except AttributeError as e:
         if e.__str__() != "'NoneType' object has no attribute 'groups'": raise
@@ -2257,6 +2257,7 @@ def graph_action_param(t,pid,aw,param):
     elif aw == 'divide': pass  # TODO
     elif aw == 'do': pass  # TODO
     elif aw == 'draw': pass  # TODO
+    elif aw == 'flicker': pass # TODO
     elif aw == 'flip': pass  # TODO
     elif aw == 'gain': pass  # TODO
     elif aw == 'get':  pass  # TODO
