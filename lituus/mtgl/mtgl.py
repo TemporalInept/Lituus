@@ -1255,6 +1255,9 @@ re_no_one = re.compile(r"no nu<1>")
 # pw<with> nu<0> needs to be retagged (only 2 Hindervines & Muraganda Petroglyphs)
 re_with_null = re.compile(r"pr<with> nu<0>")
 
+# no followed by damage
+re_no_dmg = re.compile(r"no (ef<(?:combat_)?damage>)")
+
 ####
 ## SUFFICES
 ####

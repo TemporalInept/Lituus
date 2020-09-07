@@ -330,10 +330,11 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_at_prep.sub(r"pr<at>",ntxt)
     ntxt = mtgl.re_at_prep2.sub(r"pr<at>",ntxt)
 
-    # a few cards (7) will have the phrase 'no nu<1>' - make this xp<no_one>
-    # and (2) will have the phrase "with no" - make these pr<without>
+    # a few cards (7) will have the phrase 'no nu<1>' - make this xp<no_one>,
+    #(2) will have the phrase "with no" - make these pr<without> and several
     ntxt = mtgl.re_no_one.sub(r"xp<no_one>",ntxt)
     ntxt = mtgl.re_with_null.sub(r"pr<without>",ntxt)
+    ntxt = mtgl.re_no_dmg.sub(r"nu<0> \1",ntxt)
 
     # Not deconflictions perse:
     #  1. to avoid conflicts 'named' is listed as an action, rewrite it here so
