@@ -621,7 +621,7 @@ def third_pass(txt):
     #  drawn & discard
     # mtg slang
     ntxt = mtgl.re_mill.sub(
-        lambda m: r"ka<mill{}> {}".format(
+        lambda m: r"xa<mill{}> {}".format(
             m.group(1) if m.group(1) else '',     # add suffix if present
             m.group(2) if m.group(2) else 'nu<1>' # if # not specified, make it 1
         ),txt
@@ -637,11 +637,13 @@ def third_pass(txt):
             ' '+m.group(3) if m.group(3) else ''
         ),txt
     )
+    ntxt = mtgl.re_detain.sub(r"xa<detain> \1",ntxt)
     ntxt = mtgl.re_etb.sub(r"xa<etb\1>",ntxt)
     ntxt = mtgl.re_ltb.sub(r"xa<ltb\1>",ntxt)
 
     # fix possessives (own, control) using logic symbols instead of tokens
     ntxt = mtgl.re_your_opponents.sub(r"xp<opponent suffix=s>",ntxt)  # for grapher
+    ntxt = mtgl.re_one_of_opponents.sub(r"xq<a> xp<opponent>",ntxt)    # for grapher
     ntxt = mtgl.re_both_ownctrl.sub(r"\1",ntxt)
     ntxt = mtgl.re_neither_ownctrl.sub(r"xc<¬own∧¬control>", ntxt)
     ntxt = mtgl.re_own_not_ctrl.sub(r"xc<own∧¬control>",ntxt)

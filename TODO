@@ -388,6 +388,12 @@ Gibbering Descent
 
 379. Wall of Shadows being split incorrectly in restriction-phrase. It has to do with the 'or' and the two 'only's
 
-381.
+381. See Heat Stroke. 'this turn' is not a sequence phrase rather it applies as a qualifier to which creatures can be destroyed. Additionally, because of the conjunction 'this turn' is only being applied t othe second conjoined action-clause
+
+382. See Angelic Arbiter, 'Each opponent who attacked with a creature this turn can't cast spells' should be a restriction but is not getting caught
+
+384. Fight as One, everything is missing from graph, have to check modal spell graphing, does it handle 'nu<1> or xq<both>
+
+
 
 
