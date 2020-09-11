@@ -1539,6 +1539,13 @@ re_mill = re.compile(
     r"pr<of> (xp|xq)<[^>]+> zn<library> pr<into> (xp|xq)<[^>]+> zn<graveyard>"
 )
 
+# detain i.e. Mythos of Vadrok
+# [thing] can't attack or block and its activated abilities cant be activated
+re_detain = re.compile(
+    r"(?<=[,|\.|\n] )([^,|^\.]+) xa<can> cn<not> xa<attack> or xa<block> and "
+     r"([^,|^\.]+) ob<ability[^>]+> xa<can> cn<not> xa<be> ka<activate[^>]+>"
+)
+
 # loot i.e. Merfolk Looter
 # [draw] [cards],? then [discard] [cards]
 #re_loot = re.compile(
@@ -1564,6 +1571,7 @@ re_able_to_block = re.compile(r"(.+) able pr<to> xa<block> (.+) xa<do> so")
 
 # your opponents can be combined
 re_your_opponents = re.compile(r"xp<you suffix='s> xp<opponent suffix=s>")
+re_one_of_opponents = re.compile(r"nu<1> pr<of> xp<opponent suffix=s>")
 
 # own, control related - We want to remove "do not" replaceing it with the negation
 # sign and standarize others
