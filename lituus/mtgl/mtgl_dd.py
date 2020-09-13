@@ -54,6 +54,7 @@ re_sentence = re.compile(r"\.(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")
 
 # clauses are separated by commas (may include an and that will be 'stripped'
 re_clause = re.compile(r",(?: and)?")
+re_clause2 = re.compile(r', ')
 
 ####
 ## TYPE CHECKS
@@ -227,8 +228,7 @@ re_kw_cost = re.compile(r"(?:((?:{[0-9wubrgscpx\/]+})+)|—(.+?)$)")
 # same as above but adds an additional optional cost preceded by 'and/or'
 # seen in some kicker keyword lines
 re_kw_cost2 = re.compile(
-    r"(?:((?:{[0-9wubrgscpx\/]+})+)|—(.+?)$)"
-    r"(?: and/or ((?:{[0-9wubrgscpx\/]+})+))?"
+    r"^(?:((?:{[0-9wubrgscpx\/]+})+(?: and/or (?:{[0-9wubrgscpx\/]+})+)?)|—(.+?))$"
 )
 
 # special parameters for specific keywords
@@ -562,18 +562,39 @@ re_conjoined_act_phrase_distinct = re.compile(
 #   [action-clause] [sequence] [phase]
 #  3. duration i.e. Turf Wound
 #   [quanitifer] [phase]
-re_act_clause_zone = re.compile(r"^([^,|^\.]+) pr<([^>]+)> (.+ zn<[^>]+>)\.?$")
-re_act_clause_sequence = re.compile(r"^([^,|^\.]+) (sq<[^>]+> (?:.* )?ts<[^>]+>)\.?$")
-re_act_clause_duration = re.compile(r"^([^,|^\.]+) (xq<[^>]+> ts<[^>]+>)\.?$")
+#re_act_clause_zone = re.compile(r"^([^,|^\.]+) pr<([^>]+)> (.+ zn<[^>]+>)\.?$")
+#re_act_clause_sequence = re.compile(r"^([^,|^\.]+) (sq<[^>]+> (?:.* )?ts<[^>]+>)\.?$")
+#re_act_clause_duration = re.compile(r"^([^,|^\.]+) (xq<[^>]+> ts<[^>]+>)\.?$")
 
 # duration/times/sequences
 #  [quantifier] [turn-structure] i.e Relentless Raptor
 re_quant_duration_clause = re.compile(r"^(xq<[^>]+> ts<\w+>)$")
 
+# a cost is one or more comma separated subcosts possibly either with a conjunction
+# operator or an implied and
+# each individual subcost may be a mana string (i.e. {2}), an mtg symbol (i.e. {T})
+# or a
+re_cost_delim = re.compile(r", ")
+re_cost_clause = re.compile(
+    r"((?:[^,|^\.]+, )*)(?:([^,|^\.]+),? (and|or|and/or) )?([^,|^\.]+)$"
+)
+
 # keyword or lituus action clause
 # TODO: this is not a perfect check but will eliminate most none action clauses
 re_act_clause_check = re.compile(
     r"((?:xa|ka|kw)<[^>]+>|xp<[^>]+> xc<(?:own|control)(?: suffix=s)?>)"
+)
+
+# action clause followed by 'this_turn'
+#re_act_clause_seq = re.compile(r"([^,|^\.]+) (xq<this> ts<turn>)\.?$")
+
+# complex conjunction [thing] [action] or [action] and [action]
+# Note: the first two actions will begin with an action word the last will begin
+#  with an object
+# Only one:  Sen Triplets (after detains have been tagged)
+re_conjoined_act_or_and = re.compile(
+    r"([^,|^\.]+) ((?:ka|xa)<[^>]+>[^,|^\.]* (or|and) (?:ka|xa)<[^>]+>[^,|^\.]+) "
+     r"(or|and) ((?:ka|xa)<[^>]+>[^,|^\.]+)\.?$"
 )
 
 ## Simple (two) conjunctions - three variations
@@ -596,8 +617,9 @@ re_conjoined_act_predicate = re.compile(
 #  2. the first action clause may have an implied subject but we force the second
 #   action clause to have a subject
 re_conjoined_act_clause_unique = re.compile(
-    r"^([^,|^\.]*?(?:xa|ka|kw)<[^>]+>[^,|^\.]*)? (and|or) "
-    r"([^,|^\.]*(?:ob|xp|xo)<[^>]+>[^,|^\.]* (?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?)\.?$"
+    r"^([^,|^\.]*?(?:cn<not> )?(?:xa|ka|kw)<[^>]+>[^,|^\.]*)? (and|or|and/or) "
+     r"([^,|^\.]*(?:ob|xp|xo)<[^>]+>[^,|^\.]*"
+     r"(?:cn<not> )?(?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
 
 # conjunction of actions
@@ -605,8 +627,8 @@ re_conjoined_act_clause_unique = re.compile(
 #  i.e. Lost Auramancers
 #    [thing] [action] and [action]
 re_conjoined_act_clause_common = re.compile(
-    r"^(?:([^,|^\.]*?) )?((?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?) "
-    r"(and|or|and/or) ((?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?)\.?$"
+    r"^(?:([^,|^\.]*?) )?((?:cn<not> )?(?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?) "
+    r"(and|or|and/or) ((?:cn<not> )?(?:xa|ka|kw)<[^>]+>(?: [^,|^\.]+)?)\.?$"
 )
 
 #### Singular action clauses
@@ -622,9 +644,9 @@ re_action_cando_clause = re.compile(
 #  2. singular
 #   [thing]? [[action-word] [action-parameters]
 #  NOTE: have to make sure that the action(s) are not preceded by another action
-re_action_clause = re.compile(r""
-    #r"^(?:([^,|^\.]+?) )?"
-     #r"((?:xa|ka|kw)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
+re_action_clause = re.compile(
+    r"^(?:([^,|^\.]*?(?:ob|xo|xp)<[^>]+>[^,|^\.]*?) )??"
+     r"((?:cn<not> )?(?:xa|ka|kw)<[^>]+>)(?: ([^,|^\.]+))?\.?$"
 )
 
 # 2.a do the same is another special phrasing i.e. Guild Fued (only 5 cards as
@@ -644,9 +666,8 @@ re_action_ply_poss = re.compile(
      r"xc<(own|control)(?: suffix=s)?>(?: ([^\.]+))\.?$"
 )
 
-# action word can be a single action word or preceded by not or can
-# the only card I found with a negated action is Escaped Shapeshifter
-re_action_word = re.compile(r"(?:([^>]+) )?((?:xa|ka|kw)<[^>]+>)")
+# action word can be a single action word or preceded by not
+re_action_word = re.compile(r"(?:cn<(not)> )?((?:xa|ka|kw)<[^>]+>)")
 
 ####
 ## REPLACEMENT EFFECTS (614)
@@ -1002,6 +1023,12 @@ re_seq_until_phase = re.compile(r"^sq<(until)> ([^,|^\.]*ts<[^>]+>), ([^,|^\.]+)
 re_seq_effect_cond = re.compile(
     r"^(?:([^,|^\.]+) )?(?:pr<for> )?"
     r"sq<(during|as_long_as|until|after|before)> ([^,|^\.]+)\.?$"
+)
+
+#
+# [turn-structure], [effect] i.e. Sen Triplets
+re_seq_ts_effect = re.compile(
+    r"((?:[^,|^\.]+)ts<[^>]+>), ([^,|^\.]+)\.?$"
 )
 
 # clause turn-structure have the form
@@ -1363,16 +1390,14 @@ re_consecutive_things = re.compile(
 #   this is the same as of attribute
 #  5 a variation of above
 #   with the [qualifier] [lituus object] i.e. Ghazban Ogre
-re_qual_with_ability = re.compile(r"^(?:(ob<[^>]+>) )?kw<([^>]+)>$")
-re_qual_with_dual_attribute = re.compile(
-    r"^(xr<[^>]+>) (and|or|and/or) (xr<[^>]+>)$"
-)
-re_qual_with_attribute = re.compile(r"^(xr<[^>]+>)$")
-re_qual_with_attribute2 = re.compile(r"^nu<([^>]+)> xq<([^>]+)> (xr<[^>]+>)$")
-re_qual_with_ctrs = re.compile(r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>)")
-re_qual_with_attribute_xq = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")
-re_qual_with_attribute_lo = re.compile(r"^xq<the> xl<(\w+)> (?:xo|xr)<(\w+)>$")
-re_qual_with_object = re.compile(r"^((?:xq<[^>]+> )?ob<[^>]+>)$")
+#re_qual_with_ability = re.compile(r"^(?:(ob<[^>]+>) )?kw<([^>]+)>$")
+#re_qual_with_dual_attribute = re.compile(r"^(xr<[^>]+>) (and|or|and/or) (xr<[^>]+>)$")
+#re_qual_with_attribute = re.compile(r"^(xr<[^>]+>)$")
+#re_qual_with_attribute2 = re.compile(r"^nu<([^>]+)> xq<([^>]+)> (xr<[^>]+>)$")
+#re_qual_with_ctrs = re.compile(r"^(?:(?:xq|nu)<([^>]+)>) (xo<ctr[^>]+>)")
+#re_qual_with_attribute_xq = re.compile(r"^xq<([^>]+)> xr<([^>]+)>$")
+#re_qual_with_attribute_lo = re.compile(r"^xq<the> xl<(\w+)> (?:xo|xr)<(\w+)>$")
+#re_qual_with_object = re.compile(r"^((?:xq<[^>]+> )?ob<[^>]+>)$")
 
 # from and in - applies to zones can take on multiple forms
 # from [quantifier] [zone]
@@ -1509,7 +1534,7 @@ re_exert_clause = re.compile(r"^(.+?)(?: pr<as> ([^\.]+))?$")
 re_mana_check = re.compile(r"{[^t|^e|^]+}$")
 re_mana_chain = re.compile(
     r"^(?:(xq<[^>]+>) )?"
-     r"(?:({[^t|^e|^]+}), )?(?:({[^t|^e|^}]+}),? or )?({[^t|^e|^]+}+)$"
+     r"(?:({[^t|^e|^]+}), )?(?:({[^t|^e|^}]+}),? (or|and/or) )?({[^t|^e|^]+}+)$"
 )
 
 # mana phrases of the form
@@ -1527,6 +1552,14 @@ re_that_much_mana = re.compile(
     # TODO: Grand Warlord Radha is very similar
     r"^xq<that> xl<much> ({[^t|^e|^]+}+)(?: ([^\.]+))?\.?$"
 )
+
+# related to 'attack'
+
+# standalone qualifier
+re_qual_standalone = re.compile(r"^xl<([^>]+)>$")
+
+# object preceded by 'with' i.e. Gallia of the Endless Dance
+re_qual_with_object = re.compile(r"^pr<with> ([^,|^\.]+)$")
 
 ####
 ## TEST SPACE

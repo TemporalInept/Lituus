@@ -1360,7 +1360,7 @@ def re_chain(tid):
     :return: regex.Pattern
     """
     return re.compile(
-        r"({0}<[^>]+>, )*({0}<[^>]+>),? (and|or|and/or) ({0}<[^>]+>)".format(tid)
+        r"((?:{0}<[^>]+>, )*)({0}<[^>]+>),? (and|or|and/or) ({0}<[^>]+>)".format(tid)
     )
 
 # above not working for quantifiers TODO: why
@@ -1368,7 +1368,7 @@ re_chain_quantifiers = re.compile(r"xq<[^>]+> xq<[^>]+>( xq<[^>]+>)*")
 
 # a subset of the conjunction_chain that matches only color chains
 re_clr_conjunction_chain = re.compile(
-    r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>, )*"
+    r"((?:ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>, )*)"
     r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>)"
     r",? (and|or|and/or) "
     r"(ch<¬?(?:white|blue|black|green|red|colorless|multicolored|monocolored)>)"
@@ -1391,7 +1391,7 @@ re_clr_conj_type = re.compile(
 
 # a subset of the conjunction_chain that matches only type chains
 re_type_conjunction_chain = re.compile(
-    r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>, )*"
+    r"((?:ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>, )*)"
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>)"
     r",? (and|or|and/or) "
     r"(ch<¬?(?:artifact|creature|enchantment|instant|land|planeswalker|sorcery)[^>]*>)"
@@ -1560,6 +1560,9 @@ re_flicker = re.compile(
      r"zn<battlefield> (?:([^,|\.]+) )?pr<under> xo<it suffix='s> "
      r"xp<owner suffix='s> xc<control>"
 )
+
+# blink (long flicker)
+# re_blink = re.compile(r"")
 
 # etb and ltb (NOTE: matching any suffix which should only be 'tense'
 re_etb = re.compile(r"xa<enter( [^>]+)?> xq<the> zn<battlefield>")
