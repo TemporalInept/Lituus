@@ -662,6 +662,9 @@ def third_pass(txt):
     # deconflict/retag voting
     if mtgl.re_vote_check.search(ntxt): ntxt = deconflict_vote(ntxt)
 
+    # combine landwalk with type
+    ntxt = mtgl.re_landwalk.sub(lambda m: _combine_landwalk_(m),ntxt)
+
     return ntxt
 
 def deconflict_vote(txt):
@@ -1286,3 +1289,20 @@ def _tag_vote_candidate_(c):
 def _loot_num_(tkn):
     if tkn == 'xq<a>': return 1
     else: return mtgltag.tag_val(tkn)
+
+def _combine_landwalk_(m):
+    """
+    combines landwalk type and landwalk keyword
+    :param m: the regex.Match
+    :return: the combined landwalk keyword
+    """
+    # untag both the attribute/object
+    tid,_,attr = mtgltag.untag(m.group(1))
+    if tid == 'ob':
+        assert('characteristics' in attr)
+        ltype = mtgltag.unwrap(mtgltag.split_align(attr['characteristics'])[1])
+        return mtgltag.retag('kw','landwalk',{'type':ltype})
+    elif tid == 'xr':
+        assert('val' in attr)
+        return mtgltag.retag('kw','landwalk',{'type':attr['val']})
+    return m.group()

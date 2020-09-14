@@ -378,13 +378,11 @@ Gibbering Descent
 
 374. See Glyph of Doom, the triggered effect "Destroy all creatures...", is being graphed as a sequence phrase but, the 'this turn' is actually a part of the action parameters specifying which creatures to be destroyed
 
-375. For loot have to keep an eye on Desperate Ravings as there is a following 'at random'
+375. For loot have to keep an eye on Desperate Ravings as there is a following 'at random' also how do we handle the draw, discard portions 
 
 376. Relook mill, are need to account for non-numeric specifiers of cards i.e. that many don't think there are any but just in case 
 
 377. Still need handling of phrases that end with this turn, this combat etc
-
-378. Have to figure out how/when to handle conjunctions, see Boros Battleshaper
 
 379. Wall of Shadows being split incorrectly in restriction-phrase. It has to do with the 'or' and the two 'only's
 
@@ -393,6 +391,12 @@ Gibbering Descent
 382. See Angelic Arbiter, 'Each opponent who attacked with a creature this turn can't cast spells' should be a restriction but is not getting caught
 
 384. Fight as One, everything is missing from graph, have to check modal spell graphing, does it handle 'nu<1> or xq<both>
+
+385. Have to take into account can/dos followed by conjunctions
+
+386. See Moonhold - can't _ if _ and cant _ if _ blank
+
+387. landwalk not being combined properly
 
 
 
