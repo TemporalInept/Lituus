@@ -662,8 +662,10 @@ def third_pass(txt):
     # deconflict/retag voting
     if mtgl.re_vote_check.search(ntxt): ntxt = deconflict_vote(ntxt)
 
-    # combine landwalk with type
-    ntxt = mtgl.re_landwalk.sub(lambda m: _combine_landwalk_(m),ntxt)
+    # combine landwalk, cycling and offering with type
+    ntxt = mtgl.re_landwalk.sub(lambda m: _combine_special_keyword_(m),ntxt)
+    ntxt = mtgl.re_offering.sub(lambda m: _combine_special_keyword_(m),ntxt)
+    ntxt = mtgl.re_cycling.sub(lambda m: _combine_special_keyword_(m),ntxt)
 
     return ntxt
 
@@ -1290,19 +1292,20 @@ def _loot_num_(tkn):
     if tkn == 'xq<a>': return 1
     else: return mtgltag.tag_val(tkn)
 
-def _combine_landwalk_(m):
+def _combine_special_keyword_(m):
     """
-    combines landwalk type and landwalk keyword
+    combines special keywords (landwalk, offering, cycling) with the type
     :param m: the regex.Match
     :return: the combined landwalk keyword
     """
     # untag both the attribute/object
     tid,_,attr = mtgltag.untag(m.group(1))
+    kval = mtgltag.tag_val(m.group(2))
     if tid == 'ob':
         assert('characteristics' in attr)
         ltype = mtgltag.unwrap(mtgltag.split_align(attr['characteristics'])[1])
-        return mtgltag.retag('kw','landwalk',{'type':ltype})
+        return mtgltag.retag('kw',kval,{'type':ltype})
     elif tid == 'xr':
         assert('val' in attr)
-        return mtgltag.retag('kw','landwalk',{'type':attr['val']})
+        return mtgltag.retag('kw',kval,{'type':attr['val']})
     return m.group()

@@ -1620,5 +1620,7 @@ def vote_obj1(tkn): return re.compile(r"{} ka<vote>".format(tkn))
 def vote_obj2(tkn): return re.compile("{}(?= xa<get suffix=s> xl<more>)".format(tkn))
 re_vote_obj3 = re.compile(r"(?<=(?:xl|xq)<[^>]*> )ka<vote([^>]*)>")
 
-# find landwalk preceded by an object or attribute
+# find landwalk preceded by an object or attribute, do the same w/ offering/cycling
 re_landwalk = re.compile(r"((?:ob|xr)<[^>]+>) (kw<landwalk>)")
+re_offering = re.compile(r"(ob<[^>]+>) (kw<offering>)")
+re_cycling = re.compile(r"(ob<[^>]+>) (kw<cycling>)")
