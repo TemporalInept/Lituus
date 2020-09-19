@@ -396,7 +396,10 @@ Gibbering Descent
 
 386. See Moonhold - can't _ if _ and cant _ if _ blank
 
-388. Do for offering and cycling the same tagging that was done for landwalk, then fix grapher to handle it
+390. Have to clean up and standarize replacement effects
+
+391. See Island Sanctuary, flying is appended to the creature object under the 'with attribure but the 'and/or landwalk' is not (in tagger the landwalk will not be chained because it has an attribute itself)
+
 
 
 

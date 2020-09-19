@@ -362,7 +362,7 @@ def second_pass(txt):
      4. conduct post chaining
      5. additional deconfliction of tags
      6. chain other tags
-     7. merge objects with preceding/following tags
+     # TODO removed for now 7. merge objects with preceding/following tags
     :param txt: first pass tagged oracle txt
     :return: tagged oracle text
     """
@@ -372,7 +372,7 @@ def second_pass(txt):
     ntxt = post_chain(ntxt)
     ntxt = deconflict_tags2(ntxt)
     ntxt = chain_other(ntxt)
-    ntxt = merge(ntxt)
+    #ntxt = merge(ntxt)
     return ntxt
 
 def pre_chain(txt):

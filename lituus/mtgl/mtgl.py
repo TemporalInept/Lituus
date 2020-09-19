@@ -312,7 +312,8 @@ word_hacks = {
     "controlled":"controled",
     "caused":"causeed",
     "guesses":"guesss",
-    "made":"maked","making":"makeing",
+    "made":"makeed","making":"makeing",
+    'came':"comeed","coming":"comeing",
     "once":"1 time", "twice":"2 times",
     # status related
     "tapping":"taping","tapped":"taped","untapping":"untaped","untapped":"untaped",
@@ -650,6 +651,7 @@ lituus_actions = [  # words not defined in the rules but important any way
     'share','turn','produce','round','resolve','do','repeat','change','bid',
     'select','reselect','begin','separate','note','reorder','remain','can',
     'count','divide','cause','pair','guess','make','affect',
+    'come',
     'copy',  # will have already been tagged?
     'named',  # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
