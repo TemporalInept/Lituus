@@ -1580,6 +1580,10 @@ re_color_choice = re.compile(
     r"xq<the> xr<color>( or xr<color suffix=s>)? pr<of> xp<you suffix='s> xo<choice>"
 )
 
+# find phrase of the form
+# life total among all players
+re_life_ttl = re.compile(r"(xo<life_total>) among xq<all> xp<player suffix=s>")
+
 # your opponents can be combined
 re_your_opponents = re.compile(r"xp<you suffix='s> xp<opponent suffix=s>")
 re_one_of_opponents = re.compile(r"nu<1> pr<of> xp<opponent suffix=s>")

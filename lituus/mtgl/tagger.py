@@ -652,9 +652,11 @@ def third_pass(txt):
     ntxt = mtgl.re_own_not_ctrl.sub(r"xc<own∧¬control>",ntxt)
     ntxt = mtgl.re_dont_ownctrl.sub(r"xc<¬\1>",ntxt)
 
-    # rewrite able to block and color of your choice IOT facilitate graphing
+    # rewrite able to block, color of your choice and life total among all players
+    # IOT facilitate graphing
     ntxt = mtgl.re_able_to_block.sub(r"\1 xa<block> \2 cn<if> able",ntxt)
     ntxt = mtgl.re_color_choice.sub(lambda m: _color_choice_(m),ntxt)
+    ntxt = mtgl.re_life_ttl.sub(r"\1",ntxt)
 
     # combine prefix action words of the form 'to be' action word (i.e. be cast)
     # and 'to' action word (i.e. to cast)
