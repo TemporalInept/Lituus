@@ -388,7 +388,7 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 
 lituus_qualifiers = [
     'less','greater','lesser','highest','lowest','more','back','many','random',
-    'also','maximum','most','much','alone',
+    'also','maximum','most','much','alone','high'
 ]
 qualifier_tkns = '|'.join(lituus_qualifiers)
 re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
@@ -430,9 +430,10 @@ re_lituus_obj = re.compile(
     r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(lobj_tkns)
 )
 
-# lituus players - keep suffix but check word boundary in beginning
+# lituus players - keep suffix but check word boundary in beginning (bidder is
+# only found in three cards)
 lituus_players = [
-    'you','opponent','teammate','player','owner','controller','they',
+    'you','opponent','teammate','player','owner','controller','they','bidder',
 ]
 ply_tkns = '|'.join(lituus_players)
 re_lituus_ply = re.compile(
@@ -651,7 +652,7 @@ lituus_actions = [  # words not defined in the rules but important any way
     'share','turn','produce','round','resolve','do','repeat','change','bid',
     'select','reselect','begin','separate','note','reorder','remain','can',
     'count','divide','cause','pair','guess','make','affect',
-    'come',
+    'come','start','end',
     'copy',  # will have already been tagged?
     'named',  # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
@@ -1250,6 +1251,13 @@ re_spend_stat = re.compile(r"xa<(un)?spend suffix=ed>(?= xo)")
 #  status i.e. Lens of Clarity or preceeded by 'look' i.e. Lens of Clarity
 re_at_prep = re.compile(r"(tp<at>)(?= (?:xl|st)<[^>]+>)")
 re_at_prep2 = re.compile(r"(?<=xa<look> )(tp<at>)")
+
+# 'bidding'
+re_bidding = re.compile(r"bidding")
+re_bid_obj = re.compile(r"(?<=(?:xq|xl)<[^>]+> )(xa<bid>)")
+
+# three cards have 'ends' which should be tagged as an object
+re_end_obj = re.compile(r"sq<end suffix=s>")
 
 # no nu<1> needs to be retagged
 re_no_one = re.compile(r"no nu<1>")

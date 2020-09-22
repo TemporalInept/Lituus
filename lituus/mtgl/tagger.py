@@ -330,6 +330,13 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_at_prep.sub(r"pr<at>",ntxt)
     ntxt = mtgl.re_at_prep2.sub(r"pr<at>",ntxt)
 
+    # bid is primarily an action but in some cases will be an object
+    ntxt = mtgl.re_bidding.sub(r"xo<bid>",ntxt)
+    ntxt = mtgl.re_bid_obj.sub(r"xo<bid>",ntxt)
+
+    # deconflict the special case of 'end' as an object
+    ntxt = mtgl.re_end_obj.sub(r"xa<end suffix=s>",ntxt)
+
     # a few cards (7) will have the phrase 'no nu<1>' - make this xp<no_one>,
     #(2) will have the phrase "with no" - make these pr<without> and several
     ntxt = mtgl.re_no_one.sub(r"xp<no_one>",ntxt)
