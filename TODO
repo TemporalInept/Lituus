@@ -400,6 +400,22 @@ Gibbering Descent
 
 391. See Island Sanctuary, flying is appended to the creature object under the 'with attribure but the 'and/or landwalk' is not (in tagger the landwalk will not be chained because it has an attribute itself)
 
+392. Xantcha, Sleeper Agent "attacks each combat if able" becuase it is being handled as a conjunction of action clauses the 'each combat if able' is being treated as a parameter of acttack.
+ o Boros Battleshaper is the same with "this combat if able"
+
+393. tag 'stop'?
+
+394. See Protective Bauble when does a 'can not' apply to only action of a conjunction or all?
+
+395. Gomazoa "Put Gomazoa and each creature it's blocking" this is a single object
+
+396. one of .... should be parsed as a thing
+
+397. Entourage of Trest, "an additional creature each combat" is dissappearing
+
+398. Kavu Chameleon has an activated cost of {G} that is being graphed as a conjunction
+
+
 
 
 

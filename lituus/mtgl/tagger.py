@@ -346,6 +346,9 @@ def deconflict_tags1(txt):
     ntxt = mtgl.re_upto_op.sub(r"op<{}>".format(mtgl.LE),ntxt)
     ntxt = mtgl.re_only_upto.sub(r"cn<only> \1",ntxt)
 
+    # follow up with tagging lituus status (only 'illegal' for now)
+    ntxt = mtgl.re_lituus_status.sub(r"xs<\1>",ntxt)
+
     return ntxt
 
 ####
@@ -649,8 +652,9 @@ def third_pass(txt):
     ntxt = mtgl.re_own_not_ctrl.sub(r"xc<own∧¬control>",ntxt)
     ntxt = mtgl.re_dont_ownctrl.sub(r"xc<¬\1>",ntxt)
 
-    # rewrite able to block IOT facilitate graphing
+    # rewrite able to block and color of your choice IOT facilitate graphing
     ntxt = mtgl.re_able_to_block.sub(r"\1 xa<block> \2 cn<if> able",ntxt)
+    ntxt = mtgl.re_color_choice.sub(lambda m: _color_choice_(m),ntxt)
 
     # combine prefix action words of the form 'to be' action word (i.e. be cast)
     # and 'to' action word (i.e. to cast)
@@ -1256,6 +1260,18 @@ def _join_ability_(m):
     tid,val,attr = mtgltag.untag(m.group(3))
     attr['type'] = atype
     return mtgltag.retag(tid,val,attr)
+
+def _color_choice_(m):
+    """
+     merges color(s) of your choice into a single tag
+    :param m: the regex.Match object
+    :return: the merged tag
+    """
+    # if colors is present in m add the plural suffix otherwise start w/ empty attr
+    # then add 'your-choice' as the value
+    attr = {'suffix':'s'} if m.group(1) else {}
+    attr['val'] = 'your-choice'
+    return mtgltag.retag('xr','color',attr)
 
 def _prefixed_act_word_(m):
     """

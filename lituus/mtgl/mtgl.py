@@ -252,7 +252,7 @@ word_hacks = {
     "isn't":"is not","haven't":"have not","hasn't":"have not","aren't":"are not",
     "you're":"you are","couldn't":"could not","they're":"they are",'their':"they's",
     "doesn't":"dos not","you've":"you have","your":"you's","that's":"that is",
-    "wasn't":"was not","weren't":"were not",
+    "wasn't":"was not","weren't":"were not","hadn't":"haveed not",
     # special
     'an':"a","command zone":"command",
     # plural
@@ -941,17 +941,20 @@ re_zone = re.compile(
 #  Tide that has a status involving Phasing
 # Status will have already been tagged as something else therefore, we list them
 # here and provide Status Deconfliction further on
-
 status = ['tap','flip','phase','face']
 
 # lituus status
-# As above, these will have already been tagged as something and will have to
-# be deconficted - they are only listed here for reference
+# As above, the majority of these will have already been tagged as something and
+# will have to be deconficted - they are only listed here for reference
 lituus_status = [
     'attacking','blocking','defending','transformed','enchanted','equipped',
     'exiled','unattached','attached','activated','triggered','revealed',
-    'suspended','kicked','discarded','cycled',
+    'suspended','kicked','discarded','cycled','illegal',
 ]
+lstat_tkns = '|'.join(lituus_status)
+re_lituus_status = re.compile(
+    r"\b(?<!<[^>]*)({})(?=(?:s|ing|ed|ion|\'s|s\'|:|\.|,|\n|\"|\'| |—|$))".format(lstat_tkns)
+)
 
 ####
 ## DECONFLICTIONS
@@ -1231,9 +1234,6 @@ re_misstag = re.compile(r"({})".format(misstag_tkns))
 
 # from combat find untagged combat preceded by from
 re_from_combat = re.compile(r"(?<=pr<from> )ts<combat>")
-
-# finds phrase tapped and attacking (suffixes have not been handled yet)
-# re_tna = re.compile(r"(?<=st<tapped> and )(xa)(?=<attack>ing)")
 
 # discarded is a status if it is preceded by the and followed by card
 re_discard_stat = re.compile(r"(?<=xq<the> )ka<discard suffix=ed>(?= ob<)")
@@ -1570,9 +1570,15 @@ re_flicker = re.compile(
 re_etb = re.compile(r"xa<enter( [^>]+)?> xq<the> zn<battlefield>")
 re_ltb = re.compile(r"xa<leave( [^>]+)?> xq<the> zn<battlefield>")
 
-# [thinb] able to block [thing] do so is difficult for the grapher
+# [thing] able to block [thing] do so is difficult for the grapher
 # NOTE: prefixes have not been applied to action verbs yet
 re_able_to_block = re.compile(r"(.+) able pr<to> xa<block> (.+) xa<do> so")
+
+# find phrases of the form:
+# the color( or colors)? of your choice
+re_color_choice = re.compile(
+    r"xq<the> xr<color>( or xr<color suffix=s>)? pr<of> xp<you suffix='s> xo<choice>"
+)
 
 # your opponents can be combined
 re_your_opponents = re.compile(r"xp<you suffix='s> xp<opponent suffix=s>")
