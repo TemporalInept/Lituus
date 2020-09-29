@@ -312,6 +312,7 @@ word_hacks = {
     "controlled":"controled",
     "caused":"causeed",
     "guesses":"guesss",
+    'replacing':'replaceing','replaced':'replaceed',
     "made":"makeed","making":"makeing",
     'came':"comeed","coming":"comeing",
     "once":"1 time", "twice":"2 times",
@@ -388,7 +389,7 @@ re_quantifier = re.compile(r"\b({})\b".format(quantifier_tkns))
 
 lituus_qualifiers = [
     'less','greater','lesser','highest','lowest','more','back','many','random',
-    'also','maximum','most','much','alone','high'
+    'also','maximum','most','much','alone','high','base',
 ]
 qualifier_tkns = '|'.join(lituus_qualifiers)
 re_qualifier = re.compile(r"\b({})\b".format(qualifier_tkns))
@@ -423,7 +424,7 @@ lituus_objects = [  # lituus objects
     "city's blessing", 'game','mana pool','mana cost','commander','mana','attacker',
     'blocker','itself','it','them','coin','choice','cost', "amount",'life total',
     'life','symbol','rest','monarch','pile','team','mode','level','value','number',
-    'him','her','loyalty',
+    'him','her','loyalty','instance',
 ]
 lobj_tkns = '|'.join(lituus_objects)
 re_lituus_obj = re.compile(
@@ -652,7 +653,7 @@ lituus_actions = [  # words not defined in the rules but important any way
     'share','turn','produce','round','resolve','do','repeat','change','bid',
     'select','reselect','begin','separate','note','reorder','remain','can',
     'count','divide','cause','pair','guess','make','affect',
-    'come','start','end',
+    'come','start','end','replace',
     'copy',  # will have already been tagged?
     'named',  # Special case we only want this specific conjugation
     'cost',  # will have already been tagged as an object
@@ -1028,6 +1029,11 @@ re_target_act = re.compile(r"(?<=(?:xq<that>|cn<could>|xa<can>) )(xq<target>)")
 re_target_obj = re.compile(
     r"(xq<target>)"
     r"(?! (?:ob|st|xs|xo<commander>|(?:xp<(?:player|opponent(?: suffix=(?:s|s'|'s))?))))"
+)
+
+# find 'target' preceded by a quantifier and followed by a preposition
+re_target_obj2 = re.compile(
+    r"(?<=xq<[^>]+> )(?:xa<target([^>]+)>)(?= pr<[^>]+>)"
 )
 
 # Copy

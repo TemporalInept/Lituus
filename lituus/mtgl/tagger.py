@@ -526,9 +526,10 @@ def deconflict_tags2(txt):
 
     # deconflict target as quantifier, object or action. 1) handle specials cases
     # follow rules for actions but are in fact objects. 2) take care of actions
-    ntxt = mtgl.re_target_sc.sub(r"ob<target> and xq<that> ob<target>",ntxt)
+    ntxt = mtgl.re_target_sc.sub(r"xo<target> and xq<that> xo<target>",ntxt)
     ntxt = mtgl.re_target_act.sub(r"xa<target>",ntxt)
-    ntxt = mtgl.re_target_obj.sub(r"ob<target>",ntxt)
+    ntxt = mtgl.re_target_obj.sub(r"xo<target>",ntxt)
+    ntxt = mtgl.re_target_obj2.sub(r"xo<target\1>",ntxt)
 
     # deconflict copy as action vs object (TODO: this could be done in the first
     # deconfliction)
